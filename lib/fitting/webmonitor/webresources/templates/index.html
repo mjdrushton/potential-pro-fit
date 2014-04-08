@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Fitting Tool</title>
+    <link rel="stylesheet" href="/resources/css/fitting.css" media="all">
+    <link rel="stylesheet" href="/resources/css/plot.css" media="all">
+    <link rel="stylesheet" href="/resources/css/tooltipster.css" media="all">
+    <link rel="stylesheet" href="/resources/css/jquery.dataTables.css" media="all">
+    <link rel="stylesheet" href="/resources/css/flick/jquery-ui-1.10.3.custom.css">
+    <script type="text/javascript" src="/resources/js/jquery-1.10.2.js"></script>
+    <script type="text/javascript" src="/resources/js/jquery-ui-1.10.3.custom.js"></script>
+    <script type="text/javascript" src="/resources/js/jquery.dataTables.js"></script>
+    <script type="text/javascript" src="/resources/js/jquery.mousewheel.min.js" ></script>
+    <script type="text/javascript" src="/resources/js/jquery.ba-resize.min.js" ></script>
+    <script type="text/javascript" src="/resources/js/jquery.tooltipster.min.js" ></script>
+    <script type="text/javascript" src="/resources/js/jquery.layout.min.js" ></script>
+    <script type="text/javascript" src="/resources/js/knockout-2.3.0.js"></script>
+    <script type="text/javascript" src="/resources/js/model.js"></script>
+    <script type="text/javascript" src="/resources/js/model-custombindings.js"></script>
+    <script type="text/javascript" src="/resources/js/d3.v3.js"></script>
+    <script type="text/javascript" src="/resources/js/svglayout.js" ></script>
+    <script type="text/javascript" src="/resources/js/arrowbox_callout.js" ></script>
+    <script type="text/javascript" src="/resources/js/plot.js" ></script>
+    <script type="text/javascript" src="/resources/js/fitting.js"></script>
+</head>
+
+<body>
+    
+<div id='data_pane' class="ui-layout-center">
+    <!-- Nested jQuery layout -->
+    <div class="ui-layout-center">
+        <div id='global_status'>
+            <table class='iteration_summary'>
+                <tr>
+                    <td>Current:</td>
+                    <td data-bind="
+                        text: current_iteration_summary.iteration_number, 
+                        tooltip: 'Current iteration number'"></td>
+                    <td>=</td>
+                    <td data-bind="
+                        format_number: current_iteration_summary.minimum.merit_value(),
+                        tooltip: 'Merit value for current iteration'"></td>
+                </tr>
+                <tr>
+                    <td>Best:</td>
+                    <td data-bind="
+                        text: best_iteration_summary.iteration_number, 
+                        tooltip: 'Iteration that gave best merit-value'"></td>
+                    <td>=</td>
+                    <td data-bind="
+                        format_number: best_iteration_summary.minimum.merit_value(),
+                        tooltip: 'Best ever merit-value'"></td>
+                </tr>
+                 <tr>
+                    <td>Selected:</td>
+                    <td data-bind="text: selected_iteration_summary.iteration_number"></td>
+                </tr>
+            </table>
+
+            
+
+            <!-- Run Status -->
+            <div id="status" data-bind="css: run_status">
+                <span data-bind="text: run_status"></span>
+            </div>
+
+            <div id="title" data-bind="text: title">
+                
+            </div>
+        </div>
+        
+        <!-- Overview table, listing each iteration -->
+        <div id='overview_table_container'>
+
+          <div>
+              <span>Follow:</span>
+              <div id="follow_buttons" data-bind="buttonset: overview_table.selection_follow_mode, 
+                button_data: [ {display : 'Manual',
+                                model : 'manual'},
+                                {display : 'Current',
+                                model : 'auto-current'},
+                                {display : 'Best',
+                                model : 'auto-best'} ]">
+                </div>
+            </div>
+            <table id='overview_table' data-bind="datatable:overview_table, 
+                dtconfig: {
+                    'bAutoWidth' : true,
+                    'bPaginate' : false, 
+                    'bFilter' : false,
+                    'sScrollY' : '500px',
+                    'sScrollX': '100%',
+                    'bScrollCollapse' : true                    
+                }, 
+                datatable_selection:overview_table.selected">
+            </table>
+        </div>
+    </div>
+   
+    <div id='candidate_data' class="ui-layout-south">
+        <div id="candidate_tabs">
+            <ul>
+                <li><a href="#variables_table_tab">Variables</a></li>
+                <li><a href="#variables_cfg_tab">Variables (fit.cfg)</a></li>
+                <li><a href="#evaluator_tab">Evaluators</a></li>   
+            </ul>
+            <div id="variables_table_tab">
+                    <table id='variables_table' data-bind="
+                        datatable:selected_iteration_summary.minimum.variables,
+                        datatable_selection:selected_iteration_summary.minimum.variables.table_selection,
+                        datatable_tooltip: {table_model : selected_iteration_summary.minimum.variables,
+                            tooltip_columns :[ {target_column : 'calculated_flag', data_column : 'calculation_expression'} ]},
+                        dtconfig: {
+                          'bAutoWidth' : true,
+                          'bPaginate' : false, 
+                          'sScrollY' : '500px',
+                          'sScrollX': '100%',
+                          'bScrollCollapse' : true
+                    }">
+                    </table>
+            </div>
+
+            <div id='variables_cfg_tab'>
+                <pre data-bind="text:selected_iteration_summary.minimum.variables.fitCfgVariables()">
+                </pre>
+            </div>
+
+            <div id="evaluator_tab">
+                <table id='evaluators_table' data-bind="datatable:selected_iteration_summary.minimum.evaluated,
+                  datatable_selection:selected_iteration_summary.minimum.evaluated.table_selection,
+                  datatable_tooltip: {table_model : selected_iteration_summary.minimum.evaluated,
+                      tooltip_columns :[ {target_column : 'error_message', data_column : 'error_message'} ]},
+                  dtconfig: {
+                    'bAutoWidth' : true,
+                    'bPaginate' : false, 
+                    'sScrollY' : '500px',
+                    'sScrollX': '100%',
+                    'bScrollCollapse' : true
+                }">
+                </table>
+
+            </div>
+        </div>
+    </div>
+</div>
+<!-- <div class="ui-layout-south">South</div> -->
+<div id='plot_pane' class="ui-layout-east">
+    <div id="plot">
+    </div>
+</div>
+<!-- <div class="ui-layout-west">West</div> -->
+</body>
+</html>

@@ -1,0 +1,259 @@
+*
+{
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
+   	font-weight: 300;
+}
+
+h3
+{
+	font-size : 180%;
+}
+
+
+ul.horizontal-list
+{
+	list-style-type:none;
+	margin:0;
+	margin-bottom: 0.5em;
+	padding:0;
+}
+
+ul.horizontal-list li
+{
+	display : inline;
+	border-right : dotted 1px #FF41B4;
+	padding : 5px;
+}
+
+/*Thick border*/
+
+#overview_container
+{
+	overflow: auto;
+}
+
+/*Vertical borders*/
+.evaluator_box th,
+.evaluator_box td
+{
+	border-left : solid 1pt #AAA;
+	padding : 5px;
+}
+
+.evaluator_box table tr
+{
+	height : 24px;
+}
+
+
+
+.ui-layout-east,
+.ui-layout-center
+{
+	padding : 2px;
+}
+
+#candidate_data
+{
+	overflow: hidden !important;
+}
+
+#global_status
+{
+	position : relative;
+	border-bottom : 1px solid gray;
+}
+
+.ui-layout-east
+{
+	padding-left : 5px;
+}
+
+#global_status table.iteration_summary
+{
+	margin-left:  auto;
+	right : 10px;
+	top : 10px;
+	color : rgb(102, 102, 102);
+}
+
+#status
+{
+	position : absolute;
+	padding-left : 25px;
+	color :  #FF41B4;
+	height : 20px;
+	left : 10px;
+	top : 10px;
+}
+
+#title 
+{
+	color : rgb(102, 102, 102);
+	font-size: 32pt;
+	text-align: center;
+}
+
+#status.Running
+{
+	background: url(../images/play_icon.png);
+
+	background-position: left center;
+    background-repeat: no-repeat;
+
+    animation-duration : 1s;
+    animation-name : flash;
+    animation-iteration-count : infinite;
+    animation-direction : alternate;
+
+    -webkit-animation-duration : 1s;
+    -webkit-animation-name : flash;
+    -webkit-animation-iteration-count : infinite;
+    -webkit-animation-direction : alternate;
+}
+
+#status.Finished
+{
+	background: url(../images/stop_icon.png);
+
+	background-position: left center;
+    background-repeat: no-repeat;
+}
+
+#status.Error
+{
+	background: url(../images/status_error_icon.png);
+
+	background-position: left center;
+    background-repeat: no-repeat;
+
+    animation-duration : 0.2s;
+    animation-name : flash;
+    animation-iteration-count : infinite;
+    animation-direction : alternate;
+
+    -webkit-animation-duration : 0.2s;
+    -webkit-animation-name : flash;
+    -webkit-animation-iteration-count : infinite;
+    -webkit-animation-direction : alternate;
+}
+
+
+@keyframes flash
+{
+	from 
+	{
+		opacity: 1.0;
+	}
+
+	to
+	{
+		opacity : 0.0;
+	}
+}
+
+@-webkit-keyframes flash
+{
+	from 
+	{
+		opacity: 1.0;
+	}
+
+	to
+	{
+		opacity : 0.0;
+	}
+}
+
+
+#candidate_tabs
+{
+	height : 100%;
+}
+
+#variables_cfg_tab pre
+{
+  font-family:Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
+  background : rgb(221, 221, 221);
+  border: solid 1px rgb(226, 227, 254);
+}
+
+#overview_table tbody tr.selected_row
+{
+	background-color: rgb(255, 155, 186);
+}
+
+#variables_table tbody td.selected_cell,
+#evaluators_table tbody td.selected_cell
+{
+	background-color: rgb(255, 155, 186);
+}
+
+/* Fitting flag column icon*/
+#variables_table tbody td.fit_flag span.flagged,
+#variables_table tbody td.calculated_flag span.flagged
+{
+	background-image: url(../images/tick_icon.png);
+	background-repeat: no-repeat;
+	width : 21px;
+	height : 21px;
+	display : block;
+	margin-left: auto;
+	margin-right : auto;
+}
+
+#evaluators_table tbody td.error_message span.flagged,
+th.error_message span.head_icon,
+th.calculated_flag span.head_icon
+{
+	background-image: url(../images/error_icon.png);
+	background-repeat: no-repeat;
+	width : 21px;
+	height : 21px;
+	display : block;
+	margin-left: auto;
+	margin-right : auto;
+	background-position: center;
+}
+
+th.error_message span.head_icon
+{
+	background-image: url(../images/error_icon_bw.png);
+}
+
+th.calculated_flag span.head_icon
+{
+	background-image: url(../images/function_icon.png);
+	width : 30px;
+	height : 30px;
+}
+
+#variables_table tbody td.pinnable,
+#evaluators_table tbody td.pinnable
+{
+	background-image: url(../images/small_star_bw.png);
+	background-repeat: no-repeat;
+	background-position : right center;
+}
+
+#variables_table tbody td.pinnable:hover,
+#variables_table tbody td.selected_cell.pinnable,
+#evaluators_table tbody td.pinnable:hover,
+#evaluators_table tbody td.selected_cell.pinnable
+{
+	background-image: url(../images/small_star.png);
+	background-repeat: no-repeat;
+	background-position : right center;
+}
+
+#variables_table tbody td.selected_cell.pinnable,
+#overview_table tbody td.variable_column
+{
+	color: blue;
+}
+
+#evaluators_table tbody td.selected_cell.pinnable,
+#overview_table tbody td.evaluator_column
+{
+	color: purple;
+}

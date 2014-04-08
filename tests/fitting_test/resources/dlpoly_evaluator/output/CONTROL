@@ -1,0 +1,27 @@
+Nd-900K-Simulation
+
+temperature     900.0
+pressure      0.0
+ensemble npt hoover 1.1  2.9
+
+steps    50000  
+print   100
+stack  1000
+stats  50
+traj     10000    1000     0
+no index
+
+
+equil 500
+scale 2
+
+timestep variable  1E-4
+cutoff     10.5
+rvdw cutoff 10.5
+ewald precision 1E-8
+
+job time 250000.0
+close time 500.0
+
+finish
+

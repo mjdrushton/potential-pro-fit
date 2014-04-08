@@ -1,0 +1,112 @@
+#plot
+{
+	width : 100%;
+	height : 100%;
+}
+
+
+
+svg.plot .plot_area_frame
+{
+	stroke : black;
+	stroke-width : 1pt;
+	fill : none;
+}
+
+svg.plot g.axis path.domain
+{
+	visibility: hidden;
+}
+
+svg.plot g.axis rect.axis_bg
+{
+	fill : white;
+	fill-opacity : 0;
+}
+
+svg.plot g.axis g.tick.major line
+{
+	stroke : black;
+}
+
+
+svg.plot g.plot_area g.series.line_series path.line
+{
+	stroke-width : 2pt;
+	stroke : blue;
+}
+
+svg.plot g.plot_area .plot_area_background
+{
+	fill : rgb(206,206,206);
+}
+
+svg.plot .high_error_bar,
+svg.plot .low_error_bar,
+g.series.series_population .symbol
+{
+	stroke-width : 1.5pt;
+	stroke : #888;
+}
+
+svg.plot .high_error_bar.outer,
+svg.plot .low_error_bar.outer
+{
+	stroke : white;
+}
+
+
+/*Series*/
+svg.plot g.plot_area g.series path.line
+{
+	stroke : #888;
+	stroke-width : 1pt;
+	fill : none;
+}
+
+g.series.series_best .symbol
+{
+	fill : #FF41B4;	
+}
+
+g.series.series_current .symbol
+{
+	fill : #888;
+}
+
+g.series .symbol.highlight
+{
+	stroke : white;
+}
+
+
+
+
+/*Key*/
+/*svg .key .key_background
+{
+	fill : white;
+	opacity: 0.4;
+	stroke : #666;
+	stroke-width : 2pt;
+}*/
+
+svg .key text.title
+{
+	font-weight: bold;
+	font-size : 120%;
+}
+
+svg .key text
+{
+	fill : rgb(102,102,102);
+}
+
+/* Callout */
+svg g.callout path
+{
+	fill : white;
+	stroke : #FF41B4;
+	stroke-width : 2pt;
+	opacity: 0.8;
+}

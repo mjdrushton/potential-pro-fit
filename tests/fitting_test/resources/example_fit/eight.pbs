@@ -1,0 +1,3 @@
+header_line : #PBS -S /bin/bash
+header_line : #PBS -l walltime=00:49:00
+header_line : #PBS -l select=1:ncpus=8:mem=1Gb
