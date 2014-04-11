@@ -1,6 +1,7 @@
 from _common import * # noqa
 
-from atomsscripts import dlpoly
+# from atomsscripts import dlpoly
+import _dlpoly_parse
 
 import os
 
@@ -35,11 +36,11 @@ class DLPOLY_STATISEvaluator(object):
     # Parse the config
     try:
       with open(configFilename, 'rb') as configfile:
-        config = dlpoly.parse.parseCONFIG(configfile)
+        config = _dlpoly_parse.parseCONFIG(configfile)
       with open(controlFilename,'rb') as controlfile:
         nptflag = self._isNPT(controlfile)
       with open(statisFilename, 'rb') as statisfile:
-        statisIterator = dlpoly.parse.parseSTATIS(statisfile, config, nptflag)
+        statisIterator = _dlpoly_parse.parseSTATIS(statisfile, config, nptflag)
         rows = self._extractValues(statisIterator)
         return self._makeRecords(rows)
     except Exception as exc:
@@ -90,7 +91,7 @@ class DLPOLY_STATISEvaluator(object):
 
   @staticmethod
   def createFromConfig(name, jobpath, cfgitems):
-    allowedFields = set(dlpoly.parse.statisColumnKeys)
+    allowedFields = set(_dlpoly_parse.statisColumnKeys)
     allowedFields.update(set(
       ['stressxx', 'stressxy', 'stressxz',
        'stressyx', 'stressyy', 'stressyz',
