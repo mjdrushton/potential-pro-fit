@@ -2,6 +2,11 @@
 	"folders":
 	[
 		{
+			"file_exclude_patterns":
+			[
+				"mechanize-0.2.5-py2.7.egg",
+				"wsgi_intercept-0.6.1-py2.7.egg"
+			],
 			"folder_exclude_patterns":
 			[
 				"build",

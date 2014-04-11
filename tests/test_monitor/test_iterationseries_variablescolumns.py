@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from _cherrypydbtestcase import CherryPyDBTestCaseBase
-from atomsscripts import testutil
+import testutil
 
 class IterationSeries_VariablesColumns_TestCase(CherryPyDBTestCaseBase):
   dbname = "population_fitting_run.db"

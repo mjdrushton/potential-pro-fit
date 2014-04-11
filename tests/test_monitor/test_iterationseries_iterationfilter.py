@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from _cherrypydbtestcase import CherryPyDBTestCaseBase
-from atomsscripts import testutil
+import testutil
 
 class IterationSeries_IterationFilter_TestCase(CherryPyDBTestCaseBase):
   dbname = "population_fitting_run.db"
@@ -18,7 +18,7 @@ class IterationSeries_IterationFilter_TestCase(CherryPyDBTestCaseBase):
       'values'  : [
          [0, 2, 973.78207],
          [4, 1, 964.64312]
-      ] 
+      ]
     }
     testutil.compareCollection(self, expect, j)
 
@@ -33,6 +33,6 @@ class IterationSeries_IterationFilter_TestCase(CherryPyDBTestCaseBase):
       'columns' : ['iteration_number', 'candidate_number', 'merit_value'],
       'values'  : [
         [0, 1, 56979.43601]
-      ] 
+      ]
     }
     testutil.compareCollection(self, expect, j)

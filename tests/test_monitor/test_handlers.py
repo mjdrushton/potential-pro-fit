@@ -2,7 +2,7 @@
 
 from _cherrypydbtestcase import CherryPyDBTestCaseBase
 
-from atomsscripts import testutil 
+import testutil
 
 class TestHandlers(CherryPyDBTestCaseBase):
   """Tests for the first level cherrypy /fitting handlers"""
@@ -33,7 +33,7 @@ class TestHandlers(CherryPyDBTestCaseBase):
       'iteration_number' : 3,
       'num_candidates' : 4,
       'mean' : 1118.587493,
-      'standard_deviation' : 246.9760555, 
+      'standard_deviation' : 246.9760555,
       'minimum' : {'id' : 14, 'iteration_number' : 3, 'candidate_number' : 1, 'merit_value' : 973.78207 },
       'maximum' : {'id' : 15, 'iteration_number' : 3, 'candidate_number' : 2, 'merit_value' : 1546.33659 },
     }
@@ -103,7 +103,7 @@ class TestHandlers(CherryPyDBTestCaseBase):
     j = self.fetchJSON("evaluated/2/3")
 
     #CANDIDATE_ID = 12
-    # Jobs 
+    # Jobs
     # id|candidate_id|job_name
     # 23|12|CaO
     # 24|12|MgO

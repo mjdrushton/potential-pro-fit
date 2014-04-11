@@ -1,6 +1,6 @@
 import unittest
 
-from atomsscripts import testutil
+import testutil
 from atsim import pro_fit
 
 import ConfigParser

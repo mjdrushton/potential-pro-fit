@@ -1,7 +1,7 @@
 import unittest
 
 from atsim import pro_fit
-from atomsscripts import testutil
+import testutil
 
 from common import *
 import os

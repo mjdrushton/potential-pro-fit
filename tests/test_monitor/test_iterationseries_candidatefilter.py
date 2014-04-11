@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from _cherrypydbtestcase import CherryPyDBTestCaseBase
-from atomsscripts import testutil
+import testutil
 
 class IterationSeries_CandidateFilter_TestCase(CherryPyDBTestCaseBase):
   dbname = "population_fitting_run.db"
@@ -18,7 +18,7 @@ class IterationSeries_CandidateFilter_TestCase(CherryPyDBTestCaseBase):
     # 4 1 964.64312
     # 5 3 964.64312
     j = self.fetchJSON('merit_value/all/min')
-    expect = { 
+    expect = {
                'columns' : ['iteration_number', 'candidate_number', 'merit_value'],
                'values'  : [
                     [0 ,2, 973.78207],
@@ -26,7 +26,7 @@ class IterationSeries_CandidateFilter_TestCase(CherryPyDBTestCaseBase):
                     [2 ,3, 973.78207],
                     [3 ,1, 973.78207],
                     [4 ,1, 964.64312],
-                    [5 ,3, 964.64312] 
+                    [5 ,3, 964.64312]
                   ]}
     testutil.compareCollection(self, expect, j)
 
@@ -50,6 +50,6 @@ class IterationSeries_CandidateFilter_TestCase(CherryPyDBTestCaseBase):
         [3, 2, 1546.33659],
         [4, 0, 2300.90601],
         [5, 1, 12634.65516],
-      ] 
+      ]
     }
     testutil.compareCollection(self, expect, j)

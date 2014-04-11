@@ -4,7 +4,7 @@ import unittest
 import ConfigParser
 
 from atsim import pro_fit
-from atomsscripts import testutil
+import testutil
 
 import mystic.models
 

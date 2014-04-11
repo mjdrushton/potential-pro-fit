@@ -5,7 +5,7 @@ import os
 import ConfigParser
 
 from atsim import pro_fit
-from atomsscripts import testutil
+import testutil
 
 def _getResourceDir():
   return os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'regex_evaluator')

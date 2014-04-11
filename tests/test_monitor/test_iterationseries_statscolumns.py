@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from _cherrypydbtestcase import CherryPyDBTestCaseBase
-from atomsscripts import testutil
+import testutil
 
 class IterationSeries_StatsColumns_TestCase(CherryPyDBTestCaseBase):
   dbname = "population_fitting_run.db"
@@ -106,7 +106,7 @@ class IterationSeries_StatsColumns_TestCase(CherryPyDBTestCaseBase):
 
   def testSeriesQuartiles(self):
     """Tests for /fitting/iteration_series/merit_value/all/min with columns=quartile 1,2,3"""
-    
+
     minData = [[0, 2, 973.78207],
                [1 ,3, 973.78207],
                [2 ,3, 973.78207],
@@ -128,7 +128,7 @@ class IterationSeries_StatsColumns_TestCase(CherryPyDBTestCaseBase):
        973.78207,
        964.64312,
        969.212595]
-   
+
     quartile2expect = [
        (4336.72706+3329.44833)/2.0,
        (3329.44833+5096.59874)/2.0,

@@ -3,7 +3,7 @@
 from _cherrypydbtestcase import CherryPyDBTestCaseBase
 
 
-from atomsscripts import testutil
+import testutil
 
 class IterationSeriesMetaEvaluatorColumnTestCase(CherryPyDBTestCaseBase):
   """Tests for the cherrypy handlers under /fitting/iteration_series"""
