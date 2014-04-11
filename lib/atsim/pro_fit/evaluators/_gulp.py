@@ -1,5 +1,5 @@
 from atsim.pro_fit.fittool import ConfigException
-from atomsscripts import gulp
+import _gulp_parse
 
 import collections
 import os
@@ -25,9 +25,7 @@ class GulpDrvParser(object):
     self.gradientsStrain = None
     self._parse(infile)
 
-  def _vectorMagnitude(self, vector):
-    sqmag = sum([ float(v)**2.0 for v in vector])
-    return math.sqrt(sqmag)
+
 
   def _parse(self, infile):
     for line in infile:
@@ -77,6 +75,9 @@ class Gulp_DRVEvaluator(object):
     self._configItems = configitems
     self._evaluatorname = evaluatorName
 
+  def _vectorMagnitude(self, vector):
+    sqmag = sum([ float(v)**2.0 for v in vector])
+    return math.sqrt(sqmag)
 
   def __call__(self, job):
     try:
@@ -194,7 +195,7 @@ class _GulpElasticSubEvaluator(_GulpSubEvaluatorBase):
     self._row, self._col = r,c
 
   def extractValue(self, infile):
-      mat = gulp.parse.parseElasticConstantMatrix(infile)
+      mat = _gulp_parse.parseElasticConstantMatrix(infile)
       return mat[self._row][self._col]
 
   @staticmethod
@@ -216,7 +217,7 @@ class _GulpBulkModulusSubEvaluator(_GulpSubEvaluatorBase):
     self._modtype = tokens[1]
 
   def extractValue(self, infile):
-    mechanicalproperties = gulp.parse.parseMechanicalProperties(infile)
+    mechanicalproperties = _gulp_parse.parseMechanicalProperties(infile)
     return mechanicalproperties['bulkModulus'][self._modtype]
 
   @staticmethod
@@ -233,7 +234,7 @@ class _GulpShearModulusSubEvaluator(_GulpSubEvaluatorBase):
     self._modtype = tokens[1]
 
   def extractValue(self, infile):
-    mechanicalproperties = gulp.parse.parseMechanicalProperties(infile)
+    mechanicalproperties = _gulp_parse.parseMechanicalProperties(infile)
     return mechanicalproperties['shearModulus'][self._modtype]
 
   @staticmethod
@@ -255,7 +256,7 @@ class _GulpCellSubEvaluator(_GulpSubEvaluatorBase):
     self._key = self._keyTranslate[key]
 
   def extractValue(self, infile):
-    celldict = gulp.parse.parseFinalCellParametersAndDerivatives(infile)
+    celldict = _gulp_parse.parseFinalCellParametersAndDerivatives(infile)
     return celldict[self._key]
 
   @staticmethod
@@ -267,7 +268,7 @@ class _GulpEnergySubEvaluator(_GulpSubEvaluatorBase):
   """Extracts energy from gulp output """
 
   def extractValue(self, infile):
-    energydict = gulp.parse.parseComponentsOfEnergy(infile)['componentsOfEnergyAtEnd']
+    energydict = _gulp_parse.parseComponentsOfEnergy(infile)['componentsOfEnergyAtEnd']
     return energydict['totalLatticeEnergy']
 
   @staticmethod

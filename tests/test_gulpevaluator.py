@@ -5,7 +5,7 @@ import os
 import math
 
 from atsim import pro_fit
-from atomsscripts import testutil
+import testutil
 
 
 def _getResourceDir():
@@ -22,11 +22,7 @@ class GulpDrvParserTestCase(unittest.TestCase):
     from atsim.pro_fit.evaluators._gulp import GulpDrvParser
     self.parser = GulpDrvParser(infile)
 
-  def testVectorMagnitude(self):
-    """Test atsim.pro_fit.evaluators.GulpDrvParser._vectorMagnitude"""
-    expect = 3.741657
-    actual = self.parser._vectorMagnitude((1.0,2.0,3.0))
-    self.assertAlmostEquals(expect, actual)
+
 
   def testGradientsCartesian(self):
     expect = [
@@ -64,6 +60,19 @@ class GulpDrvEvaluatorTestCase(unittest.TestCase):
     parser = ConfigParser.SafeConfigParser()
     parser.optionxform = str
     self.parser = parser
+
+  def testVectorMagnitude(self):
+    """Test atsim.pro_fit.evaluators.GulpDrvParser._vectorMagnitude"""
+    with open(os.path.join(_getResourceDir(), 'drv.cfg')) as infile:
+      self.parser.readfp(infile)
+
+      evaluator = pro_fit.evaluators.Gulp_DRVEvaluator.createFromConfig('Gulp:DRV',
+        _getResourceDir(),
+        self.parser.items('Evaluator:DRV'))
+
+      expect = 3.741657
+      actual = evaluator._vectorMagnitude((1.0,2.0,3.0))
+      self.assertAlmostEquals(expect, actual, places=5)
 
   def testEvaluator(self):
     """Test GulpDrvEvaluator from config to evaluation"""
