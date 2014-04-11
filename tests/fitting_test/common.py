@@ -52,8 +52,8 @@ class MockEvaluator(object):
         k = tokens[0].strip()
         v = float(tokens[1].strip())
         d[k] = v
-    from atomsscripts import fitting
-    return [fitting.evaluators.EvaluatorRecord('v', None, None, meritValue = self.evalfunc(d))]
+    from atsim import pro_fit
+    return [pro_fit.evaluators.EvaluatorRecord('v', None, None, meritValue = self.evalfunc(d))]
 
 def e1(d):
   return (d['A'] + d['B'])/(d['C'] - d['D'])
@@ -64,7 +64,7 @@ def e2(d):
 def e3(d):
   return (d['A'] - d['B'] - d['C'] - d['D'])
 
-from atomsscripts.fitting.jobfactories import Job as MockJob      
+from atsim.pro_fit.jobfactories import Job as MockJob
 
 class MockJobFactory(object):
   def __init__(self, runnerName, jobName, evaluators):

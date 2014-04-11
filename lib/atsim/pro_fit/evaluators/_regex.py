@@ -9,7 +9,7 @@ from atomsscripts.fitting.fittool import ConfigException
 
 from _common import RMSEvaluatorRecord, ErrorEvaluatorRecord
 
-_logger = logging.getLogger("atomsscripts.fitting.evaluators.RegexEvaluator")
+_logger = logging.getLogger("atsim.pro_fit.evaluators.RegexEvaluator")
 
 class RegexEvaluatorException(Exception):
   pass

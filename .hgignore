@@ -4,3 +4,6 @@ syntax:glob
 venv/*
 build
 dist
+mechanize-*.egg
+wsgi_intercept-*.egg
+lib/potential_pro_fit.egg-info

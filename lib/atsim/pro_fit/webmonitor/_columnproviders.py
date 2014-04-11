@@ -1,5 +1,5 @@
 from atomsscripts import mathutil
-from atomsscripts.fitting.reporters import SQLiteReporter
+from atsim.pro_fit.reporters import SQLiteReporter
 from _util import calculatePercentageDifference
 
 _metadata = SQLiteReporter.getMetaData()

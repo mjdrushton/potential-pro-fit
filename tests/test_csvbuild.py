@@ -4,22 +4,22 @@ import os
 import glob
 import shutil
 
-from atomsscripts.tools import csvbuild
+from atsim.pro_fit.tools import csvbuild
 
 def _getResourceDirectory():
-    """Returns path to resources used by this test module (currently assumed to be sub-directory 
+    """Returns path to resources used by this test module (currently assumed to be sub-directory
     of test module called resources)"""
     return os.path.join(os.path.dirname(__file__), 'resources')
 
 class CSVBuildTestCase(unittest.TestCase):
   """TestCase for csvbuild tool"""
-  
+
   def setUp(self):
     self.tempdir = tempfile.mkdtemp()
     self.oldDir = os.getcwd()
     os.chdir(self.tempdir)
 
-  def tearDown(self):  
+  def tearDown(self):
     os.chdir(self.oldDir)
     shutil.rmtree(self.tempdir, ignore_errors = True)
 
@@ -81,7 +81,7 @@ class CSVBuildTestCase(unittest.TestCase):
 
     d = [{'rel_filename' : os.path.join(os.path.pardir, 'include_me'),
          'abs_filename' : os.path.abspath(os.path.join(self.tempdir, 'include_me'))}]
-      
+
     csvbuild.buildDirs(d, 'skel', 'dest')
 
     expect = """Hello
@@ -91,26 +91,26 @@ Hello
 Goodbye
 
 """
-    
+
     actual = open(os.path.join('dest', 'boom'), 'rb').read()
     self.assertEquals(expect, actual)
-    
-  
+
+
   def testFileHierarchy(self):
     """Test creation of directory hierarchy"""
     import tarfile
     tf = tarfile.TarFile(os.path.join(_getResourceDirectory(), 'csvbuild_skel.tar'))
     tf.extractall()
 
-    os.mkdir('dest')   
+    os.mkdir('dest')
 
     self.assertTrue(os.path.isdir('skel'))
 
     rows = [ dict(run=1),
-             dict(run=2), 
+             dict(run=2),
              dict(run=3) ]
 
-    expect = [ 
+    expect = [
         ('dest', '1'),
         ('dest', 'DL_POLY_1'),
         ('dest', 'DL_POLY_1', 'CONFIG'),
@@ -118,7 +118,7 @@ Goodbye
         ('dest', 'DL_POLY_1', 'support_1'),
         ('dest', 'DL_POLY_1', 'support_1', 'file1_1'),
         ('dest', 'DL_POLY_1', 'support_1', 'file2'),
-        
+
         ('dest', '2'),
         ('dest', 'DL_POLY_2'),
         ('dest', 'DL_POLY_2', 'CONFIG'),
@@ -141,7 +141,7 @@ Goodbye
     csvbuild.buildDirs(rows, 'skel', 'dest')
     actual = []
 
-    def visit(arg, dirname, names): 
+    def visit(arg, dirname, names):
       for n in names:
         ln = os.path.join(dirname, n)
         actual.append(ln)
@@ -151,5 +151,5 @@ Goodbye
     os.path.walk('dest', visit, None)
     actual.sort()
     self.assertEquals(expect, actual)
-    
+
     self.assertEquals('1', open(os.path.join('dest', 'DL_POLY_1', 'support_1', 'file2'), 'rb').readline()[:-1])

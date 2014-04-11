@@ -17,7 +17,7 @@ class FitConfig(object):
   """Object parses fit.cfg at root of a fitTool.py run
   and acts as factory for objects required by the fitting tool"""
 
-  _logger = logging.getLogger('atomsscripts.fitting.fittool.FitConfig')
+  _logger = logging.getLogger('atsim.pro_fit.fittool.FitConfig')
 
   def __init__(self, fitCfgFilename, runnermodules, evaluatormodules, metaevaluatormodules, jobfactorymodules, minimizermodules, jobdir = None):
     """Create FitConfig from file containing configuration information.
@@ -503,7 +503,7 @@ class CalculatedVariables(object):
 
   def __init__(self, nameExpressionTuples):
     """Create CalculatedVariables instance from a list of of (variable_name, expression) tuples.
-    Where 'expression' is an arithmetic expression that can be parsed by atomsscripts.cexprtk.evaluate_expression.
+    Where 'expression' is an arithmetic expression that can be parsed by cexprtk.evaluate_expression.
 
     @param nameExpressionTuples List of (variable_name, expression) tuples."""
     self.nameExpressionTuples = nameExpressionTuples
@@ -572,8 +572,8 @@ class Merit(object):
                 beforeRun(candidateJobPairs)
 
                 Where candidateJobPairs is a list of (CANDIDATE, JOB_LIST) pairs (one for each
-                candidate solution). CANDIDATE is atomsscripts.fitting.fittool.Variables instance
-                and JOB_LIST is a list of the atomsscripts.fitting.jobfactories.Job instances
+                candidate solution). CANDIDATE is atsim.pro_fit.fittool.Variables instance
+                and JOB_LIST is a list of the atsim.pro_fit.jobfactories.Job instances
                 representing each job belonging to the candidate.
 
     afterRun  : this is called after the jobs have been run, but before merit values are
@@ -593,8 +593,8 @@ class Merit(object):
                 per candidate. """
 
   def __init__(self, runners, jobfactories, metaevaluators, variableTransform, jobdir):
-    """@param runners List of job runners (see atomsscripts.fitting.runners module for examples).
-       @param jobfactories List of jobfactories (see atomscripts.fitting.jobfactories module for examples).
+    """@param runners List of job runners (see atsim.pro_fit.runners module for examples).
+       @param jobfactories List of jobfactories (see atsim.pro_fit.jobfactories module for examples).
        @param metaevaluators List of meta-evaluators to apply following job evaluation.
        @param variableTransform Callable that accepts Variables and returns Variables that are then used during job creation.
        @param jobdir Directory in which job files should be created"""
@@ -623,7 +623,7 @@ class Merit(object):
     @param candidates List of Variables instances
     @return List of merit values if returnCandidateJobPairs is False or if True return tuple (meritValueList, candidateJobPairs),
       where candidateJobPairs is a list of (CANDIDATE, JOB_LIST) pairs (one for each candidate solution).
-      CANDIDATE is atomsscripts.fitting.fittool.Variables instance and JOB_LIST is a list of the atomsscripts.fitting.jobfactories.Job
+      CANDIDATE is atomsscripts.fitting.fittool.Variables instance and JOB_LIST is a list of the atsim.pro_fit.jobfactories.Job
       instances representing each job belonging to the candidate. This is equivalent to the values passed to afterMerit callback"""
 
     batchpaths, batchedJobs, candidate_job_lists = self._prepareJobs(candidates)

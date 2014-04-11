@@ -1,5 +1,5 @@
 
-from atomsscripts.fitting.fittool import ConfigException
+from atsim.pro_fit.fittool import ConfigException
 
 import execnet
 import StringIO
@@ -444,7 +444,7 @@ def pbsIdentify(versionString):
 
   @param versionString String as returned by qstat --versionString
   @return Field of the form described above"""
-  logger = logging.getLogger("atomsscripts.fitting.runners.PBSRunner.pbsIdentify")
+  logger = logging.getLogger("atsim.pro_fit.runners.PBSRunner.pbsIdentify")
   import re
   if re.search("PBSPro", versionString):
     #PBS Pro
@@ -468,7 +468,7 @@ class PBSRunner(RemoteRunnerBase):
 
   SSH is used to communicate with server to submit jobs and copy files."""
 
-  _logger = logging.getLogger("atomsscripts.fitting.runners.PBSRunner")
+  _logger = logging.getLogger("atsim.pro_fit.runners.PBSRunner")
 
   def __init__(self, name, url, pbsinclude, identifyRecord):
     """Create PBSRunnner instance.

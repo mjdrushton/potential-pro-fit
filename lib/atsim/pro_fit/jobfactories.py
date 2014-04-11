@@ -4,7 +4,7 @@ A job factory is responsible for creating a directory representing a job within 
 an instance of fittool.Variables.
 
 The directory created should contain an executable script or program named 'runjob' that when invoked
-will produce output that is later evaluated (see atomsscripts.fitting.evaluators) to produce a merit
+will produce output that is later evaluated (see atsim.pro_fit.evaluators) to produce a merit
 value for fitting.
 
 The interface for a JobFactory is as follows:
@@ -15,12 +15,12 @@ The interface for a JobFactory is as follows:
       @param runnerName Name of runner that will invoke 'runjob'
       @param jobName Label identifying this job factory
       @param evaluators List of Evaluators used to extract values from job output
-             (see atomsscripts.fitting.evaluators)
+             (see atsim.pro_fit.evaluators)
       ...
 
     def createJob(self, destdir, variables):
       @param destdir Absolute path in which job factory should create files.
-      @param variables atomsscripts.fitting.fittool.Variables instance from
+      @param variables atsim.pro_fit.fittool.Variables instance from
         the values of which are used to create job files.
       @return Job instance for the created job.
       ...
@@ -76,7 +76,7 @@ class MetaEvaluatorJob(object):
     self.variables = variables
     self.isMetaEvaluatorJob = True
 
-from atomsscripts.tools import csvbuild
+from atsim.pro_fit.tools import csvbuild
 
 class TemplateJobFactory(object):
   """Performs csvbuild style template substitution to create job directories from Variables"""

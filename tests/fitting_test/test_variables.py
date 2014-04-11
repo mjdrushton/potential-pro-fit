@@ -1,14 +1,13 @@
 import unittest
 
 from atomsscripts import testutil
-from atomsscripts import fitting
+from atsim import pro_fit
 
 import ConfigParser
 
-
 class VariablesTestCase(unittest.TestCase):
-  """Tests fitting.fittool._Variables class"""
-  
+  """Tests pro_fit.fittool._Variables class"""
+
   def testFlaggedVariablePairs(self):
     """Test flaggedVariablePairs property of Variables class"""
     expect = [
@@ -17,21 +16,21 @@ class VariablesTestCase(unittest.TestCase):
       ('C', 3.0, False),
       ('D', 4.0, True),
       ('E', 5.0, True) ]
-    
-    v = fitting.fittool.Variables(expect)
+
+    v = pro_fit.fittool.Variables(expect)
     actual = v.flaggedVariablePairs
     testutil.compareCollection(self, expect, actual)
 
   def testCreateUpdated(self):
-    """Ensure correct behaviour of fitting.fittool._Variables.createUpdated()"""
-    initialVariables = fitting.fittool.Variables(
+    """Ensure correct behaviour of pro_fit.fittool._Variables.createUpdated()"""
+    initialVariables = pro_fit.fittool.Variables(
         [ ('A', 1.0, False),
           ('B', 2.0, True),
           ('C', 3.0, True) ])
 
     candidate1 = initialVariables.createUpdated()
     candidate2 = initialVariables.createUpdated([5.0, 6.0])
-    
+
     testutil.compareCollection(self,
         [ ('A', 1.0),
           ('B', 2.0),
@@ -39,7 +38,7 @@ class VariablesTestCase(unittest.TestCase):
         initialVariables.variablePairs)
     self.assertEquals( ['B', 'C'],  initialVariables.fitKeys)
     self.assertEquals( [2.0, 3.0],  initialVariables.fitValues)
-    
+
     testutil.compareCollection(self,
         [ ('A', 1.0),
           ('B', 2.0),
@@ -47,7 +46,7 @@ class VariablesTestCase(unittest.TestCase):
         candidate1.variablePairs)
     self.assertEquals( ['B', 'C'],  candidate1.fitKeys)
     self.assertEquals( [2.0, 3.0],  candidate1.fitValues)
-    
+
     testutil.compareCollection(self,
         [ ('A', 1.0),
           ('B', 2.0),
@@ -70,13 +69,13 @@ class CalculatedVariables(unittest.TestCase):
 
   def testNoExpressions(self):
     """Test that variables pass through CalculatedVariables unchanged when no expressions specified"""
-    variables = fitting.fittool.Variables(
+    variables = pro_fit..fittool.Variables(
       [("A", 1.23, False),
       ("B", 4.56, False),
       ("electroneg", 0.4, True)],
       bounds = [None, None, (0,1)] )
 
-    calculatedVariables = fitting.fittool.CalculatedVariables([])
+    calculatedVariables = pro_fit..fittool.CalculatedVariables([])
     outVars = calculatedVariables(variables)
 
     expect = [
@@ -95,13 +94,13 @@ class CalculatedVariables(unittest.TestCase):
     expression3 = "electroneg * 4"
 
 
-    variables = fitting.fittool.Variables(
+    variables = pro_fit..fittool.Variables(
       [("A", 1.23, False),
       ("B", 4.56, False),
       ("electroneg", 0.4, True)],
       bounds = [None, None, (0,1)] )
 
-    calculatedVariables = fitting.fittool.CalculatedVariables(
+    calculatedVariables = pro_fit..fittool.CalculatedVariables(
       [("sum", expression1),
       ("Ocharge", expression2),
       ("Ucharge", expression3)] )
@@ -133,7 +132,7 @@ sum : 5+6+8
 Ocharge : -electroneg * 2
 Ucharge : electroneg * 4
 """
-    
+
     import StringIO
 
     cfg = ConfigParser.SafeConfigParser()
@@ -141,13 +140,13 @@ Ucharge : electroneg * 4
     cfg.readfp(StringIO.StringIO(config))
     configitems = cfg.items('CalculatedVariables')
 
-    variables = fitting.fittool.Variables(
+    variables = pro_fit..fittool.Variables(
       [("A", 1.23, False),
       ("B", 4.56, False),
       ("electroneg", 0.4, True)],
       bounds = [None, None, (0,1)] )
 
-    calculatedVariables = fitting.fittool.CalculatedVariables.createFromConfig(cfg.items("CalculatedVariables"))
+    calculatedVariables = pro_fit..fittool.CalculatedVariables.createFromConfig(cfg.items("CalculatedVariables"))
     outVars = calculatedVariables(variables)
 
     expect = [
@@ -160,7 +159,7 @@ Ucharge : electroneg * 4
 
     testutil.compareCollection(self,
       expect, outVars.flaggedVariablePairs)
-    
+
 
     # Now check that an exception is thrown if a bad expression is used.
     config = """[CalculatedVariables]
@@ -168,11 +167,11 @@ sum : abs(5+6+8
 Ocharge : -electroneg * 2
 Ucharge : electroneg * 4
 """
-    
+
     cfg = ConfigParser.SafeConfigParser()
     cfg.optionxform = str
     cfg.readfp(StringIO.StringIO(config))
     configitems = cfg.items('CalculatedVariables')
 
-    with self.assertRaises(fitting.fittool.ConfigException):
-      fitting.fittool.CalculatedVariables.createFromConfig(cfg.items("CalculatedVariables"))
+    with self.assertRaises(pro_fit..fittool.ConfigException):
+      pro_fit..fittool.CalculatedVariables.createFromConfig(cfg.items("CalculatedVariables"))

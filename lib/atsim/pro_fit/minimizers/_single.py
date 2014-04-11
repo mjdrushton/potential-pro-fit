@@ -4,7 +4,7 @@ import shutil
 
 from _common import * # noqa
 
-from atomsscripts.fitting.fittool import ConfigException
+from atsim.pro_fit.fittool import ConfigException
 
 
 class SingleStepMinimizer(object):
@@ -13,7 +13,7 @@ class SingleStepMinimizer(object):
   Provides option to keep job directories following run and is therefore useful for debugging problems with input files.
   This is used to implement the --single option from the fittingTool.py command line."""
 
-  _logger = logging.getLogger('atomsscripts.fitting.minimizers.SingleStepMinimizer')
+  _logger = logging.getLogger('atsim.pro_fit.minimizers.SingleStepMinimizer')
 
   def __init__(self, variables, keepFilesDirectory = None):
     """Create SingleStepMinimizer.
@@ -39,7 +39,7 @@ class SingleStepMinimizer(object):
     """Create a callback that is invoked by merit function after merit evaluation.
     Callback is also responsible for copying back files to self._keepFilesDirectory"""
 
-    logger = logging.getLogger('atomsscripts.fitting.minimizers.SingleStepMinimizer')
+    logger = logging.getLogger('atsim.pro_fit.minimizers.SingleStepMinimizer')
 
     def copyback(keepFilesDirectory, candidateJobPairList):
         if not keepFilesDirectory:
@@ -97,7 +97,7 @@ class SingleStepMinimizer(object):
   def minimize(self, merit):
     """Perform minimization.
 
-    @param merit atomsscripts.fitting.fittool.Merit instance.
+    @param merit atsim.pro_fit.fittool.Merit instance.
     @return MinimizerResults containing values obtained after merit function evaluation"""
     self._logger.info("Performing single step merit function evaluation.")
 

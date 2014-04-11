@@ -8,7 +8,7 @@ The basic interface for a Minimizer is as follows:
       Invoked to perform minimisation of merit values calculated by
       Merit object (arg: merit).
 
-      @param merit atomsscripts.fitting.fittool.Merit instance
+      @param merit atsim.pro_fit.fittool.Merit instance
       @return MinimizerResults instance giving minimized values.
       ...
 
@@ -17,7 +17,7 @@ The basic interface for a Minimizer is as follows:
       Allows creation of Minimizer from data [Minimizer] section of
       fit.cfg file.
 
-      @param variables atomsscripts.fitting.fittool.Variables instance
+      @param variables atsim.pro_fit.fittool.Variables instance
                        representing starting values for fitting.
       @param configitems list of key value pairs extracted from [Minimizer]
                        section of fit.cfg
@@ -30,7 +30,7 @@ This supports logging and progress monitoring. The callback is callable with the
 function prototype:
 
   def stepCallback(minimizerResults):
-    @param minimizerResults Instance of atomsscripts.fitting.minimizers.MinimizerResults
+    @param minimizerResults Instance of atsim.pro_fit.minimizers.MinimizerResults
                   By convention the minimizerResults should contain the best results
                   from the last minimiztion iteration (this is because several minimizers
                   perform several sub-steps before finalizing variable updates and completing

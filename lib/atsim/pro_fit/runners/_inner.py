@@ -70,7 +70,7 @@ class _InnerRunner(threading.Thread):
   When complete signals the threading.Event object internal
   to LocalRunnerFuture to stop blocking."""
 
-  _logger = logging.getLogger('atomsscripts.fitting.runners._InnerRunner')
+  _logger = logging.getLogger('atsim.pro_fit.runners._InnerRunner')
 
   def __init__(self, queue, nprocs, execnetURL = None):
     """@param queue threading.Queue instance from which job batches are received

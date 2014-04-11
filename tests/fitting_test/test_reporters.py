@@ -2,7 +2,7 @@
 
 import unittest
 
-from atomsscripts import fitting
+from atsim import pro_fit
 from atomsscripts import testutil
 
 import sqlalchemy as sa
@@ -16,17 +16,17 @@ class MockJob(object):
 
 
 class SQLiteReporter(unittest.TestCase):
-  """Tests for atomsscripts.fitting.reporters.SQLiteReporter"""
+  """Tests for atsim.pro_fit.reporters.SQLiteReporter"""
 
   def setUp(self):
-    # Create some MinimizerResults to feed to 
-    variables = fitting.fittool.Variables([
+    # Create some MinimizerResults to feed to
+    variables = pro_fit.fittool.Variables([
       ('A', 1000.0, False),
       ('rho', 0.1, True),
       ('C', 32.0, False) ], [None, (10.0, None), (0.0, 5.0)])
     self.initialVariables = variables
 
-    self.calculatedVariables = fitting.fittool.CalculatedVariables([("E", "A - C"), ("sum", "A+rho+C")])
+    self.calculatedVariables = pro_fit.fittool.CalculatedVariables([("E", "A - C"), ("sum", "A+rho+C")])
 
     mval = 100.0
 
@@ -40,42 +40,42 @@ class SQLiteReporter(unittest.TestCase):
       else:
         rho = vinstances[-1].fitValues[0]
       rho *= 0.1
-      vinstances.append(variables.createUpdated([rho]))  
+      vinstances.append(variables.createUpdated([rho]))
 
     # Create Jobs
     subevals =  [ ["Cell"], ["Penalty", "Bulk"], ["Value"]]
 
-    ER = fitting.evaluators.EvaluatorRecord
+    ER = pro_fit.evaluators.EvaluatorRecord
 
     mval = meritvals[0]
     jobs = [
       MockJob("Job 1", vinstances[0], [
-        [ER('Cell', 10.0, 9.0, 1.0, 2.0, evaluatorName = "Cell Evaluator")], 
+        [ER('Cell', 10.0, 9.0, 1.0, 2.0, evaluatorName = "Cell Evaluator")],
         [ER('Penalty', 0.0, 1.0, 100.0, 100.0, evaluatorName = "Penalty Evaluator"),
-         ER('Bulk', 90.0, 101.0, 1.0, 4.0, evaluatorName= "Penalty Evaluator")], 
+         ER('Bulk', 90.0, 101.0, 1.0, 4.0, evaluatorName= "Penalty Evaluator")],
         [ER('Value', 0.5, 0.8, 1.2, 5.0, evaluatorName = "Value Evaluator")]]),
       MockJob("Job 2", vinstances[0], [
-        [ER('Cell2', 10.0, 9.0, 1.0, 2.0, evaluatorName = "Cell Evaluator")], 
+        [ER('Cell2', 10.0, 9.0, 1.0, 2.0, evaluatorName = "Cell Evaluator")],
         [ER('Penalty2', 0.0, 1.0, 100.0, 100.0, evaluatorName = "Penalty Evaluator"),
-         ER('Bulk2', 90.0, 101.0, 1.0, 4.0, evaluatorName= "Penalty Evaluator")], 
+         ER('Bulk2', 90.0, 101.0, 1.0, 4.0, evaluatorName= "Penalty Evaluator")],
         [ER('Value2', 0.5, 0.8, 1.2, 5.0, evaluatorName = "Value Evaluator")]]),
       MockJob("Job 3", vinstances[0], [
-        [ER('Cell3', 10.0, 9.0, 1.0, 2.0, evaluatorName = "Cell Evaluator")], 
+        [ER('Cell3', 10.0, 9.0, 1.0, 2.0, evaluatorName = "Cell Evaluator")],
         [ER('Penalty3', 0.0, 1.0, 100.0, 100.0, evaluatorName = "Penalty Evaluator"),
-         ER('Bulk3', 90.0, 101.0, 1.0, 4.0, evaluatorName= "Penalty Evaluator")], 
+         ER('Bulk3', 90.0, 101.0, 1.0, 4.0, evaluatorName= "Penalty Evaluator")],
         [ER('Value3', 0.5, 0.8, 1.2, 5.0, evaluatorName = "Value Evaluator")]]) ]
-    
-    self.minimizerResults = [fitting.minimizers.MinimizerResults([mval], [(vinstances[0], jobs)])]
+
+    self.minimizerResults = [pro_fit.minimizers.MinimizerResults([mval], [(vinstances[0], jobs)])]
 
 
   def testInsertSingleMinimizerResult(self):
     """Test insertion of MinimizerResults into database"""
-    reporter = fitting.reporters.SQLiteReporter(None, self.initialVariables, self.calculatedVariables)
+    reporter = pro_fit.reporters.SQLiteReporter(None, self.initialVariables, self.calculatedVariables)
     #reporter = SQLiteReporter('/Users/mr498/Desktop/db.sqlite', self.initialVariables)
     engine = reporter._saengine
     engine.echo = True
     reporter(self.minimizerResults[0])
-    
+
     with engine.connect() as conn:
       metadata = sa.MetaData(conn)
       metadata.reflect()
@@ -89,7 +89,7 @@ class SQLiteReporter(unittest.TestCase):
         actual.append(dict(zip(row.keys(), row)))
       results.close()
 
-      expect = [ 
+      expect = [
         {'id' : 1, 'variable_name' : 'A', 'fit_flag' : False, 'low_bound' : None, "upper_bound" : None, "calculated_flag" : False, "calculation_expression" : None},
         {'id' : 2, 'variable_name' : 'rho', 'fit_flag' : True, 'low_bound' : float(10.0), "upper_bound" : None, "calculated_flag" : False, "calculation_expression" : None},
         {'id' : 3, 'variable_name' : 'C', 'fit_flag' : False, 'low_bound' : float(0.0), "upper_bound" : float(5.0), "calculated_flag" : False, "calculation_expression" : None},
@@ -101,13 +101,13 @@ class SQLiteReporter(unittest.TestCase):
       table = metadata.tables['candidates']
       query = sa.sql.select([metadata.tables['candidates']])
 
-      resultdicts = []    
+      resultdicts = []
       results = conn.execute(query)
       for row in results:
         resultdict = dict( zip(row.keys(), row))
         resultdicts.append(resultdict)
 
-      expect = [ {'id' : 1, 
+      expect = [ {'id' : 1,
         'iteration_number' : 0,
         'candidate_number' : 0,
         'merit_value' : 10.0}]
@@ -140,7 +140,7 @@ class SQLiteReporter(unittest.TestCase):
             id = row[table.c.id],
             candidate_id = row[table.c.candidate_id],
             job_name = row[table.c.job_name] ))
-      expect = [ 
+      expect = [
         {'id' : 1, 'candidate_id': 1, 'job_name' : "Job 1"},
         {'id' : 2, 'candidate_id': 1, 'job_name' : "Job 2"},
         {'id' : 3, 'candidate_id': 1, 'job_name' : "Job 3"} ]
@@ -184,7 +184,7 @@ class SQLiteReporter(unittest.TestCase):
           evaluator_name = 'Penalty Evaluator',
           value_name = 'Bulk', expected_value = 90.0, extracted_value = 101.0,
           weight = 1.0, merit_value = 4.0),
-      #Job 1: E3   
+      #Job 1: E3
       dict(
           id = 4, job_id = 1,
           evaluator_name = 'Value Evaluator',
@@ -209,7 +209,7 @@ class SQLiteReporter(unittest.TestCase):
           evaluator_name = 'Penalty Evaluator',
           value_name = 'Bulk2', expected_value = 90.0, extracted_value = 101.0,
           weight = 1.0, merit_value = 4.0),
-      #Job 2: E3   
+      #Job 2: E3
       dict(
           id = 8, job_id = 2,
           evaluator_name = 'Value Evaluator',
@@ -234,7 +234,7 @@ class SQLiteReporter(unittest.TestCase):
           evaluator_name = 'Penalty Evaluator',
           value_name = 'Bulk3', expected_value = 90.0, extracted_value = 101.0,
           weight = 1.0, merit_value = 4.0),
-      #Job 3: E3   
+      #Job 3: E3
       dict(
           id = 12, job_id = 3,
           evaluator_name = 'Value Evaluator',
@@ -250,11 +250,11 @@ class SQLiteReporter(unittest.TestCase):
 
   def testStatus(self):
     """Test population of the 'status' table"""
-    reporter = fitting.reporters.SQLiteReporter(None, self.initialVariables, self.calculatedVariables,'fitting_run')
+    reporter = pro_fit.reporters.SQLiteReporter(None, self.initialVariables, self.calculatedVariables,'fitting_run')
     #reporter = SQLiteReporter('/Users/mr498/Desktop/db.sqlite', self.initialVariables)
     engine = reporter._saengine
     engine.echo = True
-    
+
     with engine.connect() as conn:
       # import pudb;pudb.set_trace()
       metadata = sa.MetaData(conn)
@@ -283,10 +283,10 @@ class SQLiteReporter(unittest.TestCase):
 
   def testErrorEvaluatorRecord(self):
     """Test for insertion of evaluators.ErrorEvaluatorRecord"""
-    reporter = fitting.reporters.SQLiteReporter(None, self.initialVariables,self.calculatedVariables)
+    reporter = pro_fit.reporters.SQLiteReporter(None, self.initialVariables,self.calculatedVariables)
     engine = reporter._saengine
     engine.echo = True
-    
+
     with engine.connect() as conn:
       metadata = sa.MetaData(conn)
       metadata.reflect()
@@ -300,7 +300,7 @@ class SQLiteReporter(unittest.TestCase):
       except Exception as exc:
         mybad = exc
 
-      erecord = fitting.evaluators.ErrorEvaluatorRecord(
+      erecord = pro_fit.evaluators.ErrorEvaluatorRecord(
         "BadEvalValue",
         10.0,
         mybad,

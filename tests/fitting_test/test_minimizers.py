@@ -3,7 +3,7 @@ import unittest
 
 import ConfigParser
 
-from atomsscripts import fitting
+from atsim import pro_fit
 from atomsscripts import testutil
 
 import mystic.models
@@ -57,7 +57,7 @@ class StepCallBack(object):
 
 
 class NelderMeadTestCase(unittest.TestCase):
-  """Test atomsscripts.fitting.minimizers"""
+  """Test atsim.prof_fit.minimizers"""
 
   def testNelderMeadGetBounds(self):
     config = """[Minimizer]
@@ -72,23 +72,23 @@ max_iterations : 30
     cfg.readfp(StringIO.StringIO(config))
     configitems = cfg.items('Minimizer')
 
-    variables = fitting.fittool.Variables([
+    variables = pro_fit.fittool.Variables([
       ('A', 1.0, False),
       ('B', 2.0, True),
       ('C', 3.0, False),
-      ('D', 4.0, True)], 
+      ('D', 4.0, True)],
       [(2.0, 3.0),
        (3.0, 4.0),
        (5.0, 6.0),
        (7.0, 8.0)])
 
-    minimizer = fitting.minimizers.NelderMeadMinimizer.createFromConfig(variables, configitems)
-    expect = [(3.0, 4.0), (7.0,8.0)] 
+    minimizer = pro_fit.minimizers.NelderMeadMinimizer.createFromConfig(variables, configitems)
+    expect = [(3.0, 4.0), (7.0,8.0)]
     testutil.compareCollection(self, expect, minimizer._getBounds())
 
   def testNelderMeadSingleConfig(self):
-    """Tests for the atomsscripts.fitting.minimizers.NelderMead wrapper"""
-    variables = fitting.fittool.Variables([
+    """Tests for the atsim.prof_fit.minimizers.NelderMead wrapper"""
+    variables = pro_fit.fittool.Variables([
       ('A', 1.0, False),
       ('B', 2.0, True),
       ('C', 3.0, False),
@@ -104,8 +104,8 @@ value_tolerance : 1.0E-3
     cfg.readfp(StringIO.StringIO(config))
     configitems = cfg.items('Minimizer')
 
-    minimizer = fitting.minimizers.NelderMeadMinimizer.createFromConfig(variables, configitems)
-    self.assertEquals(fitting.minimizers.NelderMeadMinimizer, type(minimizer))
+    minimizer = pro_fit.minimizers.NelderMeadMinimizer.createFromConfig(variables, configitems)
+    self.assertEquals(pro_fit.minimizers.NelderMeadMinimizer, type(minimizer))
 
     config = """[Minimizer]
 type : NelderMead
@@ -117,11 +117,11 @@ max_iterations : 30
     cfg.readfp(StringIO.StringIO(config))
     configitems = cfg.items('Minimizer')
 
-    minimizer = fitting.minimizers.NelderMeadMinimizer.createFromConfig(variables, configitems)
-    self.assertEquals(fitting.minimizers.NelderMeadMinimizer, type(minimizer))    
+    minimizer = pro_fit.minimizers.NelderMeadMinimizer.createFromConfig(variables, configitems)
+    self.assertEquals(pro_fit.minimizers.NelderMeadMinimizer, type(minimizer))
 
   def testNelderMead(self):
-    """Tests for the atomsscripts.fitting.minimizers.NelderMead wrapper"""
+    """Tests for the atsim.prof_fit.minimizers.NelderMead wrapper"""
 
     config = """[Minimizer]
 type : NelderMead
@@ -135,14 +135,14 @@ max_iterations : 30
     cfg.readfp(StringIO.StringIO(config))
     configitems = cfg.items('Minimizer')
 
-    variables = fitting.fittool.Variables([
+    variables = pro_fit.fittool.Variables([
       ('A', 1.0, False),
       ('B', 2.0, True),
       ('C', 3.0, False),
       ('D', 4.0, True)])
 
-    minimizer = fitting.minimizers.NelderMeadMinimizer.createFromConfig(variables, configitems)
-    self.assertEquals(fitting.minimizers.NelderMeadMinimizer, type(minimizer))
+    minimizer = pro_fit.minimizers.NelderMeadMinimizer.createFromConfig(variables, configitems)
+    self.assertEquals(pro_fit.minimizers.NelderMeadMinimizer, type(minimizer))
 
     args = minimizer._initialArgs()
     testutil.compareCollection(self, [2.0, 4.0], args)
@@ -162,13 +162,13 @@ max_iterations : 30
     optimized = optimized.bestVariables
 
     self.assertAlmostEquals(0.0668765184732, finalmeritval)
-    testutil.compareCollection(self, 
+    testutil.compareCollection(self,
       [('A', 1.0),
        ('B', 1.25066832),
        ('C', 3.0),
        ('D', 1.57052885)], optimized.variablePairs)
 
-    stepcallbackexpect = [ 
+    stepcallbackexpect = [
       dict(A=1.000000, B=2.000000, C=3.000000, D=4.000000, meritval = 1.0),
       dict(A=1.000000, B=2.000000, C=3.000000, D=4.200000, meritval = 5.0000000000000071),
       dict(A=1.000000, B=2.050000, C=3.000000, D=4.050000, meritval = 3.4281249999999952),
@@ -189,50 +189,50 @@ class InspyredSupportTestCase(unittest.TestCase):
 
   def testBounderGenerator(self):
     """Test Bounder and Generator"""
-    from atomsscripts.fitting.minimizers import _inspyred
+    from atsim.pro_fit.minimizers import _inspyred
 
     # Test BounderGenerator
     # ... first check it throws when unbounded variables used for instantiation
     with self.assertRaises(_inspyred.VariableException):
       _inspyred.Bounder(
-          fitting.fittool.Variables([('A', 1.0, True)]) )
+          pro_fit.fittool.Variables([('A', 1.0, True)]) )
 
     with self.assertRaises(_inspyred.VariableException):
       _inspyred.Generator(
-        fitting.fittool.Variables([('A', 1.0, True)]) )
+        pro_fit.fittool.Variables([('A', 1.0, True)]) )
 
     with self.assertRaises(_inspyred.VariableException):
       _inspyred.Bounder(
-          fitting.fittool.Variables([('A', 1.0, True)], [(None, 10.0)]) )
-    
+          pro_fit.fittool.Variables([('A', 1.0, True)], [(None, 10.0)]) )
+
     with self.assertRaises(_inspyred.VariableException):
       _inspyred.Generator(
-          fitting.fittool.Variables([('A', 1.0, True)], [(None, 10.0)]) )
+          pro_fit.fittool.Variables([('A', 1.0, True)], [(None, 10.0)]) )
 
     with self.assertRaises(_inspyred.VariableException):
       _inspyred.Bounder(
-          fitting.fittool.Variables([('A', 1.0, False), ('B', 1.0, True)], [(None, 10.0), (-10.0, float("inf"))]) )
+          pro_fit.fittool.Variables([('A', 1.0, False), ('B', 1.0, True)], [(None, 10.0), (-10.0, float("inf"))]) )
 
     with self.assertRaises(_inspyred.VariableException):
       _inspyred.Generator(
-          fitting.fittool.Variables([('A', 1.0, False), ('B', 1.0, True)], [(None, 10.0), (-10.0, float("inf"))]) )
+          pro_fit.fittool.Variables([('A', 1.0, False), ('B', 1.0, True)], [(None, 10.0), (-10.0, float("inf"))]) )
 
     # ... or throws if non of the variables are fit parameters
     with self.assertRaises(_inspyred.VariableException):
       _inspyred.Bounder(
-          fitting.fittool.Variables([('A', 1.0, False), ('B', 1.0, False)], [(-10.0, 10.0), (-10.0, 10.0)]) )
+          pro_fit.fittool.Variables([('A', 1.0, False), ('B', 1.0, False)], [(-10.0, 10.0), (-10.0, 10.0)]) )
 
     with self.assertRaises(_inspyred.VariableException):
       _inspyred.Generator(
-          fitting.fittool.Variables([('A', 1.0, False), ('B', 1.0, False)], [(-10.0, 10.0), (-10.0, 10.0)]) )
+          pro_fit.fittool.Variables([('A', 1.0, False), ('B', 1.0, False)], [(-10.0, 10.0), (-10.0, 10.0)]) )
 
     # Check we can access initial arguments
-    
-    # self.assertEquals(variables.flaggedVariablePairs, 
+
+    # self.assertEquals(variables.flaggedVariablePairs,
     #   bounderGenerator.initialVariables.flaggedVariablePairs)
-    
+
     # Check the bounder
-    variables = fitting.fittool.Variables([('A', 1.0, False), ('B', 2.0, True), ('C', 3.0, True), ('D', 4.0, False)], [(None, None), (-10.0, 10.0), (-20.0, 20.0), (-30.0, 30.0)])
+    variables = pro_fit.fittool.Variables([('A', 1.0, False), ('B', 2.0, True), ('C', 3.0, True), ('D', 4.0, False)], [(None, None), (-10.0, 10.0), (-20.0, 20.0), (-30.0, 30.0)])
     bounder= _inspyred.Bounder(variables)
 
     expect = [[-10.0, -20.0], [10.0, 20.0]]
@@ -256,7 +256,7 @@ class MinimizerResultsTestCase(unittest.TestCase):
   def testMinimizerResults(self):
     meritVals = [2.0, 3.0, 1.0]
 
-    V = fitting.fittool.Variables
+    V = pro_fit.fittool.Variables
     c1 = V([ ('A', 1.0, False), ('B', 2.0, True)])
     c2 = V([ ('A', 1.0, False), ('B', 2.0, True)])
     c3 = V([ ('A', 1.0, False), ('B', 2.0, True)])
@@ -265,12 +265,12 @@ class MinimizerResultsTestCase(unittest.TestCase):
     j2 = MockJob(c2)
     j3 = MockJob(c3)
 
-    candidateJobList = [ 
+    candidateJobList = [
       (c1, [j1]),
       (c2, [j2]),
       (c3, [j3])]
 
-    results = fitting.minimizers.MinimizerResults(meritVals, candidateJobList)
+    results = pro_fit.minimizers.MinimizerResults(meritVals, candidateJobList)
 
     self.assertEquals(meritVals, results.meritValues)
     self.assertEquals(candidateJobList, results.candidateJobList)
@@ -283,7 +283,7 @@ class MinimizerResultsTestCase(unittest.TestCase):
     meritVals = [2.0, 3.0, 1.0]
     meritVals2 = [2.0, 0.0, 1.0]
 
-    V = fitting.fittool.Variables
+    V = pro_fit.fittool.Variables
     c1 = V([ ('A', 1.0, False), ('B', 2.0, True)])
     c2 = V([ ('A', 1.0, False), ('B', 2.0, True)])
     c3 = V([ ('A', 1.0, False), ('B', 2.0, True)])
@@ -292,13 +292,13 @@ class MinimizerResultsTestCase(unittest.TestCase):
     j2 = MockJob(c2)
     j3 = MockJob(c3)
 
-    candidateJobList = [ 
+    candidateJobList = [
       (c1, [j1]),
       (c2, [j2]),
       (c3, [j3])]
 
-    results1 = fitting.minimizers.MinimizerResults(meritVals, candidateJobList)
-    results2 = fitting.minimizers.MinimizerResults(meritVals2, candidateJobList)
+    results1 = pro_fit.minimizers.MinimizerResults(meritVals, candidateJobList)
+    results2 = pro_fit.minimizers.MinimizerResults(meritVals2, candidateJobList)
 
     self.assertTrue(results2 < results1)
     self.assertTrue(results1 > results2)

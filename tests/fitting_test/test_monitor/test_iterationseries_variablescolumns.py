@@ -11,7 +11,7 @@ class IterationSeries_VariablesColumns_TestCase(CherryPyDBTestCaseBase):
     """Tests for the variable: column types"""
     baserequest = 'merit_value/all/min?columns=variable:morse_Ca_O_A'
     j = self.fetchJSON(baserequest)
-    expect = { 
+    expect = {
                'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'variable:morse_Ca_O_A'],
                'values'  : [
                     [0 ,2, 973.78207, 0.473366852725934],
@@ -19,15 +19,15 @@ class IterationSeries_VariablesColumns_TestCase(CherryPyDBTestCaseBase):
                     [2 ,3, 973.78207, 0.473366852725934],
                     [3 ,1, 973.78207, 0.473366852725934],
                     [4 ,1, 964.64312, 0.10328268378764],
-                    [5 ,3, 964.64312, 0.10328268378764] 
+                    [5 ,3, 964.64312, 0.10328268378764]
                   ]}
     testutil.compareCollection(self, expect, j)
 
   def testVariablesColumnProvider(self):
     """Tests for _VariablesColumnProvider"""
-    import atomsscripts.fitting._sqlalchemy_cherrypy_integration as sacpi
-    from atomsscripts.fitting.webmonitor import IterationSeries, _formatResults
-    from atomsscripts.fitting.webmonitor._columnproviders import _VariablesColumnProvider
+    import atsim.pro_fit._sqlalchemy_cherrypy_integration as sacpi
+    from atsim.pro_fit.webmonitor import IterationSeries, _formatResults
+    from atsim.pro_fit.webmonitor._columnproviders import _VariablesColumnProvider
     import sqlalchemy as sa
 
     class App(object):

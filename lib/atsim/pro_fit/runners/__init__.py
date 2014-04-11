@@ -10,7 +10,7 @@ The basic interface for a runner is as follows:
     def createFromConfig(runnerName, fitRootPath, cfgitems):
       ...
 
-The runBatch method accepts a list of job instances as created by a job factory (see atomsscripts.fitting.jobfactories) and
+The runBatch method accepts a list of job instances as created by a job factory (see atsim.pro_fit.jobfactories) and
 returns an object that will block until the jobs in the batch complete when its .join() method is called.
 
 The runner should go into each job directory (given by Job.path property) and execute the 'runjob' command found there.

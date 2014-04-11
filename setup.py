@@ -14,7 +14,9 @@ setup(name="potential-pro-fit",
                       'Jinja2',
                       'inspyred',
                       'mystic',
-                      'cexprtk'],
+                      'cexprtk',
+                      'execnet'],
+  tests_require = ['wsgi_intercept', 'mechanize'],
 
   #zip_safe = True,
 

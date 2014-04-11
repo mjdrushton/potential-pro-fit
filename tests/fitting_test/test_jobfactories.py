@@ -6,17 +6,17 @@ import os
 import ConfigParser
 
 from common import *
-from atomsscripts import fitting
+from atsim import pro_fit
 
 def _getResourceDir():
   return os.path.join(
       os.path.dirname(__file__),
       'resources')
-      
+
 
 class TemplateJobFactoryTestCase(unittest.TestCase):
-  """Tests for atomsscripts.fitting.jobfactories.TemplateJobFactory"""
-  
+  """Tests for atsim.pro_fit.jobfactories.TemplateJobFactory"""
+
   def setUp(self):
     self.tempd = tempfile.mkdtemp()
 
@@ -31,12 +31,12 @@ class TemplateJobFactoryTestCase(unittest.TestCase):
 
     logger.debug('srcpath: %s' % srcpath)
     logger.debug('destpath: %s' % self.tempd)
-  
-    factory = fitting.jobfactories.TemplateJobFactory(srcpath, 'Runner', 
-        'Job', 
+
+    factory = pro_fit.jobfactories.TemplateJobFactory(srcpath, 'Runner',
+        'Job',
         [])
 
-    variables = fitting.fittool.Variables([
+    variables = pro_fit.fittool.Variables([
       ('NAME', 'Named', True),
       ('A', 5.0,  False) ])
 
@@ -62,7 +62,7 @@ echo 5.0 > output.res
     self.assertEqual(self.tempd, job.path)
 
   def testCreateFromConfig(self):
-    """Test atomsscripts.fitting.jobfactories.TemplateJobFactory.createFromConfig"""
+    """Test atsim.pro_fit.jobfactories.TemplateJobFactory.createFromConfig"""
     parser = ConfigParser.SafeConfigParser()
     parser.optionxform = str
     import StringIO
@@ -75,11 +75,11 @@ runner : runner_name
 
     import mockeval1
     eval1 = mockeval1.MockEvaluator1Evaluator()
-    jf = fitting.jobfactories.TemplateJobFactory.createFromConfig('path/to/sourcedir', 'runner_name', 'Blah', [eval1], sect)
-    self.assertEqual(fitting.jobfactories.TemplateJobFactory, type(jf))
+    jf = pro_fit.jobfactories.TemplateJobFactory.createFromConfig('path/to/sourcedir', 'runner_name', 'Blah', [eval1], sect)
+    self.assertEqual(pro_fit.jobfactories.TemplateJobFactory, type(jf))
     self.assertEqual('runner_name', jf.runnerName)
     self.assertEqual('Blah', jf.jobName)
     self.assertEqual([eval1], jf.evaluators)
     self.assertEqual('path/to/sourcedir', jf._templatePath)
 
-    
+

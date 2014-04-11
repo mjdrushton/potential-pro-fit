@@ -1,7 +1,7 @@
 import logging
 
 from _common import * # noqa
-from atomsscripts.fitting.fittool import ConfigException
+from atsim.pro_fit.fittool import ConfigException
 
 
 class _NelderMeadMeritCallback(object):
@@ -24,7 +24,7 @@ class _NelderMeadStepMonitor(object):
   Furthermore, registers afterMerit with merit function allowing merit values and candidate
   job lists to be passed to NelderMeadMinimizer.stepCallback"""
 
-  _logger = logging.getLogger('atomsscripts.fitting.minimizers.NelderMeadMinimizer')
+  _logger = logging.getLogger('atsim.pro_fit.minimizers.NelderMeadMinimizer')
 
   def __init__(self, stepCallback, merit):
     self.bestSolution = None
@@ -79,7 +79,7 @@ class NelderMeadMinimizer(object):
 
   """
 
-  _logger = logging.getLogger('atomsscripts.fitting.minimizers.NelderMeadMinimizer')
+  _logger = logging.getLogger('atsim.pro_fit.minimizers.NelderMeadMinimizer')
 
   def __init__(self, variables, maxiter, xtol, ftol):
     """Create simplex minimizer
@@ -125,7 +125,7 @@ class NelderMeadMinimizer(object):
   def minimize(self, merit):
     """Perform minimization.
 
-    @param merit atomsscripts.fitting.fittool.Merit instance used to calculate merit value.
+    @param merit atsim.pro_fit.fittool.Merit instance used to calculate merit value.
     @return MinimizerResults for candidate solution population containing best merit value."""
     import mystic
     self._logger.info("Starting minimisation.")
@@ -156,7 +156,7 @@ class NelderMeadMinimizer(object):
   def createFromConfig(variables, configitems):
     """Create NelderMeadMinimizer from [Minimizer] section of fit.cfg config file.
 
-    @param variables atomsscripts.fitting.fittool.Variables instance containing starting parameters for minimization.
+    @param variables atsim.pro_fit.fittool.Variables instance containing starting parameters for minimization.
     @param configitems List of key,value pairs extracted from [Minimizer] section of config file.
     @return Instance of NelderMeadMinimizer"""
 

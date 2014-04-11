@@ -31,7 +31,7 @@ class FormulaMetaEvaluator(object):
 
     If VALUE not specified then 'merit_value' is used."""
 
-  _logger = logging.getLogger("atomsscripts.fitting.metaevaluators.FormulaMetaEvaluator")
+  _logger = logging.getLogger("atsim.pro_fit.metaevaluators.FormulaMetaEvaluator")
 
   def __init__(self, name, expressionList, variables):
     """@param name Meta evaluator name.
@@ -93,7 +93,7 @@ class FormulaMetaEvaluator(object):
     contained with the Job instances listed in joblist.
 
     @param joblist List of Job instances
-    @return A list containing a single atomsscripts.fitting.evaluators.EvaluatorRecord instance with a meritValue equal to the evaluated expression"""
+    @return A list containing a single atsim.pro_fit.evaluators.EvaluatorRecord instance with a meritValue equal to the evaluated expression"""
     variableDict = self._makeVariableDict(joblist)
     retlist = []
     for expression in self.expressionList:

@@ -1,6 +1,6 @@
 import unittest
 
-from atomsscripts import fitting
+from atsim import pro_fit
 from atomsscripts import testutil
 
 from common import *
@@ -11,11 +11,11 @@ import logging
 import sys
 
 class MeritTestCase(unittest.TestCase):
-  """Test for the atomsscripts.fitting.fittool.Merit class"""
+  """Test for the pro_fit.fitting.fittool.Merit class"""
 
   def setUp(self):
     # Create two initial candidates
-    initialVariables = fitting.fittool.Variables(
+    initialVariables = pro_fit.fittool.Variables(
         [ ('A', 1.0, False),
           ('B', 2.0, True),
           ('C', 3.0, False),
@@ -39,7 +39,7 @@ class MeritTestCase(unittest.TestCase):
     j2 = MockJobFactory('Runner2', 'Job2', [eval1, eval2])
     j3 = MockJobFactory('Runner1', 'Job3', [eval1, eval2, eval3])
     j4 = MockJobFactory('Runner2', 'Job4', [eval3])
-    
+
     class MockMetaEvaluator(object):
       def __init__(self):
         self.name = "MockMetaEvaluator"
@@ -51,13 +51,13 @@ class MeritTestCase(unittest.TestCase):
             meritval += j.evaluatorRecords[0][0].meritValue
           elif j.name == "Job3":
             meritval += j.evaluatorRecords[2][0].meritValue
-        return [ fitting.evaluators.EvaluatorRecord("value", 0.0, meritval, 1.0, meritval, "MockMetaEvaluator")]
+        return [ pro_fit.evaluators.EvaluatorRecord("value", 0.0, meritval, 1.0, meritval, "MockMetaEvaluator")]
 
     import tempfile
     self.tempd = tempfile.mkdtemp()
     self.mmtempd = tempfile.mkdtemp()
-    self.merit = fitting.fittool.Merit([r1,r2], [j1,j2,j3,j4], [], fitting.fittool.CalculatedVariables([]), self.tempd)
-    self.metamerit = fitting.fittool.Merit([r1,r2], [j1,j2,j3,j4], [MockMetaEvaluator()], fitting.fittool.CalculatedVariables([]), self.mmtempd) 
+    self.merit = pro_fit.fittool.Merit([r1,r2], [j1,j2,j3,j4], [], pro_fit.fittool.CalculatedVariables([]), self.tempd)
+    self.metamerit = pro_fit.fittool.Merit([r1,r2], [j1,j2,j3,j4], [MockMetaEvaluator()], pro_fit.fittool.CalculatedVariables([]), self.mmtempd)
 
   def tearDown(self):
     shutil.rmtree(self.tempd, ignore_errors = True)
@@ -118,7 +118,7 @@ class MeritTestCase(unittest.TestCase):
       jobdicts.append([ self._jobToDict(j) for j in jl])
 
 
-    expect = [ [ #Runner 1.  
+    expect = [ [ #Runner 1.
         # Candidate 1. J1
         dict(Candidate = 1, Job = 'Job1', Runner = 'Runner1', variables = dict(
           A = 1.0 , B = 2.5 , C = 3.0 , D= 4.5)),
@@ -132,7 +132,7 @@ class MeritTestCase(unittest.TestCase):
         dict(Candidate = 2, Job = 'Job3', Runner = 'Runner1', variables = dict(
           A = 1.0 , B = 4.5 , C = 3.0 , D= 8.5))],
 
-      [ #Runner 2.  
+      [ #Runner 2.
         # Candidate 1. J2
         dict(Candidate = 1, Job = 'Job2', Runner = 'Runner2', variables = dict(
           A = 1.0 , B = 2.5 , C = 3.0 , D= 4.5)),
@@ -267,7 +267,7 @@ class MeritTestCase(unittest.TestCase):
               [J([ [ER('v', 2.0)]]),
                J([ [ER('v', 3.0), ER('u' , 2.0), ER('l' , 1.0)]])]]
     expect = [ 1.0+1.0+2.0+1.0, 2.0+3.0+2.0+1.0 ]
-    actual = fitting.fittool._sumValuesReductionFunction(testd)
+    actual = pro_fit.fittool._sumValuesReductionFunction(testd)
     testutil.compareCollection(self, expect, actual)
 
   def testCalculateMerit(self):
@@ -287,14 +287,14 @@ class MeritTestCase(unittest.TestCase):
     testutil.compareCollection(self, expect, actual)
 
   def testCleanBatches(self):
-    """Test fitting.fittool.Merit.cleanBatches()"""
+    """Test pro_fit.fittool.Merit.cleanBatches()"""
     batchpaths, batchedjobs, candidatejoblists = self.merit._prepareJobs(self.candidates)
     self.assertTrue(len(os.listdir(self.tempd)) == 2)
     self.merit._cleanBatches(batchpaths)
     self.assertTrue(len(os.listdir(self.tempd)) == 0)
 
   def testBeforeRunCallback(self):
-    """Test fitting.fittool.Merit.beforeRuncallbacks"""
+    """Test pro_fit.fittool.Merit.beforeRuncallbacks"""
     beforeRunDict = {}
 
     def beforeRun(candidateJobPairs):
@@ -335,7 +335,7 @@ class MeritTestCase(unittest.TestCase):
     testutil.compareCollection(self, expect, beforeRunDict)
 
   def testAfterRunCallback(self):
-    """Test fitting.fittool.Merit.afterRunCallback"""
+    """Test pro_fit.fittool.Merit.afterRunCallback"""
     afterRunDict = {}
 
     outputResProcess = MockEvaluator(lambda v:sorted(v.items()))
@@ -388,7 +388,7 @@ class MeritTestCase(unittest.TestCase):
 
 
   def testAfterEvaluationCallback(self):
-    """Test fitting.fittool.Merit.afterEvaluation callback"""
+    """Test pro_fit.fittool.Merit.afterEvaluation callback"""
     afterEvaluationDict = {}
 
     outputResProcess = MockEvaluator(lambda v:sorted(v.items()))
@@ -431,10 +431,10 @@ class MeritTestCase(unittest.TestCase):
                            [('A', 1.0), ('B' , 2.5), ('C',3.0), ('D', 4.5)],
                            [('A', 1.0), ('B' , 2.5), ('C',3.0), ('D', 4.5)]],
       'candidate_ids' : ['1','1','1','1'],
-      'evaluated' : [ 
-          [ {'v' : -2 - 1.0/3.0} ], 
+      'evaluated' : [
+          [ {'v' : -2 - 1.0/3.0} ],
           [ {'v' : -2 - 1.0/3.0},
-            {'v' : 11.0}], 
+            {'v' : 11.0}],
           [ {'v' : -2 - 1.0/3.0},
             {'v' : 11.0},
             {'v' : -9.0}],
@@ -453,13 +453,13 @@ class MeritTestCase(unittest.TestCase):
                            [('A', 1.0), ('B' , 4.5), ('C',3.0), ('D', 8.5)],
                            [('A', 1.0), ('B' , 4.5), ('C',3.0), ('D', 8.5)]],
        'candidate_ids' : ['2', '2', '2', '2'],
-        'evaluated' : [ 
+        'evaluated' : [
           [ {'v' : -1.0} ],
           [ {'v' : -1.0},
             {'v' : 17.0}],
           [ {'v' : -1.0},
             {'v' : 17.0},
-            {'v' : -15.0}],  
+            {'v' : -15.0}],
           [ {'v' : -15.0}]
         ]
        }

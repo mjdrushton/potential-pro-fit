@@ -3,10 +3,10 @@ import unittest
 import json
 
 from mechanize import Browser
-from atomsscripts.fitting import webmonitor
+from atsim.pro_fit import webmonitor
 cherrypy = webmonitor.cherrypy
 
-from atomsscripts import testutil 
+from atomsscripts import testutil
 
 def _getResourceDir():
   return os.path.abspath(os.path.join(os.path.dirname(__file__),'resources'))
@@ -21,8 +21,8 @@ class CherryPyDBTestCaseBase(unittest.TestCase):
 
   @classmethod
   def tearDownClass(cls):
-    cherrypy.process.wspbus.bus.exit() 
-    cherrypy.engine.stop()  
+    cherrypy.process.wspbus.bus.exit()
+    cherrypy.engine.stop()
 
   def fetchJSON(self, url):
     br = Browser()

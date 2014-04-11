@@ -6,12 +6,12 @@ import stat
 import os
 
 import common
-from atomsscripts import fitting
+from atsim import pro_fit
 
 import ConfigParser
 
 class LocalRunnerTestCase(unittest.TestCase):
-  """Tests for atomsscripts.fitting.runners.LocalRunner"""
+  """Tests for atsim.pro_fit.runners.LocalRunner"""
 
   DIR = 0
   FILE = 1
@@ -26,7 +26,7 @@ class LocalRunnerTestCase(unittest.TestCase):
     jobs = []
 
     for i in xrange(12):
-      variables = fitting.fittool.Variables([('A', i, True)])
+      variables = pro_fit.fittool.Variables([('A', i, True)])
       variables.id = i
       jd = os.path.join(self.tempd, str(i))
       os.mkdir(jd)
@@ -54,19 +54,19 @@ class LocalRunnerTestCase(unittest.TestCase):
     return actual
 
   def testSingle(self):
-    runner = fitting.runners.LocalRunner('LocalRunner', 1)
+    runner = pro_fit.runners.LocalRunner('LocalRunner', 1)
     runner.runBatch([self.jobs[0]]).join()
     self._testjob(runner, 0)
 
   def testAllInSingleBatch(self):
-    runner = fitting.runners.LocalRunner('LocalRunner', 3)
+    runner = pro_fit.runners.LocalRunner('LocalRunner', 3)
     runner.runBatch(self.jobs).join()
     for job in self.jobs:
       self._testjob(runner, job.variables.id)
 
   def testAllInMultipleBatch(self):
-    runner = fitting.runners.LocalRunner('LocalRunner', 3)
-    
+    runner = pro_fit.runners.LocalRunner('LocalRunner', 3)
+
     f1 = runner.runBatch(self.jobs[:6])
     f2 = runner.runBatch(self.jobs[6:])
     f2.join()
@@ -83,7 +83,7 @@ class LocalRunnerTestCase(unittest.TestCase):
 
     actual = self._compareDir(self.jobs[jobid].path)
     self.assertEqual(sorted(expect), sorted(actual))
-    
+
     # Check output directory contents
     expect = [ ('runjob', self.FILE),
              ('STATUS', self.FILE),
@@ -110,13 +110,13 @@ class LocalRunnerTestCase(unittest.TestCase):
     os.remove( os.path.join(self.jobs[0].path, 'runjob') )
     os.remove( os.path.join(self.jobs[5].path, 'runjob') )
     os.remove( os.path.join(self.jobs[8].path, 'runjob') )
-    runner = fitting.runners.LocalRunner('LocalRunner', 3)
+    runner = pro_fit.runners.LocalRunner('LocalRunner', 3)
     future = runner.runBatch(self.jobs)
     future.join()
-    
+
     self.assertTrue(future.errorFlag)
     expect = [0,5,8]
-    actual = [ dict(j.variables.variablePairs)['A'] for (j,msg) in future.jobsWithErrors ] 
+    actual = [ dict(j.variables.variablePairs)['A'] for (j,msg) in future.jobsWithErrors ]
     self.assertEqual(expect, actual)
 
   def testCreateFromConfig(self):
@@ -129,17 +129,17 @@ type: Local
 nprocesses : 5
 """)
     parser.readfp(sio)
-    runner = fitting.runners.LocalRunner.createFromConfig('RunnerName', self.tempd, parser.items('Runner:RunnerName'))
-    self.assertEquals(fitting.runners.LocalRunner, type(runner))
+    runner = pro_fit.runners.LocalRunner.createFromConfig('RunnerName', self.tempd, parser.items('Runner:RunnerName'))
+    self.assertEquals(pro_fit.runners.LocalRunner, type(runner))
     self.assertEquals('RunnerName', runner.name)
     self.assertEquals(5, runner._runner._nprocs)
 
-    with self.assertRaises(fitting.fittool.ConfigException):
-      runner = fitting.runners.LocalRunner.createFromConfig('RunnerName', self.tempd, [])
+    with self.assertRaises(pro_fit.fittool.ConfigException):
+      runner = pro_fit.runners.LocalRunner.createFromConfig('RunnerName', self.tempd, [])
 
 
 class RemoteRunnerTestCase(unittest.TestCase):
-  """Tests for atomsscripts.fitting.runners.RemoteRunner"""
+  """Tests for atsim.pro_fit.runners.RemoteRunner"""
 
   DIR = 0
   FILE = 1
@@ -155,7 +155,7 @@ class RemoteRunnerTestCase(unittest.TestCase):
     jobs = []
 
     for i in xrange(12):
-      variables = fitting.fittool.Variables([('A', i, True)])
+      variables = pro_fit.fittool.Variables([('A', i, True)])
       variables.id = i
       jd = os.path.join(self.tempd, str(i))
       os.mkdir(jd)
@@ -185,31 +185,31 @@ class RemoteRunnerTestCase(unittest.TestCase):
 
   def testUrlParse(self):
     """Test parsing of host directory string"""
-    username, host, path = fitting.runners.RemoteRunner._urlParse("ssh://username@localhost/%s" % self.remoted)
+    username, host, path = pro_fit.runners.RemoteRunner._urlParse("ssh://username@localhost/%s" % self.remoted)
     self.assertEqual('username', username)
     self.assertEqual('localhost', host)
     self.assertEqual(self.remoted, path)
 
-    username, host, path = fitting.runners.RemoteRunner._urlParse("ssh://localhost/%s" % self.remoted)
+    username, host, path = pro_fit.runners.RemoteRunner._urlParse("ssh://localhost/%s" % self.remoted)
     self.assertEqual('', username)
     self.assertEqual('localhost', host)
     self.assertEqual(self.remoted, path)
 
   def testSingle(self):
-    runner = fitting.runners.RemoteRunner('RemoteRunner', "ssh://localhost/%s" % self.remoted, 1)
+    runner = pro_fit.runners.RemoteRunner('RemoteRunner', "ssh://localhost/%s" % self.remoted, 1)
     runner.runBatch([self.jobs[0]]).join()
     # import pudb;pudb.set_trace()
     self._testjob(runner, 0)
 
   def testAllInSingleBatch(self):
-    runner = fitting.runners.RemoteRunner('RemoteRunner', "ssh://localhost/%s" % self.remoted, 3)
+    runner = pro_fit.runners.RemoteRunner('RemoteRunner', "ssh://localhost/%s" % self.remoted, 3)
     runner.runBatch(self.jobs).join()
     for job in self.jobs:
       self._testjob(runner, job.variables.id)
 
   def testAllInMultipleBatch(self):
-    runner = fitting.runners.RemoteRunner('RemoteRunner', "ssh://localhost/%s" % self.remoted, 3)
-    
+    runner = pro_fit.runners.RemoteRunner('RemoteRunner', "ssh://localhost/%s" % self.remoted, 3)
+
     f1 = runner.runBatch(self.jobs[:6])
     f2 = runner.runBatch(self.jobs[6:])
     f2.join()
@@ -226,7 +226,7 @@ class RemoteRunnerTestCase(unittest.TestCase):
 
     actual = self._compareDir(self.jobs[jobid].path)
     self.assertEqual(sorted(expect), sorted(actual))
-    
+
     # Check output directory contents
     expect = [ ('runjob', self.FILE),
              ('STATUS', self.FILE),
@@ -254,7 +254,7 @@ class PBSRunnerTestCase(unittest.TestCase):
   def testPBSIdentify(self):
     """Given a string from qstat --version identify PBS system as Torque or PBSPro"""
 
-    from atomsscripts.fitting.runners._remoterunner import pbsIdentify
+    from atsim.pro_fit.runners._remoterunner import pbsIdentify
 
     # Test output from TORQUE
     versionString = "version: 2.4.16"

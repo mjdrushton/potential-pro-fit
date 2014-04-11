@@ -1,4 +1,4 @@
-from atomsscripts import fitting
+from atsim import pro_fit
 
 import optparse
 import sys
@@ -163,7 +163,7 @@ def _initializeJob(jobDescription, logger):
     raise _DirectoryInitializationException("Could not create job directory '%s': %s" % (jobDirname, e.message))
 
   # Create 'job.cfg'
-  templateLoader = jinja2.PackageLoader('atomsscripts.fitting', 'resources/jobinit')
+  templateLoader = jinja2.PackageLoader('atsim.pro_fit', 'resources/jobinit')
   env = jinja2.Environment(loader=templateLoader)
 
   template = env.get_template('job.cfg.jinja')
@@ -183,7 +183,7 @@ def _setupLogging(verbose):
   if verbose:
     logger = logging.getLogger()
   else:
-    logger = logging.getLogger('atomsscripts.tools.fittingTool')
+    logger = logging.getLogger('atsim.pro_fit.fittingTool')
 
   logger.setLevel(logging.DEBUG)
   stderrHandler = logging.StreamHandler(sys.stderr)
@@ -254,17 +254,17 @@ This gives name of runner (defined in fit.cfg) to be associated with created JOB
 
   return options
 
-def _getfitcfg(jobdir, cls = fitting.fittool.FitConfig, pluginmodules = []):
-  """Creates atomsscripts.fitting.fittool.FitConfig from configuration files.
+def _getfitcfg(jobdir, cls = pro_fit.fittool.FitConfig, pluginmodules = []):
+  """Creates atsim.pro_fit.fittool.FitConfig from configuration files.
      @param jobdir Directory in which temporary job files should be created.
      @param cls FitConfig class
      @param pluginmodules Additional modules to be scanned by FitConfig for evaluators, runners etc.
-     @return atomsscripts.fitting.fittool.FitConfig instance"""
-  runners = [fitting.runners]
-  evaluators = [fitting.evaluators]
-  metaevaluators = [fitting.metaevaluators]
-  jobfactories = [fitting.jobfactories]
-  minimizers = [fitting.minimizers]
+     @return atsim.pro_fit.fittool.FitConfig instance"""
+  runners = [pro_fit.runners]
+  evaluators = [pro_fit.evaluators]
+  metaevaluators = [pro_fit.metaevaluators]
+  jobfactories = [pro_fit.jobfactories]
+  minimizers = [pro_fit.minimizers]
 
   for l in [runners, evaluators, metaevaluators, jobfactories, minimizers]:
     l.extend(pluginmodules)
@@ -277,22 +277,22 @@ def _getfitcfg(jobdir, cls = fitting.fittool.FitConfig, pluginmodules = []):
     minimizers, jobdir = jobdir)
 
 def _getSingleStepCfg(jobdir, keepDirectory, pluginmodules):
-  """Creates atomsscripts.fitting.fittool.FitConfig like object from configuration files.
+  """Creates atsim.pro_fit.fittool.FitConfig like object from configuration files.
   Object is customised such that its minimizer property return SingleStepMinimizer that will
   copy files to keepDirectory following run.
 
   @param jobdir Directory in which temporary job files should be created.
   @param keepDirectory Path into which job files are copied following run.
   @param pluginmodules List of module objects to be scanned by FitConfig
-  @return atomsscripts.fitting.fittool.FitConfig like object configured to use SingleStepMinimizer"""
-  class CustomConfig(fitting.fittool.FitConfig):
+  @return atsim.pro_fit.fittool.FitConfig like object configured to use SingleStepMinimizer"""
+  class CustomConfig(pro_fit.fittool.FitConfig):
     def _createMinimizer(self, minimizermodules):
-      return fitting.minimizers.SingleStepMinimizer(self.variables, keepDirectory)
+      return pro_fit.minimizers.SingleStepMinimizer(self.variables, keepDirectory)
   return _getfitcfg(jobdir, cls = CustomConfig, pluginmodules = pluginmodules)
 
 
 def _getCreateFilesCfg(jobdir, keepDirectory, pluginmodules):
-  """Creates atomsscripts.fitting.fittool.FitConfig like object from configuration files.
+  """Creates atsim.pro_fit.fittool.FitConfig like object from configuration files.
   Object is customised such that its minimizer property return SingleStepMinimizer that will
   copy files to keepDirectory following run. In addition evaluators and meta-evaluators are disabled.
   Further, all runners are replaced by NullRunner instances.
@@ -300,15 +300,15 @@ def _getCreateFilesCfg(jobdir, keepDirectory, pluginmodules):
   @param jobdir Directory in which temporary job files should be created.
   @param keepDirectory Path into which job files are copied following run.
   @param pluginmodules List of modules to be scanned by FitConfig for runners, evaluators etc.
-  @return atomsscripts.fitting.fittool.FitConfig like object configured to use SingleStepMinimizer"""
+  @return atsim.pro_fit.fittool.FitConfig like object configured to use SingleStepMinimizer"""
   import collections
   def defaultfactory():
-    return fitting.runners.NullRunner
+    return pro_fit.runners.NullRunner
   runnerdict = collections.defaultdict(defaultfactory)
 
-  class CustomConfig(fitting.fittool.FitConfig):
+  class CustomConfig(pro_fit.fittool.FitConfig):
     def _createMinimizer(self, minimizermodules):
-      return fitting.minimizers.SingleStepMinimizer(self.variables, keepDirectory)
+      return pro_fit.minimizers.SingleStepMinimizer(self.variables, keepDirectory)
 
     def _findClasses(self, modulelist, nameSuffix):
       if nameSuffix == 'Runner':
@@ -337,18 +337,18 @@ def _invokeMinimizer(cfg, logger, logsql):
     raise _FittingToolException('Minimization run. Job temporary directory does not exist: "%s"' % cfg.jobdir)
 
   if len(cfg.variables.fitKeys) == 0:
-    raise fitting.fittool.ConfigException('No variables selected to change during minimization within "fit.cfg" [Variables] section.')
+    raise pro_fit.fittool.ConfigException('No variables selected to change during minimization within "fit.cfg" [Variables] section.')
 
   # Set-up reporters
   stepCallback = MultiCallback()
   # ... create the console log reporter
-  stepCallback.append(fitting.reporters.LogReporter(logger))
+  stepCallback.append(pro_fit.reporters.LogReporter(logger))
   # ... create SQLiteReporter
   if logsql:
     if os.path.exists('fitting_run.db'):
       logger.info("Removing existing 'fitting_run.db'")
       os.remove('fitting_run.db')
-    sqlreporter = fitting.reporters.SQLiteReporter('fitting_run.db',cfg.variables, cfg.merit.variableTransform, cfg.title)
+    sqlreporter = pro_fit.reporters.SQLiteReporter('fitting_run.db',cfg.variables, cfg.merit.variableTransform, cfg.title)
     stepCallback.append(sqlreporter)
 
   minimizer = cfg.minimizer
@@ -452,7 +452,7 @@ def main():
       logger.info('Performing Minimization run')
       cfg = _getfitcfg(tempdir, pluginmodules= pluginmodules)
     _invokeMinimizer(cfg, logger,logsql)
-  except (_FittingToolException, fitting.fittool.ConfigException, fitting.minimizers.MinimizerException) as e:
+  except (_FittingToolException, pro_fit.fittool.ConfigException, pro_fit.minimizers.MinimizerException) as e:
     logger.error(e.message)
     sys.exit(1)
   finally:

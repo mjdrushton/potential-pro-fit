@@ -4,7 +4,7 @@ import ConfigParser
 import os
 import math
 
-from atomsscripts import fitting
+from atsim import pro_fit
 from atomsscripts import testutil
 
 
@@ -19,11 +19,17 @@ class GulpDrvParserTestCase(unittest.TestCase):
   def setUp(self):
     self.filename = os.path.join(_getResourceDir(), 'output', 'out.drv')
     infile = open(self.filename, 'rb')
-    from atomsscripts.fitting.evaluators._gulp import GulpDrvParser
+    from atsim.pro_fit.evaluators._gulp import GulpDrvParser
     self.parser = GulpDrvParser(infile)
 
+  def testVectorMagnitude(self):
+    """Test atsim.pro_fit.evaluators.GulpDrvParser._vectorMagnitude"""
+    expect = 3.741657
+    actual = self.parser._vectorMagnitude((1.0,2.0,3.0))
+    self.assertAlmostEquals(expect, actual)
+
   def testGradientsCartesian(self):
-    expect = [     
+    expect = [
      ( 0.00000001,    -16.94269799,    -14.62767097),
      (-0.00000001,     16.94269799,     14.62767097),
      ( 0.00000001,    -11.61397756,     24.28685966),
@@ -64,11 +70,11 @@ class GulpDrvEvaluatorTestCase(unittest.TestCase):
     with open(os.path.join(_getResourceDir(), 'drv.cfg')) as infile:
       self.parser.readfp(infile)
 
-      evaluator = fitting.evaluators.Gulp_DRVEvaluator.createFromConfig('Gulp:DRV',
+      evaluator = pro_fit.evaluators.Gulp_DRVEvaluator.createFromConfig('Gulp:DRV',
         _getResourceDir(),
         self.parser.items('Evaluator:DRV'))
 
-      job = fitting.jobfactories.Job(None, _getResourceDir(), None)
+      job = pro_fit.jobfactories.Job(None, _getResourceDir(), None)
       evalvalues = evaluator(job)
 
       expect = [ ('atom_gradients', 0.0, 327.0376332, 1.0, 'Gulp:DRV', 327.0376332),
@@ -98,12 +104,12 @@ class GulpEvaluatorTestCase(unittest.TestCase):
     with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
       self.parser.readfp(infile)
 
-    evaluator = fitting.evaluators.GulpEvaluator.createFromConfig(
+    evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(
       'Gulp',
       _getResourceDir(),
       self.parser.items('Evaluator:Elastic'))
 
-    job = fitting.jobfactories.Job(None, _getResourceDir(), None)
+    job = pro_fit.jobfactories.Job(None, _getResourceDir(), None)
     evalvalues = evaluator(job)
     extractedvalues = dict([ (v.name, v.extractedValue) for v in evalvalues])
     fractionaldiffs = dict([ (v.name, v.fractionalDifference) for v in evalvalues])
@@ -147,7 +153,7 @@ class GulpEvaluatorTestCase(unittest.TestCase):
       elastic_c65=10,
       elastic_c66=152.8714)
     testutil.compareCollection(self, expectrmsvalues, rmsvalues)
-    
+
     weightvalues = dict([(v.name, v.weight )for v in evalvalues])
 
     self.assertAlmostEquals(5.0, weightvalues['elastic_c21'])
@@ -162,84 +168,84 @@ class GulpEvaluatorTestCase(unittest.TestCase):
       self.assertAlmostEquals(10.0, v)
 
     expectextractedvalues = dict(
-      elastic_c11=372.0647 , 
-      elastic_c12=162.8691 , 
-      elastic_c13=162.8691 , 
-      elastic_c14=0        , 
-      elastic_c15=0        , 
-      elastic_c16=0        , 
-      elastic_c21=162.8691 , 
-      elastic_c22=372.0647 , 
-      elastic_c23=162.8691 , 
-      elastic_c24=0        , 
-      elastic_c25=0        , 
-      elastic_c26=0        , 
-      elastic_c31=162.8691 , 
-      elastic_c32=162.8691 , 
-      elastic_c33=372.0647 , 
-      elastic_c34=0        , 
-      elastic_c35=0        , 
-      elastic_c36=0        , 
-      elastic_c41=0        , 
-      elastic_c42=0        , 
-      elastic_c43=0        , 
-      elastic_c44=162.8714 , 
-      elastic_c45=0        , 
-      elastic_c46=0        , 
-      elastic_c51=0        , 
-      elastic_c52=0        , 
-      elastic_c53=0        , 
-      elastic_c54=0        , 
-      elastic_c55=162.8714 , 
-      elastic_c56=0        , 
-      elastic_c61=0        , 
-      elastic_c62=0        , 
-      elastic_c63=0        , 
-      elastic_c64=0        , 
-      elastic_c65=0        , 
-      elastic_c66=162.8714 ) 
+      elastic_c11=372.0647 ,
+      elastic_c12=162.8691 ,
+      elastic_c13=162.8691 ,
+      elastic_c14=0        ,
+      elastic_c15=0        ,
+      elastic_c16=0        ,
+      elastic_c21=162.8691 ,
+      elastic_c22=372.0647 ,
+      elastic_c23=162.8691 ,
+      elastic_c24=0        ,
+      elastic_c25=0        ,
+      elastic_c26=0        ,
+      elastic_c31=162.8691 ,
+      elastic_c32=162.8691 ,
+      elastic_c33=372.0647 ,
+      elastic_c34=0        ,
+      elastic_c35=0        ,
+      elastic_c36=0        ,
+      elastic_c41=0        ,
+      elastic_c42=0        ,
+      elastic_c43=0        ,
+      elastic_c44=162.8714 ,
+      elastic_c45=0        ,
+      elastic_c46=0        ,
+      elastic_c51=0        ,
+      elastic_c52=0        ,
+      elastic_c53=0        ,
+      elastic_c54=0        ,
+      elastic_c55=162.8714 ,
+      elastic_c56=0        ,
+      elastic_c61=0        ,
+      elastic_c62=0        ,
+      elastic_c63=0        ,
+      elastic_c64=0        ,
+      elastic_c65=0        ,
+      elastic_c66=162.8714 )
     testutil.compareCollection(self, expectextractedvalues, extractedvalues)
 
     nan = float('NaN')
     fractionalextractedvalues = dict(
-      elastic_c11= 36.20647, 
-      elastic_c12= 15.28691, 
-      elastic_c13= 15.28691, 
-      elastic_c14= 1.0       , 
-      elastic_c15= 1.0       , 
-      elastic_c16= 1.0       , 
-      elastic_c21= 15.28691, 
-      elastic_c22= nan       , 
-      elastic_c23= 15.28691, 
-      elastic_c24= 1.0       , 
-      elastic_c25= 1.0       , 
-      elastic_c26= 1.0       , 
-      elastic_c31= 15.28691, 
-      elastic_c32= 15.28691, 
-      elastic_c33= 36.20647, 
-      elastic_c34= 1.0       , 
-      elastic_c35= 1.0       , 
-      elastic_c36= 1.0       , 
-      elastic_c41= 1.0       , 
-      elastic_c42= 1.0       , 
-      elastic_c43= 1.0       , 
-      elastic_c44= 15.28714, 
-      elastic_c45= 1.0       , 
-      elastic_c46= 1.0       , 
-      elastic_c51= 1.0       , 
-      elastic_c52= 1.0       , 
-      elastic_c53= 1.0       , 
-      elastic_c54= 1.0       , 
-      elastic_c55= 15.28714, 
-      elastic_c56= 1.0       , 
-      elastic_c61= 1.0       , 
-      elastic_c62= 1.0       , 
-      elastic_c63= 1.0       , 
-      elastic_c64= 1.0       , 
-      elastic_c65= 1.0       , 
-      elastic_c66= 15.28714) 
+      elastic_c11= 36.20647,
+      elastic_c12= 15.28691,
+      elastic_c13= 15.28691,
+      elastic_c14= 1.0       ,
+      elastic_c15= 1.0       ,
+      elastic_c16= 1.0       ,
+      elastic_c21= 15.28691,
+      elastic_c22= nan       ,
+      elastic_c23= 15.28691,
+      elastic_c24= 1.0       ,
+      elastic_c25= 1.0       ,
+      elastic_c26= 1.0       ,
+      elastic_c31= 15.28691,
+      elastic_c32= 15.28691,
+      elastic_c33= 36.20647,
+      elastic_c34= 1.0       ,
+      elastic_c35= 1.0       ,
+      elastic_c36= 1.0       ,
+      elastic_c41= 1.0       ,
+      elastic_c42= 1.0       ,
+      elastic_c43= 1.0       ,
+      elastic_c44= 15.28714,
+      elastic_c45= 1.0       ,
+      elastic_c46= 1.0       ,
+      elastic_c51= 1.0       ,
+      elastic_c52= 1.0       ,
+      elastic_c53= 1.0       ,
+      elastic_c54= 1.0       ,
+      elastic_c55= 15.28714,
+      elastic_c56= 1.0       ,
+      elastic_c61= 1.0       ,
+      elastic_c62= 1.0       ,
+      elastic_c63= 1.0       ,
+      elastic_c64= 1.0       ,
+      elastic_c65= 1.0       ,
+      elastic_c66= 15.28714)
     testutil.compareCollection(self, fractionalextractedvalues, fractionaldiffs)
-    
+
     expectmeritvalues = dict(
       elastic_c11=362.0647,
       elastic_c12=152.8691,
@@ -286,12 +292,12 @@ class GulpEvaluatorTestCase(unittest.TestCase):
     with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
       self.parser.readfp(infile)
 
-    evaluator = fitting.evaluators.GulpEvaluator.createFromConfig(
+    evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(
       'Gulp',
       _getResourceDir(),
       self.parser.items('Evaluator:BulkModulus'))
 
-    job = fitting.jobfactories.Job(None, _getResourceDir(), None)
+    job = pro_fit.jobfactories.Job(None, _getResourceDir(), None)
     subevalled = evaluator(job)
     extractedvalues = dict([ (v.name, v.extractedValue) for v in subevalled])
     fractionaldiffs = dict([ (v.name, v.fractionalDifference) for v in subevalled])
@@ -304,18 +310,18 @@ class GulpEvaluatorTestCase(unittest.TestCase):
     testutil.compareCollection(self, {'bulkmodulus_reuss' : 0.06959628 ,
       'bulkmodulus_voigt' : 0.01565621739,
       'bulkmodulus_hill'  : 0.07123712329 }, fractionaldiffs)
-    
+
   def testShearModulus(self):
     """Test GulpEvaluator, shear modulus extraction"""
     with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
       self.parser.readfp(infile)
 
-    evaluator = fitting.evaluators.GulpEvaluator.createFromConfig(
+    evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(
       'Gulp',
       _getResourceDir(),
       self.parser.items('Evaluator:ShearModulus'))
 
-    job = fitting.jobfactories.Job(None, _getResourceDir(), None)
+    job = pro_fit.jobfactories.Job(None, _getResourceDir(), None)
     subevalled = evaluator(job)
     extractedvalues = dict([ (v.name, v.extractedValue) for v in subevalled])
 
@@ -323,18 +329,18 @@ class GulpEvaluatorTestCase(unittest.TestCase):
       'shearmodulus_voigt' : 139.56198,
       'shearmodulus_hill'  : 136.37610 }, extractedvalues)
 
-    
+
 
   def testUnitCell(self):
     with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
       self.parser.readfp(infile)
 
-    evaluator = fitting.evaluators.GulpEvaluator.createFromConfig(
+    evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(
       'Gulp',
       _getResourceDir(),
       self.parser.items('Evaluator:UnitCell'))
 
-    job = fitting.jobfactories.Job(None, _getResourceDir(), None)
+    job = pro_fit.jobfactories.Job(None, _getResourceDir(), None)
     # import pudb;pudb.set_trace()
     subevalled = evaluator(job)
     extractedvalues = dict([ (v.name, v.extractedValue) for v in subevalled])
@@ -354,23 +360,23 @@ class GulpEvaluatorTestCase(unittest.TestCase):
     with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
       self.parser.readfp(infile)
 
-    evaluator = fitting.evaluators.GulpEvaluator.createFromConfig(
+    evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(
       'Gulp',
       _getResourceDir(),
       self.parser.items('Evaluator:Energy'))
 
-    job = fitting.jobfactories.Job(None, _getResourceDir(), None)
+    job = pro_fit.jobfactories.Job(None, _getResourceDir(), None)
     actual = evaluator(job)
     actual = dict([(v.name, v.meritValue) for v in actual])
     expect = { 'optimisation_penalty' : 0.0,
                'lattice_energy' : 69.87295}
     testutil.compareCollection(self, expect, actual)
 
-    evaluator = fitting.evaluators.GulpEvaluator.createFromConfig(
+    evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(
       'Gulp',
       _getResourceDir(),
       self.parser.items('Evaluator:BadEnergy'))
-    job = fitting.jobfactories.Job(None, _getResourceDir(), None)
+    job = pro_fit.jobfactories.Job(None, _getResourceDir(), None)
     actual = evaluator(job)
     actual = dict([(v.name, v.meritValue) for v in actual])
     expect = { 'optimisation_penalty' : 100.0 }
@@ -381,49 +387,49 @@ class GulpEvaluatorTestCase(unittest.TestCase):
     with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
       self.parser.readfp(infile)
 
-    evaluator = fitting.evaluators.GulpEvaluator.createFromConfig(
+    evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(
       'Gulp',
       _getResourceDir(),
       self.parser.items('Evaluator:Phonon'))
 
-    job = fitting.jobfactories.Job(None, _getResourceDir(), None)
+    job = pro_fit.jobfactories.Job(None, _getResourceDir(), None)
 
     actual = evaluator(job)
     actual = dict([(v.name, v.meritValue) for v in actual])
     expect = { 'negative_phonon_penalty' : 100.0}
-    testutil.compareCollection(self, expect, actual)  
+    testutil.compareCollection(self, expect, actual)
 
   def testPhononShrunk(self):
     with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
       self.parser.readfp(infile)
 
-    evaluator = fitting.evaluators.GulpEvaluator.createFromConfig(
+    evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(
       'Gulp',
       _getResourceDir(),
       self.parser.items('Evaluator:Phonon_shrunk'))
 
-    job = fitting.jobfactories.Job(None, _getResourceDir(), None)
+    job = pro_fit.jobfactories.Job(None, _getResourceDir(), None)
     actual = evaluator(job)
     self.assertEqual(False, actual[0].errorFlag)
     actual = dict([(v.name, v.meritValue) for v in actual])
     expect = { 'negative_phonon_penalty' : 0.0}
-    testutil.compareCollection(self, expect, actual)  
+    testutil.compareCollection(self, expect, actual)
 
   def testEvaluationErrors(self):
     """Check that GulpEvaluator returns ErrorEvaluatorRecord for bad values"""
     with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
       self.parser.readfp(infile)
 
-    evaluator = fitting.evaluators.GulpEvaluator.createFromConfig(
+    evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(
       'Gulp',
       _getResourceDir(),
       self.parser.items('Evaluator:Error'))
 
-    job = fitting.jobfactories.Job(None, _getResourceDir(), None)
+    job = pro_fit.jobfactories.Job(None, _getResourceDir(), None)
     actual = evaluator(job)
     self.assertEqual(1, len(actual))
     r = actual[0]
-    self.assertEqual(fitting.evaluators.ErrorEvaluatorRecord, type(r))
+    self.assertEqual(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
     self.assertTrue(math.isnan(r.meritValue))
     self.assertEqual(100.0, r.expectedValue)
     self.assertTrue(math.isnan(r.extractedValue))

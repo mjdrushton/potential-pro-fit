@@ -9,10 +9,10 @@ import contextlib
 
 import sqlalchemy as sa
 
-from atomsscripts.fitting import reporters
+from atsim.pro_fit import reporters
 
 
-from atomsscripts.fitting._sqlalchemy_cherrypy_integration import session, configure_session
+from atsim.pro_fit._sqlalchemy_cherrypy_integration import session, configure_session
 import  _jinja_cherrypy_integration # noqa
 
 from _columnproviders import  _VariablesColumnProvider, _StatColumnProvider, _EvaluatorColumnProvider

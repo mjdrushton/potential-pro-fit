@@ -5,11 +5,11 @@ import logging
 import math
 
 from _common import * # noqa
-from atomsscripts.fitting.fittool import ConfigException
+from atsim.pro_fit.fittool import ConfigException
 
 class VariableException(Exception):
   """Exception raised by inspyred related classes when a problem is found with
-  input atomsscripts.fitting.fittool.Variables instances"""
+  input atsim.pro_fit.fittool.Variables instances"""
   pass
 
 
@@ -80,11 +80,11 @@ class Evaluator(object):
   Also responsible for calling the stepCallback of the fitting tool minimizers that use this class.
   Also maintains instance of MinimizerResults containing generation with best merit values"""
 
-  __name__ = "atomsscripts.fitting.minimizers._inspyred.Evaluator"
+  __name__ = "atsim.pro_fit.minimizers._inspyred.Evaluator"
 
   def __init__(self, initialVariables, merit):
     """@param initialVariables Variables instance.
-       @param merit atomsscripts.fitting.fittool.Merit instance"""
+       @param merit atsim.pro_fit.fittool.Merit instance"""
 
     self._initialVariables = initialVariables
     self._merit = merit
@@ -127,7 +127,7 @@ class Observer(object):
   bestMinimizerResults property."""
 
 
-  __name__ = "atomsscripts.fitting.minimizers._inspyred.Observer"
+  __name__ = "atsim.pro_fit.minimizers._inspyred.Observer"
 
   def __init__(self, stepCallback):
     """@param stepCallback Step callback called with single argument: MinimizerResults instance"""
@@ -162,7 +162,7 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
   maximumEvaluations = 30000
 
   def __init__(self, initialVariables, evolutionaryComputation, populationSize, **args):
-    """@param initialVariables atomsscripts.fitting.fittool.Variables instance providing bounds for generator and bounder applied to
+    """@param initialVariables atsim.pro_fit.fittool.Variables instance providing bounds for generator and bounder applied to
                 population used within evolutionaryComputation.
        @param evolutionaryComputation Instance of inspyred.ec.EvolutionaryComputation.
                 Note: the evaluator, bounder and generator of the evolutionaryComputation are overwritten by this class.
@@ -179,7 +179,7 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
   def minimize(self, merit):
     """Perform minimization.
 
-    @param merit atomsscripts.fitting.fittool.Merit instance used to calculate merit value.
+    @param merit atsim.pro_fit.fittool.Merit instance used to calculate merit value.
     @return MinimizerResults for candidate solution population containing best merit value."""
 
     bounder = Bounder(self._initialVariables)
@@ -237,7 +237,7 @@ class DEAMinimizer(object):
 
   This class wraps the DEA minimizer provided by the Inspyred package"""
 
-  logger = logging.getLogger("atomsscripts.fitting.minimizers.DEAMinimizer")
+  logger = logging.getLogger("atsim.pro_fit.minimizers.DEAMinimizer")
 
   def __init__(self, initialVariables, **args):
 
@@ -278,7 +278,7 @@ class DEAMinimizer(object):
   def createFromConfig(variables, configitems):
     """Create DEAMinimizer from [Minimizer] section of fit.cfg config file.
 
-    @param variables atomsscripts.fitting.fittool.Variables instance containing starting parameters for minimization.
+    @param variables atsim.pro_fit.fittool.Variables instance containing starting parameters for minimization.
     @param configitems List of key,value pairs extracted from [Minimizer] section of config file.
     @return Instance of DEAMinimizer"""
 

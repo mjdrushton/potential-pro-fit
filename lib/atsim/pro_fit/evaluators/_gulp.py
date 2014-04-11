@@ -1,6 +1,5 @@
-from atomsscripts.fitting.fittool import ConfigException
+from atsim.pro_fit.fittool import ConfigException
 from atomsscripts import gulp
-from atomsscripts import simplevector
 
 import collections
 import os
@@ -9,7 +8,7 @@ import inspect
 import logging
 import sys
 
-_logger = logging.getLogger('atomsscripts.fitting.evaluators')
+_logger = logging.getLogger('atsim.pro_fit.evaluators')
 
 
 from _common import * # noqa
@@ -25,6 +24,10 @@ class GulpDrvParser(object):
     self.gradientsCartesian = None
     self.gradientsStrain = None
     self._parse(infile)
+
+  def _vectorMagnitude(self, vector):
+    sqmag = sum([ float(v)**2.0 for v in vector])
+    return math.sqrt(sqmag)
 
   def _parse(self, infile):
     for line in infile:
@@ -110,7 +113,7 @@ class Gulp_DRVEvaluator(object):
 
   def _atom_gradients(self, parser):
     gradients = parser.gradientsCartesian
-    gradients = [simplevector.vectorMagnitude(v) for v in gradients]
+    gradients = [self._vectorMagnitude(v) for v in gradients]
     return sum(gradients)
 
   def _individual_cell_gradient(self, n, parser):
