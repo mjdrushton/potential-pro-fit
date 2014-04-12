@@ -367,8 +367,6 @@ class FitConfig(object):
       raise ConfigException("No Evaluators have been defined for any Job.")
 
 
-
-
 class Variables(object):
   """Class for handling fitting variables"""
 
@@ -616,7 +614,6 @@ class Merit(object):
     return self._jobdir
   jobdir = property(fget=_getjobdir)
 
-
   def calculate(self, candidates, returnCandidateJobPairs = False):
     """Calculate Merit value for each Variables object in candidates and return list of merit values.
 
@@ -656,7 +653,6 @@ class Merit(object):
         return meritvals
     finally:
       self._cleanBatches(batchpaths)
-
 
   def _prepareJobs(self, candidateVariables):
     """Create job directories and populate them with files from jobfactories.

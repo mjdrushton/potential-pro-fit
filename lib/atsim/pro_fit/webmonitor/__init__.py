@@ -1,3 +1,5 @@
+#! /isr/bin/env python
+
 import cherrypy
 from cherrypy import tools
 
@@ -288,7 +290,7 @@ class Fitting:
 
 
 def _formatResults(results):
-  """Takes SA results and formats them in table format expected by the fittingTool_monitor.py front end."""
+  """Takes SA results and formats them in table format expected by the pprofitmon front end."""
   columns = results.keys()
   outdict = {'columns' : columns}
   values = [ list(r) for r in results]
@@ -488,7 +490,7 @@ def _processCommandLineOptions():
     action = "store")
 
   if not os.path.exists('fit.cfg'):
-    parser.error("fittingTool_monitor.py must be run from same directory as fitting run.")
+    parser.error("pprofitmon must be run from same directory as fitting run.")
 
   options, args = parser.parse_args()
   _setPort(options.port)

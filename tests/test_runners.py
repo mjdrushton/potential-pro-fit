@@ -4,11 +4,13 @@ import tempfile
 import shutil
 import stat
 import os
+import ConfigParser
 
 import common
 from atsim import pro_fit
 
-import ConfigParser
+from execnet import HostNotFound
+
 
 class LocalRunnerTestCase(unittest.TestCase):
   """Tests for atsim.pro_fit.runners.LocalRunner"""
@@ -183,6 +185,17 @@ class RemoteRunnerTestCase(unittest.TestCase):
       actual.append((f, m))
     return actual
 
+  def _createRunner(self, ncpu=1):
+    runner = pro_fit.runners.RemoteRunner('RemoteRunner', "ssh://localhost/%s" % self.remoted, ncpu)
+    return runner
+
+  def _runBatch(self, runner, jobs):
+    try:
+      return runner.runBatch(jobs)
+    except HostNotFound:
+      self.skipTest("Cannot connect to localhost")
+
+
   def testUrlParse(self):
     """Test parsing of host directory string"""
     username, host, path = pro_fit.runners.RemoteRunner._urlParse("ssh://username@localhost/%s" % self.remoted)
@@ -196,22 +209,22 @@ class RemoteRunnerTestCase(unittest.TestCase):
     self.assertEqual(self.remoted, path)
 
   def testSingle(self):
-    runner = pro_fit.runners.RemoteRunner('RemoteRunner', "ssh://localhost/%s" % self.remoted, 1)
-    runner.runBatch([self.jobs[0]]).join()
-    # import pudb;pudb.set_trace()
+    runner = self._createRunner(1)
+    self._runBatch(runner, [self.jobs[0]]).join()
     self._testjob(runner, 0)
 
+
   def testAllInSingleBatch(self):
-    runner = pro_fit.runners.RemoteRunner('RemoteRunner', "ssh://localhost/%s" % self.remoted, 3)
-    runner.runBatch(self.jobs).join()
+    runner = self._createRunner(3)
+    self._runBatch(runner, self.jobs).join()
     for job in self.jobs:
       self._testjob(runner, job.variables.id)
 
   def testAllInMultipleBatch(self):
-    runner = pro_fit.runners.RemoteRunner('RemoteRunner', "ssh://localhost/%s" % self.remoted, 3)
+    runner = self._createRunner(3)
 
-    f1 = runner.runBatch(self.jobs[:6])
-    f2 = runner.runBatch(self.jobs[6:])
+    f1 = self._runBatch(runner, self.jobs[:6])
+    f2 = self._runBatch(runner, self.jobs[6:])
     f2.join()
     f1.join()
     for job in self.jobs:

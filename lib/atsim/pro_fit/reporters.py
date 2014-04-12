@@ -81,6 +81,7 @@ class SQLiteReporter(object):
 
   def _createDatabase(self):
     """Create sqlite database"""
+
     if self.dbfilename:
       engine = sa.create_engine('sqlite:///%s' % self.dbfilename)
     else:

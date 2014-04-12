@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 from atsim import pro_fit
 
 import optparse
@@ -8,7 +10,6 @@ import shutil
 import tempfile
 
 import jinja2
-
 
 
 class _FittingToolException(Exception):
@@ -30,18 +31,18 @@ def _isValidDirectory(logger):
   # return True if directory is valid, False otherwise.
 
   if not os.path.isfile('fit.cfg'):
-    logger.error("Not a valid fittingTool.py directory. Required file 'fit.cfg' not found.")
+    logger.error("Not a valid pprofit directory. Required file 'fit.cfg' not found.")
     return False
 
   if not os.path.isdir('fit_files'):
-    logger.error("Not a valid fittingTool.py directory. Required directory 'fit_files' not found.")
+    logger.error("Not a valid pprofit directory. Required directory 'fit_files' not found.")
     return False
 
   # Check for existence of a lockfile
   if os.path.isfile('lockfile'):
     with open('lockfile') as infile:
       pidline = infile.next()[:-1]
-      logger.error("Found 'lockfile', this indicates that fittingTool.py is already running with PID=%s" % pidline)
+      logger.error("Found 'lockfile', this indicates that pprofit is already running with PID=%s" % pidline)
       return False
 
   return True
@@ -187,7 +188,7 @@ def _setupLogging(verbose):
 
   logger.setLevel(logging.DEBUG)
   stderrHandler = logging.StreamHandler(sys.stderr)
-  formatter = logging.Formatter('fittingTool.py - %(message)s')
+  formatter = logging.Formatter('pprofit - %(message)s')
   stderrHandler.setFormatter(formatter)
   logger.addHandler(stderrHandler)
   return logger

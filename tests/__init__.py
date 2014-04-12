@@ -11,6 +11,8 @@ import sys
 
 from common import *
 
+import test_monitor
+
 
 def _getResourceDir():
   return os.path.join(

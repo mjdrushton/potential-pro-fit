@@ -11,7 +11,7 @@ class SingleStepMinimizer(object):
   """Evaluate merit function a single time and return resulting MinimizerResults.
 
   Provides option to keep job directories following run and is therefore useful for debugging problems with input files.
-  This is used to implement the --single option from the fittingTool.py command line."""
+  This is used to implement the --single option from the pprofit command line."""
 
   _logger = logging.getLogger('atsim.pro_fit.minimizers.SingleStepMinimizer')
 

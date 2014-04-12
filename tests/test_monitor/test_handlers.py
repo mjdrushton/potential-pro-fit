@@ -11,18 +11,18 @@ class TestHandlers(CherryPyDBTestCaseBase):
   baseurl = "http://localhost:8080/fitting/"
 
   def testCurrentGeneration(self):
-    """Test fittingTool_monitor.py /fitting/current_iteration"""
+    """Test pprofitmon /fitting/current_iteration"""
     j = self.fetchJSON("current_iteration")
     self.assertEquals(5, j['current_iteration'])
 
   def testBestCandidate(self):
-    """Test fittingTool_monitory.py /fitting/best_candidate"""
+    """Test pprofitmon /fitting/best_candidate"""
     j = self.fetchJSON("best_candidate")
     expect = {'id' : 18, 'iteration_number' : 4, 'candidate_number' : 1, 'merit_value' : 964.64312 }
     testutil.compareCollection(self, expect, j)
 
   def testIterationOverview(self):
-    """Test fittingTool_monitor.py /fitting/iteration_overview"""
+    """Test pprofitmon /fitting/iteration_overview"""
     # id|iteration_number|candidate_number|merit_value
     # 13|3|0|980.44924
     # 14|3|1|973.78207
@@ -40,7 +40,7 @@ class TestHandlers(CherryPyDBTestCaseBase):
     testutil.compareCollection(self, expect, j)
 
   def testRunStatus(self):
-    """Test fittingTool_monitor.py /fitting/run_status"""
+    """Test pprofitmon /fitting/run_status"""
     j = self.fetchJSON("run_status")
     expect = {
       'runstatus' : 'Finished',
@@ -50,7 +50,7 @@ class TestHandlers(CherryPyDBTestCaseBase):
 
 
   def testVariables(self):
-    """Test fittingTool_monitor.py /fitting/variables/ITERATION/CANDIDATE"""
+    """Test pprofitmon /fitting/variables/ITERATION/CANDIDATE"""
     #ITERATION = 2
     #CANDIDATE = 3
     j = self.fetchJSON("variables/2/3")
@@ -97,7 +97,7 @@ class TestHandlers(CherryPyDBTestCaseBase):
     testutil.compareCollection(self, expect, j)
 
   def testEvaluators(self):
-    """Test fittingTool_monitor.py /fitting/evaluated/ITERATION/CANDIDATE"""
+    """Test pprofitmon /fitting/evaluated/ITERATION/CANDIDATE"""
     #ITERATION = 2
     #CANDIDATE = 3
     j = self.fetchJSON("evaluated/2/3")

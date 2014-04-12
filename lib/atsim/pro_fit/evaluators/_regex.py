@@ -4,7 +4,7 @@ import os
 
 import logging
 
-from atomsscripts.fitting.fittool import ConfigException
+from atsim.pro_fit.fittool import ConfigException
 
 
 from _common import RMSEvaluatorRecord, ErrorEvaluatorRecord

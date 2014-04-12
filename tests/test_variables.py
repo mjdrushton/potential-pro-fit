@@ -69,13 +69,13 @@ class CalculatedVariables(unittest.TestCase):
 
   def testNoExpressions(self):
     """Test that variables pass through CalculatedVariables unchanged when no expressions specified"""
-    variables = pro_fit..fittool.Variables(
+    variables = pro_fit.fittool.Variables(
       [("A", 1.23, False),
       ("B", 4.56, False),
       ("electroneg", 0.4, True)],
       bounds = [None, None, (0,1)] )
 
-    calculatedVariables = pro_fit..fittool.CalculatedVariables([])
+    calculatedVariables = pro_fit.fittool.CalculatedVariables([])
     outVars = calculatedVariables(variables)
 
     expect = [
@@ -94,13 +94,13 @@ class CalculatedVariables(unittest.TestCase):
     expression3 = "electroneg * 4"
 
 
-    variables = pro_fit..fittool.Variables(
+    variables = pro_fit.fittool.Variables(
       [("A", 1.23, False),
       ("B", 4.56, False),
       ("electroneg", 0.4, True)],
       bounds = [None, None, (0,1)] )
 
-    calculatedVariables = pro_fit..fittool.CalculatedVariables(
+    calculatedVariables = pro_fit.fittool.CalculatedVariables(
       [("sum", expression1),
       ("Ocharge", expression2),
       ("Ucharge", expression3)] )
@@ -140,13 +140,13 @@ Ucharge : electroneg * 4
     cfg.readfp(StringIO.StringIO(config))
     configitems = cfg.items('CalculatedVariables')
 
-    variables = pro_fit..fittool.Variables(
+    variables = pro_fit.fittool.Variables(
       [("A", 1.23, False),
       ("B", 4.56, False),
       ("electroneg", 0.4, True)],
       bounds = [None, None, (0,1)] )
 
-    calculatedVariables = pro_fit..fittool.CalculatedVariables.createFromConfig(cfg.items("CalculatedVariables"))
+    calculatedVariables = pro_fit.fittool.CalculatedVariables.createFromConfig(cfg.items("CalculatedVariables"))
     outVars = calculatedVariables(variables)
 
     expect = [
@@ -173,5 +173,5 @@ Ucharge : electroneg * 4
     cfg.readfp(StringIO.StringIO(config))
     configitems = cfg.items('CalculatedVariables')
 
-    with self.assertRaises(pro_fit..fittool.ConfigException):
-      pro_fit..fittool.CalculatedVariables.createFromConfig(cfg.items("CalculatedVariables"))
+    with self.assertRaises(pro_fit.fittool.ConfigException):
+      pro_fit.fittool.CalculatedVariables.createFromConfig(cfg.items("CalculatedVariables"))

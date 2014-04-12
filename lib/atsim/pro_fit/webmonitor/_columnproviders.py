@@ -1,4 +1,3 @@
-from atomsscripts import mathutil
 from atsim.pro_fit.reporters import SQLiteReporter
 from _util import calculatePercentageDifference
 
@@ -10,7 +9,62 @@ import functools
 import contextlib
 import operator
 import re
+import math
 
+def _mean(data):
+  """Calculate mean of values in data.
+
+  @param data List of numbers for which mean should be calculated.
+  @return Mean of data"""
+  return sum(data)/ float(len(data))
+
+def _median(data):
+  """Calculate the median of values in data.
+
+  @param data List of numbers for which median should be determined.
+  @return Median of data"""
+  data = sorted(data)
+  # Even length
+  if len(data) % 2 == 0 :
+    idx = len(data)/2
+    v1 = data[idx]
+    v2 = data[idx-1]
+    return (v1+v2) / float(2.0)
+  # Odd length
+  else:
+    return data[len(data)/2]
+
+def _quartile(data, q):
+  """Calculate quartiles.
+
+  @param data Data for which quartile should be calculated.
+  @param q Number of quartile to be calculated. One of 1,2,3"""
+
+  if not q in [1,2,3]:
+    raise ValueError('q should be 1,2 or 3')
+
+  m = _median(data)
+  if q == 1:
+    return _median([v for v in data if v < m ])
+
+  if q == 2:
+    return m
+
+  if q == 3:
+    return _median([v for v in data if v > m ])
+
+def _stdev(data):
+  """Calculate the standard deviation of values in data.
+
+  @param data List of data for which standard deviation should be calculated.
+  @return Standard deviation of data."""
+  m = _mean(data)
+  sd = 0.0
+  for v in data:
+    sd += (v - m)**2.0
+  sd /= float(len(data))
+  sd = math.sqrt(sd)
+  return sd
 
 class _RunningFilter(object):
   def __init__(self, op):
@@ -186,12 +240,12 @@ class _StatColumnProvider(object):
 
   _calculators = {'stat:min' : min,
                   'stat:max' : max,
-                  'stat:mean' : mathutil.mean,
-                  'stat:median' : mathutil.median,
-                  'stat:std_dev' : mathutil.stdev,
-                  'stat:quartile1': functools.partial(mathutil.quartile,q=1),
-                  'stat:quartile2': functools.partial(mathutil.quartile,q=2),
-                  'stat:quartile3': functools.partial(mathutil.quartile,q=3)}
+                  'stat:mean' : _mean,
+                  'stat:median' : _median,
+                  'stat:std_dev' : _stdev,
+                  'stat:quartile1': functools.partial(_quartile,q=1),
+                  'stat:quartile2': functools.partial(_quartile,q=2),
+                  'stat:quartile3': functools.partial(_quartile,q=3)}
 
 
   def __init__(self, conn, columnKey, columnLabels):

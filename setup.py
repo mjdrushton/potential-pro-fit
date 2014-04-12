@@ -20,6 +20,14 @@ setup(name="potential-pro-fit",
 
   #zip_safe = True,
 
+  entry_points = {
+    'console_scripts' : [
+      'pprofit = atsim.pro_fit.tools.fittingTool:main',
+      'pprofitmon = atsim.pro_fit.webmonitor:main',
+      'csvbuild = atsim.pro_fit.tools.csvbuild:main'
+    ]
+  },
+
   # Meta-data for PyPI
   # description = "atsim.potentials provides tools for working with pair and embedded atom method potential models including tabulation routines for DL_POLY and LAMMPS",
   # long_description = open('README.rst').read(),

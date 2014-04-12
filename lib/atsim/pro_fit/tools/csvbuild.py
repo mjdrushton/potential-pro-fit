@@ -165,7 +165,7 @@ def _verboseLogging():
   logger = logging.getLogger('csvbuild')
   logger.setLevel(logging.DEBUG)
   stderrHandler = logging.StreamHandler(sys.stderr)
-  formatter = logging.Formatter('csvbuild.py - %(message)s')
+  formatter = logging.Formatter('csvbuild - %(message)s')
   stderrHandler.setFormatter(formatter)
   logger.addHandler(stderrHandler)
   logger.info("Verbose output enabled")
@@ -226,7 +226,7 @@ Template directory structure:
 
 The values in the spreadsheet can be combined with the template directory structure using the following
 command line:
-  csvbuild.py spreadsheet.csv template dl_poly_runs
+  %prog spreadsheet.csv template dl_poly_runs
 
 This would create the following directory structure in which the CONTROL files contain the appropriate
 temperature values:

@@ -17,7 +17,7 @@ class GulpParseOutputConfigurationTestCase(unittest.TestCase):
   """Tests for functions that parse values from gulp output configuration sections"""
 
   def testParseComponentsOfEnergy(self):
-    """Test for atsom.pro_fit.evaluators._gulp_parse.parseComponentsOfEnergy()"""
+    """Test for atsim.pro_fit.evaluators._gulp_parse.parseComponentsOfEnergy()"""
     testfile = open(os.path.join(_getResourceDirectory(), 'opti_conp_prop_outputsection.res'))
     expect = { 'componentsOfEnergyAtStart' : { 'interatomicPotentials'                : 26.88207570,
                                                'monopoleMonopoleReal'                 : -57.34563079,
@@ -54,7 +54,7 @@ class GulpParseOutputConfigurationTestCase(unittest.TestCase):
     testutil.compareCollection(self, expect, actual)
 
   def testParseFinalCellParametersAndDerivatives(self):
-    """Test for gulp.parse._outputconfiguration._parseFinalCellParametersAndDerivatives()"""
+    """Test for parseFinalCellParametersAndDerivatives()"""
     testfile = open(os.path.join(_getResourceDirectory(), 'opti_conp_prop_outputsection.res'))
     expect = {
               'a' : 4.212000,
@@ -77,7 +77,7 @@ class GulpParseOutputConfigurationTestCase(unittest.TestCase):
     testutil.compareCollection(self, expect,actual)
 
   def testParseElasticConstantMatrix(self):
-    """Test gulp.parse._outputconfiguration._parseElasticConstantMatrix()"""
+    """Test parseElasticConstantMatrix()"""
     testfile = open(os.path.join(_getResourceDirectory(), 'opti_conp_prop_outputsection.res'))
     expect = [
                   [372.0647 , 162.8691 , 162.8691 , 0.0000   , 0.0000   , 0.0000]   ,
@@ -90,7 +90,7 @@ class GulpParseOutputConfigurationTestCase(unittest.TestCase):
     testutil.compareCollection(self, expect, actual)
 
   def testParseMechanicalProperties(self):
-    """Test gulp.parse._outputconfiguration._parseMechanicalProperties()"""
+    """Test parseMechanicalProperties()"""
     testfile = open(os.path.join(_getResourceDirectory(), 'opti_conp_prop_outputsection.res'))
     expect = { 'bulkModulus'     : {'reuss' : 232.60093, 'voigt' : 232.60093, 'hill' : 232.60093},
                'shearModulus'    : {'reuss' : 133.19021, 'voigt' : 139.56198, 'hill' : 136.37610},

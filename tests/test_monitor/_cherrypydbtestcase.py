@@ -6,7 +6,7 @@ from mechanize import Browser
 from atsim.pro_fit import webmonitor
 cherrypy = webmonitor.cherrypy
 
-import testutil
+from .. import testutil
 
 def _getResourceDir():
   return os.path.abspath(os.path.join(os.path.dirname(__file__),'resources'))
