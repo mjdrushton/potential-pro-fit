@@ -1,4 +1,4 @@
-.. _fittingtool-fittingruncontrol:
+.. _pprofit-fittingruncontrol:
 
 ##########################
 Global Fitting Run Options
@@ -10,6 +10,6 @@ The ``[FittingRun]`` section of the ``fit.cfg`` file contains options relevant t
 ====================
 
 :Name: title
-:Description: Name of the fitting run. This is displayed in the fittingTool_monitor and is particularly useful for distinguising between multiple fitting runs.
+:Description: Name of the fitting run. This is displayed in ``pprofitmon`` and is particularly useful for distinguising between multiple fitting runs.
 
 \

@@ -1,13 +1,13 @@
-.. _fittingtool-variables:
+.. _pprofit-variables:
 
 #########
 Variables
 #########
 
-The fitting system defines two types of variables. These are defined in the :ref:`[Variables] <fittingtool-variables-variables>` and :ref:`[CalculatedVariables] <fittingtool-variables-calculatedvariables>` sections of ``fit.cfg``. Conventional :ref:`[Variables] <fittingtool-variables-variables>` can be modified by the :ref:`minimizer <fittingtool-minimizers>` to obtain the merit function. As their name suggests, :ref:`[CalculatedVariables] <fittingtool-variables-calculatedvariables>` are defined using arithmetic expressions which can contain references to conventional variables. Meaning that values can be passed to jobs that depend, however indirectly on fitting parameters. These have a number of uses, for instance to optimise for partial charges in MgO, an ionicity could be defined as a fitting parameter within the :ref:`[Variables] <fittingtool-variables-variables>` section with :ref:`[CalculatedVariables] <fittingtool-variables-calculatedvariables>` defined to ensure that Mg's charge was ``2 * ionicity`` and the O charge being ``-2 * ionicity``.
+The fitting system defines two types of variables. These are defined in the :ref:`[Variables] <pprofit-variables-variables>` and :ref:`[CalculatedVariables] <pprofit-variables-calculatedvariables>` sections of ``fit.cfg``. Conventional :ref:`[Variables] <pprofit-variables-variables>` can be modified by the :ref:`minimizer <pprofit-minimizers>` to obtain the merit function. As their name suggests, :ref:`[CalculatedVariables] <pprofit-variables-calculatedvariables>` are defined using arithmetic expressions which can contain references to conventional variables. Meaning that values can be passed to jobs that depend, however indirectly on fitting parameters. These have a number of uses, for instance to optimise for partial charges in MgO, an ionicity could be defined as a fitting parameter within the :ref:`[Variables] <pprofit-variables-variables>` section with :ref:`[CalculatedVariables] <pprofit-variables-calculatedvariables>` defined to ensure that Mg's charge was ``2 * ionicity`` and the O charge being ``-2 * ionicity``.
 
 
-.. _fittingtool-variables-variables:
+.. _pprofit-variables-variables:
 
 [Variables]
 ===========
@@ -22,9 +22,9 @@ Where:
 
 	* ``INITIAL_VALUE`` the starting value for the variable. 
 
-	 Note certain :ref:`minimizers <fittingtool-minimizers>` do not use this information. For example,  population based optimizers select a large number of candidate variable sets at random from a given set of variable ranges. This value must always be specified however.  See :ref:`minimizers <fittingtool-minimizers>` for more information.
+	 Note certain :ref:`minimizers <pprofit-minimizers>` do not use this information. For example,  population based optimizers select a large number of candidate variable sets at random from a given set of variable ranges. This value must always be specified however.  See :ref:`minimizers <pprofit-minimizers>` for more information.
 
-	* ``(LOWERBOUND, UPPERBOUND)`` specify the desired range for a particular variable. Some :ref:`minimizers <fittingtool-minimizers>` treat these bounds as constraints, with the variable being prevented from going above ``UPPERBOUND`` or below ``LOWERBOUND``. Variable bounds are often used by population based :ref:`minimizers <fittingtool-minimizers>` as the region of the variable space from which to choose an initial population of solutions. Again, please refer to each minimizer's documentation to establish how it treats bounds (see :ref:`fittingtool-minimizers-reference`).
+	* ``(LOWERBOUND, UPPERBOUND)`` specify the desired range for a particular variable. Some :ref:`minimizers <pprofit-minimizers>` treat these bounds as constraints, with the variable being prevented from going above ``UPPERBOUND`` or below ``LOWERBOUND``. Variable bounds are often used by population based :ref:`minimizers <pprofit-minimizers>` as the region of the variable space from which to choose an initial population of solutions. Again, please refer to each minimizer's documentation to establish how it treats bounds (see :ref:`pprofit-minimizers-reference`).
 
 	* ``*``. An asterisk at the end of a variable line indicates that the variable should be optimised during fitting. If no asterisk appears, the variable will be held fixed.
 
@@ -57,7 +57,7 @@ Examples
 
 
 
-.. _fittingtool-variables-calculatedvariables:
+.. _pprofit-variables-calculatedvariables:
 
 [CalculatedVariables]
 =====================
@@ -67,7 +67,7 @@ Calculated variables are defined with the optional ``[CalculatedVariables]`` sec
 	VARIABLE_NAME : EXPRESSION
 
 
-Where ``VARIABLE_NAME`` is the label used to refer to the calculated variable within the fitting system. ``EXPRESSION`` is an arithmetic expression which can contain references to variables from the :ref:`[Variables] <fittingtool-variables-variables>` section. The functions and operators that can be used in expressions are the same as for the ``Formula`` meta-evaluator and are described :ref:`here <fittingtool-metaevaluators-expressionsyntax>`.
+Where ``VARIABLE_NAME`` is the label used to refer to the calculated variable within the fitting system. ``EXPRESSION`` is an arithmetic expression which can contain references to variables from the :ref:`[Variables] <pprofit-variables-variables>` section. The functions and operators that can be used in expressions are the same as for the ``Formula`` meta-evaluator and are described :ref:`here <pprofit-metaevaluators-expressionsyntax>`.
 
 Example
 ^^^^^^^
@@ -85,7 +85,7 @@ The charges for uranium and oxygen would then be defined within ``[CalculatedVar
 	Ocharge : -2.0 * ionicity
 	Ucharge : 4.0 * ionicity
 
-These variables should then be used in place of ``ionicity`` within a job's input file. If using the :ref:`Template <fittingtool-jobfactories-template>` job-factory to create a GULP file, this would involve modifying the ``species`` section of the GULP input as follows::
+These variables should then be used in place of ``ionicity`` within a job's input file. If using the :ref:`Template <pprofit-jobfactories-template>` job-factory to create a GULP file, this would involve modifying the ``species`` section of the GULP input as follows::
 
 	species
 	U @Ucharge@

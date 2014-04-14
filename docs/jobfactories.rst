@@ -1,10 +1,10 @@
-.. _fittingtools-jobfactories:
+.. _pprofit-jobfactories:
 
 #############
 Job-Factories
 #############
 
-Job factories are responsible for creating jobs. This involves combining the contents of a job directory within the ``fit_files`` sub-directory with a set of variables produced by the :ref:`minimizer <fittingtool-minimizers>`, creating a job-instance whose ``runjob`` script can be invoked by a :ref:`runner <fittingtool-runners>`. 
+Job factories are responsible for creating jobs. This involves combining the contents of a job directory within the ``fit_files`` sub-directory with a set of variables produced by the :ref:`minimizer <pprofit-minimizers>`, creating a job-instance whose ``runjob`` script can be invoked by a :ref:`runner <pprofit-runners>`. 
 
 Job factories are configured within each job's ``job.cfg`` file and th job factory is selected within the ``[Job]`` block of this configuration file::
 
@@ -12,16 +12,16 @@ Job factories are configured within each job's ``job.cfg`` file and th job facto
 	type : FACTORY_TYPE
 	...
 
-Where ``FACTORY_TYPE`` the name of a job-factory as listed in :ref:`fitting-tool-jobfactories-reference`.
+Where ``FACTORY_TYPE`` the name of a job-factory as listed in :ref:`below <pprofit-jobfactories-reference>`.
 
 
-.. _fittingtool-jobfactories-reference:
+.. _pprofit-jobfactories-reference:
 
 Job Factory Reference
 =====================
 
 
-.. _fittingtool-jobfactories-template:
+.. _pprofit-jobfactories-template:
 
 Template
 ^^^^^^^^
@@ -45,7 +45,7 @@ Example
 
 The following example shows how the ``Template`` job factory can be used to define potentials for a GULP job.
 
-The ``[Variables]`` section of the ``fit.cfg`` file is defined as (see :ref:`fittingtool-variables` for more information)::
+The ``[Variables]`` section of the ``fit.cfg`` file is defined as (see :ref:`pprofit-variables` for more information)::
 
 	[Variables]
 	morse_Ca_O_A : 0.030211 *
@@ -82,7 +82,7 @@ The ``Template`` job factory is configured within the CaO ``job.cfg`` which has 
 	cell_b : 4.811 10.0
 	cell_c : 4.811 10.0		
 
-Information regarding the ``runner`` and ``[Evaluator]`` configuration options can be found :ref:`here <fittingtool-runners>` and :ref:`here <fittingtool-evaluators>`.
+Information regarding the ``runner`` and ``[Evaluator]`` configuration options can be found :ref:`here <pprofit-runners>` and :ref:`here <pprofit-evaluators>`.
 
 For completeness the contents of the ``runjob`` file is shown here::
 

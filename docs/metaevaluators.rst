@@ -1,10 +1,10 @@
-.. _fittingtool-metaevaluators:
+.. _pprofit-metaevaluators:
 
 ###############
 Meta-Evaluators
 ###############
 
-Meta evaluators can be thought of as :ref:`evaluators <fittingtool-metaevaluators>` that are called after job evaluation and therefore have access to the values extracted by the job level :ref:`evaluators <fittingtool-metaevaluators>`. Rather than being associated with a single job, meta-evaluators are associated with the fitting run as a whole. Sitting above the jobs in this way means meta-evaluators can be used for many purposes. For example:
+Meta evaluators can be thought of as :ref:`evaluators <pprofit-metaevaluators>` that are called after job evaluation and therefore have access to the values extracted by the job level :ref:`evaluators <pprofit-metaevaluators>`. Rather than being associated with a single job, meta-evaluators are associated with the fitting run as a whole. Sitting above the jobs in this way means meta-evaluators can be used for many purposes. For example:
 
 	* Calculate merit-values that require information from multiple jobs.
 	* For a single job synthesise merit-values from records obtained from different evaluators, avoiding the need to program a new, custom, evaluator.
@@ -17,12 +17,12 @@ Meta-evaluators are specified within the top-level ``fit.cfg`` file as one or mo
 	type : META_EVALUATOR_TYPE
 	...
 
-Where ``EVALUATOR_NAME`` uniquely identifies the evaluator and ``META_EVALUATOR_TYPE`` names a particular meta-evaluator (the meta-evaluators provided with ``fittingTool.py`` are described below). The remainder of the configuration block is used to specify ``option : value`` pairs specific to the chosen ``META_EVALUATOR_TYPE``. 
+Where ``EVALUATOR_NAME`` uniquely identifies the evaluator and ``META_EVALUATOR_TYPE`` names a particular meta-evaluator (the meta-evaluators provided with Potential Pro-Fit are described below). The remainder of the configuration block is used to specify ``option : value`` pairs specific to the chosen ``META_EVALUATOR_TYPE``. 
 
 Example
 =======
 
-For a cubic system, bulk modulus can be calculated as :math:`B = \frac{1}{3} (C_{11} + 2C_{12})`. Whilst the :ref:`Gulp evaluator <fittingtool-evaluators-gulp>` can extract bulk modulus through the ``bulkmodulus_reuss``, ``bulkmodulus_voigt`` and ``bulkmodulus_hill`` fields, these apply a form of averaging in order to estimate the bulk-modulus of a polycrystalline material from elastic constants that have effectively been obtained for a single crystal system.  Sometimes it might be interesting to calculate :math:`B` directly from the individual elastic constants. The following example shows how the :ref:`Formula <fittingtool-metaevaluators-formula>` meta-evaluator can be applied to achieve this.
+For a cubic system, bulk modulus can be calculated as :math:`B = \frac{1}{3} (C_{11} + 2C_{12})`. Whilst the :ref:`Gulp evaluator <pprofit-evaluators-gulp>` can extract bulk modulus through the ``bulkmodulus_reuss``, ``bulkmodulus_voigt`` and ``bulkmodulus_hill`` fields, these apply a form of averaging in order to estimate the bulk-modulus of a polycrystalline material from elastic constants that have effectively been obtained for a single crystal system.  Sometimes it might be interesting to calculate :math:`B` directly from the individual elastic constants. The following example shows how the :ref:`Formula <pprofit-metaevaluators-formula>` meta-evaluator can be applied to achieve this.
 
 A job named ``MgO`` has been set-up to run Gulp and extract the :math:`C_{11}` and :math:`C_{12}` elastic constants using a ``job.cfg`` file with the following contents::
 
@@ -48,7 +48,7 @@ The meta-evaluator is then defined within the ``fit.cfg`` thus::
 	variable_c12 		   : MgO:elastic:elastic_c12:extracted_value
 	expression_bulkmodulus : (1.0/3.0)*(c11 * 2*c12)
 
-Although the ``Formula`` meta-evaluator is described in more detail :ref:`here <fittingtool-metaevaluators-formula>`, this ``[MetaEvaluator]`` block performs the following:
+Although the ``Formula`` meta-evaluator is described in more detail :ref:`here <pprofit-metaevaluators-formula>`, this ``[MetaEvaluator]`` block performs the following:
 
 	* Two variables are defined as ``c11`` and ``c12``.
 	* These variables take their values from the ``elastic`` evaluator belonging to the ``MgO`` job. The syntax used to define these variables can be read as:
@@ -62,7 +62,7 @@ Although the ``Formula`` meta-evaluator is described in more detail :ref:`here <
 Meta-Evaluator Reference
 ========================
 
-.. _fittingtool-metaevaluators-formula:
+.. _pprofit-metaevaluators-formula:
 
 Formula
 ^^^^^^^
@@ -80,7 +80,7 @@ Each ``Formula`` meta-evaluator can define multiple expressions. Expressions hav
 	expression_VALUENAME : [EXPECTED_VALUE = ] EXPRESSION
 
 Where:
-	* ``VALUENAME`` defines the name of the evaluator record as it is passed to the global merit function and :ref:`fitting tool monitor <fittingtool-fittingmonitor>`.
+	* ``VALUENAME`` defines the name of the evaluator record as it is passed to the global merit function and :ref:`fitting tool monitor <pprofitmon>`.
 	* ``EXPECTED_VALUE`` [optional] If specified, then expression evaluates to the root-squared difference between the ``EXPECTED_VALUE`` and the value obtained from evaluating ``EXPRESSION`` (i.e. :math:`\sqrt{ \left( {\mathrm EXPECTED\_VALUE} - V \right)^2 }` where :math:`V` is value obtained from evaluating ``EXPRESSION``).
 		- If ``EXPECTED_VALUE`` is not specified then ``expression_VALUENAME`` is simply the result of evaluating ``EXPRESSION``.
 	* ``EXPRESSION`` is a string defining the formula to be evaluated.
@@ -90,7 +90,7 @@ Where:
 Expression Weights
 """"""""""""""""""
 
-Weighting values can be applied to the values obtained by evaluating expressions. The evaluated expressions are multiplied by their weight values before being passed to the merit function. By default a weight of 1.0 is used however in certain circumstances it can be useful to apply different weighting values. In particular, if a weight of 0.0 is used the expression value will be reported within the :ref:`fitting tool monitor <fittingtool-fittingmonitor>` but will not affect the fitting process. In this way expressions can be debugged or expression data can be used for informational purposes.
+Weighting values can be applied to the values obtained by evaluating expressions. The evaluated expressions are multiplied by their weight values before being passed to the merit function. By default a weight of 1.0 is used however in certain circumstances it can be useful to apply different weighting values. In particular, if a weight of 0.0 is used the expression value will be reported within the :ref:`fitting tool monitor <pprofitmon>` but will not affect the fitting process. In this way expressions can be debugged or expression data can be used for informational purposes.
 
 Weights are defined using fields with this format::
 
@@ -104,7 +104,7 @@ The following gives an example of an expression and its associated weight field:
 	weight_sum : 0.0
 
 
-.. _fittingtool-metaevaluators-expressionsyntax:
+.. _pprofit-metaevaluators-expressionsyntax:
 
 Expression Syntax
 """""""""""""""""
@@ -171,17 +171,21 @@ Notes:
 		variable_A : MgO:Cell:cell_a:extracted_value
 		variable_B : MgO:Cell:cell_b:extracted_value
 		variable_C : MgO:Cell:cell_c:extracted_value
-\
-	3. The ``lattice_constant`` expression calculates the average lattice constant of the super-cell and divides this by 8 in order to allow easier comparison with experimental values. A zero weight is then assigned to this expression. This means that this ``lattice_constant`` will not contribute to the overall merit value and hence will not affect the fit. However, it will still be reported to the ``fittingTool_monitor``, allowing the value to be monitored and a percentage difference between the desired value of 4.212 and the calculated value to be displayed. This is a useful technique not only for monitoring runs but for debugging the formulae used in expressions::
+
+
+	2. The ``lattice_constant`` expression calculates the average lattice constant of the super-cell and divides this by 8 in order to allow easier comparison with experimental values. A zero weight is then assigned to this expression. This means that this ``lattice_constant`` will not contribute to the overall merit value and hence will not affect the fit. However, it will still be reported to ``pprofitmon``, allowing the value to be monitored and a percentage difference between the desired value of 4.212 and the calculated value to be displayed. This is a useful technique not only for monitoring runs but for debugging the formulae used in expressions::
 
 		expression_lattice_constant : 4.212 = (A+B+C)/3 / 8
 		weight_lattice_constant : 0.0
-\
-	5. ``expression_volume`` - Calculates the RMS difference between the desired volume (based on a lattice parameter of 4.212 and super-cell dimension of 8) and the actual volume calculated from a,b and c cell parameters::
+
+
+	3. ``expression_volume`` - Calculates the RMS difference between the desired volume (based on a lattice parameter of 4.212 and super-cell dimension of 8) and the actual volume calculated from a,b and c cell parameters::
 
 		expression_volume : sqrt(((8*4.212)^3 - (A*B*C))^2)
-\
-	6. The same result could have been obtained by specifying an expected value a calculation of the volume thus::
+
+
+	4. The same result could have been obtained by specifying an expected value a calculation of the volume thus::
 
 		expression_volume : 305767.9111 = A*B*C
-\
+
+

@@ -1,16 +1,16 @@
-.. _fittingtool-runners:
+.. _pprofit-runners:
 
 #######
 Runners
 #######
 
-As their names suggest runners are responsible for running jobs and making sure that their output is copied to a job's ``output/`` sub-directory. Runners are provided to run jobs on the local machine (see :ref:`fittingtool-runners-Local`) or on remote hosts (see :ref:`fittingtool-runners-Remote` and :ref:`fittingtool-runners-PBS` as examples). When jobs are run remotely, the runner is responsible for copying the job files to the remote machine, invoking ``runjob`` for each file, monitoring job completion before copying the output files back to the machine running ``fittingTool.py``.
+As their names suggest runners are responsible for running jobs and making sure that their output is copied to a job's ``output/`` sub-directory. Runners are provided to run jobs on the local machine (see :ref:`pprofit-runners-Local`) or on remote hosts (see :ref:`pprofit-runners-Remote` and :ref:`pprofit-runners-PBS` as examples). When jobs are run remotely, the runner is responsible for copying the job files to the remote machine, invoking ``runjob`` for each file, monitoring job completion before copying the output files back to the machine running ``pprofit``.
 
 At present the following runners are supported by the fitting tool:
 
-  * :ref:`fittingtool-runners-Local` - Allows jobs to be run in parallel on the computer running ``fittingTool.py``.
-  * :ref:`fittingtool-runners-Remote` - Uses SSH to run jobs in parallel on a remote computer.
-  * :ref:`fittingtool-runners-PBS` - Submits jobs to queues on a remote machine running the PBS batch queueing system.
+  * :ref:`pprofit-runners-Local` - Allows jobs to be run in parallel on the computer running ``pprofit``.
+  * :ref:`pprofit-runners-Remote` - Uses SSH to run jobs in parallel on a remote computer.
+  * :ref:`pprofit-runners-PBS` - Submits jobs to queues on a remote machine running the PBS batch queueing system.
 
 
 Configuring Runners and Associating with Jobs
@@ -26,7 +26,7 @@ Runners are configured in the ``fit.cfg`` file in the root fitting directory. Th
 
 Where ``RUNNER_NAME`` is a label that uniquely identifies this ``RUNNER`` to the jobs with which it is associated. ``RUNNER_TYPE`` defines what sort of runner should be created (details of the available runners are listed below). The remainder of the block contains specific ``field : value pairs`` that configure the runner.
 
-Continuing our example in which both :ref:`fittingtool-runners-Local` and remote :ref:`fittingtool-runners-PBS` runners are required, the following could be added to ``fit.cfg``::
+Continuing our example in which both :ref:`pprofit-runners-Local` and remote :ref:`pprofit-runners-PBS` runners are required, the following could be added to ``fit.cfg``::
 
 	...
 
@@ -39,9 +39,9 @@ Continuing our example in which both :ref:`fittingtool-runners-Local` and remote
 	remotehost : ssh://remoteuser@remotehost//home/remoteuser/jobdirectory
 	...
 
-Here the local runner (labelled ``Local``) , is configured to run a maximum of four jobs concurrently. The :ref:`fittingtool-runners-PBS` runner (labelled ``HPC``) is configured to log into ``remotehost`` as a user named ``remoteuser``, before invoking ``qsub`` for jobs that are staged in the directory ``/home/remoteuser/jobdirectory``.
+Here the local runner (labelled ``Local``) , is configured to run a maximum of four jobs concurrently. The :ref:`pprofit-runners-PBS` runner (labelled ``HPC``) is configured to log into ``remotehost`` as a user named ``remoteuser``, before invoking ``qsub`` for jobs that are staged in the directory ``/home/remoteuser/jobdirectory``.
 
-Each job that constitutes a ``fittingTool.py`` needs to be associated with a runner. This is achieved by setting the 'runner' field within the ``[Job]`` section of each job's ``job.cfg`` configuration file. The format of the ``runner`` field is::
+Each job within a Potential Pro-Fit fitting run's input needs to be associated with a runner. This is achieved by setting the 'runner' field within the ``[Job]`` section of each job's ``job.cfg`` configuration file. The format of the ``runner`` field is::
 
 	runner : RUNNER_NAME
 
@@ -59,20 +59,20 @@ For comparison a job associated with the HPC, PBS runner may be configured as fo
 	runner : HPC
 	...
 
-For completeness the ``type : Template`` directive indicates that these jobs use the :ref:`Template <fittingtool-jobfactories-Template>` job-factory (see :ref:`fittingtool-jobfactories` for more).
+For completeness the ``type : Template`` directive indicates that these jobs use the :ref:`Template <pprofit-jobfactories-Template>` job-factory (see :ref:`pprofit-jobfactories` for more).
 
 
 Runner Reference
 ================
 
-.. _fittingtool-runners-local:
+.. _pprofit-runners-local:
 
 Local
 ^^^^^
 
 :Type-Name: Local
-:Description: Runs jobs on the same computer as the ``fittingTool.py`` script. 
-	This runner spawns :ref:`nprocesses <fittingtool-runners-local-nprocesses>` processes. This means that a maximum of :ref:`nprocesses <fittingtool-runners-local-nprocesses>` jobs can run at the same time.
+:Description: Runs jobs on the same computer as the ``pprofit`` script. 
+	This runner spawns :ref:`nprocesses <pprofit-runners-local-nprocesses>` processes. This means that a maximum of :ref:`nprocesses <pprofit-runners-local-nprocesses>` jobs can run at the same time.
 
 \ 
 
@@ -80,13 +80,13 @@ Local
 Required Fields
 ---------------
 
-.. _fittingtool-runners-local-nprocesses:
+.. _pprofit-runners-local-nprocesses:
 
 :Name: nprocesses
 :Arg type: integer
 :Description: Number of processes to be spawned by runner. In general it makes sense to set this to the same number of cores as your machine has.
 
-.. _fittingtool-runners-pbs:
+.. _pprofit-runners-pbs:
 
 PBS
 ^^^
@@ -96,7 +96,7 @@ PBS
 
 
 .. note::
-	The PBS runner uses SSH to communicate with the PBS head-node. In order to run correctly ``fittingTool.py`` must be able to log into the remote-host and invoke the ``qsub`` command without requiring a password. This can be achieved by setting-up key based login as described in :ref:`ssh-keybased-login`. 
+	The PBS runner uses SSH to communicate with the PBS head-node. In order to run correctly ``pprofit`` must be able to log into the remote-host and invoke the ``qsub`` command without requiring a password. This can be achieved by setting-up key based login as described in :ref:`ssh-keybased-login`. 
 
 Required Fields
 ---------------
@@ -134,17 +134,17 @@ Optional Fields
 	``pbsinclude : 8cpus.pbs`` 
 
 
-.. _fittingtool-runners-remote:
+.. _pprofit-runners-remote:
 
 Remote
 ^^^^^^
 
 :Type-Name: Remote
 :Description: Runs jobs on a remote host using SSH as the communication mechanism. 
-	This runner spawns :ref:`nprocesses <fittingtool-runners-remote-nprocesses>` processes on the remote machine. This means that a maximum of :ref:`nprocesses <fittingtool-runners-remote-nprocesses>` jobs can run at the same time.
+	This runner spawns :ref:`nprocesses <pprofit-runners-remote-nprocesses>` processes on the remote machine. This means that a maximum of :ref:`nprocesses <pprofit-runners-remote-nprocesses>` jobs can run at the same time.
 
 .. note::
-	The Remote runner uses SSH to communicate with the remote machine. In order to run correctly ``fittingTool.py`` must be able to log into the remote-host and invoke commands without requiring a password. This can be achieved by setting-up key based login as described in :ref:`ssh-keybased-login`. 	
+	The Remote runner uses SSH to communicate with the remote machine. In order to run correctly ``pprofit`` must be able to log into the remote-host and invoke commands without requiring a password. This can be achieved by setting-up key based login as described in :ref:`ssh-keybased-login`. 	
 
 
 Required Fields
@@ -159,7 +159,7 @@ Required Fields
 
 \ 
 
-.. _fittingtool-runners-remote-nprocesses:
+.. _pprofit-runners-remote-nprocesses:
 
 :Name: nprocesses
 :Arg type: integer

@@ -1,22 +1,22 @@
-.. _fittingtool-minimizers:
+.. _pprofit-minimizers:
 
 ##########
 Minimizers 
 ##########
 
-Minimizers are the entities within ``fittingTool.py`` responsible for choosing candidate parameter sets and iteratively optimising them to minimize an objective function. In simpler terms, the minimizer gradually changes an initial set of input variables to improve the property predictions yielded by the potential set.
+Minimizers are the entities within Potential Pro-Fit responsible for choosing candidate parameter sets and iteratively optimising them to minimize an objective function. In simpler terms, the minimizer gradually changes an initial set of input variables to improve the property predictions yielded by the potential set.
 
-A single minimizer is configured for each fitting run within the ``fit.cfg`` file by specifying a ``[Minimizer]`` block. This must, as a minimum, specify a ``type`` field selecting the minimizer and any other field required by a particular minimizer (see :ref:`fittingtool-minimizers-reference`). For example the :ref:`NelderMead <fittingtool-minimizers-neldermead>` minimizer can be selected in this way::
+A single minimizer is configured for each fitting run within the ``fit.cfg`` file by specifying a ``[Minimizer]`` block. This must, as a minimum, specify a ``type`` field selecting the minimizer and any other field required by a particular minimizer (see :ref:`pprofit-minimizers-reference`). For example the :ref:`NelderMead <pprofit-minimizers-neldermead>` minimizer can be selected in this way::
 
   [Minimizer]
   type : NelderMead
 
-.. _fittingtool-minimizers-reference:
+.. _pprofit-minimizers-reference:
 
 Minimizer Reference
 -------------------
 
-.. _fittingtool-minimizers-DEA:
+.. _pprofit-minimizers-DEA:
 
 DEA
 ^^^
@@ -33,7 +33,7 @@ Algorithm Description
   Flowchart showing operation of the differential evolution algorithm. Configuration options and the stage of the algorithm that they affect are indicated in blue. 
 
 
-  1. **Initialisation:** Fitting parameters bounds read from ``[Variables]`` section of the ``fit.cfg`` (see :ref:`fittingtool-variables`). A list of candidate solutions ``population_size`` in length is initialised by randomly selecting parameter values uniformly from interval defined by these bounds.
+  1. **Initialisation:** Fitting parameters bounds read from ``[Variables]`` section of the ``fit.cfg`` (see :ref:`pprofit-variables`). A list of candidate solutions ``population_size`` in length is initialised by randomly selecting parameter values uniformly from interval defined by these bounds.
 
   2. **Population Evaluation:** Merit function is used to calculate fitness values for each candidate solution within population.
 
@@ -57,7 +57,7 @@ Algorithm Description
   5. **Mutation:** for each fit parameter within the offspring generated in the previous step gaussian mutation is performed with the probability defined by the ``mutation_rate`` parameter. Mutation is performed by selecting a value at random from a gaussian distribution centred at ``gaussian_mean`` and ``gaussian_stdev`` and adding to the parameter.
   6. **Evaluate Offspring:** The merit function is used to evaluate the new offspring. 
   7. **Replace in Population:** The offspring replace the least fit (higher merit value) individuals in the existing population, even if those offspring are less fit than the individuals that they replace.
-  8. **Report to Monitor:** Population is archived to ``fitting_run.db`` database and reported to the ``fittingTool_monitor.py`` if running.
+  8. **Report to Monitor:** Population is archived to ``fitting_run.db`` database and reported to ``pprofitmon`` if running.
 
 
 .. note::
@@ -131,7 +131,7 @@ Optional Fields
 :Description: Number of candidates randomly selected from population during tournament selection of parents before crossover.
 
 
-.. _fittingtool-minimizers-neldermead:
+.. _pprofit-minimizers-neldermead:
 
 NelderMead
 ^^^^^^^^^^
@@ -151,7 +151,7 @@ NelderMead
 Variable Bounds
 ===============
 
-The ``NelderMead`` minimizer has support for constrained optimisation. Variable constraints are defined within the ``[Variables]`` section of the ``fit.cfg`` file (see :ref:`fittingtool-variables`). The following gives some examples of how constraints may be specified to the minimizer::
+The ``NelderMead`` minimizer has support for constrained optimisation. Variable constraints are defined within the ``[Variables]`` section of the ``fit.cfg`` file (see :ref:`pprofit-variables`). The following gives some examples of how constraints may be specified to the minimizer::
 
   [Variables]
   A : 1.0 
@@ -193,7 +193,7 @@ SingleStepMinimizer
 ^^^^^^^^^^^^^^^^^^^
 
 :Type-Name: SingleStepMinimizer
-:Description: Evaluates the merit function once then exits. Using this minimizer is equivalent to specifying the ``--single`` option to ``fittingTool.py``. 
+:Description: Evaluates the merit function once then exits. Using this minimizer is equivalent to specifying the ``--single`` option to ``pprofit``. 
 
 \ 
 

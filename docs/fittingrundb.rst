@@ -2,9 +2,9 @@
 fitting_run.db
 **************
 
-During a fitting run, :ref:`fittingTool.py <fittingTool>` creates an `sqlite <http://sqlite.org>`_ database named ``fitting_run.db`` into which job and evaluator information are reported during a fitting run. 
+During a fitting run, :ref:`pprofit` creates an `sqlite <http://sqlite.org>`_ database named ``fitting_run.db`` into which job and evaluator information are reported during a fitting run. 
 
-Under normal use end-users do not need to directly access this file and should instead use :ref:`fittingTool_monitor.py <fittingToolMonitor>`. Advanced users may want to perform additional monitoring or analysis, for this reason the format of `fitting_run.db` is now described. 
+Under normal use end-users do not need to directly access this file and should instead use :ref:`pprofitmon`. Advanced users may want to perform additional monitoring or analysis, for this reason the format of `fitting_run.db` is now described. 
 
 
 Database Structure
@@ -29,13 +29,13 @@ Tables
 \
 
 :Name: ``evaluated``
-:Description: Contains values extracted from jobs by :ref:`evaluators <fittingtool-evaluators>`.
+:Description: Contains values extracted from jobs by :ref:`evaluators <pprofit-evaluators>`.
 :Fields:
 
 	:id: Unique identifier for evaluator record.
 	:job_id: Foreign key for ``id`` within ``jobs`` table. Used to join evaluator values to jobs from which they were extracted.
 	:evaluator_name: Name of evaluator generating value. This takes the form of ``JOB:EVALUATOR`` where ``JOB`` is the job name and ``EVALUATOR`` the evaluator label within that job.
-	:value_name: Value name returned by evaluator as listed in :ref:`evaluator reference <fittingtool-evaluators>`.
+	:value_name: Value name returned by evaluator as listed in :ref:`evaluator reference <pprofit-evaluators>`.
 	:expected_value: Float expected for this value.
 	:extracted_value: Value extracted by evaluator for this record.
 	:weight: Weighting factor.
@@ -82,7 +82,7 @@ Tables
 	:fit_flag: Boolean indicating whether this variable is changed during fitting.
 	:low_bound: Lower value for variable limit or undefined.
 	:upper_bound: Upper value for variable limits or undefined.
-	:calculated_flag: Boolean flag indicating if this variable is a :ref:`calculated variable <fittingtool-variables-calculatedvariables>`.
+	:calculated_flag: Boolean flag indicating if this variable is a :ref:`calculated variable <pprofit-variables-calculatedvariables>`.
 	:calculation_expression: For calculated variables gives the formula used to obtain variable value.
 
 \

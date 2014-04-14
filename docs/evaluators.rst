@@ -1,4 +1,4 @@
-.. _fittingtool-evaluators:
+.. _pprofit-evaluators:
 
 ##########
 Evaluators
@@ -12,14 +12,14 @@ Evaluators are attached to jobs meaning that evaluator configuration should appe
 	type : EVALUATOR_TYPE
 	...
 
-Each block starts with ``[Evaluator:EVALUATOR_NAME]`` where ``EVALUATOR_NAME`` is a label used to refer to the evaluated values produced by this evaluator and is used within the :ref:`fittingtool-fittingmonitor` and by :ref:`fittingtool-metaevaluators` to identify each evaluator. For this reason each block needs to have a unique ``EVALUATOR_NAME`` for a particular job (although names can be re-used within different jobs).
+Each block starts with ``[Evaluator:EVALUATOR_NAME]`` where ``EVALUATOR_NAME`` is a label used to refer to the evaluated values produced by this evaluator and is used within the :ref:`pprofitmon` and by :ref:`pprofit-metaevaluators` to identify each evaluator. For this reason each block needs to have a unique ``EVALUATOR_NAME`` for a particular job (although names can be re-used within different jobs).
 
-``type : EVALUATOR_TYPE`` identifies the evaluator to be applied to job output following completion. Several evaluators are provided with fittingTool.py and they can be selected by setting ``EVALUATOR_TYPE`` to their name. The ``type`` field is then followed by fields specific to each evaluator, these are documented with respect to each evaluator below.
+``type : EVALUATOR_TYPE`` identifies the evaluator to be applied to job output following completion. Several evaluators are provided with Potential Pro-Fit and they can be selected by setting ``EVALUATOR_TYPE`` to their name. The ``type`` field is then followed by fields specific to each evaluator, these are documented with respect to each evaluator below.
 
 Evaluator Reference
 ===================
 
-.. _fittingtool-evaluators-DLPOLY_STATIS:
+.. _pprofit-evaluators-DLPOLY_STATIS:
 
 DLPOLY_STATIS
 ^^^^^^^^^^^^^
@@ -28,14 +28,14 @@ DLPOLY_STATIS
 
 :Description: Evaluator for extracting property time averages from the STATIS files created by the `DL_POLY <http://www.stfc.ac.uk/CSE/randd/ccg/software/DL_POLY/25526.aspx>`_ molecular dynamics code.
 
-By default the evaluator takes the average of a property value over an entire STATIS file and returns the weighted root mean squared difference between this average and a desired value. If the :ref:`start_time <fittingtool-evaluators-DLPOLY_STATIS-start_time>` field is specified, then the average will be taken from this time to the end of the STATIS file.
+By default the evaluator takes the average of a property value over an entire STATIS file and returns the weighted root mean squared difference between this average and a desired value. If the :ref:`start_time <pprofit-evaluators-DLPOLY_STATIS-start_time>` field is specified, then the average will be taken from this time to the end of the STATIS file.
 
-.. _fittingtool-evaluators-DLPOLY_STATIS-fielddescription:
+.. _pprofit-evaluators-DLPOLY_STATIS-fielddescription:
 
 Field Descriptions
 ------------------
 
-In general, field labels are the same as those used to identify values to the :ref:`statistocsv` tool. The general format of ``DLPOLY_STATIS`` fields is::
+The general format of ``DLPOLY_STATIS`` fields is::
 
 	FIELD_NAME : EXPECTED_VALUE [WEIGHT]
 
@@ -65,7 +65,7 @@ The the following example could be to create and evaluator named "DL_POLY" withi
 
 General Fields
 --------------
-.. _fittingtool-evaluators-DLPOLY_STATIS-start_time:
+.. _pprofit-evaluators-DLPOLY_STATIS-start_time:
 
 :Name: start_time
 :Arg Type: float
@@ -284,7 +284,7 @@ The following fields can only be used for DL_POLY jobs using NPT/NST thermodynam
 	cellc_z
 :Description: x, y or z components of simulation cell a,b and c vectors.
 
-.. _fittingtool-evaluators-gulp:
+.. _pprofit-evaluators-gulp:
 
 Gulp
 ^^^^
@@ -296,7 +296,7 @@ GULP is a powerful simulation code allowing various types of simulation run to b
 
 	FIELD_NAME : EXPECTED_VALUE [WEIGHT]
 
-See description :ref:`above <fittingtool-evaluators-DLPOLY_STATIS-fielddescription>` for detailed explanation of ``FIELD_NAME``, ``EXPECTED_VALUE`` and ``WEIGHT``.
+See description :ref:`above <pprofit-evaluators-DLPOLY_STATIS-fielddescription>` for detailed explanation of ``FIELD_NAME``, ``EXPECTED_VALUE`` and ``WEIGHT``.
 
 .. note::
 

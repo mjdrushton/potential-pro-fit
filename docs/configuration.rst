@@ -1,4 +1,4 @@
-.. _fittingtool-configuration_reference:
+.. _pprofit-configuration_reference:
 
 #######################
 Configuration Reference
@@ -7,7 +7,7 @@ Configuration Reference
 Fitting runs are configured either at the run or job level. 
 
   * Run-level configuration appears within ``fit.cfg`` within the root directory of the fitting run. 
-  * Jobs are configured using the ``job.cfg`` from each fitting run's ``fit-files`` directory. The contents of ``job.cfg`` files is described :ref:`here <fittingtools-jobfactories>`.
+  * Jobs are configured using the ``job.cfg`` from each fitting run's ``fit-files`` directory. The contents of ``job.cfg`` files is described :ref:`here <pprofit-jobfactories>`.
 
 Fitting Run Configuration
 =========================

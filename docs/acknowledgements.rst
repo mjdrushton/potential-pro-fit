@@ -3,7 +3,7 @@ Acknowledgements
 ################
 
 
-The ``fittingTool.py`` builds on the work of others and the author would like to acknowledge the following:
+Potential Pro-Fit builds on the work of others and the author would like to acknowledge the following:
 
 	* Python libraries on which the tool relies:
 	  
