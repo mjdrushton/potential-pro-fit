@@ -1,1 +1,2 @@
 graft lib/atsim/pro_fit/resources
+graft lib/atsim/pro_fit/webmonitor/webresources
