@@ -83,7 +83,7 @@ def _initializeRun(directoryName, logger):
   except Exception as e:
     raise _DirectoryInitializationException("Could not create 'fit_files' directory: %s" % e.message)
 
-  templateLoader = jinja2.PackageLoader('atomsscripts.fitting', 'resources/dirinit')
+  templateLoader = jinja2.PackageLoader('atsim.pro_fit', 'resources/dirinit')
   env = jinja2.Environment(loader=templateLoader)
   template = env.get_template('fit.cfg.jinja')
 

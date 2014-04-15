@@ -18,6 +18,8 @@ setup(name="potential-pro-fit",
                       'execnet'],
   tests_require = ['wsgi_intercept', 'mechanize'],
 
+  include_package_data = True,
+
   #zip_safe = True,
 
   entry_points = {

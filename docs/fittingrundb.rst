@@ -13,7 +13,7 @@ Database Structure
 .. figure:: images/schema.png
     :align: center
 
-    Entity diagram for ``fitting_run.db``. This diagram was obtained by introspecting database schema and can be generated using the following command: ``python -m atomsscripts.fitting.drawschema schema.png``.
+    Entity diagram for ``fitting_run.db``. This diagram was obtained by introspecting database schema and can be generated using the following command: ``python -m atsim.pro_fit.drawschema schema.png``.
 
 Tables
 ^^^^^^
