@@ -11,7 +11,7 @@ import sys
 
 from common import *
 
-import test_monitor
+# import test_monitor
 
 
 def _getResourceDir():

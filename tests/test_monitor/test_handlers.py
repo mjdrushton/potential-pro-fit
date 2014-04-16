@@ -2,7 +2,7 @@
 
 from _cherrypydbtestcase import CherryPyDBTestCaseBase
 
-import testutil
+from .. import testutil
 
 class TestHandlers(CherryPyDBTestCaseBase):
   """Tests for the first level cherrypy /fitting handlers"""
