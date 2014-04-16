@@ -15,7 +15,8 @@
 				"venv"
 			],
 			"follow_symlinks": true,
-			"path": "."
+			"path": ".",
+			"python_interpreter_path": "venv/bin/python"
 		}
 	]
 }
