@@ -15,19 +15,24 @@ class MockJob(object):
     self.evaluatorRecords = evaluatorRecords
 
 
-class SQLiteReporter(unittest.TestCase):
+class SQLiteReporterTestCase(unittest.TestCase):
   """Tests for atsim.pro_fit.reporters.SQLiteReporter"""
 
-  def setUp(self):
-    # Create some MinimizerResults to feed to
+  @staticmethod
+  def getInitialVariables():
     variables = pro_fit.fittool.Variables([
       ('A', 1000.0, False),
       ('rho', 0.1, True),
       ('C', 32.0, False) ], [None, (10.0, None), (0.0, 5.0)])
-    self.initialVariables = variables
+    return variables
 
-    self.calculatedVariables = pro_fit.fittool.CalculatedVariables([("E", "A - C"), ("sum", "A+rho+C")])
+  @staticmethod
+  def getCalculatedVariables():
+    return pro_fit.fittool.CalculatedVariables([("E", "A - C"), ("sum", "A+rho+C")])
 
+  @staticmethod
+  def getVariables():
+    variables = SQLiteReporterTestCase.getInitialVariables()
     mval = 100.0
 
     meritvals = []
@@ -65,16 +70,25 @@ class SQLiteReporter(unittest.TestCase):
          ER('Bulk3', 90.0, 101.0, 1.0, 4.0, evaluatorName= "Penalty Evaluator")],
         [ER('Value3', 0.5, 0.8, 1.2, 5.0, evaluatorName = "Value Evaluator")]]) ]
 
-    self.minimizerResults = [pro_fit.minimizers.MinimizerResults([mval], [(vinstances[0], jobs)])]
+    return [pro_fit.minimizers.MinimizerResults([mval], [(vinstances[0], jobs)])]
 
+  def setUp(self):
+    # Create some MinimizerResults to feed to
+    self.initialVariables = self.getInitialVariables()
+    self.calculatedVariables = self.getCalculatedVariables()
+    self.minimizerResults = self.getVariables()
 
   def testInsertSingleMinimizerResult(self):
-    """Test insertion of MinimizerResults into database"""
     reporter = pro_fit.reporters.SQLiteReporter(None, self.initialVariables, self.calculatedVariables)
-    #reporter = SQLiteReporter('/Users/mr498/Desktop/db.sqlite', self.initialVariables)
     engine = reporter._saengine
     engine.echo = True
     reporter(self.minimizerResults[0])
+    self.tstInsertSingleMinimizerResult(self, engine)
+
+
+  @staticmethod
+  def tstInsertSingleMinimizerResult(tstcase, engine):
+    """Test insertion of MinimizerResults into database"""
 
     with engine.connect() as conn:
       metadata = sa.MetaData(conn)
@@ -95,7 +109,7 @@ class SQLiteReporter(unittest.TestCase):
         {'id' : 3, 'variable_name' : 'C', 'fit_flag' : False, 'low_bound' : float(0.0), "upper_bound" : float(5.0), "calculated_flag" : False, "calculation_expression" : None},
         {'id' : 4, 'variable_name' : 'E', 'fit_flag' : False, 'low_bound' : None, "upper_bound" : None, "calculated_flag" : True, "calculation_expression" : "A - C"},
         {'id' : 5, 'variable_name' : 'sum', 'fit_flag' : False, 'low_bound' : None, "upper_bound" : None, "calculated_flag" : True, "calculation_expression" : "A+rho+C"}]
-      self.assertEquals(expect, actual)
+      tstcase.assertEquals(expect, actual)
 
       # Check that 'candidates' table contains what it should
       table = metadata.tables['candidates']
@@ -111,7 +125,7 @@ class SQLiteReporter(unittest.TestCase):
         'iteration_number' : 0,
         'candidate_number' : 0,
         'merit_value' : 10.0}]
-      testutil.compareCollection(self, expect, resultdicts)
+      testutil.compareCollection(tstcase, expect, resultdicts)
       results.close()
 
       # Check that 'variables' table has been correctly populated
@@ -125,7 +139,7 @@ class SQLiteReporter(unittest.TestCase):
       expect = [ {'id' : 1, 'variable_name' : 'A', 'candidate_id' : 1, 'value' : 1000.0},
                  {'id' : 2, 'variable_name' : 'rho', 'candidate_id' : 1, 'value' : 0.01},
                  {'id' : 3, 'variable_name' : 'C', 'candidate_id' : 1, 'value' : 32.0}]
-      testutil.compareCollection(self, expect, actual)
+      testutil.compareCollection(tstcase, expect, actual)
       results.close()
 
 
@@ -144,7 +158,7 @@ class SQLiteReporter(unittest.TestCase):
         {'id' : 1, 'candidate_id': 1, 'job_name' : "Job 1"},
         {'id' : 2, 'candidate_id': 1, 'job_name' : "Job 2"},
         {'id' : 3, 'candidate_id': 1, 'job_name' : "Job 3"} ]
-      testutil.compareCollection(self, expect, actual)
+      testutil.compareCollection(tstcase, expect, actual)
       results.close()
 
       # Check 'evaluated' table
@@ -245,7 +259,7 @@ class SQLiteReporter(unittest.TestCase):
       for e in expect:
         e['evaluatorerror_id'] = None
 
-      testutil.compareCollection(self, expect, actual)
+      testutil.compareCollection(tstcase, expect, actual)
       results.close()
 
   def testStatus(self):
