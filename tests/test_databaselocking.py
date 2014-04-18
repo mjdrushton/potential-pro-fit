@@ -57,9 +57,15 @@ def locker(dbfilename, pipe):
 
 def populatedatabase(dbfilename, pipe):
   try:
+    import logging
+    import sys
+    # retryLogger=  logging.getLogger("atsim.pro_fit.retry")
+    # retryLogger.addHandler(logging.StreamHandler(sys.stdout))
+    # retryLogger.setLevel(logging.DEBUG)
     initialVariables = test_reporters.SQLiteReporterTestCase.getInitialVariables()
     calculatedVariables = test_reporters.SQLiteReporterTestCase.getCalculatedVariables()
     reporter = SQLiteReporter(dbfilename, initialVariables, calculatedVariables)
+
     pipe.send("ready")
   except:
     pipe.send("error")
@@ -172,4 +178,3 @@ class SQLReporterDatabaseLockTestCase(unittest.TestCase):
 
     engine = sa.create_engine("sqlite:///%s" % self.dbfilename)
     test_reporters.SQLiteReporterTestCase.tstInsertSingleMinimizerResult(self, engine)
-

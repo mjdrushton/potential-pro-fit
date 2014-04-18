@@ -1,5 +1,7 @@
 import sqlalchemy as sa
 
+from _util import retry_backoff
+
 def _createMetaData():
   metadata = sa.MetaData()
 
@@ -58,6 +60,9 @@ def _createMetaData():
 
   return metadata
 
+import logging
+_retryLogger = logging.getLogger("atsim.pro_fit.reporters.SQLiteReporter.retry")
+
 class SQLiteReporter(object):
   """Minimizer stepCallback that places results in a sqlite database"""
 
@@ -75,8 +80,9 @@ class SQLiteReporter(object):
        @param calculatedVariables CalculatedVariables instance used by Merit object."""
     self.dbfilename = dbfilename
     self._createDatabase()
-    self._populateVariableKeysTable(initialVariables, calculatedVariables)
-    self._populateStatus(title)
+    with self._saengine.begin() as conn:
+      self._populateVariableKeysTable(conn, initialVariables, calculatedVariables)
+      self._populateStatus(conn, title)
     self.iterationNum = 0
 
   def _createDatabase(self):
@@ -94,7 +100,7 @@ class SQLiteReporter(object):
     self._saengine = engine
     self._metadata = metadata
 
-  def _populateVariableKeysTable(self, variables, calculatedVariables):
+  def _populateVariableKeysTable(self, conn, variables, calculatedVariables):
     """Populate the variable_keys table with initial variables"""
     variableKeysTable = self._metadata.tables['variable_keys']
     insertQuery = variableKeysTable.insert()
@@ -120,18 +126,16 @@ class SQLiteReporter(object):
           low_bound = None, upper_bound = None,
           calculated_flag = True, calculation_expression = v))
 
-    with self._saengine.connect() as conn:
-      conn.execute(insertQuery, insertData)
+    conn.execute(insertQuery, insertData)
 
-  def _populateStatus(self, title):
+  def _populateStatus(self, conn, title):
     """Initially populate the 'runstatus' table
 
+    @param conn Database connection instance
     @param title Title for the run"""
     table = self._metadata.tables['runstatus']
     insert = table.insert()
-
-    with self._saengine.connect() as conn:
-      conn.execute(insert, dict(runstatus = 'Running', title=title))
+    conn.execute(insert, dict(runstatus = 'Running', title=title))
 
   def _createCandidateRecord(self, conn, iterationNum, candidateNum, meritValue):
     # Create candidate instance
@@ -183,7 +187,6 @@ class SQLiteReporter(object):
     result = conn.execute(insert, msg = str(record.exception))
     return result.lastrowid
 
-
   def _createJobs(self, conn, candidateId, joblist):
     jobTable = self._metadata.tables['jobs']
     insert = jobTable.insert()
@@ -194,21 +197,23 @@ class SQLiteReporter(object):
       # Create associated evaluator records
       self._createEvaluators(conn, jobId, j)
 
+  @retry_backoff([sa.exc.OperationalError], initialSleep = 1, maxSleep = 60, logger = _retryLogger)
   def finished(self, error = False):
     """Update status table to 'Finished'"""
     table = self._metadata.tables['runstatus']
     update = table.update().where(table.c.id == 1)
 
-    with self._saengine.connect() as conn:
+    with self._saengine.begin() as conn:
       if error:
         conn.execute(update, dict(runstatus = 'Error'))
       else:
         conn.execute(update, dict(runstatus = 'Finished'))
 
+  @retry_backoff([sa.exc.OperationalError], initialSleep = 1, maxSleep = 60, logger = _retryLogger)
   def __call__(self, minimizerResults):
     meritValues = minimizerResults.meritValues
     jobLists = minimizerResults.candidateJobList
-    with self._saengine.connect() as conn:
+    with self._saengine.begin() as conn:
       for (candidateNum, (mval, (variables, joblist))) in enumerate(zip(meritValues, jobLists)):
         # Create record in the 'candidates' table
         candidateId = self._createCandidateRecord(conn,

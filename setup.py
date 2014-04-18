@@ -16,7 +16,9 @@ setup(name="potential-pro-fit",
                       'mystic',
                       'cexprtk',
                       'execnet'],
-  tests_require = ['nose', 'wsgi_intercept', 'mechanize'],
+  tests_require = ['nose',
+                   'wsgi_intercept',
+                   'mechanize'],
 
   include_package_data = True,
 

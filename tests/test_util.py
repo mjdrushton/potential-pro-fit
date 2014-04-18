@@ -12,7 +12,7 @@ class RetryTestCase(unittest.TestCase):
     def success(v, r):
       return v+5 + r
 
-    success = _util.retry_times(success, [Exception], 5)
+    success = _util.retry_times_wrapper(success, [Exception], 5)
     self.assertEquals(14, success(5,4))
 
   def testRetryTimesAlwaysFail(self):
@@ -22,7 +22,7 @@ class RetryTestCase(unittest.TestCase):
       d['numcalls'] += 1
       raise Exception("I'm bad")
 
-    failure = _util.retry_times(failure, [Exception], 5, 0.01)
+    failure = _util.retry_times_wrapper(failure, [Exception], 5, 0.01)
     with self.assertRaises(Exception):
       failure(1)
 
@@ -48,7 +48,7 @@ class RetryTestCase(unittest.TestCase):
       else:
         return v
 
-    func = _util.retry_times(func, [RegisteredException], 5)
+    func = _util.retry_times_wrapper(func, [RegisteredException], 5)
     self.assertEquals(1, func(1))
     d['numcalls'] = 0
     v = func(0)
@@ -80,7 +80,7 @@ class RetryTestCase(unittest.TestCase):
       else:
         return v
 
-    func = _util.retry_backoff(func, [RegisteredException], initialSleep = 0.01, maxSleep =5, times = 5)
+    func = _util.retry_backoff_wrapper(func, [RegisteredException], initialSleep = 0.01, maxSleep =5, times = 5)
     self.assertEquals(1, func(1))
     d['numcalls'] = 0
     v = func(0)

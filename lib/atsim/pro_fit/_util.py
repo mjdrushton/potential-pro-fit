@@ -23,7 +23,19 @@ def retry(func, handledExceptions, retryCallback, logger=None):
   return wrapper
 
 
-def retry_times(func, handledExceptions, times=5, sleep = None, logger = None):
+def retry_times(*args, **kwargs):
+  """Decorator supporting retry behaviour see :func:`retry_times_wrapper` for details"""
+  def wrapped(func):
+    return retry_times_wrapper(func, *args, **kwargs)
+  return wrapped
+
+def retry_backoff(*args, **kwargs):
+  """Decorator supporting retry behaviour see :func:`retry_backoff_wrapper` for details"""
+  def wrapped(func):
+    return retry_backoff_wrapper(func, *args, **kwargs)
+  return wrapped
+
+def retry_times_wrapper(func, handledExceptions, times=5, sleep = None, logger = None):
   """Function wrapper. If `func` throws any of the functions within
   the `handledExceptions` list then `func` is called up to `times` retries.
   If function suceeds then function's value is returned. After maximum retries,
@@ -45,6 +57,8 @@ def retry_times(func, handledExceptions, times=5, sleep = None, logger = None):
     logmsg = str(exc)
     if times:
       logmsg = logmsg + ". Call %d/%d" % (callcount, times)
+    else:
+      logmsg = logmsg + ". Call %d" % callcount
 
     if times == None or callcount < times:
       if sleep:
@@ -60,7 +74,7 @@ def retry_times(func, handledExceptions, times=5, sleep = None, logger = None):
     return retval
   return retry(func, handledExceptions, retryLogic)
 
-def retry_backoff(func, handledExceptions, initialSleep = 0.5, maxSleep = None, times = None, logger=None):
+def retry_backoff_wrapper(func, handledExceptions, initialSleep = 0.5, maxSleep = None, times = None, logger=None):
   """Function wrapper. If `func` throws any of the functions within
   the `handledExceptions` list then `func` is called up to `times` retries (or forever if `times` is None).
   If function suceeds then function's value is returned. After maximum retries,
@@ -87,6 +101,8 @@ def retry_backoff(func, handledExceptions, initialSleep = 0.5, maxSleep = None, 
     logmsg = str(exc)
     if times:
       logmsg = logmsg + ". Call %d/%d" % (callcount, times)
+    else:
+      logmsg = logmsg +". Call %d" % callcount
 
     if times == None or callcount < times:
       sleeptime = _exponentialBackoff(initialSleep, maxSleep, callcount)
@@ -100,7 +116,6 @@ def retry_backoff(func, handledExceptions, initialSleep = 0.5, maxSleep = None, 
       time.sleep(sleeptime)
     return retval
   return retry(func, handledExceptions, retryLogic)
-
 
 def _exponentialBackoff(sleep, maxSleep, numcalls):
   """Calculate sleep time for exponential back-off based on numcall.
