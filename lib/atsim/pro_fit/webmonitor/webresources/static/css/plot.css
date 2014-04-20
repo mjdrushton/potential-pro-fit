@@ -24,6 +24,16 @@ svg.plot g.axis rect.axis_bg
 	fill-opacity : 0;
 }
 
+svg.plot g.axis.axis_vertical
+{
+	cursor : ns-resize;
+}
+
+svg.plot g.axis.axis_horizontal
+{
+	cursor : ew-resize;
+}
+
 svg.plot g.axis g.tick.major line
 {
 	stroke : black;
@@ -39,6 +49,7 @@ svg.plot g.plot_area g.series.line_series path.line
 svg.plot g.plot_area .plot_area_background
 {
 	fill : rgb(206,206,206);
+	cursor : all-scroll;
 }
 
 svg.plot .high_error_bar,
