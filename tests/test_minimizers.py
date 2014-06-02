@@ -318,6 +318,116 @@ filename : %(filename)s
     testutil.compareCollection(self,stepcallbackexpect, minimizer.stepCallback.stepDicts)
 
 
+class SpreadsheetRowIteratorTestCase(unittest.TestCase):
+  """Tests for atsim.pro_fit.minimizers._spreadsheet._SpreadsheetRowIterator"""
+
+  def testAllFit(self):
+    """Test when all variables are fitting variables"""
+    spreadfilename = os.path.join(_getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
+
+    with open(spreadfilename) as infile:
+
+      variables = pro_fit.fittool.Variables([
+        ('A', 10.0, True),
+        ('B', 20.0, True),
+        ('C', 30.0, True),
+        ('D', 40.0, True)])
+
+      from atsim.pro_fit.minimizers._spreadsheet import _SpreadsheetRowIterator
+      rowit = _SpreadsheetRowIterator(variables, infile)
+      actual = [ dict(v.variablePairs) for v in rowit]
+
+    expect = [
+      dict(A = 1.0 , B= 2.0 , C = 3  , D = 4.0),
+      dict(A = 6.0 , B= 7   , C = 8  , D = 9  ),
+      dict(A = 11  , B= 12  , C = 13 , D = 14 ),
+      dict(A = 16  , B= 17  , C = 18 , D = 19 )]
+
+    testutil.compareCollection(self, expect, actual)
+
+  def testSomeFit(self):
+    """Test when some variables are fitting variables"""
+    spreadfilename = os.path.join(_getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
+
+    with open(spreadfilename) as infile:
+
+      variables = pro_fit.fittool.Variables([
+        ('A', 10.0, False),
+        ('B', 20.0, False),
+        ('C', 30.0, True),
+        ('D', 40.0, True)])
+
+      from atsim.pro_fit.minimizers._spreadsheet import _SpreadsheetRowIterator
+      rowit = _SpreadsheetRowIterator(variables, infile)
+      actual = [ dict(v.variablePairs) for v in rowit]
+
+    expect = [
+      dict(A = 10.0, B= 20.0, C = 3  , D = 4.0),
+      dict(A = 10.0, B= 20.0, C = 8  , D = 9  ),
+      dict(A = 10.0, B= 20.0, C = 13 , D = 14 ),
+      dict(A = 10.0, B= 20.0, C = 18 , D = 19 )]
+
+    testutil.compareCollection(self, expect, actual)
+
+  def testMissingColumn(self):
+    """Test that iterator throws when spreadsheet does not contain required column"""
+    spreadfilename = os.path.join(_getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
+
+    variables = pro_fit.fittool.Variables([
+        ('A', 10.0, True),
+        ('B', 20.0, False),
+        ('C', 30.0, True),
+        ('D', 40.0, True),
+        ('Missing', 1.0, True)])
+
+    with open(spreadfilename) as infile:
+
+      from atsim.pro_fit.minimizers._spreadsheet import _SpreadsheetRowIterator, _MissingColumnException
+      rowit = _SpreadsheetRowIterator(variables, infile)
+
+      with self.assertRaises(_MissingColumnException):
+        for row in rowit:
+          pass
+
+    with open(spreadfilename) as infile:
+      rowit = _SpreadsheetRowIterator(variables, infile)
+      try:
+        for row in rowit:
+          pass
+      except _MissingColumnException as e:
+        self.assertEqual('Missing', e.columnKey)
+
+  def testBadvalue(self):
+    """Test that iterator throws when spreadsheet contains value that cannot be converted to a float"""
+    spreadfilename = os.path.join(_getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
+
+    variables = pro_fit.fittool.Variables([
+        ('Label', 10.0, True),
+        ('A', 10.0, True),
+        ('B', 20.0, False),
+        ('C', 30.0, True),
+        ('D', 40.0, True)])
+
+    with open(spreadfilename) as infile:
+
+      from atsim.pro_fit.minimizers._spreadsheet import _SpreadsheetRowIterator, _BadValueException
+      rowit = _SpreadsheetRowIterator(variables, infile)
+
+      with self.assertRaises(_BadValueException):
+        for row in rowit:
+          pass
+
+    with open(spreadfilename) as infile:
+      rowit = _SpreadsheetRowIterator(variables, infile)
+      try:
+        for row in rowit:
+          pass
+      except _BadValueException as e:
+        self.assertEqual('Label', e.columnKey)
+        self.assertEqual(2, e.lineno)
+
+
+
 class MinimizerResultsTestCase(unittest.TestCase):
   """Tests for atsim.pro_fit.minimizers.MinimizerResults"""
 
