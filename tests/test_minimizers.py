@@ -1,14 +1,19 @@
 import unittest
-
-
+import StringIO
 import ConfigParser
+import os
 
 from atsim import pro_fit
 import testutil
 
 import mystic.models
 
-import StringIO
+
+def _getResourceDir():
+  return os.path.join(
+      os.path.dirname(__file__),
+      'resources')
+
 
 class MockJob(object):
 
@@ -18,7 +23,8 @@ class MockJob(object):
   def __repr__(self):
     return repr(self.variables)
 
-class MockMerit(object):
+class MockMeritRosen(object):
+  """Mock merit object which evaluates Rosenbrock function"""
 
   def __init__(self):
     self.afterMerit = None
@@ -34,6 +40,24 @@ class MockMerit(object):
 
     return v
 
+class MockMerit(object):
+  """Mock merit object which returns squared sum of variable values."""
+
+  def __init__(self):
+    self.afterMerit = None
+
+  def calculate(self, candidates):
+    retvals = []
+    amvals = []
+    for c in candidates:
+      j = MockJob(c)
+      vsum = sum([ v*v for (k,v) in c.variablePairs ])
+      retvals.append(vsum)
+      amvals.append((c, [j]))
+
+    if self.afterMerit:
+      self.afterMerit(retvals, amvals)
+    return retvals
 
 class StepCallBack(object):
 
@@ -156,7 +180,7 @@ max_iterations : 30
 
     minimizer.stepCallback = StepCallBack()
     # Perform minimization of Rosenbrock function and check we get correct answers
-    optimized = minimizer.minimize(MockMerit())
+    optimized = minimizer.minimize(MockMeritRosen())
 
     finalmeritval = optimized.bestMeritValue
     optimized = optimized.bestVariables
@@ -249,9 +273,53 @@ class InspyredSupportTestCase(unittest.TestCase):
     self.assertEquals(2, len(actual))
 
 
+class SpreadsheetTestCase(unittest.TestCase):
+  """Tests for atsim.pro_fit.minimizers.SpreadsheetMinimizer"""
+
+  def testMinimiser(self):
+    """End to end test of SpreadsheetMinimizer"""
+    spreadfilename = os.path.join(_getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
+    config = """[Minimizer]
+type : SpreadSheet
+filename : %(filename)s
+
+    """ % {'filename' : spreadfilename}
+
+    cfg = ConfigParser.SafeConfigParser()
+    cfg.optionxform = str
+    cfg.readfp(StringIO.StringIO(config))
+    configitems = cfg.items('Minimizer')
+
+    variables = pro_fit.fittool.Variables([
+      ('A', 10.0, False),
+      ('B', 20.0, True),
+      ('C', 30.0, False),
+      ('D', 40.0, True)])
+
+    minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(variables, configitems)
+    self.assertEquals(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
+
+    minimizer.stepCallback = StepCallBack()
+    optimized = minimizer.minimize(MockMerit())
+
+    testutil.compareCollection(self,
+      [('A', 10.0, False),
+       ('B', 2.0, True),
+       ('C', 30.0, False),
+       ('D', 4.0, True)],
+      optimized.variablePairs)
+
+    stepcallbackexpect = [
+      dict(A=10.0, B=2.0, C=30.000000, D=4.0, meritval = 1020.0),
+      dict(A=10.0, B=7, C=30.000000,   D=9, meritval = 1130),
+      dict(A=10.0, B=12, C=30.000000,  D=14, meritval = 1340),
+      dict(A=10.0, B=17, C=30.000000,  D=19, meritval = 1650),
+    ]
+    testutil.compareCollection(self,stepcallbackexpect, minimizer.stepCallback.stepDicts)
+
 
 class MinimizerResultsTestCase(unittest.TestCase):
-  """Tests for fitting.minimizers.MinimizerResults"""
+  """Tests for atsim.pro_fit.minimizers.MinimizerResults"""
 
   def testMinimizerResults(self):
     meritVals = [2.0, 3.0, 1.0]

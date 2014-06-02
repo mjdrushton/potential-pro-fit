@@ -43,3 +43,4 @@ from _common import *
 from _mystic import NelderMeadMinimizer
 from _single import SingleStepMinimizer
 from _inspyred import DEAMinimizer
+from _spreadsheet import SpreadsheetMinimizer
