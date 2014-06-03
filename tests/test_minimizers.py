@@ -427,6 +427,26 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
         self.assertEqual(2, e.lineno)
         self.assertEqual("Iteration 1", e.value)
 
+  def testOutOfBounds(self):
+    """Test that iterator throws when a spreadsheet value is out of bounds for the variable it represents"""
+
+    spreadfilename = os.path.join(_getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
+    variables = pro_fit.fittool.Variables([('A', 10.0, True)], [(float("-inf"), 15.0)])
+
+    with open(spreadfilename) as infile:
+      from atsim.pro_fit.minimizers._spreadsheet import _SpreadsheetRowIterator, _OutOfBoundsException
+      rowit = _SpreadsheetRowIterator(variables, infile)
+
+      with open(spreadfilename) as infile:
+        rowit = _SpreadsheetRowIterator(variables, infile)
+        try:
+          for row in rowit:
+            pass
+          self.fail("Test should raise _OutOfBoundsException")
+        except _OutOfBoundsException as e:
+          self.assertEqual('A', e.columnKey)
+          self.assertEqual(5, e.lineno)
+          self.assertEqual(16.0, e.value)
 
 
 class MinimizerResultsTestCase(unittest.TestCase):

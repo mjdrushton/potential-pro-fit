@@ -12,8 +12,7 @@ class SpreadsheetMinimizer(object):
     """Create SpreadsheetMinimizer.
 
     :param variables: Variables instance giving run values.
-    :param spreadsheetRowIterator: Iterator returning one dict per spreadsheet row
-      keyed by variable name."""
+    :param spreadsheetRowIterator: Iterator returning one Variables instance per spreadsheet row."""
     pass
 
   def minimize(self, merit):
@@ -28,23 +27,30 @@ class SpreadsheetMinimizer(object):
     pass
 
 
+class _RowColException(Exception):
+  def __init__(self, msgPrefix, columnKey, value, lineno):
+    super(_RowColException, self).__init__(
+      "%s column '%s' on line %d: '%s'" % (msgPrefix, columnKey, lineno, value))
+    self.columnKey = columnKey
+    self.value = value
+    self.lineno = lineno
 
 class _MissingColumnException(Exception):
-
   def __init__(self, columnKey):
     super(_MissingColumnException, self).__init__("Required column missing in spreadsheet: '%s'" % columnKey )
     self.columnKey = columnKey
 
 
-class _BadValueException(Exception):
-
+class _BadValueException(_RowColException):
   def __init__(self, columnKey, value, lineno):
     super(_BadValueException, self).__init__(
-      "Value could not be converted to float in column '%s' on line %d: '%s'" % (columnKey, lineno, value))
-    self.columnKey = columnKey
-    self.value = value
-    self.lineno = lineno
+      "Value could not be converted to float", columnKey, value, lineno)
 
+
+class _OutOfBoundsException(_RowColException):
+  def __init__(self, columnKey, value, lineno):
+    super(_OutOfBoundsException, self).__init__(
+      "Value outside variable bounds ", columnKey, value, lineno)
 
 
 class _SpreadsheetRowIterator(object):
@@ -58,7 +64,10 @@ class _SpreadsheetRowIterator(object):
 
   def __init__(self, variables, fileObj):
     """Initialise row iterator from Variables instance and python file object containing
-    delimited data"""
+    delimited data.
+
+    :param variables: Initial Variables instance.
+    :param fileObj: Python file object providing the spreadsheet data."""
 
     self._logger.debug("Creating _SpreadsheetRowIterator with initial Variable: %s"  % variables)
     self._iter = self._createIterator(variables, fileObj)
@@ -71,6 +80,7 @@ class _SpreadsheetRowIterator(object):
 
     for rowidx,row in enumerate(dr):
       self._logger.debug("Read row from spreadsheet: %s" % row)
+      lineno = rowidx + 2
       updatevals = []
       for k in reqkeys:
         try:
@@ -81,7 +91,10 @@ class _SpreadsheetRowIterator(object):
         try:
           v = float(v)
         except ValueError:
-          raise _BadValueException(k, v, rowidx + 2)
+          raise _BadValueException(k, v, lineno)
+
+        if not variables.inBounds(k, v):
+          raise _OutOfBoundsException(k, v, lineno)
 
         updatevals.append(v)
       yieldvariables = variables.createUpdated(updatevals)
