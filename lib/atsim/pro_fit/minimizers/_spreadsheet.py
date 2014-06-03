@@ -36,6 +36,17 @@ class _MissingColumnException(Exception):
     self.columnKey = columnKey
 
 
+class _BadValueException(Exception):
+
+  def __init__(self, columnKey, value, lineno):
+    super(_BadValueException, self).__init__(
+      "Value could not be converted to float in column '%s' on line %d: '%s'" % (columnKey, lineno, value))
+    self.columnKey = columnKey
+    self.value = value
+    self.lineno = lineno
+
+
+
 class _SpreadsheetRowIterator(object):
   """Iterator class that reads CSV data and yields one row per spreadsheet row.
 
@@ -58,7 +69,7 @@ class _SpreadsheetRowIterator(object):
 
     reqkeys = variables.fitKeys
 
-    for row in dr:
+    for rowidx,row in enumerate(dr):
       self._logger.debug("Read row from spreadsheet: %s" % row)
       updatevals = []
       for k in reqkeys:
@@ -66,7 +77,12 @@ class _SpreadsheetRowIterator(object):
           v = row[k]
         except KeyError:
           raise _MissingColumnException(k)
-        v = float(v)
+
+        try:
+          v = float(v)
+        except ValueError:
+          raise _BadValueException(k, v, rowidx + 2)
+
         updatevals.append(v)
       yieldvariables = variables.createUpdated(updatevals)
       self._logger.debug("Created variables from spreadsheet row: %s" % yieldvariables)

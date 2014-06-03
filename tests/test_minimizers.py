@@ -425,6 +425,7 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
       except _BadValueException as e:
         self.assertEqual('Label', e.columnKey)
         self.assertEqual(2, e.lineno)
+        self.assertEqual("Iteration 1", e.value)
 
 
 
