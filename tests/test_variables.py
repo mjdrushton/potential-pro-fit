@@ -175,3 +175,21 @@ Ucharge : electroneg * 4
 
     with self.assertRaises(pro_fit.fittool.ConfigException):
       pro_fit.fittool.CalculatedVariables.createFromConfig(cfg.items("CalculatedVariables"))
+
+  def testInBounds(self):
+    """Test Variables.inBounds method"""
+
+    variables = pro_fit.fittool.Variables(
+      [("A", 1.23, False),
+       ("B", 4.56, False),
+       ("electroneg", 0.4, True)],
+      bounds = [None, (float("-inf"), 4.0), (2.0 , 3.0) ] )
+
+    self.assertTrue(variables.inBounds('A', 100))
+    self.assertTrue(variables.inBounds('B', -10.0))
+    self.assertFalse(variables.inBounds('B', 10.0))
+    self.assertTrue(variables.inBounds('electroneg', 2.1))
+    self.assertFalse(variables.inBounds('electroneg', 3.1))
+
+
+

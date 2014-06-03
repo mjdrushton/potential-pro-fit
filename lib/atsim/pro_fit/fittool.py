@@ -413,6 +413,27 @@ class Variables(object):
   bounds = property(fget =  bounds,
     doc = """Return list of (lowerbound, upperbound) tuples indicating box bounds for each variable returned by variablePairs""")
 
+  def inBounds(self, varKey, value):
+    """Used to check if ``value`` is within the bounds of the variable named ``varKey``.
+
+    :param str varKey: Variable name.
+    :param float value: Check if value is in range.
+    :return: ``True`` if ``value`` is in bounds or ``False`` otherwise."""
+
+    boundsDict = dict(
+      zip(
+        [k for (k,v) in self.variablePairs],
+        self.bounds))
+
+    bounds = boundsDict[varKey]
+
+    if not bounds:
+      lowBound, highBound = (float("-inf"), float("inf"))
+    else:
+      lowBound, highBound = bounds
+
+    return (lowBound <= value <= highBound)
+
   @staticmethod
   def _parseBounds(s):
     """Parse string of the form (lowbound, upperbound) into a numeric tuple.
