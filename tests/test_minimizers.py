@@ -320,6 +320,116 @@ filename : %(filename)s
     ]
     testutil.compareCollection(self,stepcallbackexpect, minimizer.stepCallback.stepDicts)
 
+  def testStartRow(self):
+    """Test the start_row configuration option for the SpreadsheetMinimizer"""
+
+    spreadfilename = os.path.join(_getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
+    config = """[Minimizer]
+type : SpreadSheet
+filename : %(filename)s
+start_row : 1
+
+    """ % {'filename' : spreadfilename}
+
+    cfg = ConfigParser.SafeConfigParser()
+    cfg.optionxform = str
+    cfg.readfp(StringIO.StringIO(config))
+    configitems = cfg.items('Minimizer')
+
+    variables = pro_fit.fittool.Variables([
+      ('A', 10.0, False),
+      ('B', 20.0, True),
+      ('C', 30.0, False),
+      ('D', 40.0, True)])
+
+    minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(variables, configitems)
+    self.assertEquals(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
+
+    minimizer.stepCallback = StepCallBack()
+    minimizer.minimize(MockMerit())
+
+
+    stepcallbackexpect = [
+      dict(A=10.0, B=7,   C=30.000000,  D=9,   meritval = 1130),
+      dict(A=10.0, B=12,  C=30.000000,  D=14,  meritval = 1340),
+      dict(A=10.0, B=17,  C=30.000000,  D=19,  meritval = 1650),
+    ]
+    testutil.compareCollection(self,stepcallbackexpect, minimizer.stepCallback.stepDicts)
+
+
+  def testEndRow(self):
+    """Test end_row configuration option for the SpreadsheetMinimizer"""
+
+    spreadfilename = os.path.join(_getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
+    config = """[Minimizer]
+type : SpreadSheet
+filename : %(filename)s
+end_row : 2
+
+    """ % {'filename' : spreadfilename}
+
+    cfg = ConfigParser.SafeConfigParser()
+    cfg.optionxform = str
+    cfg.readfp(StringIO.StringIO(config))
+    configitems = cfg.items('Minimizer')
+
+    variables = pro_fit.fittool.Variables([
+      ('A', 10.0, False),
+      ('B', 20.0, True),
+      ('C', 30.0, False),
+      ('D', 40.0, True)])
+
+    # import pdb;pdb.set_trace()
+
+    minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(variables, configitems)
+    self.assertEquals(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
+
+    minimizer.stepCallback = StepCallBack()
+    minimizer.minimize(MockMerit())
+
+    stepcallbackexpect = [
+      dict(A=10.0, B=2.0, C=30.000000, D=4.0, meritval = 1020.0),
+      dict(A=10.0, B=7, C=30.000000,   D=9, meritval = 1130),
+      dict(A=10.0, B=12, C=30.000000,  D=14, meritval = 1340)
+    ]
+    testutil.compareCollection(self,stepcallbackexpect, minimizer.stepCallback.stepDicts)
+
+
+  def testStartAndEndRow(self):
+    """Test the start_row and end_row configuration options for the SpreadsheetMinimizer"""
+
+    spreadfilename = os.path.join(_getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
+    config = """[Minimizer]
+type : SpreadSheet
+filename : %(filename)s
+start_row : 1
+end_row : 2
+
+    """ % {'filename' : spreadfilename}
+
+    cfg = ConfigParser.SafeConfigParser()
+    cfg.optionxform = str
+    cfg.readfp(StringIO.StringIO(config))
+    configitems = cfg.items('Minimizer')
+
+    variables = pro_fit.fittool.Variables([
+      ('A', 10.0, False),
+      ('B', 20.0, True),
+      ('C', 30.0, False),
+      ('D', 40.0, True)])
+
+    minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(variables, configitems)
+    self.assertEquals(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
+
+    minimizer.stepCallback = StepCallBack()
+    minimizer.minimize(MockMerit())
+
+    stepcallbackexpect = [
+      dict(A=10.0, B=7, C=30.000000,   D=9, meritval = 1130),
+      dict(A=10.0, B=12, C=30.000000,  D=14, meritval = 1340)
+    ]
+    testutil.compareCollection(self,stepcallbackexpect, minimizer.stepCallback.stepDicts)
+
 
 class SpreadsheetRowIteratorTestCase(unittest.TestCase):
   """Tests for atsim.pro_fit.minimizers._spreadsheet._SpreadsheetRowIterator"""
@@ -412,7 +522,6 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
         ('D', 40.0, True)])
 
     with open(spreadfilename) as infile:
-
       from atsim.pro_fit.minimizers._spreadsheet import _SpreadsheetRowIterator, _BadValueException
       rowit = _SpreadsheetRowIterator(variables, infile)
 
@@ -432,7 +541,6 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
 
   def testOutOfBounds(self):
     """Test that iterator throws when a spreadsheet value is out of bounds for the variable it represents"""
-
     spreadfilename = os.path.join(_getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
     variables = pro_fit.fittool.Variables([('A', 10.0, True)], [(float("-inf"), 15.0)])
 
@@ -450,6 +558,110 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
           self.assertEqual('A', e.columnKey)
           self.assertEqual(5, e.lineno)
           self.assertEqual(16.0, e.value)
+
+
+  def testStartAndEndRow(self):
+    """Test startRow and endRow constructor arguments"""
+    spreadfilename = os.path.join(_getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
+
+    variables = pro_fit.fittool.Variables([
+      ('A', 10.0, True),
+      ('B', 20.0, True),
+      ('C', 30.0, True),
+      ('D', 40.0, True)])
+
+    from atsim.pro_fit.minimizers._spreadsheet import _SpreadsheetRowIterator, _RowRangeException
+    with open(spreadfilename) as infile:
+      rowit = _SpreadsheetRowIterator(variables, infile, startRow = 0, endRow = 0)
+      actual = [ dict(v.variablePairs) for v in rowit]
+      expect = [
+        dict(A = 1.0 , B= 2.0 , C = 3  , D = 4.0),
+        # dict(A = 6.0 , B= 7   , C = 8  , D = 9  ),
+        # dict(A = 11  , B= 12  , C = 13 , D = 14 ),
+        # dict(A = 16  , B= 17  , C = 18 , D = 19 )
+        ]
+      testutil.compareCollection(self, expect, actual)
+
+    with open(spreadfilename) as infile:
+      rowit = _SpreadsheetRowIterator(variables, infile, startRow = 3, endRow = 3)
+      actual = [ dict(v.variablePairs) for v in rowit]
+      expect = [
+        # dict(A = 1.0 , B= 2.0 , C = 3  , D = 4.0),
+        # dict(A = 6.0 , B= 7   , C = 8  , D = 9  ),
+        # dict(A = 11  , B= 12  , C = 13 , D = 14 ),
+        dict(A = 16  , B= 17  , C = 18 , D = 19 )]
+      testutil.compareCollection(self, expect, actual)
+
+    with open(spreadfilename) as infile:
+      rowit = _SpreadsheetRowIterator(variables, infile, startRow = 1, endRow = 2)
+      actual = [ dict(v.variablePairs) for v in rowit]
+      expect = [
+        # dict(A = 1.0 , B= 2.0 , C = 3  , D = 4.0),
+        dict(A = 6.0 , B= 7   , C = 8  , D = 9  ),
+        dict(A = 11  , B= 12  , C = 13 , D = 14 ),
+        # dict(A = 16  , B= 17  , C = 18 , D = 19 )
+        ]
+
+      testutil.compareCollection(self, expect, actual)
+
+
+  def testBadStartRow(self):
+    """Test when an invalid startRow is specified"""
+    spreadfilename = os.path.join(_getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
+
+    variables = pro_fit.fittool.Variables([
+      ('A', 10.0, True),
+      ('B', 20.0, True),
+      ('C', 30.0, True),
+      ('D', 40.0, True)])
+
+    from atsim.pro_fit.minimizers._spreadsheet import _SpreadsheetRowIterator, _RowRangeException
+    with open(spreadfilename) as infile:
+      rowit = _SpreadsheetRowIterator(variables, infile, startRow = 6)
+
+      with self.assertRaises(_RowRangeException):
+        for row in rowit:
+          pass
+
+  def testBadEndRow(self):
+    """Test when an invalid endRow is specified"""
+    spreadfilename = os.path.join(_getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
+
+    variables = pro_fit.fittool.Variables([
+      ('A', 10.0, True),
+      ('B', 20.0, True),
+      ('C', 30.0, True),
+      ('D', 40.0, True)])
+
+    from atsim.pro_fit.minimizers._spreadsheet import _SpreadsheetRowIterator, _RowRangeException
+    with open(spreadfilename) as infile:
+      rowit = _SpreadsheetRowIterator(variables, infile, endRow = 6)
+
+      with self.assertRaises(_RowRangeException):
+        for row in rowit:
+          pass
+
+
+  def testBlankSpreadSheet(self):
+    """Test that empty spreadsheets raise appropriate exceptions."""
+
+    variables = pro_fit.fittool.Variables([
+      ('A', 10.0, True),
+      ('B', 20.0, True),
+      ('C', 30.0, True),
+      ('D', 40.0, True)])
+
+    from atsim.pro_fit.minimizers._spreadsheet import _SpreadsheetRowIterator, _RowRangeException
+
+    import StringIO
+
+    sio = StringIO.StringIO()
+    print >>sio, "A,B,C,D"
+    sio.seek(0)
+    rowit = _SpreadsheetRowIterator(variables, sio)
+    with self.assertRaises(_RowRangeException):
+      for row in rowit:
+        pass
 
 
 class MinimizerResultsTestCase(unittest.TestCase):
