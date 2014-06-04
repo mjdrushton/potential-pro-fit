@@ -46,7 +46,7 @@ class MockMerit(object):
   def __init__(self):
     self.afterMerit = None
 
-  def calculate(self, candidates):
+  def calculate(self, candidates, returnCandidateJobPairs = False):
     retvals = []
     amvals = []
     for c in candidates:
@@ -57,6 +57,9 @@ class MockMerit(object):
 
     if self.afterMerit:
       self.afterMerit(retvals, amvals)
+
+    if returnCandidateJobPairs:
+      return (retvals, amvals)
     return retvals
 
 class StepCallBack(object):
@@ -307,7 +310,7 @@ filename : %(filename)s
        ('B', 2.0, True),
        ('C', 30.0, False),
        ('D', 4.0, True)],
-      optimized.variablePairs)
+      optimized.bestVariables.flaggedVariablePairs)
 
     stepcallbackexpect = [
       dict(A=10.0, B=2.0, C=30.000000, D=4.0, meritval = 1020.0),

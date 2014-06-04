@@ -8,23 +8,95 @@ class SpreadsheetMinimizer(object):
 
   _logger = logging.getLogger('atsim.pro_fit.minimizers.SpreadsheetMinimizer')
 
-  def __init__(self, variables, spreadsheetRowIterator):
+  def __init__(self, spreadsheetRowIterator):
     """Create SpreadsheetMinimizer.
 
     :param variables: Variables instance giving run values.
     :param spreadsheetRowIterator: Iterator returning one Variables instance per spreadsheet row."""
-    pass
+    self._rowIterator = spreadsheetRowIterator
+    self.stepCallback = None
 
   def minimize(self, merit):
     """Perform minimization.
 
     :param merit: atsim.pro_fit.fittool.Merit instance.
     :return: MinimizerResults containing values obtained after merit function evaluation"""
-    pass
+
+    minimizerResults = None
+
+    for i,variables in enumerate(self._rowIterator):
+      self._logger.info("Minimizer iteration: %d" % i)
+      candidates = [variables]
+      meritValues, candidateJobPairs = merit.calculate(
+        candidates,
+        returnCandidateJobPairs = True)
+      currentMinimizerResults = MinimizerResults(meritValues, candidateJobPairs)
+      
+      if not minimizerResults:
+        minimizerResults = currentMinimizerResults
+        self._logger.info("Iteration %d. Initial solution found, candidate: %d. %s. Merit = %f" % (
+          i,
+          currentMinimizerResults.indexOfBest,
+          currentMinimizerResults.bestVariables,
+          currentMinimizerResults.bestMeritValue))
+      elif currentMinimizerResults < minimizerResults:
+        minimizerResults = currentMinimizerResults
+        self._logger.info("Iteration %d. Improved solution found, candidate: %d. %s. Merit = %f" % (
+          i,
+          currentMinimizerResults.indexOfBest,
+          currentMinimizerResults.bestVariables,
+          currentMinimizerResults.bestMeritValue))
+      
+      if self.stepCallback:
+        self.stepCallback(currentMinimizerResults)
+  
+
+    return minimizerResults
 
   @staticmethod
   def createFromConfig(variables, configitems):
-    pass
+    cfgdict = dict(configitems)
+    del cfgdict['type']
+
+    allowedkeys = set(['filename'])
+
+    for k in cfgdict.iterkeys():
+      if not (k in allowedkeys):
+        raise ConfigException("Unknown configuration option: '%s'" % k)
+
+    # Extract required configuration items
+    # ... filename
+    filename = cfgdict['filename']
+
+    try:
+      with open(filename) as infile:
+        pass
+    except IOError as e:
+      raise ConfigException("Could not open spreadsheet with 'filename' '%s': %s" % (filename, e.strerror))
+
+    # Do a test-run through the spreadsheet
+    with open(filename, 'rUb') as infile:
+      SpreadsheetMinimizer._logger.info("Checking integrity of spreadsheet: '%s'" % filename)
+      rowit = _SpreadsheetRowIterator(variables, infile)
+
+      try:
+        for row in rowit:
+          pass
+      except _RowColException as rce:
+        msg = "In spreadsheet: '%s', %s for col: '%s', line: %d, value = '%s'" % (filename, rce.message, rce.columnKey, rce.lineno)
+        raise ConfigException(msg)
+      except  _MissingColumnException as mce:
+        raise ConfigException("Spreadsheet did not contain column for fitting variable named '%s'" % mce.columnKey)
+
+      SpreadsheetMinimizer._logger.info("Spreadsheet integrity test, passed")
+
+    infile = open(filename, 'rUb')
+    SpreadsheetMinimizer._logger.info("Creating Spreadsheet minimizer with options:")
+    SpreadsheetMinimizer._logger.info("  'filename' : %s" % filename)
+
+    rowit = _SpreadsheetRowIterator(variables, infile)
+    minimizer = SpreadsheetMinimizer(rowit)
+    return minimizer
 
 
 class _RowColException(Exception):
