@@ -21,7 +21,7 @@ class MockJob(object):
     self.variables = variables
 
   def __repr__(self):
-    return repr(self.variables)
+    return "MockJob("+repr(self.variables)+")"
 
 class MockMeritRosen(object):
   """Mock merit object which evaluates Rosenbrock function"""
@@ -379,8 +379,6 @@ end_row : 2
       ('C', 30.0, False),
       ('D', 40.0, True)])
 
-    # import pdb;pdb.set_trace()
-
     minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(variables, configitems)
     self.assertEquals(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
 
@@ -429,6 +427,115 @@ end_row : 2
       dict(A=10.0, B=12, C=30.000000,  D=14, meritval = 1340)
     ]
     testutil.compareCollection(self,stepcallbackexpect, minimizer.stepCallback.stepDicts)
+
+  def testBatchSize(self):
+    """Test SpreadsheetMinimizer 'batch_size' configuration option"""
+    spreadfilename = os.path.join(_getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
+    config = """[Minimizer]
+type : SpreadSheet
+filename : %(filename)s
+batch_size : 2
+
+    """ % {'filename' : spreadfilename}
+
+    cfg = ConfigParser.SafeConfigParser()
+    cfg.optionxform = str
+    cfg.readfp(StringIO.StringIO(config))
+    configitems = cfg.items('Minimizer')
+
+    variables = pro_fit.fittool.Variables([
+      ('A', 10.0, False),
+      ('B', 20.0, True),
+      ('C', 30.0, False),
+      ('D', 40.0, True)])
+
+    minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(variables, configitems)
+    self.assertEquals(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
+
+    cvalpairs = []
+    def afterMerit(meritvals, candvalpairs):
+      cvalpairs.append((meritvals, candvalpairs))
+
+    merit = MockMerit()
+    merit.afterMerit = afterMerit
+    optimized = minimizer.minimize(merit)
+
+    testutil.compareCollection(self,
+      [('A', 10.0, False),
+       ('B', 2.0, True),
+       ('C', 30.0, False),
+       ('D', 4.0, True)],
+      optimized.bestVariables.flaggedVariablePairs)
+
+    expect = [
+      ([1020.0, 1130.0],
+       [dict(A=10.0, B=2.0, C=30.000000, D=4.0),
+        dict(A=10.0, B=7, C=30.000000,   D=9)]),
+      ([1340.0, 1650.0],
+       [dict(A=10.0, B=12.0, C=30.000000, D=14.0),
+        dict(A=10.0, B=17, C=30.000000,   D=19)])]
+
+    actual = []
+    for (meritvals, cvp) in cvalpairs:
+      cvp = [ dict(v.variablePairs) for (v, j) in cvp]
+      actual.append((meritvals, cvp))
+
+    testutil.compareCollection(self, expect, actual)
+
+  def testBatchSize_withStartRow(self):
+    """Test SpreadsheetMinimizer 'batch_size' configuration option"""
+    spreadfilename = os.path.join(_getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
+    config = """[Minimizer]
+type : SpreadSheet
+filename : %(filename)s
+start_row : 1
+batch_size : 2
+
+    """ % {'filename' : spreadfilename}
+
+    cfg = ConfigParser.SafeConfigParser()
+    cfg.optionxform = str
+    cfg.readfp(StringIO.StringIO(config))
+    configitems = cfg.items('Minimizer')
+
+    variables = pro_fit.fittool.Variables([
+      ('A', 10.0, False),
+      ('B', 20.0, True),
+      ('C', 30.0, False),
+      ('D', 40.0, True)])
+
+    minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(variables, configitems)
+    self.assertEquals(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
+
+    cvalpairs = []
+    def afterMerit(meritvals, candvalpairs):
+      cvalpairs.append((meritvals, candvalpairs))
+
+    merit = MockMerit()
+    merit.afterMerit = afterMerit
+    optimized = minimizer.minimize(merit)
+
+    testutil.compareCollection(self,
+      [('A', 10.0, False),
+       ('B', 7.0, True),
+       ('C', 30.0, False),
+       ('D', 9.0, True)],
+      optimized.bestVariables.flaggedVariablePairs)
+
+    expect = [
+      ([1130.0, 1340.0],
+       [dict(A=10.0, B=7, C=30.000000,  D=9),
+        dict(A=10.0, B=12.0, C=30.000000, D=14.0)
+        ]),
+      ([1650.0],
+       [dict(A=10.0, B=17, C=30.000000, D=19)])]
+
+    actual = []
+    for (meritvals, cvp) in cvalpairs:
+      cvp = [ dict(v.variablePairs) for (v, j) in cvp]
+      actual.append((meritvals, cvp))
+
+    testutil.compareCollection(self, expect, actual)
 
 
 class SpreadsheetRowIteratorTestCase(unittest.TestCase):

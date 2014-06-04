@@ -9,13 +9,15 @@ class SpreadsheetMinimizer(object):
 
   _logger = logging.getLogger('atsim.pro_fit.minimizers.SpreadsheetMinimizer')
 
-  def __init__(self, spreadsheetRowIterator):
+  def __init__(self, spreadsheetRowIterator, batchSize):
     """Create SpreadsheetMinimizer.
 
     :param variables: Variables instance giving run values.
-    :param spreadsheetRowIterator: Iterator returning one Variables instance per spreadsheet row."""
+    :param spreadsheetRowIterator: Iterator returning one Variables instance per spreadsheet row.
+    :param int batchSize: Number of candidates to evaluate at each minimizer iteration."""
     self._rowIterator = spreadsheetRowIterator
     self.stepCallback = None
+    self.batchSize = batchSize
 
   def minimize(self, merit):
     """Perform minimization.
@@ -24,10 +26,8 @@ class SpreadsheetMinimizer(object):
     :return: MinimizerResults containing values obtained after merit function evaluation"""
 
     minimizerResults = None
-
-    for i,variables in enumerate(self._rowIterator):
+    for i,candidates in enumerate(self._batchIt()):
       self._logger.info("Minimizer iteration: %d" % i)
-      candidates = [variables]
       meritValues, candidateJobPairs = merit.calculate(
         candidates,
         returnCandidateJobPairs = True)
@@ -52,6 +52,16 @@ class SpreadsheetMinimizer(object):
         self.stepCallback(currentMinimizerResults)
     return minimizerResults
 
+  def _batchIt(self):
+    batch = []
+    for variables in self._rowIterator:
+      if len(batch) == self.batchSize:
+        yield batch
+        batch = []
+      batch.append(variables)
+    if batch:
+      yield batch
+
   @staticmethod
   def createFromConfig(variables, configitems):
     cfgdict = dict(configitems)
@@ -60,7 +70,8 @@ class SpreadsheetMinimizer(object):
     allowedkeys = set([
       'filename',
       'start_row',
-      'end_row'])
+      'end_row',
+      'batch_size'])
 
     for k in cfgdict.iterkeys():
       if not (k in allowedkeys):
@@ -73,11 +84,13 @@ class SpreadsheetMinimizer(object):
     except KeyError:
       raise ConfigException("'filename' not specified for Spreadsheet minimizer.")
 
+    # ... start_row
     try:
       startRow = int(cfgdict.get('start_row', 0))
     except ValueError:
       raise ConfigException("Could not convert 'start_row' value into an integer")
 
+    # ... end_row
     try:
       endRow = cfgdict.get('end_row', None)
       if endRow != None:
@@ -94,7 +107,13 @@ class SpreadsheetMinimizer(object):
     if endRow != None and endRow < startRow:
       raise ConfigException("'end_row' should be greater than 'start_row'.")
 
+    # ... batch_size
+    try:
+      batchSize = int(cfgdict.get('batch_size', 1))
+    except ValueError:
+      raise ConfigException("Could not convert 'batch_size' into an integer")
 
+    # Check that input file can be opened.
     try:
       with open(filename) as infile:
         pass
@@ -105,7 +124,6 @@ class SpreadsheetMinimizer(object):
     with open(filename, 'rUb') as infile:
       SpreadsheetMinimizer._logger.info("Checking integrity of spreadsheet: '%s'" % filename)
       rowit = _SpreadsheetRowIterator(variables, infile, startRow = startRow, endRow = endRow)
-
       try:
         for row in rowit:
           pass
@@ -116,19 +134,23 @@ class SpreadsheetMinimizer(object):
         raise ConfigException("Spreadsheet did not contain column for fitting variable named '%s'" % mce.columnKey)
       except _RowRangeException as rre:
         raise ConfigException(rre.message)
-
-
       SpreadsheetMinimizer._logger.info("Spreadsheet integrity test, passed")
 
+    # Finally, build the SpreadsheetMinimiser object
     infile = open(filename, 'rUb')
     SpreadsheetMinimizer._logger.info("Creating Spreadsheet minimizer with options:")
-    SpreadsheetMinimizer._logger.info("  'filename'  : %s" % filename)
-    SpreadsheetMinimizer._logger.info("  'start_row' : %s" % startRow)
-    SpreadsheetMinimizer._logger.info("  'end_row'   : %s" % endRow)
+    SpreadsheetMinimizer._logger.info("  'filename'   : %s" % filename)
+    SpreadsheetMinimizer._logger.info("  'start_row'  : %s" % startRow)
+    SpreadsheetMinimizer._logger.info("  'end_row'    : %s" % endRow)
+    SpreadsheetMinimizer._logger.info("  'batch_size' : %s" % batchSize)
 
     rowit = _SpreadsheetRowIterator(
-      variables, infile, startRow = startRow, endRow = endRow)
-    minimizer = SpreadsheetMinimizer(rowit)
+      variables,
+      infile,
+      startRow = startRow,
+      endRow = endRow)
+
+    minimizer = SpreadsheetMinimizer(rowit, batchSize)
     return minimizer
 
 
