@@ -14,7 +14,8 @@ class SpreadsheetMinimizer(object):
 
     :param variables: Variables instance giving run values.
     :param spreadsheetRowIterator: Iterator returning one Variables instance per spreadsheet row.
-    :param int batchSize: Number of candidates to evaluate at each minimizer iteration."""
+    :param int batchSize: Number of candidates to evaluate at each minimizer iteration.
+    :param int rowIncrement: Increment between spreadsheet rows."""
     self._rowIterator = spreadsheetRowIterator
     self.stepCallback = None
     self.batchSize = batchSize
@@ -71,7 +72,8 @@ class SpreadsheetMinimizer(object):
       'filename',
       'start_row',
       'end_row',
-      'batch_size'])
+      'batch_size',
+      'row_step'])
 
     for k in cfgdict.iterkeys():
       if not (k in allowedkeys):
@@ -113,6 +115,16 @@ class SpreadsheetMinimizer(object):
     except ValueError:
       raise ConfigException("Could not convert 'batch_size' into an integer")
 
+    # ... row_step
+    try:
+      rowIncrement = int(cfgdict.get('row_step', 1))
+    except ValueError:
+      raise ConfigException("Could not convert 'row_step' into an intger")
+
+    if not rowIncrement > 0:
+      raise ConfigException("'row_step' should be > 0. Instead currently has value: %s" % rowIncrement)
+
+
     # Check that input file can be opened.
     try:
       with open(filename) as infile:
@@ -143,12 +155,14 @@ class SpreadsheetMinimizer(object):
     SpreadsheetMinimizer._logger.info("  'start_row'  : %s" % startRow)
     SpreadsheetMinimizer._logger.info("  'end_row'    : %s" % endRow)
     SpreadsheetMinimizer._logger.info("  'batch_size' : %s" % batchSize)
+    SpreadsheetMinimizer._logger.info("  'row_step'   : %s"   % rowIncrement)
 
     rowit = _SpreadsheetRowIterator(
       variables,
       infile,
       startRow = startRow,
-      endRow = endRow)
+      endRow = endRow,
+      rowIncrement = rowIncrement)
 
     minimizer = SpreadsheetMinimizer(rowit, batchSize)
     return minimizer
@@ -196,18 +210,20 @@ class _SpreadsheetRowIterator(object):
 
   _logger = logging.getLogger('atsim.pro_fit.minimizers.SpreadsheetMinimizer._SpreadsheetRowIterator')
 
-  def __init__(self, variables, fileObj, startRow = 0, endRow = None):
+  def __init__(self, variables, fileObj, startRow = 0, endRow = None, rowIncrement = 1):
     """Initialise row iterator from Variables instance and python file object containing
     delimited data.
 
     :param variables: Initial Variables instance.
     :param fileObj: Python file object providing the spreadsheet data.
     :param startRow: Index of first that row iteration should start.
-    :param endRow: Final row for iteration or None if all rows should be used."""
+    :param endRow: Final row for iteration or None if all rows should be used.
+    :param int rowIncrement: Step size between rows."""
 
     self._logger.debug("Creating _SpreadsheetRowIterator with initial Variable: %s"  % variables)
     self.startRow = startRow
     self.endRow = endRow
+    self.rowIncrement = rowIncrement
     self._iter = self._createIterator(variables, fileObj)
 
 
@@ -224,6 +240,11 @@ class _SpreadsheetRowIterator(object):
       if rowidx < self.startRow:
         self._logger.debug("Skipping row (rowidx < startRow): %s < %s" % (rowidx, self.startRow))
         continue
+
+      if (rowidx-self.startRow) % self.rowIncrement != 0:
+        self._logger.debug("Skipping row. As rowidx-self.startRow (%s - %s) not divisible by self.rowIncrement): %s %% %s != 0" % (rowidx, self.startRow, rowidx-self.startRow, self.rowIncrement))
+        continue
+
 
       if self.endRow != None and rowidx > self.endRow:
         self._logger.debug("rowidx > endRow) end of spreadsheet iteration: %s > %s" % (rowidx, self.endRow))

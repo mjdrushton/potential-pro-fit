@@ -271,6 +271,62 @@ batch_size : 2
     testutil.compareCollection(self, expect, actual)
 
 
+
+  def testBatchSize_withStartRow_AndRowStep(self):
+      """Test SpreadsheetMinimizer 'batch_size' configuration option"""
+      spreadfilename = os.path.join(getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
+      config = """[Minimizer]
+type : SpreadSheet
+filename : %(filename)s
+start_row : 1
+batch_size : 2
+row_step : 2
+
+      """ % {'filename' : spreadfilename}
+
+      cfg = ConfigParser.SafeConfigParser()
+      cfg.optionxform = str
+      cfg.readfp(StringIO.StringIO(config))
+      configitems = cfg.items('Minimizer')
+
+      variables = pro_fit.fittool.Variables([
+        ('A', 10.0, False),
+        ('B', 20.0, True),
+        ('C', 30.0, False),
+        ('D', 40.0, True)])
+
+      minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(variables, configitems)
+      self.assertEquals(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
+
+      cvalpairs = []
+      def afterMerit(meritvals, candvalpairs):
+        cvalpairs.append((meritvals, candvalpairs))
+
+      merit = MockMerit()
+      merit.afterMerit = afterMerit
+      optimized = minimizer.minimize(merit)
+
+      testutil.compareCollection(self,
+        [('A', 10.0, False),
+         ('B', 7.0, True),
+         ('C', 30.0, False),
+         ('D', 9.0, True)],
+        optimized.bestVariables.flaggedVariablePairs)
+
+      expect = [
+        ([1130.0, 1650.0],
+         [dict(A=10.0, B=7, C=30.000000,  D=9),
+          dict(A=10.0, B=17, C=30.000000,  D=19)
+          ]) ]
+
+      actual = []
+      for (meritvals, cvp) in cvalpairs:
+        cvp = [ dict(v.variablePairs) for (v, j) in cvp]
+        actual.append((meritvals, cvp))
+
+      testutil.compareCollection(self, expect, actual)
+
+
 class SpreadsheetRowIteratorTestCase(unittest.TestCase):
   """Tests for atsim.pro_fit.minimizers._spreadsheet._SpreadsheetRowIterator"""
 
@@ -279,7 +335,6 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
     spreadfilename = os.path.join(getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
 
     with open(spreadfilename) as infile:
-
       variables = pro_fit.fittool.Variables([
         ('A', 10.0, True),
         ('B', 20.0, True),
@@ -303,7 +358,6 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
     spreadfilename = os.path.join(getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
 
     with open(spreadfilename) as infile:
-
       variables = pro_fit.fittool.Variables([
         ('A', 10.0, False),
         ('B', 20.0, False),
@@ -334,7 +388,6 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
         ('Missing', 1.0, True)])
 
     with open(spreadfilename) as infile:
-
       from atsim.pro_fit.minimizers._spreadsheet import _SpreadsheetRowIterator, _MissingColumnException
       rowit = _SpreadsheetRowIterator(variables, infile)
 
@@ -481,7 +534,6 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
         for row in rowit:
           pass
 
-
   def testBlankSpreadSheet(self):
     """Test that empty spreadsheets raise appropriate exceptions."""
 
@@ -502,3 +554,50 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
     with self.assertRaises(_RowRangeException):
       for row in rowit:
         pass
+
+  def testRowIncrement(self):
+    """Test _SpreadsheetRowIterator rowIncrement constructor variable"""
+    spreadfilename = os.path.join(getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv")
+
+    variables = pro_fit.fittool.Variables([
+      ('A', 10.0, True),
+      ('B', 20.0, True),
+      ('C', 30.0, True),
+      ('D', 40.0, True)])
+
+    # rowIncrement = 1
+    with open(spreadfilename) as infile:
+      from atsim.pro_fit.minimizers._spreadsheet import _SpreadsheetRowIterator
+      rowit = _SpreadsheetRowIterator(variables, infile, startRow = 1, endRow = 3, rowIncrement = 1)
+      actual = [ dict(v.variablePairs) for v in rowit]
+
+    expect = [
+      dict(A = 6.0 , B= 7   , C = 8  , D = 9  ),
+      dict(A = 11  , B= 12  , C = 13 , D = 14 ),
+      dict(A = 16  , B= 17  , C = 18 , D = 19 )]
+
+    testutil.compareCollection(self, expect, actual)
+
+    # rowIncrement = 2
+    with open(spreadfilename) as infile:
+      from atsim.pro_fit.minimizers._spreadsheet import _SpreadsheetRowIterator
+      rowit = _SpreadsheetRowIterator(variables, infile, startRow = 1, endRow = 3, rowIncrement = 2)
+      actual = [ dict(v.variablePairs) for v in rowit]
+
+    expect = [
+      dict(A = 6.0 , B= 7   , C = 8  , D = 9  ),
+      dict(A = 16  , B= 17  , C = 18 , D = 19 )]
+
+    testutil.compareCollection(self, expect, actual)
+
+    # rowIncrement = 3
+    with open(spreadfilename) as infile:
+      from atsim.pro_fit.minimizers._spreadsheet import _SpreadsheetRowIterator
+      rowit = _SpreadsheetRowIterator(variables, infile, rowIncrement = 3)
+      actual = [ dict(v.variablePairs) for v in rowit]
+
+    expect = [
+      dict(A = 1.0 , B= 2.0 , C = 3  , D = 4.0),
+      dict(A = 16  , B= 17  , C = 18 , D = 19 )]
+
+    testutil.compareCollection(self, expect, actual)

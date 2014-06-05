@@ -8,3 +8,12 @@ mechanize-*.egg
 wsgi_intercept-*.egg
 lib/potential_pro_fit.egg-info
 nose-1.3.1-py2.7.egg
+CherryPy-3.3.0-py2.7.egg/cherrypy
+CherryPy-3.3.0-py2.7.egg
+execnet-1.2.0-py2.7.egg
+Jinja2-2.7.2-py2.7.egg
+MarkupSafe-0.23-py2.7-macosx-10.9-x86_64.egg
+SQLAlchemy-0.9.4-py2.7-macosx-10.9-x86_64.egg
+cexprtk-0.1.1-py2.7-macosx-10.9-x86_64.egg
+inspyred-1.0-py2.7.egg
+mystic-0.2a1-py2.7.egg
