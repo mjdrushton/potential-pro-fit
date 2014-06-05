@@ -1,0 +1,58 @@
+.. _pprofit-minimizers-neldermead:
+
+NelderMead
+^^^^^^^^^^
+
+:Type-Name: NelderMead
+:Description: This minimizer uses the `Nelder-Mead algorithm <http://en.wikipedia.org/wiki/Nelder%E2%80%93Mead_method>`_ (also known as the downhill simplex method).
+
+\ 
+
+.. note::
+  The NelderMead minimizer as implemented here, makes use of the `mystic framework <http://dev.danse.us/trac/mystic>`_ that is part of the `DANSE project <http://danse.us/trac/all/wiki>`_. If you use this minimizer please acknowledge this work through the following references:
+
+  * M.M. McKerns, L. Strand, T. Sullivan, A. Fang and M.A.G. Aivazis, "Building a framework for predictive science", *Proceedings of the 10th Python in Science Conference*, 2011. http://arxiv.org/pdf/1202.1056
+
+  * Michael McKerns, Patrick Hung, and Michael Aivazis, "mystic: a simple model-independent inversion framework", 2009- ; http://dev.danse.us/trac/mystic
+
+Variable Bounds
+===============
+
+The ``NelderMead`` minimizer has support for constrained optimisation. Variable constraints are defined within the ``[Variables]`` section of the ``fit.cfg`` file (see :ref:`pprofit-variables`). The following gives some examples of how constraints may be specified to the minimizer::
+
+  [Variables]
+  A : 1.0 
+  B : 1.0 (0.0,)
+  C : 1.0 (, 10.0)
+  D : 1.0 (0.0, 10.0)
+
+Above, each value has an initial value of 1.0 and the constraints are as follows:
+  
+  * ``A``: no constraint.
+  * ``B``: variable cannot go below 0.0 (no upper bound).
+  * ``C``: variable cannot go above 10.0 (no lower bound).
+  * ``C`` : variable is restricted to the range :math:`0.0 \leq C \leq 10.0`.
+
+
+Optional Fields
+===============
+
+:Name: function_tolerance
+:Arg-type: float
+:Default: 0.0001
+:Description: Relative error on calculated merit function acceptable for convergence.
+
+\ 
+
+:Name: value_tolerance
+:Arg-type: float
+:Default: 0.0001
+:Description: Relative error on adjustable variable parameters acceptable for convergence.
+
+\ 
+
+:Name: max_iterations
+:Arg-type: int
+:Default: Unlimited
+:Description: Terminate minimization after given number of iterations.
+

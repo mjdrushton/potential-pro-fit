@@ -16,7 +16,7 @@ The following lists configuration entries that can appear in ``fit.cfg``:
 .. toctree::
     fittingruncontrol
     variables
-    minimizers
+    minimizers/minimizers.rst
     runners
     metaevaluators
 	

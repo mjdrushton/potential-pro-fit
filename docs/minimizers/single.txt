@@ -1,0 +1,18 @@
+SingleStepMinimizer
+^^^^^^^^^^^^^^^^^^^
+
+:Type-Name: SingleStepMinimizer
+:Description: Evaluates the merit function once then exits. Using this minimizer is equivalent to specifying the ``--single`` option to ``pprofit``. 
+
+\ 
+
+
+Optional Fields
+===============
+
+:Name: keep-files-directory
+:Arg-type: string
+:Description: If specified, job files are copied to given directory following run. This can provide useful information for debugging the simulation runs making up a fitting run as job output is retained.
+
+\ 
+
