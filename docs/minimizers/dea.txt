@@ -10,7 +10,7 @@ DEA
 Algorithm Description
 =====================
 
-.. figure:: images/DEA_flowchart.png
+.. figure:: images/DEA_flowchart.svg
 
   Flowchart showing operation of the differential evolution algorithm. Configuration options and the stage of the algorithm that they affect are indicated in blue. 
 

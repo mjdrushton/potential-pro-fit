@@ -5,7 +5,7 @@ Potential Pro-Fit
 
 Potential Pro-Fit is a system designed to facilitate parameter optimisation for the potentials models for use with classical simulation codes. This should be used with :ref:`pprofitmon` which is used monitor and analyse fitting results.
 
-.. figure:: images/pprofit_flowchart.png
+.. figure:: images/pprofit_flowchart.svg
     :align: center
     :figwidth: 50%
 

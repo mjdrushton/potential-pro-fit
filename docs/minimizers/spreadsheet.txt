@@ -5,26 +5,32 @@ Spreadsheet
 ^^^^^^^^^^^
 
 :Type-Name: ``Spreadsheet``
-:Description: The Spreadsheet minimizer allows the contents of a file containing Comma Separated Values (CSV), to drive a ``pprofit`` run. The columns of the spreadsheet table defined by the CSV file can each represent a variable within a fitting run and each row defines variable values that should be evaluated during the run. 
+:Description: The Spreadsheet minimizer allows the contents of a file containing Comma Separated Values (CSV), to drive a ``pprofit`` run. The columns of the spreadsheet table defined by the CSV file can each represent a variable within a fitting run and each row defines variable values that should be evaluated during the run. During a run, the ``Spreadsheet`` minimizer steps through each row of the spreadsheeet table and evaluates the merit function for each row's values. Several configuration options exist to slightly modify this behaviour:
 
-TODO: Need a picture illustrating typical spreadsheet.
-
-  During a run, the ``Spreadsheet`` minimizer steps through each row of the spreadsheeet table and evaluates the merit function for each row's values. Several configuration options exist to slightly modify this behaviour:
-  
       * ``batch_size``: adjust the number of rows evaluated for each step of the run.
       * ``start_row`` and ``end_row`` : allows a subset of the spreadsheet rows to be selected.
       * ``row_step`` : allows rows to be skipped (e.g. allowing every other row to be selected).
         
   
+.. figure:: images/spreadsheet.svg
+    :align: center
+
+    The Spreadsheet minimizer accepts CSV formatted files with a header row. Only columns that represent optimisation variables are used during a ``pprofit`` run. 
+
+
 Spreadsheet Format
 ==================
 
 * The minimizer accepts data in CSV format. 
 * The first line of the file **must** be a header row.
+  
   * The column names defined by the header row are used to map columns on to variable names.
   * Columns **must** exist for all optimisation variables (i.e. each variable marked with ``*`` within the ``[Variables]`` section of ``fit.cfg``).
+
 * Values are **only** taken from columns representing optimisation (``*``) variables: these should **only** contain values that can be converted to floating point values. Other columns may contain arbitrary data.
 * If bounds are specified within the ``[Variables]`` section, then spreadsheet values are checked to make sure they are within these bounds. If they are not, a configuration error will be raised and the run will fail. 
+
+
 
 Required Fields
 ===============
@@ -37,7 +43,7 @@ Optional Fields
 ===============
 
 :Name: ``start_row``
-:Arg Type: int
+:Arg Type: ``int``
 :Default: 0
 :Description: Option used to select a subset of the rows from spreadsheet. Selection is defined by selecting rows with indices between ``start_row`` and ``end_row``. Row indices are zero base (i.e. first data row, excluding the header row, has index of zero). 
 
@@ -46,7 +52,7 @@ Optional Fields
 \ 
 
 :Name: ``end_row``
-:Arg Type: int
+:Arg Type: ``int``
 :Default: None
 :Description: Option used to select a subset of the rows from spreadsheet . Selection is defined by selecting rows with indices between``start_row`` and ``end_row``. Row indices are zero based (i.e. first data row, excluding the header row, has index of zero). 
 
@@ -56,15 +62,28 @@ Optional Fields
 
 \
 
+.. figure:: images/spreadsheet_start_row_end_row.svg
+    :align: center
+
+    The ``start_row`` and ``end_row`` directives can be used to select rows from the spreadsheet.
+
+
 :Name: ``batch_size``
-:Arg Type: int
+:Arg Type: ``int``
 :Default: 1
 :Description: Determines the number of rows that should be run at each iteration of the minimiser. The default value of 1, means that a single candidate solution is evaluated per step of the spreadsheet minimizer. If a value of 2 is specified, then two rows are extracted from the spreadsheet and the jobs for the two candidate solutions they represent are submitted to their runners at the same time. For runners that allow jobs to be run in parallel, setting larger values of ``batch_size`` may make better use of available computing faciliities.
 
 \
 
-:Name: row_step
-:Arg Type: int
+.. figure:: images/spreadsheet_batch_size.svg
+    :align: center
+
+    Example of the effect of the ``batch_size`` configuration option.
+
+     
+
+:Name: ``row_step``
+:Arg Type: ``int``
 :Default: 1
 :Description:  Row index increment used when this minimiser steps through spreadsheet rows.
 

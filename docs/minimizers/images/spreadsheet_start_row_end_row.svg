@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 15.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="577px" height="391px" viewBox="0 0 577 391" enable-background="new 0 0 577 391" xml:space="preserve">
+<g>
+	<defs>
+		<path id="SVGID_1_" d="M45.5,86h291c0.553,0,1,0.448,1,1v124c0,0.553-0.447,1-1,1h-291c-0.552,0-1-0.447-1-1V87
+			C44.5,86.448,44.948,86,45.5,86z"/>
+	</defs>
+	<clipPath id="SVGID_2_">
+		<use xlink:href="#SVGID_1_"  overflow="visible"/>
+	</clipPath>
+	<g clip-path="url(#SVGID_2_)">
+		<defs>
+			<rect id="SVGID_3_" x="45" y="86.001" width="292.999" height="125.999"/>
+		</defs>
+		<clipPath id="SVGID_4_">
+			<use xlink:href="#SVGID_3_"  overflow="visible"/>
+		</clipPath>
+		<g clip-path="url(#SVGID_4_)" enable-background="new    ">
+			<g>
+				<defs>
+					<rect id="SVGID_5_" x="45" y="86" width="293" height="126"/>
+				</defs>
+				<clipPath id="SVGID_6_">
+					<use xlink:href="#SVGID_5_"  overflow="visible"/>
+				</clipPath>
+				<g clip-path="url(#SVGID_6_)">
+					<defs>
+						<rect id="SVGID_7_" x="45" y="86" width="293" height="126"/>
+					</defs>
+					<clipPath id="SVGID_8_">
+						<use xlink:href="#SVGID_7_"  overflow="visible"/>
+					</clipPath>
+					<rect x="47" y="88" clip-path="url(#SVGID_8_)" fill="#1A98FC" width="72.24" height="20.55"/>
+					<rect x="119.24" y="88" clip-path="url(#SVGID_8_)" fill="#1A98FC" width="72.24" height="20.55"/>
+					<rect x="191.48" y="88" clip-path="url(#SVGID_8_)" fill="#1A98FC" width="72.24" height="20.55"/>
+					<rect x="263.72" y="88" clip-path="url(#SVGID_8_)" fill="#1A98FC" width="72.239" height="20.55"/>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 51.1748 101.875)" fill="#BFBFBF" font-family="'Helvetica-Bold'" font-size="10">Name</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 123.415 101.875)" fill="#FFFFFF" font-family="'Helvetica-Bold'" font-size="10">A</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 195.6548 101.875)" fill="#FFFFFF" font-family="'Helvetica-Bold'" font-size="10">rho</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 267.895 101.875)" fill="#BFBFBF" font-family="'Helvetica-Bold'" font-size="10">C</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 51.1748 122.625)" fill="#BFBFBF" font-family="'Helvetica'" font-size="10">First</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 156.7148 122.625)" font-family="'Helvetica-Bold'" font-size="10">1000.0</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 240.0747 122.625)" font-family="'Helvetica-Bold'" font-size="10">0.23</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 312.3145 122.625)" fill="#BFBFBF" font-family="'Helvetica'" font-size="10">32.0</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 51.165 142.9746)" fill="#BFBFBF" font-family="'Helvetica'" font-size="10">Second</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 156.7046 142.9746)" font-family="'Helvetica-Bold'" font-size="10">2000.0</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 240.0649 142.9746)" font-family="'Helvetica-Bold'" font-size="10">0.24</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 312.3047 142.9746)" fill="#BFBFBF" font-family="'Helvetica'" font-size="10">33.0</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 51.1548 163.3252)" fill="#BFBFBF" font-family="'Helvetica'" font-size="10">Third</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 156.6948 163.3252)" font-family="'Helvetica-Bold'" font-size="10">4000.0</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 240.0547 163.3252)" font-family="'Helvetica-Bold'" font-size="10">0.25</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 312.2949 163.3252)" fill="#BFBFBF" font-family="'Helvetica'" font-size="10">34.0</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 51.145 183.6748)" fill="#BFBFBF" font-family="'Helvetica'" font-size="10">Fourth</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 156.6846 183.6748)" font-family="'Helvetica-Bold'" font-size="10">6000.0</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 240.0449 183.6748)" font-family="'Helvetica-Bold'" font-size="10">0.26</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 312.2852 183.6748)" fill="#BFBFBF" font-family="'Helvetica'" font-size="10">35.0</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 51.1348 204.0254)" fill="#BFBFBF" font-family="'Helvetica'" font-size="10">Fifth</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 156.6748 204.0254)" font-family="'Helvetica-Bold'" font-size="10">8000.0</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 240.0347 204.0254)" font-family="'Helvetica-Bold'" font-size="10">0.27</text>
+					</g>
+					<g clip-path="url(#SVGID_8_)">
+						<text transform="matrix(1 0 0 1 312.2754 204.0254)" fill="#BFBFBF" font-family="'Helvetica'" font-size="10">36.0</text>
+					</g>
+					
+						<line clip-path="url(#SVGID_8_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="119.24" y1="87.5" x2="119.24" y2="108.55"/>
+					
+						<line clip-path="url(#SVGID_8_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="119.24" y1="108.55" x2="119.24" y2="211"/>
+					
+						<line clip-path="url(#SVGID_8_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="191.48" y1="87.5" x2="191.48" y2="108.55"/>
+					
+						<line clip-path="url(#SVGID_8_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="191.48" y1="108.55" x2="191.48" y2="211"/>
+					
+						<line clip-path="url(#SVGID_8_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="263.72" y1="87.5" x2="263.72" y2="108.55"/>
+					
+						<line clip-path="url(#SVGID_8_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="263.72" y1="108.55" x2="263.72" y2="211"/>
+					
+						<line clip-path="url(#SVGID_8_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="46.5" y1="129.1" x2="336.459" y2="129.1"/>
+					
+						<line clip-path="url(#SVGID_8_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="46.5" y1="149.451" x2="336.459" y2="149.451"/>
+					
+						<line clip-path="url(#SVGID_8_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="46.5" y1="169.801" x2="336.459" y2="169.801"/>
+					
+						<line clip-path="url(#SVGID_8_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="46.5" y1="190.15" x2="336.459" y2="190.15"/>
+					
+						<line clip-path="url(#SVGID_8_)" fill="none" stroke="#404040" stroke-width="0.75" x1="46.5" y1="108.55" x2="336.459" y2="108.55"/>
+					<line clip-path="url(#SVGID_8_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="47" y1="87.5" x2="47" y2="108.55"/>
+					<line clip-path="url(#SVGID_8_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="47" y1="108.55" x2="47" y2="211"/>
+					
+						<line clip-path="url(#SVGID_8_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="335.96" y1="87.5" x2="335.96" y2="108.55"/>
+					
+						<line clip-path="url(#SVGID_8_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="335.96" y1="108.55" x2="335.96" y2="211"/>
+					<line clip-path="url(#SVGID_8_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="46.5" y1="88" x2="336.459" y2="88"/>
+					
+						<line clip-path="url(#SVGID_8_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="46.5" y1="210.5" x2="336.459" y2="210.5"/>
+				</g>
+			</g>
+		</g>
+	</g>
+</g>
+<g>
+	<defs>
+		<rect id="SVGID_9_" width="577" height="391"/>
+	</defs>
+	<clipPath id="SVGID_10_">
+		<use xlink:href="#SVGID_9_"  overflow="visible"/>
+	</clipPath>
+	
+		<path opacity="0.22" clip-path="url(#SVGID_10_)" fill="none" stroke="#1A98FC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="
+		M46,86.5h291c0.553,0,1,0.448,1,1v124c0,0.553-0.447,1-1,1H46c-0.552,0-1-0.447-1-1v-124C45,86.948,45.448,86.5,46,86.5z"/>
+	<path clip-path="url(#SVGID_10_)" fill="#EBEBEB" d="M14.5,11.5h97c1.657,0,3,1.343,3,3v60c0,1.657-1.343,3-3,3h-97
+		c-1.657,0-3-1.343-3-3v-60C11.5,12.843,12.843,11.5,14.5,11.5z"/>
+	
+		<path clip-path="url(#SVGID_10_)" fill="none" stroke="#A9A9A9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="
+		M14.5,11.5h97c1.657,0,3,1.343,3,3v60c0,1.657-1.343,3-3,3h-97c-1.657,0-3-1.343-3-3v-60C11.5,12.843,12.843,11.5,14.5,11.5z"/>
+	<g clip-path="url(#SVGID_10_)">
+		<text transform="matrix(1 0 0 1 16 27)" font-family="'Courier'" font-size="12">[Variables]</text>
+	</g>
+	<g clip-path="url(#SVGID_10_)">
+		<text transform="matrix(1 0 0 1 16 41)"><tspan x="0" y="0" fill="#1A98FC" font-family="'Courier-Bold'" font-size="12">rho : 0.1</tspan><tspan x="64.811" y="0" fill="#1A98FC" font-family="'Courier-Bold'" font-size="12" letter-spacing="11"> </tspan><tspan x="84" y="0" fill="#1A98FC" font-family="'Courier-Bold'" font-size="12">*</tspan></text>
+	</g>
+	<g clip-path="url(#SVGID_10_)">
+		<text transform="matrix(1 0 0 1 16 55)"><tspan x="0" y="0" fill="#1A98FC" font-family="'Courier-Bold'" font-size="12">A</tspan><tspan x="7.201" y="0" fill="#1A98FC" font-family="'Courier-Bold'" font-size="12" letter-spacing="13"> </tspan><tspan x="27.999" y="0" fill="#1A98FC" font-family="'Courier-Bold'" font-size="12">: 900.0 *</tspan></text>
+	</g>
+	<g clip-path="url(#SVGID_10_)">
+		<text transform="matrix(1 0 0 1 16 69)"><tspan x="0" y="0" fill="#A9A9A9" font-family="'Courier'" font-size="12">C</tspan><tspan x="7.201" y="0" fill="#A9A9A9" font-family="'Courier'" font-size="12" letter-spacing="13"> </tspan><tspan x="27.999" y="0" fill="#A9A9A9" font-family="'Courier'" font-size="12">: 20.0</tspan></text>
+	</g>
+	
+		<polyline clip-path="url(#SVGID_10_)" fill="none" stroke="#1A98FC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" points="
+		112,36.5 120,36.5 203,36.5 203,80 203,84.4 	"/>
+	<path clip-path="url(#SVGID_10_)" fill="#1A98FC" d="M200.455,85.455c1.406-1.406,3.685-1.406,5.091,0
+		c1.406,1.406,1.406,3.685,0,5.091c-1.406,1.406-3.685,1.406-5.091,0C199.048,89.14,199.048,86.86,200.455,85.455"/>
+	<path clip-path="url(#SVGID_10_)" fill="none" stroke="#1A98FC" stroke-width="2" stroke-miterlimit="10" d="M200.455,85.455
+		c1.406-1.406,3.685-1.406,5.091,0c1.406,1.406,1.406,3.685,0,5.091c-1.406,1.406-3.685,1.406-5.091,0
+		C199.048,89.14,199.048,86.86,200.455,85.455"/>
+	
+		<polyline clip-path="url(#SVGID_10_)" fill="none" stroke="#1A98FC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" points="
+		112,51 120,51 127.5,51 127.5,79.5 127.5,83.9 	"/>
+	<path clip-path="url(#SVGID_10_)" fill="#1A98FC" d="M124.955,84.955c1.406-1.406,3.685-1.406,5.091,0
+		c1.406,1.406,1.406,3.685,0,5.091c-1.406,1.406-3.685,1.406-5.091,0C123.548,88.64,123.548,86.36,124.955,84.955"/>
+	<path clip-path="url(#SVGID_10_)" fill="none" stroke="#1A98FC" stroke-width="2" stroke-miterlimit="10" d="M124.955,84.955
+		c1.406-1.406,3.685-1.406,5.091,0c1.406,1.406,1.406,3.685,0,5.091c-1.406,1.406-3.685,1.406-5.091,0
+		C123.548,88.64,123.548,86.36,124.955,84.955"/>
+	<path clip-path="url(#SVGID_10_)" fill="#EBEBEB" d="M374.5,110h189c1.657,0,3,1.343,3,3v86c0,1.657-1.343,3-3,3h-189
+		c-1.657,0-3-1.343-3-3v-86C371.5,111.343,372.843,110,374.5,110z"/>
+	
+		<path clip-path="url(#SVGID_10_)" fill="none" stroke="#C0C0C0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="
+		M374.5,110h189c1.657,0,3,1.343,3,3v86c0,1.657-1.343,3-3,3h-189c-1.657,0-3-1.343-3-3v-86C371.5,111.343,372.843,110,374.5,110z"
+		/>
+	<g clip-path="url(#SVGID_10_)">
+		<text transform="matrix(1 0 0 1 376 125.5)" font-family="'Courier'" font-size="12">[Minimizer]</text>
+	</g>
+	<g clip-path="url(#SVGID_10_)">
+		<text transform="matrix(1 0 0 1 376 142.5)"><tspan x="0" y="0" font-family="'Courier'" font-size="12">typ</tspan><tspan x="21.604" y="0" font-family="'Courier'" font-size="12" letter-spacing="55">e</tspan><tspan x="84.005" y="0" font-family="'Courier'" font-size="12">: Spreadsheet</tspan></text>
+	</g>
+	<g clip-path="url(#SVGID_10_)">
+		<text transform="matrix(1 0 0 1 376 159.5)"><tspan x="0" y="0" font-family="'Courier'" font-size="12">filenam</tspan><tspan x="50.408" y="0" font-family="'Courier'" font-size="12" letter-spacing="26">e</tspan><tspan x="83.998" y="0" font-family="'Courier'" font-size="12">: filename.csv</tspan></text>
+	</g>
+	<g clip-path="url(#SVGID_10_)">
+		<text transform="matrix(1 0 0 1 376 176.5)"><tspan x="0" y="0" fill="#1A98FC" font-family="'Courier-Bold'" font-size="12">start_ro</tspan><tspan x="57.609" y="0" fill="#1A98FC" font-family="'Courier-Bold'" font-size="12" letter-spacing="19">w</tspan><tspan x="83.998" y="0" fill="#1A98FC" font-family="'Courier-Bold'" font-size="12">: 1</tspan></text>
+	</g>
+	<g clip-path="url(#SVGID_10_)">
+		<text transform="matrix(1 0 0 1 376 193.5)"><tspan x="0" y="0" fill="#1A98FC" font-family="'Courier-Bold'" font-size="12">end_ro</tspan><tspan x="43.207" y="0" fill="#1A98FC" font-family="'Courier-Bold'" font-size="12" letter-spacing="33">w</tspan><tspan x="83.996" y="0" fill="#1A98FC" font-family="'Courier-Bold'" font-size="12">: 3</tspan></text>
+	</g>
+	
+		<polyline clip-path="url(#SVGID_10_)" fill="none" stroke="#1A98FC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" points="
+		372,173.5 364,173.5 354.5,173.5 354.5,139.534 346,139.534 341.2,139.534 	"/>
+	
+		<line clip-path="url(#SVGID_10_)" fill="none" stroke="#1A98FC" stroke-width="2" stroke-miterlimit="10" x1="341.2" y1="144.334" x2="341.2" y2="134.734"/>
+	
+		<polyline clip-path="url(#SVGID_10_)" fill="none" stroke="#1A98FC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" points="
+		372,191 364,191 354.5,191 354.5,181.89 346,181.89 341.2,181.89 	"/>
+	
+		<line clip-path="url(#SVGID_10_)" fill="none" stroke="#1A98FC" stroke-width="2" stroke-miterlimit="10" x1="341.2" y1="186.689" x2="341.2" y2="177.089"/>
+	<path opacity="0.16" clip-path="url(#SVGID_10_)" fill="#04F955" d="M48,130h287c1.657,0,3,1.343,3,3v55c0,1.657-1.343,3-3,3H48
+		c-1.657,0-3-1.343-3-3v-55C45,131.343,46.343,130,48,130z"/>
+	
+		<path clip-path="url(#SVGID_10_)" fill="none" stroke="#00FA92" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" d="
+		M48,130h287c1.657,0,3,1.343,3,3v55c0,1.657-1.343,3-3,3H48c-1.657,0-3-1.343-3-3v-55C45,131.343,46.343,130,48,130z"/>
+	<polygon clip-path="url(#SVGID_10_)" fill="#1A98FC" points="181.5,221.5 201.5,221.5 201.5,241.5 211.5,241.5 191.5,261.5 
+		171.5,241.5 181.5,241.5 	"/>
+	
+		<polygon clip-path="url(#SVGID_10_)" fill="none" stroke="#008AD5" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" points="
+		181.5,221.5 201.5,221.5 201.5,241.5 211.5,241.5 191.5,261.5 171.5,241.5 181.5,241.5 	"/>
+</g>
+<g>
+	<defs>
+		<rect id="SVGID_11_" x="44.5" y="270" width="293" height="85"/>
+	</defs>
+	<clipPath id="SVGID_12_">
+		<use xlink:href="#SVGID_11_"  overflow="visible"/>
+	</clipPath>
+	<g clip-path="url(#SVGID_12_)">
+		<defs>
+			<rect id="SVGID_13_" x="45" y="270" width="293" height="85"/>
+		</defs>
+		<clipPath id="SVGID_14_">
+			<use xlink:href="#SVGID_13_"  overflow="visible"/>
+		</clipPath>
+		<g clip-path="url(#SVGID_14_)" enable-background="new    ">
+			<g>
+				<defs>
+					<rect id="SVGID_15_" x="45" y="270" width="293" height="85"/>
+				</defs>
+				<clipPath id="SVGID_16_">
+					<use xlink:href="#SVGID_15_"  overflow="visible"/>
+				</clipPath>
+				<g clip-path="url(#SVGID_16_)">
+					<defs>
+						<rect id="SVGID_17_" x="45" y="270" width="293" height="85"/>
+					</defs>
+					<clipPath id="SVGID_18_">
+						<use xlink:href="#SVGID_17_"  overflow="visible"/>
+					</clipPath>
+					<rect x="47" y="272" clip-path="url(#SVGID_18_)" fill="#BFBFBF" width="72.24" height="20.55"/>
+					<rect x="119.24" y="272" clip-path="url(#SVGID_18_)" fill="#FF2F92" width="72.24" height="20.55"/>
+					<rect x="191.48" y="272" clip-path="url(#SVGID_18_)" fill="#FF2F92" width="72.241" height="20.55"/>
+					<rect x="263.721" y="272" clip-path="url(#SVGID_18_)" fill="#FF2F92" width="72.239" height="20.55"/>
+					<rect x="47" y="292.55" clip-path="url(#SVGID_18_)" fill="#BFBFBF" width="72.24" height="20.55"/>
+					<rect x="47" y="313.1" clip-path="url(#SVGID_18_)" fill="#BFBFBF" width="72.24" height="20.352"/>
+					<rect x="47" y="333.45" clip-path="url(#SVGID_18_)" fill="#BFBFBF" width="72.24" height="20.35"/>
+					<g clip-path="url(#SVGID_18_)">
+						<text transform="matrix(1 0 0 1 51.1748 285.875)" fill="#FFFFFF" font-family="'Helvetica-Bold'" font-size="10">Iteration</text>
+					</g>
+					<g clip-path="url(#SVGID_18_)">
+						<text transform="matrix(1 0 0 1 123.415 285.875)" fill="#FFFFFF" font-family="'Helvetica-Bold'" font-size="10">A</text>
+					</g>
+					<g clip-path="url(#SVGID_18_)">
+						<text transform="matrix(1 0 0 1 195.6548 285.875)" fill="#FFFFFF" font-family="'Helvetica-Bold'" font-size="10">rho</text>
+					</g>
+					<g clip-path="url(#SVGID_18_)">
+						<text transform="matrix(1 0 0 1 267.895 285.875)" fill="#BFBFBF" font-family="'Helvetica-Bold'" font-size="10">C</text>
+					</g>
+					<g clip-path="url(#SVGID_18_)">
+						<text transform="matrix(1 0 0 1 109.5049 306.625)" font-family="'Helvetica-Bold'" font-size="10">0</text>
+					</g>
+					<g clip-path="url(#SVGID_18_)">
+						<text transform="matrix(1 0 0 1 156.7246 306.625)" font-family="'Helvetica-Bold'" font-size="10">2000.0</text>
+					</g>
+					<g clip-path="url(#SVGID_18_)">
+						<text transform="matrix(1 0 0 1 240.085 306.625)" font-family="'Helvetica-Bold'" font-size="10">0.24</text>
+					</g>
+					<g clip-path="url(#SVGID_18_)">
+						<text transform="matrix(1 0 0 1 312.3242 306.625)" fill="#BFBFBF" font-family="'Helvetica'" font-size="10">20.0</text>
+					</g>
+					<g clip-path="url(#SVGID_18_)">
+						<text transform="matrix(1 0 0 1 109.5049 326.9746)" font-family="'Helvetica-Bold'" font-size="10">1</text>
+					</g>
+					<g clip-path="url(#SVGID_18_)">
+						<text transform="matrix(1 0 0 1 156.7246 326.9746)" font-family="'Helvetica-Bold'" font-size="10">4000.0</text>
+					</g>
+					<g clip-path="url(#SVGID_18_)">
+						<text transform="matrix(1 0 0 1 240.085 326.9746)" font-family="'Helvetica-Bold'" font-size="10">0.25</text>
+					</g>
+					<g clip-path="url(#SVGID_18_)">
+						<text transform="matrix(1 0 0 1 312.3242 326.9746)" fill="#BFBFBF" font-family="'Helvetica'" font-size="10">20.0</text>
+					</g>
+					<g clip-path="url(#SVGID_18_)">
+						<text transform="matrix(1 0 0 1 109.5049 347.3252)" font-family="'Helvetica-Bold'" font-size="10">2</text>
+					</g>
+					<g clip-path="url(#SVGID_18_)">
+						<text transform="matrix(1 0 0 1 156.7246 347.3252)" font-family="'Helvetica-Bold'" font-size="10">6000.0</text>
+					</g>
+					<g clip-path="url(#SVGID_18_)">
+						<text transform="matrix(1 0 0 1 240.085 347.3252)" font-family="'Helvetica-Bold'" font-size="10">0.26</text>
+					</g>
+					<g clip-path="url(#SVGID_18_)">
+						<text transform="matrix(1 0 0 1 312.3242 347.3252)" fill="#BFBFBF" font-family="'Helvetica'" font-size="10">20.0</text>
+					</g>
+					
+						<line clip-path="url(#SVGID_18_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="119.24" y1="271.5" x2="119.24" y2="292.55"/>
+					
+						<line clip-path="url(#SVGID_18_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="119.24" y1="292.55" x2="119.24" y2="354.3"/>
+					
+						<line clip-path="url(#SVGID_18_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="191.48" y1="271.5" x2="191.48" y2="292.55"/>
+					
+						<line clip-path="url(#SVGID_18_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="191.48" y1="292.55" x2="191.48" y2="354.3"/>
+					
+						<line clip-path="url(#SVGID_18_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="263.721" y1="271.5" x2="263.721" y2="292.55"/>
+					
+						<line clip-path="url(#SVGID_18_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="263.721" y1="292.55" x2="263.721" y2="354.3"/>
+					
+						<line clip-path="url(#SVGID_18_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="46.5" y1="313.1" x2="336.46" y2="313.1"/>
+					
+						<line clip-path="url(#SVGID_18_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="46.5" y1="333.45" x2="336.46" y2="333.45"/>
+					
+						<line clip-path="url(#SVGID_18_)" fill="none" stroke="#404040" stroke-width="0.75" x1="46.5" y1="292.55" x2="336.46" y2="292.55"/>
+					<line clip-path="url(#SVGID_18_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="47" y1="271.5" x2="47" y2="292.55"/>
+					<line clip-path="url(#SVGID_18_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="47" y1="292.55" x2="47" y2="354.3"/>
+					
+						<line clip-path="url(#SVGID_18_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="335.96" y1="271.5" x2="335.96" y2="292.55"/>
+					
+						<line clip-path="url(#SVGID_18_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="335.96" y1="292.55" x2="335.96" y2="354.3"/>
+					
+						<line clip-path="url(#SVGID_18_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="46.5" y1="272" x2="336.46" y2="272"/>
+					
+						<line clip-path="url(#SVGID_18_)" fill="none" stroke="#A6A6A6" stroke-width="0.35" x1="46.5" y1="353.8" x2="336.46" y2="353.8"/>
+				</g>
+			</g>
+		</g>
+	</g>
+</g>
+<g>
+	<defs>
+		<rect id="SVGID_19_" width="577" height="391"/>
+	</defs>
+	<clipPath id="SVGID_20_">
+		<use xlink:href="#SVGID_19_"  overflow="visible"/>
+	</clipPath>
+	<g clip-path="url(#SVGID_20_)">
+		<text transform="matrix(1 0 0 1 118.582 377.5)"><tspan x="0" y="0" fill="#1A98FC" font-family="'GillSans'" font-size="14">V</tspan><tspan x="7.616" y="0" fill="#1A98FC" font-family="'GillSans'" font-size="14">ariable</tspan><tspan x="44.954" y="0" fill="#1A98FC" font-family="'GillSans'" font-size="14" letter-spacing="-2"> </tspan><tspan x="46.758" y="0" fill="#1A98FC" font-family="'GillSans'" font-size="14">V</tspan><tspan x="54.374" y="0" fill="#1A98FC" font-family="'GillSans'" font-size="14">alues Evaluated </tspan><tspan x="143.945" y="0" fill="#1A98FC" font-family="'GillSans'" font-size="14">b</tspan><tspan x="150.819" y="0" fill="#1A98FC" font-family="'GillSans'" font-size="14">y Minimizer </tspan></text>
+	</g>
+</g>
+</svg>
