@@ -1,6 +1,5 @@
 .. _pprofit-minimizers-spreadsheet:
 
-
 Spreadsheet
 ^^^^^^^^^^^
 

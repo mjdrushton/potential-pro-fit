@@ -16,10 +16,12 @@ Potential Pro-Fit is a system designed to facilitate parameter optimisation for 
 Contents
 =========
 .. toctree::
+  :maxdepth: 3 
     
-    pprofit
-    pprofitmon/pprofitmon
-    configuration
-    fittingrundb
-    sshlogin   
-    acknowledgements
+  pprofit
+  pprofitmon/pprofitmon
+  configuration
+  examples/examples
+  fittingrundb
+  sshlogin   
+  acknowledgements
