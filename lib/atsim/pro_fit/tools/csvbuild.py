@@ -7,6 +7,10 @@ import sys
 
 import logging
 
+class CSVBuildKeyError(KeyError):
+  """Raised when a bad substitution variable is encountered."""
+  pass
+
 def _includeHandler(placeholder, substitutionDict, skelpath):
   if not placeholder.startswith('INCLUDE:'):
     return (False, None)
@@ -25,7 +29,10 @@ def _includeHandler(placeholder, substitutionDict, skelpath):
 
 
 def _defaultHandler(placeholder, substitutionDict, skelpath):
-  retstring = str(substitutionDict[placeholder])
+  try:
+    retstring = str(substitutionDict[placeholder])
+  except KeyError, e:
+    raise CSVBuildKeyError(*e.args)
   return (True, retstring)
 
 
@@ -109,7 +116,13 @@ class _DirectoryWalker(object):
       self._logger.debug("Template processing: %s ---> %s" % (srcpath, dstpath))
       with open(srcpath, 'rb') as infile:
         filecontents = infile.read()
-      filecontents = _templateSubstitution(filecontents, row, self.skeletonDirectory)
+
+      try:
+        filecontents = _templateSubstitution(filecontents, row, self.skeletonDirectory)
+      except CSVBuildKeyError, e:
+        augmentedException = CSVBuildKeyError(*e.args)
+        augmentedException.templateFilename = srcpath
+        raise augmentedException
 
       with open(dstpath, 'wb') as outfile:
         outfile.write(filecontents)
@@ -162,14 +175,18 @@ def buildDirs(rows,
 
 def _verboseLogging():
   """Set-up python logging to display to stderr"""
+  _setupLogging(logging.DEBUG)
   logger = logging.getLogger('csvbuild')
-  logger.setLevel(logging.DEBUG)
-  stderrHandler = logging.StreamHandler(sys.stderr)
-  formatter = logging.Formatter('csvbuild - %(message)s')
-  stderrHandler.setFormatter(formatter)
-  logger.addHandler(stderrHandler)
   logger.info("Verbose output enabled")
 
+def _setupLogging(level=logging.WARN):
+  """Set-up python logging to display to stderr"""
+  logger = logging.getLogger('csvbuild')
+  logger.setLevel(level)
+  stderrHandler = logging.StreamHandler(sys.stderr)
+  formatter = logging.Formatter('[%(levelname)s] %(message)s')
+  stderrHandler.setFormatter(formatter)
+  logger.addHandler(stderrHandler)
 
 def _commandLineParser():
   usage = u"""usage: %prog [options] CSV_FILENAME TEMPLATE_DIRECTORY DESTINATION_DIRECTORY
@@ -289,6 +306,8 @@ def main():
   #Process verbose option
   if options.verbose:
     _verboseLogging()
+  else:
+    _setupLogging()
 
   #Process -p options
   if options.extra_variables != None:
@@ -310,4 +329,12 @@ def main():
   if os.path.realpath(csvfilename) == os.path.realpath(destpath):
     optionparser.error("Template directory and destination directories cannot be the same")
 
-  buildDirs(dr, templatedir, destpath, suffix, extraVariables = extraVariables, overwrite = options.overwrite)
+  try:
+    buildDirs(dr, templatedir, destpath, suffix, extraVariables = extraVariables, overwrite = options.overwrite)
+  except CSVBuildKeyError,e:
+    logger = logging.getLogger('csvbuild')
+    msg  = "Unknown variable name '%s' specified in template: '%s'" % (e.args[0], e.templateFilename)
+    logger.error(msg)
+    sys.exit(3)
+
+

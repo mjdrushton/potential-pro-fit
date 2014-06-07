@@ -94,6 +94,7 @@ class TemplateJobFactory(object):
 
   def createJob(self, destdir, variables):
     import os
+    from atsim.pro_fit.fittool import ConfigException
     oldcwd = os.getcwd()
     try:
       rows = [ dict(variables.variablePairs) ]
@@ -103,6 +104,10 @@ class TemplateJobFactory(object):
           os.path.basename(self._templatePath),
           destdir)
       return Job(self, destdir, variables)
+
+    except csvbuild.CSVBuildKeyError,e:
+      msg = "Unknown variable name '%s' specified in template: %s" % (e.args[0], os.path.join(self._templatePath, e.templateFilename))
+      raise ConfigException(msg)
     finally:
       os.chdir(oldcwd)
 
