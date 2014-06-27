@@ -4,6 +4,7 @@ from atsim.pro_fit.fittool import ConfigException
 import logging
 import csv
 import os
+import itertools
 
 import cexprtk
 
@@ -14,27 +15,55 @@ class TableEvaluator(object):
   _logger = logging.getLogger("atsim.pro_fit.evaluators.TableEvaluator")
 
 
-  def __init__(self, expectCSVReader, resultsFilename, row_compare, weight):
+  def __init__(self, name, expectCSVReader, resultsFilename, row_compare, weight):
     """Create TableEvaluator.
 
+    :param str name: evaluator name.
     :param expectCSVReader: csv.DictReader like iterator, returning expectation table.
     :param str resultsFilename: Output filename from which simulation results are read and compared with
       expectation table.
     :param str row_compare: Expression used to perform row-by-row comparison of expected and actual results.
     :param float weight: Weight applied to merit value calculated by this evaluator"""
 
+    self._name = name
     self._expectedTable = list(expectCSVReader)
     self._resultsFilename = resultsFilename
-    self._rowCompare = row_compare
-    self._meritWeight = weight
-
+    self._rowCompare = _RowComparator(row_compare)
+    self._weight = weight
 
   def __call__(self, job):
     resultsFilename = os.path.join(job.path, 'output', self._resultsFilename)
     self._logger.debug("TableEvaluator processing ouput file: '%s'" % self._resultsFilename)
-    #TODO: Implement.
-    return None
 
+    with open(resultsFilename) as resultsFile:
+      resultsTable = csv.DictReader(resultsFile)
+      rowrecords = []
+      for rowid, (expectRow, resultsRow) in enumerate(itertools.izip_longest(self._expectedTable, resultsTable)):
+        #TODO: If either of these comes up None then throw appropriate exception.
+        cmpval = self._rowCompare.compare(expectRow, resultsRow)
+        expect = float(expectRow['expect'])
+        rowrecord = RMSEvaluatorRecord(
+          "row_" + str(rowid),
+          expect,
+          cmpval,
+          evaluatorName = self._name)
+        self._logger.debug("Result of row comparison: %s" % rowrecord )
+        rowrecords.append(rowrecord)
+
+    # Sum over the meritValues of the individual row evaluator records
+    meritValue = sum([r.meritValue for r in rowrecords])
+    overallRecord =   EvaluatorRecord("table_sum",
+      0.0,        # Expected value
+      meritValue, # Extracted value
+      weight = self._weight,
+      meritValue = self._weight * meritValue,
+      evaluatorName = self._name)
+
+    self._logger.info("Result of table comparison: %s" % overallRecord)
+
+    # TODO: Provide an option to dump individual row records
+
+    return [overallRecord]
 
   @classmethod
   def createFromConfig(cls, name, jobpath, cfgitems):
@@ -100,7 +129,7 @@ class TableEvaluator(object):
 
         csvfile.seek(0)
         dr = csv.DictReader(csvfile)
-        return cls(dr, results_filename, row_compare, weight)
+        return cls(name, dr, results_filename, row_compare, weight)
     except IOError:
       raise ConfigException("Could not open file given by 'expect_filename': %s" % csvfilename)
 
@@ -220,10 +249,8 @@ class _UnknownVariableResolver(object):
   unknown variable names accessible through the .variables property, after
   cexprtk.Expression has instantiated with an instance of this class"""
 
-
   def __init__(self):
     self._variables = []
-
 
   def __call__(self, symbol):
     self._variables.append(symbol)
@@ -232,7 +259,6 @@ class _UnknownVariableResolver(object):
   @property
   def variables(self):
     return sorted(self._variables)
-
 
   @property
   def expectVariables(self):
@@ -254,3 +280,47 @@ class _UnknownVariableResolver(object):
           return True
       return False
     return [ vname for vname in self.variables if not predicate(vname)]
+
+
+class _RowComparator(object):
+  """Class used to compare rows from the expect and results table by the TableEvaluator.
+  Evaluation takes place using a provided row_compare expression."""
+
+  def __init__(self, expression):
+    """:param str expression: row_compare expression"""
+    symbol_table = cexprtk.Symbol_Table({}, add_constants = True)
+    callback = _UnknownVariableResolver()
+    self._expression = cexprtk.Expression(expression, symbol_table, callback)
+    self._expectVariables = callback.expectVariables
+    self._resultsVariables = callback.resultsVariables
+
+
+  def compare(self, expectRow, resultsRow):
+    """Return float giving result of comparison between expectRow and resultsRow.
+    Comparison is made using the expression passed to the _RowComparator constructor.
+
+    :param dict expectRow: Row extracted from expectation table. Keys give variable names
+      and dict values, the variable values.
+    :param dict resultsRow: Row extracted from results table.
+
+    :return float: Number giving result of expression evaluation"""
+
+    self._populateSymbolTableWithExpect(expectRow)
+    self._populateSymbolTableWithResults(resultsRow)
+
+    return self._expression.value()
+
+  def _populateSymbolTableWithExpect(self, expectRow):
+    #TODO: raise appropriate exception if resultsRow doesn't contain required variable.
+    for var in self._expectVariables:
+      varkey = "e_"+var
+      #TODO: raise appropriate exception if value cannot be converted to a float.
+      self._expression.symbol_table.variables[varkey] = float(expectRow[var])
+
+  def _populateSymbolTableWithResults(self, resultsRow):
+    #TODO: raise appropriate exception if resultsRow doesn't contain required variable.
+    for var in self._resultsVariables:
+      varkey = "r_"+var
+      #TODO: raise appropriate exception if value cannot be converted to a float.
+      self._expression.symbol_table.variables[varkey] = float(resultsRow[var])
+

@@ -5,6 +5,7 @@ import os
 import shutil
 
 from atsim import pro_fit
+import testutil
 
 def _getResourceDir():
   return os.path.join(
@@ -34,7 +35,7 @@ class TableEvaluatorTestCase(unittest.TestCase):
       parser.items('Evaluator:Table'))
 
     job = pro_fit.jobfactories.Job(None, resdir, None)
-
+    # import pdb;pdb.set_trace()
     evaluated = evaluator(job)
 
     self.assertEqual(1, len(evaluated))
@@ -159,3 +160,53 @@ class TableEvaluatorTestCase(unittest.TestCase):
     sio.seek(0)
     with self.assertRaises(TableEvaluatorConfigException):
       TableEvaluator._validateExpectRows("e_A + e_B", sio)
+
+
+class RowComparatorTestCase(unittest.TestCase):
+  """Tests for atsim.pro_fit.evaluators._table._RowComparator"""
+
+  def testRowCompare(self):
+    comparator = pro_fit.evaluators._table._RowComparator("(r_x - e_x) + (r_y - e_y)")
+    actual = comparator.compare(
+      {'label' : 'hello', 'x' : '1.0', 'y' : '2.1', 'expect' : '0.0'},
+      {'label' : 'boom', 'x' : '15.0', 'y' : '2.2', 'ignored' : '5.0'})
+    expect = (15.0 - 1.0) + (2.2 - 2.1)
+    self.assertAlmostEquals(expect, actual)
+
+  def testPopulateSymbolTable(self):
+    comparator = pro_fit.evaluators._table._RowComparator("(r_x - e_x) + (r_y - e_y)")
+
+    expect = [
+      ('r_x', 0.0),
+      ('e_x', 0.0),
+      ('r_y', 0.0),
+      ('e_y', 0.0)]
+
+    testutil.compareCollection(self,
+      sorted(expect),
+      sorted(comparator._expression.symbol_table.variables.items()))
+
+    comparator._populateSymbolTableWithExpect({'label' : 'hello', 'x' : '1.0', 'y' : '2.1', 'expect' : '0.0'})
+
+    expect = [
+      ('r_x', 0.0),
+      ('e_x', 1.0),
+      ('r_y', 0.0),
+      ('e_y', 2.1)]
+
+    testutil.compareCollection(self,
+      sorted(expect),
+      sorted(comparator._expression.symbol_table.variables.items()))
+
+    comparator._populateSymbolTableWithResults({'label' : 'boom', 'x' : '15.0', 'y' : '2.2', 'ignored' : '5.0'})
+
+    expect = [
+      ('r_x', 15.0),
+      ('e_x', 1.0),
+      ('r_y', 2.2),
+      ('e_y', 2.1)]
+
+    testutil.compareCollection(self,
+      sorted(expect),
+      sorted(comparator._expression.symbol_table.variables.items()))
+

@@ -31,6 +31,15 @@ class EvaluatorRecord(object):
     self.errorFlag = False
     """Flag indicating if error was experienced when extracting value"""
 
+  def __repr__(self):
+    return "EvaluatorRecord(name=%s, expectedValue=%s, extractedValue=%s, weight=%s, meritValue=%s, evaluatorName=%s)" % (
+      self.name,
+      self.expectedValue,
+      self.extractedValue,
+      self.weight,
+      self.meritValue,
+      self.evaluatorName)
+
 
 class RMSEvaluatorRecord(EvaluatorRecord):
   """As EvaluatorRecord but with additional rmsDifference (root mean squared difference),
@@ -43,6 +52,10 @@ class RMSEvaluatorRecord(EvaluatorRecord):
 
   def _rmsDifference(self):
     return math.sqrt((self.extractedValue - self.expectedValue)**2.0)
+
+  def __repr__(self):
+    return "RMSEvaluatorRecord(name=%s, expectedValue=%f, extractedValue= %f, weight = %f, evaluatorName=%s, rmsDiff=%f)" % (self.name, self.expectedValue, self.extractedValue, self.weight, self.evaluatorName, self.rmsDifference)
+
 
 
 class FractionalDifferenceEvaluatorRecord(RMSEvaluatorRecord):
