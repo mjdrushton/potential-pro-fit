@@ -67,8 +67,19 @@ class TableEvaluatorTestCase(unittest.TestCase):
     except pro_fit.evaluators._table.UnknownVariableException, e:
       self.assertEqual(["bad"], e.unknownVariables)
 
+    # Check when expression references column that doesn't exist in expect
+    with self.assertRaises(pro_fit.fittool.ConfigException):
+      pro_fit.evaluators.TableEvaluator._validateExpression("e_bad + e_A", sio)
+
+    # Check when non e_ and r_ variables are specified.
+    sio.seek(0)
+    with self.assertRaises(pro_fit.evaluators._table.UnknownVariableException):
+      pro_fit.evaluators.TableEvaluator._validateExpression("e_x + e_y + r_n + really + bad", sio)
+
   def testExpectColumnValidation(self):
     """Test TableEvaluator._validateExpectColumns()"""
+
+    expression = "(e_A+e_B) - (r_A + r_B)"
 
     import StringIO
     sio = StringIO.StringIO()
@@ -88,6 +99,63 @@ class TableEvaluatorTestCase(unittest.TestCase):
     pro_fit.evaluators.TableEvaluator._validateExpectColumns(sio)
 
 
+  def testParseVariablesUnknownSymbolResolver(self):
+    """Test the cexprtk unknown symbol resolver callback used to identify row_compare variables"""
+    import cexprtk
+    callback = pro_fit.evaluators._table._UnknownVariableResolver()
+    st = cexprtk.Symbol_Table({}, add_constants = True)
+    expression = "sqrt( (e_jabble + e_x - r_x)^2)"
+    cexprtk.Expression(expression, st, callback)
+    self.assertEquals(["e_jabble", "e_x", "r_x"], callback.variables)
 
+    self.assertEquals(["jabble", "x"], callback.expectVariables)
+    self.assertEquals(["x"], callback.resultsVariables)
 
+    callback = pro_fit.evaluators._table._UnknownVariableResolver()
+    st = cexprtk.Symbol_Table({}, add_constants = True)
+    expression = "pi + blah + r_A_B  - r_E_B + sqrt(booble) + e_Z "
+    cexprtk.Expression(expression, st, callback)
+    self.assertEquals(["blah", "booble", "e_Z", "r_A_B", "r_E_B"], callback.variables)
+    self.assertEquals(["Z"], callback.expectVariables)
+    self.assertEquals(["A_B", "E_B"], callback.resultsVariables)
+    self.assertEquals(["blah", "booble"], callback.otherVariables)
 
+  def testRowValidation(self):
+    """Test row by row validation of table files"""
+    from atsim.pro_fit.evaluators._table import TableEvaluator, TableEvaluatorConfigException
+
+    import StringIO
+    sio = StringIO.StringIO()
+
+    # Test that should pass
+    print >> sio, "A,B,C,expect"
+    print >> sio, "1,2,3,4"
+    sio.seek(0)
+
+    TableEvaluator._validateExpectRows("e_A + e_B + e_C", sio)
+
+    # Test non-numeric value in the 'expect' column.
+    sio = StringIO.StringIO()
+    print >> sio, "A,B,C,expect"
+    print >> sio, "1,2,3,X"
+    sio.seek(0)
+
+    with self.assertRaises(TableEvaluatorConfigException):
+      TableEvaluator._validateExpectRows("e_A + e_B + e_C", sio)
+
+    # Test that non-numeric values in fields un-used by expression passes.
+    sio = StringIO.StringIO()
+    print >> sio, "A,B,C,expect"
+    print >> sio, "1,X,X,2"
+    print >> sio, "3,4,5,6"
+    print >> sio, "7,8,X,9"
+    print >> sio, "1,X,7,10"
+    sio.seek(0)
+
+    with self.assertRaises(TableEvaluatorConfigException):
+      TableEvaluator._validateExpectRows("e_B + 5", sio)
+
+    # Test that bad value in e_ field used by expression fails.
+    sio.seek(0)
+    with self.assertRaises(TableEvaluatorConfigException):
+      TableEvaluator._validateExpectRows("e_A + e_B", sio)
