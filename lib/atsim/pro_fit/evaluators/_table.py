@@ -39,13 +39,24 @@ class TableLengthException(Exception):
     self.isResultsLonger = isResultsLonger
 
 
+class TableSumException(Exception):
+  pass
+
+
 class TableEvaluator(object):
   """Evaluator allowing comparison between two sets of tabulated data"""
 
   _logger = logging.getLogger("atsim.pro_fit.evaluators.TableEvaluator")
 
-
-  def __init__(self, name, expectCSVReader, resultsFilename, row_compare, weight):
+  def __init__(
+    self,
+    name,
+    expectCSVReader,
+    resultsFilename,
+    row_compare,
+    sumWeight,
+    rowWeight,
+    recordPerRow):
     """Create TableEvaluator.
 
     :param str name: evaluator name.
@@ -53,13 +64,18 @@ class TableEvaluator(object):
     :param str resultsFilename: Output filename from which simulation results are read and compared with
       expectation table.
     :param str row_compare: Expression used to perform row-by-row comparison of expected and actual results.
-    :param float weight: Weight applied to merit value calculated by this evaluator"""
+    :param float sumWeight: Weight applied to ``table_sum`` evaluator record.
+    :param float rowWeight: Weight applied ``row_`` evaluator records.
+    :param bool recordPerRow: If ``True`` call method will return one evaluator record per table
+      row in addition to ``table_sum`` evaluator record."""
 
     self._name = name
     self._expectedTable = list(expectCSVReader)
     self._resultsFilename = resultsFilename
     self._rowCompare = _RowComparator(row_compare)
-    self._weight = weight
+    self._sumWeight = sumWeight
+    self._rowWeight = rowWeight
+    self._recordPerRow = recordPerRow
 
   def __call__(self, job):
     resultsFilename = os.path.join(job.path, 'output', self._resultsFilename)
@@ -71,10 +87,9 @@ class TableEvaluator(object):
         rowRecords = self._processRows(resultsFile, job, resultsFilename)
     except IOError, ioe:
       self._logger.warning("Table evaluator '%s' could not open results file: '%s' for job '%s'" % (self._name, resultsFilename, job.name))
-      errorRecord = ErrorEvaluatorRecord('table_sum', 0.0, ioe, weight = self._weight, evaluatorName = self._name)
+      errorRecord = ErrorEvaluatorRecord('table_sum', 0.0, ioe, weight = self._sumWeight, evaluatorName = self._name)
       rowRecords = [errorRecord]
 
-    # TODO: Provide an option to dump individual row records
     rowRecords = self._makeReturnRecords(rowRecords)
     return rowRecords
 
@@ -86,11 +101,10 @@ class TableEvaluator(object):
     if None == resultsTable.fieldnames:
       self._logger.warning("Table evaluator '%s' could not find any fields in file : '%s' (indicating no header or empty file) for job '%s'" % (self._name, resultsFilename, job.name))
       the = TableHeaderException("Could not read field names from file: '%s' (indicating no header or empty file)" % resultsFilename)
-      return [ErrorEvaluatorRecord('table_sum', 0.0, the, weight = self._weight, evaluatorName = self._name)]
+      return [ErrorEvaluatorRecord('table_sum', 0.0, the, weight = self._sumWeight, evaluatorName = self._name)]
 
     rowRecords = []
     for rowid, (expectRow, resultsRow) in enumerate(itertools.izip_longest(self._expectedTable, resultsTable)):
-
       rowName = "row_" + str(rowid)
       # Is one table longer than the other?
       if not expectRow:
@@ -123,6 +137,7 @@ class TableEvaluator(object):
               rowName,
               expect,
               cmpval,
+              weight = self._rowWeight,
               evaluatorName = self._name)
 
       self._logger.debug("Result of row comparison: %s" % rowrecord )
@@ -135,37 +150,50 @@ class TableEvaluator(object):
     return message
 
   def _makeErrorRowRecord(self, e, rowName, expect, rowid, job):
-    rowrecord = ErrorEvaluatorRecord(rowName, expect, e, weight = self._weight, evaluatorName = self._name)
+    rowrecord = ErrorEvaluatorRecord(rowName, expect, e, weight = self._sumWeight, evaluatorName = self._name)
     self._logger.warning("Table evaluator (%s, job: %s) could not evaluate expression '%s': %s" % (
       self._name, job.name, self._rowCompare.expressionString, e.message ) )
     return rowrecord
 
   def _makeReturnRecords(self, rowRecords):
     """Check for errors and either return ErrorEvaluatorRecord or sum of individual rows"""
+    sumRecord = self._makeTableSumRecord(rowRecords)
+    if self._recordPerRow:
+      retrows = list(rowRecords)
+    else:
+      retrows = []
+    retrows.append(sumRecord)
+    return retrows
 
+  def _makeTableSumRecord(self, rowRecords):
+    """Make the table_sum record"""
     errorRecord = self._getFirstErrorRecord(rowRecords)
     if errorRecord:
-      errorRecord.name = "table_sum"
-      self._logger.warning("Result of table comparison: %s" % errorRecord)
-      return [errorRecord]
+      if not self._recordPerRow or len(rowRecords) == 1:
+        errorRecord.name = "table_sum"
+        errorRecord.weight = self._sumWeight
+        return errorRecord
+      else:
+        errorRecord = ErrorEvaluatorRecord('table_sum',
+          TableSumException("Problem calculating table_sum. See individual row evaluator records for reason"),
+          weight = self._sumWeight, evaluatorName = self._name)
+        return errorRecord
 
     # Sum over the meritValues of the individual row evaluator records
     meritValue = sum([r.meritValue for r in rowRecords])
     overallRecord =   EvaluatorRecord("table_sum",
       0.0,        # Expected value
       meritValue, # Extracted value
-      weight = self._weight,
-      meritValue = self._weight * meritValue,
+      weight = self._sumWeight,
+      meritValue = self._sumWeight * meritValue,
       evaluatorName = self._name)
-    self._logger.info("Result of table comparison: %s" % overallRecord)
-    return [overallRecord]
+    return overallRecord
 
   def _getFirstErrorRecord(self, rowRecords):
     for record in rowRecords:
       if record.errorFlag:
         return record
     return None
-
 
   @classmethod
   def createFromConfig(cls, name, jobpath, cfgitems):
@@ -178,7 +206,8 @@ class TableEvaluator(object):
       'results_filename',
       'expect_filename',
       'row_compare',
-      'weight'])
+      'weight',
+      'sum_only'])
 
     for k,v in cfgdict.iteritems():
       if not k in supportedFields:
@@ -211,6 +240,8 @@ class TableEvaluator(object):
     else:
       csvfilename = expect_filename
 
+    sum_only = cls._validateSumOnly(cfgdict)
+
     try:
       with open(csvfilename, 'rUb') as csvfile:
         # Check that expect file contains the columns that it should.
@@ -230,10 +261,29 @@ class TableEvaluator(object):
         cls._logger.debug("   expect_filename  : '%s'" % csvfilename)
         cls._logger.debug("   row_compare      : '%s'" % row_compare)
         cls._logger.debug("   weight           : '%s'" % weight)
+        cls._logger.debug("   sum_only         : '%s'" % sum_only)
+
+        if sum_only:
+          sumWeight = weight
+          rowWeight = 1.0
+        else:
+          sumWeight = 0.0
+          rowWeight = weight
+
+        recordPerRow =  not sum_only
 
         csvfile.seek(0)
         dr = csv.DictReader(csvfile)
-        return cls(name, dr, results_filename, row_compare, weight)
+
+        # Finally, create the table evaulator.
+        return cls(
+          name,             # name
+          dr,               # expectCSVReader
+          results_filename, # resultsFilename
+          row_compare,      # row_compare
+          sumWeight,        # sumWeight
+          rowWeight,        # rowWeight
+          recordPerRow)     # recordPerRow
     except IOError:
       raise ConfigException("Could not open file given by 'expect_filename': %s" % csvfilename)
 
@@ -282,7 +332,6 @@ class TableEvaluator(object):
     if callback.otherVariables:
       raise UnknownVariableException(expression, callback.otherVariables)
 
-
   @staticmethod
   def _validateExpectColumns(expectCSVFile, csvfilename = ""):
     """Check that expectCSVFile contains necessary columns, based on ``expression``.
@@ -301,7 +350,6 @@ class TableEvaluator(object):
     if not 'expect' in csvFieldNames:
       TableEvaluator._logger.debug("'expect' column not found, 'expect_filename' columns: %s" % dr.fieldnames)
       raise ConfigException("File given by 'expect_filename' did no contain column named 'expect'.")
-
 
   @classmethod
   def _validateExpectRows(cls, expression, expectCSVFile, csvFilename = ""):
@@ -338,6 +386,21 @@ class TableEvaluator(object):
             "Error converting '%s' value into float in row %d of '%s': %s" % (
               k, i+1, csvFilename, v ))
     cls._logger.debug("Row validation completed.")
+
+  @classmethod
+  def _validateSumOnly(self, cfgdict):
+    """Parse 'sum_only' option value into boolean value.
+
+    :param dict cfgdict: Configuration options.
+    :return bool: True or False depending on option being set (defaults to False)
+    :raises TableEvaluatorConfigException: if value isn't 'True' or 'False'"""
+    optionval = cfgdict.get('sum_only', 'False')
+    optionval = optionval.lower()
+
+    try:
+      return {'true' : True, 'false' : False}[optionval]
+    except KeyError:
+      raise TableEvaluatorConfigException("'sum_only' option can be True or False not '%s'" % optionval)
 
 
 class _UnknownVariableResolver(object):

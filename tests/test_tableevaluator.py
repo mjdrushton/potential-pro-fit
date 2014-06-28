@@ -20,8 +20,8 @@ mockJobFactory = MockJobFactory('Runner', "TableJob", [])
 class TableEvaluatorTestCase(unittest.TestCase):
   """Tests for atsim.pro_fit.evaluators.TableEvaluator"""
 
-  def testEndToEnd(self):
-    """Test extraction and comparison of single row"""
+  def testEndToEnd_onlysum(self):
+    """Test TableEvaluator"""
     resdir = _getResourceDir()
     resdir = os.path.join(resdir, 'end_to_end')
 
@@ -31,6 +31,7 @@ class TableEvaluatorTestCase(unittest.TestCase):
     with open(os.path.join(resdir, 'evaluator.cfg')) as infile:
       parser.readfp(infile)
 
+    # import pdb;pdb.set_trace()
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
       resdir,
@@ -45,6 +46,56 @@ class TableEvaluatorTestCase(unittest.TestCase):
     self.assertAlmostEquals(0.0, rec.expectedValue)
     self.assertAlmostEquals(46.983161698072, rec.extractedValue)
     self.assertAlmostEquals(2.0 * 46.983161698072, rec.meritValue)
+
+  def testEndToEnd(self):
+    """Test for when individual evaluator records are returned for each row"""
+    resdir = _getResourceDir()
+    resdir = os.path.join(resdir, 'end_to_end')
+
+    # Configure the evaluator
+    parser = ConfigParser.SafeConfigParser()
+    parser.optionxform = str
+    with open(os.path.join(resdir, 'evaluator_individual_rows.cfg')) as infile:
+      parser.readfp(infile)
+
+    evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
+      'Table',
+      resdir,
+      parser.items('Evaluator:Table'))
+
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+    # import pdb;pdb.set_trace()
+    evaluated = evaluator(job)
+
+    ER = pro_fit.evaluators._common.RMSEvaluatorRecord
+    # def __init__(self, name, expectedValue, extractedValue, weight = 1.0, evaluatorName = None):
+
+    weight = 2.0
+    expectedRecords = [
+      ER('row_0'       , 0   , 18.6010752377383        , weight , "Table") ,
+      ER('row_1'       , 1   , 14.3527000944073        , weight , "Table") ,
+      ER('row_2'       , 2   , 17.0293863659264        , weight , "Table") ,
+      ER('table_sum'   , 0.0  , weight *46.983161698072         , 0.0    , "Table") ]
+
+    def todicts(records):
+      dicts = []
+      for r in records:
+        d = dict(name = r.name,
+          expectedValue = r.expectedValue,
+          extractedValue = r.extractedValue,
+          weight = r.weight,
+          evaluatorName = r.evaluatorName,
+          errorFlag = r.errorFlag)
+        dicts.append(d)
+      return dicts
+
+    testutil.compareCollection(self,
+      todicts(expectedRecords),
+      todicts(evaluated))
+
+
+class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
+  """Test TableEvaluator methods related to TableEvaluator.createFromConfig()"""
 
   def testRowCompareValidation(self):
     """Check field validation for 'row_compare' configuration option."""
@@ -78,37 +129,6 @@ class TableEvaluatorTestCase(unittest.TestCase):
     with self.assertRaises(pro_fit.evaluators._table.UnknownVariableException):
       pro_fit.evaluators.TableEvaluator._validateExpression("e_x + e_y + r_n + really + bad", sio)
 
-  def testHeaderExceptions(self):
-    """Test _validateExpectColumns() and _validateExpectRows() raises TableHeaderException under error conditions."""
-    import StringIO
-    sio = StringIO.StringIO()
-
-    # Completely empty file
-    with self.assertRaises(pro_fit.evaluators._table.TableHeaderException):
-      pro_fit.evaluators.TableEvaluator._validateExpectColumns(sio)
-
-    # File where header has different number of columns than body
-    sio = StringIO.StringIO()
-    print >>sio, "A,B,expect"
-    print >>sio, "1,2,3"
-    print >>sio, "2,3,4,5"
-
-    sio.seek(0)
-    with self.assertRaises(pro_fit.evaluators._table.TableHeaderException):
-      pro_fit.evaluators.TableEvaluator._validateExpectRows("e_A", sio)
-
-    # File where header has different number of columns than body
-    sio = StringIO.StringIO()
-    print >>sio, "A,B,expect"
-    print >>sio, "1,2,3,4"
-    print >>sio, "2,3,4"
-
-    sio.seek(0)
-    with self.assertRaises(pro_fit.evaluators._table.TableHeaderException):
-      pro_fit.evaluators.TableEvaluator._validateExpectRows("e_A", sio)
-
-
-
   def testExpectColumnValidation(self):
     """Test TableEvaluator._validateExpectColumns()"""
 
@@ -130,7 +150,6 @@ class TableEvaluatorTestCase(unittest.TestCase):
     sio.seek(0)
 
     pro_fit.evaluators.TableEvaluator._validateExpectColumns(sio)
-
 
   def testParseVariablesUnknownSymbolResolver(self):
     """Test the cexprtk unknown symbol resolver callback used to identify row_compare variables"""
@@ -193,6 +212,60 @@ class TableEvaluatorTestCase(unittest.TestCase):
     with self.assertRaises(TableEvaluatorConfigException):
       TableEvaluator._validateExpectRows("e_A + e_B", sio)
 
+  def testSumOnlyValidate(self):
+    """Test sum_only configuration option for TableEvaluator"""
+
+    optionDict = {
+    }
+
+    self.assertEquals(False, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict))
+
+    optionDict['sum_only'] = 'false'
+    self.assertEquals(False, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict))
+    optionDict['sum_only'] = 'False'
+    self.assertEquals(False, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict))
+    optionDict['sum_only'] = 'true'
+    self.assertEquals(True, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict))
+    optionDict['sum_only'] = 'True'
+    self.assertEquals(True, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict))
+
+    with self.assertRaises(pro_fit.evaluators._table.TableEvaluatorConfigException):
+      optionDict['sum_only'] = 'booom'
+      pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict)
+
+
+class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
+  """Tests for TableEvaluator error conditions"""
+
+  def testHeaderExceptions(self):
+    """Test _validateExpectColumns() and _validateExpectRows() raises TableHeaderException under error conditions."""
+    import StringIO
+    sio = StringIO.StringIO()
+
+    # Completely empty file
+    with self.assertRaises(pro_fit.evaluators._table.TableHeaderException):
+      pro_fit.evaluators.TableEvaluator._validateExpectColumns(sio)
+
+    # File where header has different number of columns than body
+    sio = StringIO.StringIO()
+    print >>sio, "A,B,expect"
+    print >>sio, "1,2,3"
+    print >>sio, "2,3,4,5"
+
+    sio.seek(0)
+    with self.assertRaises(pro_fit.evaluators._table.TableHeaderException):
+      pro_fit.evaluators.TableEvaluator._validateExpectRows("e_A", sio)
+
+    # File where header has different number of columns than body
+    sio = StringIO.StringIO()
+    print >>sio, "A,B,expect"
+    print >>sio, "1,2,3,4"
+    print >>sio, "2,3,4"
+
+    sio.seek(0)
+    with self.assertRaises(pro_fit.evaluators._table.TableHeaderException):
+      pro_fit.evaluators.TableEvaluator._validateExpectRows("e_A", sio)
+
   def testMissingOutputFile(self):
     """Test error condition when results table is missing"""
 
@@ -200,7 +273,9 @@ class TableEvaluatorTestCase(unittest.TestCase):
       [{"A": '1.0', "B" : '2.0', "expect": 3.0}],
       "nofile.csv",
       "r_A",
-      1.0)
+      1.0,
+      0.0,
+      False)
 
     resdir = _getResourceDir()
     job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
@@ -214,7 +289,6 @@ class TableEvaluatorTestCase(unittest.TestCase):
     self.assertEquals(True, r.errorFlag)
     self.assertEquals(IOError, type(r.exception))
     self.assertEquals("Table", r.evaluatorName)
-
 
   def testEmptyOutputFile(self):
     """Test error condition when results table is empty"""
@@ -238,7 +312,9 @@ class TableEvaluatorTestCase(unittest.TestCase):
             [{"A": '1.0', "B" : '2.0', "expect": 3.0}],
             "output.csv",
             "r_A",
-            1.0)
+            1.0,
+            0.0,
+            False)
 
       evaluated = evaluator(job)
       self.assertEqual(1, len(evaluated))
@@ -258,7 +334,9 @@ class TableEvaluatorTestCase(unittest.TestCase):
       [{"A": '1.0', "B" : '2.0', "expect": 3.0}],
       "missing_column.csv",
       "r_A",
-      1.0)
+      1.0,
+      0.0,
+      False)
 
     resdir = os.path.join(_getResourceDir(), 'error_conditions')
     job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
@@ -275,7 +353,6 @@ class TableEvaluatorTestCase(unittest.TestCase):
     self.assertEquals('r_A', r.exception.expression)
     self.assertEquals("Table", r.evaluatorName)
 
-
   def testExpectResultsDifferentLengths_ExpectLonger(self):
     """Test correct behaviour when expect table and results table have different lengths"""
 
@@ -289,7 +366,9 @@ class TableEvaluatorTestCase(unittest.TestCase):
       ],
       "three_rows.csv",
       "r_A",
-      1.0)
+      1.0,
+      0.0,
+      False)
 
     resdir = os.path.join(_getResourceDir(), 'error_conditions')
     job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
@@ -314,7 +393,9 @@ class TableEvaluatorTestCase(unittest.TestCase):
       ],
       "three_rows.csv",
       "r_A",
-      1.0)
+      1.0,
+      0.0,
+      False)
 
     resdir = os.path.join(_getResourceDir(), 'error_conditions')
     job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
@@ -330,7 +411,6 @@ class TableEvaluatorTestCase(unittest.TestCase):
     self.assertEquals(True, r.exception.isResultsLonger)
     self.assertEquals("Table", r.evaluatorName)
 
-
   def testValueError(self):
     """Check error handling when expectation and results table values cannot be converted to float"""
     evaluator = pro_fit.evaluators.TableEvaluator("Table",
@@ -341,7 +421,9 @@ class TableEvaluatorTestCase(unittest.TestCase):
       ],
       "bad_value.csv",
       "r_B",
-      1.0)
+      1.0,
+      0.0,
+      False)
 
     resdir = os.path.join(_getResourceDir(), 'error_conditions')
     job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
@@ -356,7 +438,6 @@ class TableEvaluatorTestCase(unittest.TestCase):
     self.assertEquals(ValueError, type(r.exception))
     self.assertEquals("Table", r.evaluatorName)
 
-
   def testMathDomainError(self):
     """Check correct behaviour when row_compare expression yields bad values"""
     evaluator = pro_fit.evaluators.TableEvaluator("Table",
@@ -367,7 +448,9 @@ class TableEvaluatorTestCase(unittest.TestCase):
       ],
       "three_rows.csv",
       "1.0/0",
-      1.0)
+      1.0,
+      0.0,
+      False)
 
     resdir = os.path.join(_getResourceDir(), 'error_conditions')
     job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
@@ -390,7 +473,9 @@ class TableEvaluatorTestCase(unittest.TestCase):
       ],
       "three_rows.csv",
       "log(-1)",
-      1.0)
+      1.0,
+      0.0,
+      False)
 
     job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
 
@@ -402,8 +487,6 @@ class TableEvaluatorTestCase(unittest.TestCase):
     self.assertEquals(True, r.errorFlag)
     self.assertEquals(ValueError, type(r.exception))
     self.assertEquals("Table", r.evaluatorName)
-
-
 
 
 class RowComparatorTestCase(unittest.TestCase):
