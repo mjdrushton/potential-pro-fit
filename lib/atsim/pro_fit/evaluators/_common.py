@@ -54,7 +54,7 @@ class RMSEvaluatorRecord(EvaluatorRecord):
     return math.sqrt((self.extractedValue - self.expectedValue)**2.0)
 
   def __repr__(self):
-    return "RMSEvaluatorRecord(name=%s, expectedValue=%f, extractedValue= %f, weight = %f, evaluatorName=%s, rmsDiff=%f)" % (self.name, self.expectedValue, self.extractedValue, self.weight, self.evaluatorName, self.rmsDifference)
+    return "RMSEvaluatorRecord(name=%s, expectedValue=%f, extractedValue=%f, weight=%f, evaluatorName=%s, rmsDiff=%f)" % (self.name, self.expectedValue, self.extractedValue, self.weight, self.evaluatorName, self.rmsDifference)
 
 
 
@@ -82,3 +82,6 @@ class ErrorEvaluatorRecord(EvaluatorRecord):
       EvaluatorRecord.__init__(self, name, expectedValue, float("nan"), weight = weight, meritValue = float("nan"), evaluatorName = evaluatorName )
       self.errorFlag = True
       self.exception = exception
+
+  def __repr__(self):
+      return "ErrorEvaluatorRecord(name=%s, exception=%s, evaluatorName=%s)" % (self.name, self.exception, self.evaluatorName)

@@ -17,5 +17,9 @@
 			"follow_symlinks": true,
 			"path": "."
 		}
-	]
+	],
+	"python_interpreter" : "venv/bin/python",
+	"python_test" : {
+		"command" : "source venv/bin/activate;venv/bin/nose2"
+	}
 }

@@ -22,8 +22,6 @@ class GulpDrvParserTestCase(unittest.TestCase):
     from atsim.pro_fit.evaluators._gulp import GulpDrvParser
     self.parser = GulpDrvParser(infile)
 
-
-
   def testGradientsCartesian(self):
     expect = [
      ( 0.00000001,    -16.94269799,    -14.62767097),
@@ -43,7 +41,6 @@ class GulpDrvParserTestCase(unittest.TestCase):
               -13.26823765,     -0.00000001,      0.00000007]
     actual = self.parser.gradientsStrain
     testutil.compareCollection(self, expect, actual)
-
 
     symbols = ['xx', 'yy', 'zz', 'yz', 'xz', 'xy']
 

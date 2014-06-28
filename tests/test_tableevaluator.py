@@ -14,9 +14,11 @@ def _getResourceDir():
       'table_evaluator')
 
 
+from tests.common import MockJobFactory
+mockJobFactory = MockJobFactory('Runner', "TableJob", [])
+
 class TableEvaluatorTestCase(unittest.TestCase):
   """Tests for atsim.pro_fit.evaluators.TableEvaluator"""
-
 
   def testEndToEnd(self):
     """Test extraction and comparison of single row"""
@@ -34,8 +36,7 @@ class TableEvaluatorTestCase(unittest.TestCase):
       resdir,
       parser.items('Evaluator:Table'))
 
-    job = pro_fit.jobfactories.Job(None, resdir, None)
-    # import pdb;pdb.set_trace()
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
     evaluated = evaluator(job)
 
     self.assertEqual(1, len(evaluated))
@@ -76,6 +77,37 @@ class TableEvaluatorTestCase(unittest.TestCase):
     sio.seek(0)
     with self.assertRaises(pro_fit.evaluators._table.UnknownVariableException):
       pro_fit.evaluators.TableEvaluator._validateExpression("e_x + e_y + r_n + really + bad", sio)
+
+  def testHeaderExceptions(self):
+    """Test _validateExpectColumns() and _validateExpectRows() raises TableHeaderException under error conditions."""
+    import StringIO
+    sio = StringIO.StringIO()
+
+    # Completely empty file
+    with self.assertRaises(pro_fit.evaluators._table.TableHeaderException):
+      pro_fit.evaluators.TableEvaluator._validateExpectColumns(sio)
+
+    # File where header has different number of columns than body
+    sio = StringIO.StringIO()
+    print >>sio, "A,B,expect"
+    print >>sio, "1,2,3"
+    print >>sio, "2,3,4,5"
+
+    sio.seek(0)
+    with self.assertRaises(pro_fit.evaluators._table.TableHeaderException):
+      pro_fit.evaluators.TableEvaluator._validateExpectRows("e_A", sio)
+
+    # File where header has different number of columns than body
+    sio = StringIO.StringIO()
+    print >>sio, "A,B,expect"
+    print >>sio, "1,2,3,4"
+    print >>sio, "2,3,4"
+
+    sio.seek(0)
+    with self.assertRaises(pro_fit.evaluators._table.TableHeaderException):
+      pro_fit.evaluators.TableEvaluator._validateExpectRows("e_A", sio)
+
+
 
   def testExpectColumnValidation(self):
     """Test TableEvaluator._validateExpectColumns()"""
@@ -160,6 +192,218 @@ class TableEvaluatorTestCase(unittest.TestCase):
     sio.seek(0)
     with self.assertRaises(TableEvaluatorConfigException):
       TableEvaluator._validateExpectRows("e_A + e_B", sio)
+
+  def testMissingOutputFile(self):
+    """Test error condition when results table is missing"""
+
+    evaluator = pro_fit.evaluators.TableEvaluator("Table",
+      [{"A": '1.0', "B" : '2.0', "expect": 3.0}],
+      "nofile.csv",
+      "r_A",
+      1.0)
+
+    resdir = _getResourceDir()
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+
+    evaluated = evaluator(job)
+    self.assertEqual(1, len(evaluated))
+    r = evaluated[0]
+
+    # Test that error-flag is set
+    self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
+    self.assertEquals(True, r.errorFlag)
+    self.assertEquals(IOError, type(r.exception))
+    self.assertEquals("Table", r.evaluatorName)
+
+
+  def testEmptyOutputFile(self):
+    """Test error condition when results table is empty"""
+
+    # Create empty file
+    import tempfile
+    import shutil
+    import os
+    tempdir = tempfile.mkdtemp()
+    oldir = os.getcwd()
+    try:
+      # Create an empty file
+      os.chdir(tempdir)
+      os.mkdir('output')
+      f = open(os.path.join('output', 'output.csv'),'w')
+      f.close()
+
+      # Perform the test
+      job = pro_fit.jobfactories.Job(mockJobFactory, tempdir, None)
+      evaluator = pro_fit.evaluators.TableEvaluator("Table",
+            [{"A": '1.0', "B" : '2.0', "expect": 3.0}],
+            "output.csv",
+            "r_A",
+            1.0)
+
+      evaluated = evaluator(job)
+      self.assertEqual(1, len(evaluated))
+      r = evaluated[0]
+
+      self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
+      self.assertEquals(True, r.errorFlag)
+      self.assertEquals(pro_fit.evaluators._table.TableHeaderException, type(r.exception))
+      self.assertEquals("Table", r.evaluatorName)
+
+    finally:
+      shutil.rmtree(tempdir, ignore_errors = True)
+
+  def testMissingResultsColumn(self):
+    """Check error condition when results table is missing column required by row_compare expression"""
+    evaluator = pro_fit.evaluators.TableEvaluator("Table",
+      [{"A": '1.0', "B" : '2.0', "expect": 3.0}],
+      "missing_column.csv",
+      "r_A",
+      1.0)
+
+    resdir = os.path.join(_getResourceDir(), 'error_conditions')
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+
+    evaluated = evaluator(job)
+    self.assertEqual(1, len(evaluated))
+    r = evaluated[0]
+
+    # Test that error-flag is set
+    self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
+    self.assertEquals(True, r.errorFlag)
+    self.assertEquals(pro_fit.evaluators._table.UnknownVariableException, type(r.exception))
+    self.assertEquals(['r_A'], r.exception.unknownVariables)
+    self.assertEquals('r_A', r.exception.expression)
+    self.assertEquals("Table", r.evaluatorName)
+
+
+  def testExpectResultsDifferentLengths_ExpectLonger(self):
+    """Test correct behaviour when expect table and results table have different lengths"""
+
+    # Expect longer than results
+    evaluator = pro_fit.evaluators.TableEvaluator("Table",
+      [
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'},
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'},
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'},
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'}
+      ],
+      "three_rows.csv",
+      "r_A",
+      1.0)
+
+    resdir = os.path.join(_getResourceDir(), 'error_conditions')
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+
+    evaluated = evaluator(job)
+    self.assertEqual(1, len(evaluated))
+    r = evaluated[0]
+
+    # Test that error-flag is set
+    self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
+    self.assertEquals(True, r.errorFlag)
+    self.assertEquals(pro_fit.evaluators._table.TableLengthException, type(r.exception))
+    self.assertEquals(False, r.exception.isResultsLonger)
+    self.assertEquals("Table", r.evaluatorName)
+
+  def testExpectResultsDifferentLengths_ResultsLonger(self):
+    # Results longer than expect
+    evaluator = pro_fit.evaluators.TableEvaluator("Table",
+      [
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'},
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'},
+      ],
+      "three_rows.csv",
+      "r_A",
+      1.0)
+
+    resdir = os.path.join(_getResourceDir(), 'error_conditions')
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+
+    evaluated = evaluator(job)
+    self.assertEqual(1, len(evaluated))
+    r = evaluated[0]
+
+    # Test that error-flag is set
+    self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
+    self.assertEquals(True, r.errorFlag)
+    self.assertEquals(pro_fit.evaluators._table.TableLengthException, type(r.exception))
+    self.assertEquals(True, r.exception.isResultsLonger)
+    self.assertEquals("Table", r.evaluatorName)
+
+
+  def testValueError(self):
+    """Check error handling when expectation and results table values cannot be converted to float"""
+    evaluator = pro_fit.evaluators.TableEvaluator("Table",
+      [
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'},
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'},
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'}
+      ],
+      "bad_value.csv",
+      "r_B",
+      1.0)
+
+    resdir = os.path.join(_getResourceDir(), 'error_conditions')
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+
+    evaluated = evaluator(job)
+    self.assertEqual(1, len(evaluated))
+    r = evaluated[0]
+
+    # Test that error-flag is set
+    self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
+    self.assertEquals(True, r.errorFlag)
+    self.assertEquals(ValueError, type(r.exception))
+    self.assertEquals("Table", r.evaluatorName)
+
+
+  def testMathDomainError(self):
+    """Check correct behaviour when row_compare expression yields bad values"""
+    evaluator = pro_fit.evaluators.TableEvaluator("Table",
+      [
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'},
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'},
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'},
+      ],
+      "three_rows.csv",
+      "1.0/0",
+      1.0)
+
+    resdir = os.path.join(_getResourceDir(), 'error_conditions')
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+
+    evaluated = evaluator(job)
+    self.assertEqual(1, len(evaluated))
+    r = evaluated[0]
+
+    # Test that error-flag is set
+    self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
+    self.assertEquals(True, r.errorFlag)
+    self.assertEquals(ValueError, type(r.exception))
+    self.assertEquals("Table", r.evaluatorName)
+
+    evaluator = pro_fit.evaluators.TableEvaluator("Table",
+      [
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'},
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'},
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'},
+      ],
+      "three_rows.csv",
+      "log(-1)",
+      1.0)
+
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+
+    evaluated = evaluator(job)
+    self.assertEqual(1, len(evaluated))
+    r = evaluated[0]
+
+    self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
+    self.assertEquals(True, r.errorFlag)
+    self.assertEquals(ValueError, type(r.exception))
+    self.assertEquals("Table", r.evaluatorName)
+
+
 
 
 class RowComparatorTestCase(unittest.TestCase):

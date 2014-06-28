@@ -1,12 +1,42 @@
 from _common import *
 from atsim.pro_fit.fittool import ConfigException
 
-import logging
 import csv
-import os
 import itertools
+import logging
+import math
+import os
 
 import cexprtk
+
+
+class TableEvaluatorConfigException(ConfigException):
+  pass
+
+class TableHeaderException(TableEvaluatorConfigException):
+  pass
+
+class BadExpressionException(TableEvaluatorConfigException):
+  pass
+
+
+class UnknownVariableException(TableEvaluatorConfigException):
+  def __init__(self, expression, unknownVariables, msg = None):
+    if not msg:
+      super(TableEvaluatorConfigException,self).__init__(
+        "Expression refers to unknown variables '%s' : %s" % (
+          ",".join([str(v) for v in unknownVariables]),
+          expression ))
+    else:
+      super(TableEvaluatorConfigException,self).__init__(msg)
+    self.expression = expression
+    self.unknownVariables = unknownVariables
+
+class TableLengthException(Exception):
+
+  def __init__(self, msg, isResultsLonger = False):
+    super(Exception,self).__init__(msg)
+    self.isResultsLonger = isResultsLonger
 
 
 class TableEvaluator(object):
@@ -33,37 +63,109 @@ class TableEvaluator(object):
 
   def __call__(self, job):
     resultsFilename = os.path.join(job.path, 'output', self._resultsFilename)
-    self._logger.debug("TableEvaluator processing ouput file: '%s'" % self._resultsFilename)
+    self._logger.debug("TableEvaluator processing output file: '%s' for job '%s'" % (self._resultsFilename, job.name))
 
-    with open(resultsFilename) as resultsFile:
-      resultsTable = csv.DictReader(resultsFile)
-      rowrecords = []
-      for rowid, (expectRow, resultsRow) in enumerate(itertools.izip_longest(self._expectedTable, resultsTable)):
-        #TODO: If either of these comes up None then throw appropriate exception.
-        cmpval = self._rowCompare.compare(expectRow, resultsRow)
+    # Open results file and then compare rows.
+    try:
+      with open(resultsFilename) as resultsFile:
+        rowRecords = self._processRows(resultsFile, job, resultsFilename)
+    except IOError, ioe:
+      self._logger.warning("Table evaluator '%s' could not open results file: '%s' for job '%s'" % (self._name, resultsFilename, job.name))
+      errorRecord = ErrorEvaluatorRecord('table_sum', 0.0, ioe, weight = self._weight, evaluatorName = self._name)
+      rowRecords = [errorRecord]
+
+    # TODO: Provide an option to dump individual row records
+    rowRecords = self._makeReturnRecords(rowRecords)
+    return rowRecords
+
+  def _processRows(self, resultsFile, job, resultsFilename = ""):
+    # Iterate over rows and perform row comparison.
+    resultsTable = csv.DictReader(resultsFile)
+
+    # Is the table empty?
+    if None == resultsTable.fieldnames:
+      self._logger.warning("Table evaluator '%s' could not find any fields in file : '%s' (indicating no header or empty file) for job '%s'" % (self._name, resultsFilename, job.name))
+      the = TableHeaderException("Could not read field names from file: '%s' (indicating no header or empty file)" % resultsFilename)
+      return [ErrorEvaluatorRecord('table_sum', 0.0, the, weight = self._weight, evaluatorName = self._name)]
+
+    rowRecords = []
+    for rowid, (expectRow, resultsRow) in enumerate(itertools.izip_longest(self._expectedTable, resultsTable)):
+
+      rowName = "row_" + str(rowid)
+      # Is one table longer than the other?
+      if not expectRow:
+        # Results table longer than expect table
+        tle = TableLengthException("Results table has more rows than expect table (current row=%d). Results filename: '%s'" % (
+          rowid, self._resultsFilename),
+          True)
+        rowrecord = self._makeErrorRowRecord(tle, rowName, 0, rowid, job)
+      else:
         expect = float(expectRow['expect'])
-        rowrecord = RMSEvaluatorRecord(
-          "row_" + str(rowid),
-          expect,
-          cmpval,
-          evaluatorName = self._name)
-        self._logger.debug("Result of row comparison: %s" % rowrecord )
-        rowrecords.append(rowrecord)
+        if not resultsRow:
+          # Expect table longer than results table
+          tle = TableLengthException("Expect table has more rows than results table (current row=%d). Results filename: '%s'" % (
+            rowid, self._resultsFilename),
+            False)
+          rowrecord = self._makeErrorRowRecord(tle, rowName, expect, rowid, job)
+        else:
+          try:
+            cmpval = self._rowCompare.compare(expectRow, resultsRow)
+          except ValueError as ve:
+            # Some sort of math domain error or floating point conversion error..
+            ve = ValueError(self._augmentExceptionMessage(ve, rowid, expectRow, resultsRow))
+            rowrecord = self._makeErrorRowRecord(ve,rowName, expect, rowid, job)
+          except UnknownVariableException as uve:
+            uve = UnknownVariableException(uve.expression, uve.unknownVariables, msg = self._augmentExceptionMessage(uve, rowid, expectRow, resultsRow))
+            rowrecord = self._makeErrorRowRecord(uve,rowName, expect, rowid, job)
+          else:
+            # No error detected so create RMSEvaluatorRecord
+            rowrecord = RMSEvaluatorRecord(
+              rowName,
+              expect,
+              cmpval,
+              evaluatorName = self._name)
+
+      self._logger.debug("Result of row comparison: %s" % rowrecord )
+      rowRecords.append(rowrecord)
+    return rowRecords
+
+  def _augmentExceptionMessage(self, e, rowid, expectRow, resultsRow):
+    message = e.message
+    message = "%s when comparing row number %d. Expect table row: '%s'. Results table row: '%s'" % (message, rowid, expectRow, resultsRow)
+    return message
+
+  def _makeErrorRowRecord(self, e, rowName, expect, rowid, job):
+    rowrecord = ErrorEvaluatorRecord(rowName, expect, e, weight = self._weight, evaluatorName = self._name)
+    self._logger.warning("Table evaluator (%s, job: %s) could not evaluate expression '%s': %s" % (
+      self._name, job.name, self._rowCompare.expressionString, e.message ) )
+    return rowrecord
+
+  def _makeReturnRecords(self, rowRecords):
+    """Check for errors and either return ErrorEvaluatorRecord or sum of individual rows"""
+
+    errorRecord = self._getFirstErrorRecord(rowRecords)
+    if errorRecord:
+      errorRecord.name = "table_sum"
+      self._logger.warning("Result of table comparison: %s" % errorRecord)
+      return [errorRecord]
 
     # Sum over the meritValues of the individual row evaluator records
-    meritValue = sum([r.meritValue for r in rowrecords])
+    meritValue = sum([r.meritValue for r in rowRecords])
     overallRecord =   EvaluatorRecord("table_sum",
       0.0,        # Expected value
       meritValue, # Extracted value
       weight = self._weight,
       meritValue = self._weight * meritValue,
       evaluatorName = self._name)
-
     self._logger.info("Result of table comparison: %s" % overallRecord)
-
-    # TODO: Provide an option to dump individual row records
-
     return [overallRecord]
+
+  def _getFirstErrorRecord(self, rowRecords):
+    for record in rowRecords:
+      if record.errorFlag:
+        return record
+    return None
+
 
   @classmethod
   def createFromConfig(cls, name, jobpath, cfgitems):
@@ -112,13 +214,15 @@ class TableEvaluator(object):
     try:
       with open(csvfilename, 'rUb') as csvfile:
         # Check that expect file contains the columns that it should.
-        cls._validateExpectColumns(csvfile)
+        cls._validateExpectColumns(csvfile, csvfilename)
         csvfile.seek(0)
         # Check that row_compare can be parsed into an expression.
         cls._validateExpression(row_compare, csvfile, csvfilename)
         csvfile.seek(0)
         # Step through the expect file, checking its integrity.
         cls._validateExpectRows(row_compare, csvfile, csvfilename)
+
+        #TODO: Log warning if row_compare does not reference any r_ or e_ variables.
 
         # Now actually create the TableEvaluator
         cls._logger.debug("Creating TableEvaluator using the following settings:")
@@ -180,7 +284,7 @@ class TableEvaluator(object):
 
 
   @staticmethod
-  def _validateExpectColumns(expectCSVFile):
+  def _validateExpectColumns(expectCSVFile, csvfilename = ""):
     """Check that expectCSVFile contains necessary columns, based on ``expression``.
 
     Objects that are sub-classes of ConfigException are raised if problems are detected.
@@ -189,10 +293,15 @@ class TableEvaluator(object):
       values table.
     """
     dr = csv.DictReader(expectCSVFile)
+
+    if not dr.fieldnames:
+      raise TableHeaderException("Could not read column names from header of table : %s " % csvfilename)
+
     csvFieldNames = set(dr.fieldnames)
     if not 'expect' in csvFieldNames:
       TableEvaluator._logger.debug("'expect' column not found, 'expect_filename' columns: %s" % dr.fieldnames)
       raise ConfigException("File given by 'expect_filename' did no contain column named 'expect'.")
+
 
   @classmethod
   def _validateExpectRows(cls, expression, expectCSVFile, csvFilename = ""):
@@ -213,7 +322,13 @@ class TableEvaluator(object):
     cls._logger.debug("Checking following keys in rows: %s" % (requiredVariables,))
 
     dr = csv.DictReader(expectCSVFile)
+
+    fieldnames = sorted(dr.fieldnames)
+
     for i,row in enumerate(dr):
+      if fieldnames != sorted(row.keys()):
+        raise TableHeaderException(
+          "Number of columns for row %d of '%s' is different to that specified by header row." % (i, csvFilename) )
       for k in requiredVariables:
         v = row[k]
         try:
@@ -223,25 +338,6 @@ class TableEvaluator(object):
             "Error converting '%s' value into float in row %d of '%s': %s" % (
               k, i+1, csvFilename, v ))
     cls._logger.debug("Row validation completed.")
-
-class TableEvaluatorConfigException(ConfigException):
-  pass
-
-class BadExpressionException(TableEvaluatorConfigException):
-  pass
-
-class UnknownVariableException(TableEvaluatorConfigException):
-
-  def __init__(self, expression, unknownVariables, msg = None):
-    if not msg:
-      super(TableEvaluatorConfigException,self).__init__(
-        "Expression refers to unknown variables '%s' : %s" % (
-          ",".join([str(v) for v in unknownVariables]),
-          expression ))
-    else:
-      super(TableEvaluatorConfigException,self).__init__(msg)
-    self.expression = expression
-    self.unknownVariables = unknownVariables
 
 
 class _UnknownVariableResolver(object):
@@ -290,6 +386,7 @@ class _RowComparator(object):
     """:param str expression: row_compare expression"""
     symbol_table = cexprtk.Symbol_Table({}, add_constants = True)
     callback = _UnknownVariableResolver()
+    self.expressionString = expression
     self._expression = cexprtk.Expression(expression, symbol_table, callback)
     self._expectVariables = callback.expectVariables
     self._resultsVariables = callback.resultsVariables
@@ -308,19 +405,35 @@ class _RowComparator(object):
     self._populateSymbolTableWithExpect(expectRow)
     self._populateSymbolTableWithResults(resultsRow)
 
+    v = self._expression.value()
+    if math.isinf(v):
+      raise ValueError("Expression: '%s' evaluated to 'inf'" % self.expressionString)
+    elif math.isnan(v):
+      raise ValueError("Expression: '%s' evaluated to 'inf'" % self.expressionString)
     return self._expression.value()
 
   def _populateSymbolTableWithExpect(self, expectRow):
-    #TODO: raise appropriate exception if resultsRow doesn't contain required variable.
     for var in self._expectVariables:
       varkey = "e_"+var
-      #TODO: raise appropriate exception if value cannot be converted to a float.
-      self._expression.symbol_table.variables[varkey] = float(expectRow[var])
+      try:
+       val = float(expectRow[var])
+      except ValueError as ve:
+        raise ValueError(
+          "for expect table variable '%s',  %s." % ( varkey,ve.message))
+      except KeyError as ke:
+        raise UnknownVariableException(self.expressionString, [varkey])
+
+      self._expression.symbol_table.variables[varkey] = val
 
   def _populateSymbolTableWithResults(self, resultsRow):
-    #TODO: raise appropriate exception if resultsRow doesn't contain required variable.
     for var in self._resultsVariables:
       varkey = "r_"+var
-      #TODO: raise appropriate exception if value cannot be converted to a float.
-      self._expression.symbol_table.variables[varkey] = float(resultsRow[var])
+      try:
+         val = float(resultsRow[var])
+      except ValueError as ve:
+        raise ValueError(
+          "for results table variable '%s', %s." % (varkey,ve.message))
+      except KeyError as ke:
+        raise UnknownVariableException(self.expressionString, [varkey])
 
+      self._expression.symbol_table.variables[varkey] = val
