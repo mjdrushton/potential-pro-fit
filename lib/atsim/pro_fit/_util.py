@@ -1,3 +1,4 @@
+import csv
 import functools
 import itertools
 
@@ -140,3 +141,30 @@ def _exponentialBackoff(sleep, maxSleep, numcalls):
   if maxSleep and btime > maxSleep:
     return maxSleep
   return btime
+
+
+class SkipWhiteSpaceDictReader(csv.DictReader):
+  """Version of csv.DictReader that strips whitespace from column names and values"""
+
+  def __init__(self, *args, **kwargs):
+    csv.DictReader.__init__(self, *args , **kwargs)
+
+  @csv.DictReader.fieldnames.getter
+  def fieldnames(self):
+    orignames = csv.DictReader.fieldnames.fget(self)
+    if orignames is None:
+      return None
+    return [f.strip() for f in orignames]
+
+  def next(self):
+    origdict = csv.DictReader.next(self)
+    if not origdict:
+      return origdict
+    vals = []
+    for k,v in origdict.iteritems():
+      if not k is None and hasattr(k, 'strip'):
+        k = k.strip()
+      if not v is None and hasattr(v, 'strip'):
+        v = v.strip()
+      vals.append((k,v))
+    return dict(vals)
