@@ -19,7 +19,6 @@ class TableHeaderException(TableEvaluatorConfigException):
 class BadExpressionException(TableEvaluatorConfigException):
   pass
 
-
 class UnknownVariableException(TableEvaluatorConfigException):
   def __init__(self, expression, unknownVariables, msg = None):
     if not msg:
@@ -83,14 +82,14 @@ class TableEvaluator(object):
 
     # Open results file and then compare rows.
     try:
-      with open(resultsFilename) as resultsFile:
+      with open(resultsFilename, 'rUb') as resultsFile:
         rowRecords = self._processRows(resultsFile, job, resultsFilename)
     except IOError, ioe:
       self._logger.warning("Table evaluator '%s' could not open results file: '%s' for job '%s'" % (self._name, resultsFilename, job.name))
       errorRecord = ErrorEvaluatorRecord('table_sum', 0.0, ioe, weight = self._sumWeight, evaluatorName = self._name)
       rowRecords = [errorRecord]
 
-    rowRecords = self._makeReturnRecords(rowRecords)
+    rowRecords = self._makeReturnRecords(rowRecords,job)
     return rowRecords
 
   def _processRows(self, resultsFile, job, resultsFilename = ""):
@@ -105,44 +104,60 @@ class TableEvaluator(object):
 
     rowRecords = []
     for rowid, (expectRow, resultsRow) in enumerate(itertools.izip_longest(self._expectedTable, resultsTable)):
-      rowName = "row_" + str(rowid)
-      # Is one table longer than the other?
-      if not expectRow:
-        # Results table longer than expect table
-        tle = TableLengthException("Results table has more rows than expect table (current row=%d). Results filename: '%s'" % (
-          rowid, self._resultsFilename),
-          True)
-        rowrecord = self._makeErrorRowRecord(tle, rowName, 0, rowid, job)
+      rowName = self._getRowLabel(rowid)
+
+      # Is one of the tables longer than the other?
+      errorRecord = self._handleTableLengthErrors(rowid, rowName, expectRow, resultsRow, job)
+      if errorRecord:
+        rowrecord = errorRecord
       else:
-        expect = float(expectRow['expect'])
-        if not resultsRow:
-          # Expect table longer than results table
-          tle = TableLengthException("Expect table has more rows than results table (current row=%d). Results filename: '%s'" % (
-            rowid, self._resultsFilename),
-            False)
-          rowrecord = self._makeErrorRowRecord(tle, rowName, expect, rowid, job)
-        else:
-          try:
-            cmpval = self._rowCompare.compare(expectRow, resultsRow)
-          except ValueError as ve:
-            # Some sort of math domain error or floating point conversion error..
-            ve = ValueError(self._augmentExceptionMessage(ve, rowid, expectRow, resultsRow))
-            rowrecord = self._makeErrorRowRecord(ve,rowName, expect, rowid, job)
-          except UnknownVariableException as uve:
-            uve = UnknownVariableException(uve.expression, uve.unknownVariables, msg = self._augmentExceptionMessage(uve, rowid, expectRow, resultsRow))
-            rowrecord = self._makeErrorRowRecord(uve,rowName, expect, rowid, job)
-          else:
-            # No error detected so create RMSEvaluatorRecord
-            rowrecord = RMSEvaluatorRecord(
-              rowName,
-              expect,
-              cmpval,
-              weight = self._rowWeight,
-              evaluatorName = self._name)
+        # Tables are, up to now, looking fine, perform comparison.
+        rowrecord = self._compareRow(rowid, rowName, expectRow, resultsRow, job)
 
       self._logger.debug("Result of row comparison: %s" % rowrecord )
       rowRecords.append(rowrecord)
     return rowRecords
+
+  def _getRowLabel(self, rowidx):
+    return "row_" + str(rowidx)
+
+  def _handleTableLengthErrors(self, rowid, rowName, expectRow, resultsRow, job ):
+    # Results table longer than expect table ?
+    if not expectRow:
+      tle = TableLengthException("Results table has more rows than expect table (current row=%d). Results filename: '%s'" % (
+        rowid, self._resultsFilename),
+        True)
+      return self._makeErrorRowRecord(tle, rowName, 0, rowid, job)
+
+    # Expect table long than results table ?
+    expect = float(expectRow['expect'])
+    if not resultsRow:
+      # Expect table longer than results table
+      tle = TableLengthException("Expect table has more rows than results table (current row=%d). Results filename: '%s'" % (
+        rowid, self._resultsFilename),
+        False)
+      return self._makeErrorRowRecord(tle, rowName, expect, rowid, job)
+    return None
+
+  def _compareRow(self, rowid, rowName, expectRow, resultsRow, job ):
+    expect = float(expectRow['expect'])
+    try:
+      cmpval = self._rowCompare.compare(expectRow, resultsRow)
+    except ValueError as ve:
+      # Some sort of math domain error or floating point conversion error..
+      ve = ValueError(self._augmentExceptionMessage(ve, rowid, expectRow, resultsRow))
+      return self._makeErrorRowRecord(ve,rowName, expect, rowid, job)
+    except UnknownVariableException as uve:
+      uve = UnknownVariableException(uve.expression, uve.unknownVariables, msg = self._augmentExceptionMessage(uve, rowid, expectRow, resultsRow))
+      return self._makeErrorRowRecord(uve,rowName, expect, rowid, job)
+    else:
+      # No error detected so create RMSEvaluatorRecord
+      return RMSEvaluatorRecord(
+        rowName,
+        expect,
+        cmpval,
+        weight = self._rowWeight,
+        evaluatorName = self._name)
 
   def _augmentExceptionMessage(self, e, rowid, expectRow, resultsRow):
     message = e.message
@@ -150,19 +165,42 @@ class TableEvaluator(object):
     return message
 
   def _makeErrorRowRecord(self, e, rowName, expect, rowid, job):
-    rowrecord = ErrorEvaluatorRecord(rowName, expect, e, weight = self._sumWeight, evaluatorName = self._name)
+    rowrecord = ErrorEvaluatorRecord(rowName, expect, e, weight = self._rowWeight, evaluatorName = self._name)
     self._logger.warning("Table evaluator (%s, job: %s) could not evaluate expression '%s': %s" % (
       self._name, job.name, self._rowCompare.expressionString, e.message ) )
     return rowrecord
 
-  def _makeReturnRecords(self, rowRecords):
+  def _makeReturnRecords(self, rowRecords, job):
     """Check for errors and either return ErrorEvaluatorRecord or sum of individual rows"""
-    sumRecord = self._makeTableSumRecord(rowRecords)
+    retrows = list(rowRecords)
+
+    # If rowRecords has one entry and that is 'table_sum' then an error ocurred
+    # before iteration over rows occurred in processRows(). Use the table_sum evaluator record
+    # and build row_records containing the same exception.
+    if len(retrows) == 1 and retrows[0].name == 'table_sum' and retrows[0].errorFlag:
+      sumRecord = retrows[0]
+      retrows = self._makeErrorRows(sumRecord, job)
+    else:
+      sumRecord = self._makeTableSumRecord(retrows)
+
     if self._recordPerRow:
-      retrows = list(rowRecords)
+      # Truncate list to number of rows in expect table.
+      retrows = retrows[:len(self._expectedTable)]
     else:
       retrows = []
     retrows.append(sumRecord)
+    return retrows
+
+  def _makeErrorRows(self, errorRecord, job):
+    retrows = []
+    for i,expectRow in enumerate(self._expectedTable):
+      rowName = self._getRowLabel(i)
+      rowRecord = self._makeErrorRowRecord(
+        errorRecord.exception,
+        rowName,
+        float(expectRow['expect']),
+        i, job)
+      retrows.append(rowRecord)
     return retrows
 
   def _makeTableSumRecord(self, rowRecords):
@@ -174,8 +212,11 @@ class TableEvaluator(object):
         errorRecord.weight = self._sumWeight
         return errorRecord
       else:
-        errorRecord = ErrorEvaluatorRecord('table_sum',
-          TableSumException("Problem calculating table_sum. See individual row evaluator records for reason"),
+        if type(errorRecord.exception) == TableLengthException:
+          exc = errorRecord.exception
+        else:
+          exc = TableSumException("Problem calculating table_sum. See individual row evaluator records for reason")
+        errorRecord = ErrorEvaluatorRecord('table_sum', 0, exc,
           weight = self._sumWeight, evaluatorName = self._name)
         return errorRecord
 
@@ -453,7 +494,6 @@ class _RowComparator(object):
     self._expression = cexprtk.Expression(expression, symbol_table, callback)
     self._expectVariables = callback.expectVariables
     self._resultsVariables = callback.resultsVariables
-
 
   def compare(self, expectRow, resultsRow):
     """Return float giving result of comparison between expectRow and resultsRow.

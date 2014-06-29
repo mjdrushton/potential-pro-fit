@@ -17,6 +17,28 @@ def _getResourceDir():
 from tests.common import MockJobFactory
 mockJobFactory = MockJobFactory('Runner', "TableJob", [])
 
+def _compareEvaluatorRecords(testcase, expect, actual):
+  def todicts(records):
+    dicts = []
+    for r in records:
+      d = dict(name = r.name,
+        expectedValue = r.expectedValue,
+        extractedValue = r.extractedValue,
+        weight = r.weight,
+        evaluatorName = r.evaluatorName,
+        errorFlag = r.errorFlag)
+
+      if r.errorFlag and type(r) == pro_fit.evaluators.ErrorEvaluatorRecord:
+        d['error_exception'] = type(r.exception)
+
+      dicts.append(d)
+    return dicts
+
+  testutil.compareCollection(testcase,
+    todicts(expect),
+    todicts(actual))
+
+
 class TableEvaluatorTestCase(unittest.TestCase):
   """Tests for atsim.pro_fit.evaluators.TableEvaluator"""
 
@@ -68,30 +90,16 @@ class TableEvaluatorTestCase(unittest.TestCase):
     evaluated = evaluator(job)
 
     ER = pro_fit.evaluators._common.RMSEvaluatorRecord
-    # def __init__(self, name, expectedValue, extractedValue, weight = 1.0, evaluatorName = None):
 
     weight = 2.0
     expectedRecords = [
       ER('row_0'       , 0   , 18.6010752377383        , weight , "Table") ,
       ER('row_1'       , 1   , 14.3527000944073        , weight , "Table") ,
       ER('row_2'       , 2   , 17.0293863659264        , weight , "Table") ,
-      ER('table_sum'   , 0.0  , weight *46.983161698072         , 0.0    , "Table") ]
+      ER('table_sum'   , 0.0  , weight *46.983161698072, 0.0    , "Table") ]
 
-    def todicts(records):
-      dicts = []
-      for r in records:
-        d = dict(name = r.name,
-          expectedValue = r.expectedValue,
-          extractedValue = r.extractedValue,
-          weight = r.weight,
-          evaluatorName = r.evaluatorName,
-          errorFlag = r.errorFlag)
-        dicts.append(d)
-      return dicts
+    _compareEvaluatorRecords(self, expectedRecords, evaluated)
 
-    testutil.compareCollection(self,
-      todicts(expectedRecords),
-      todicts(evaluated))
 
 
 class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
@@ -266,7 +274,7 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     with self.assertRaises(pro_fit.evaluators._table.TableHeaderException):
       pro_fit.evaluators.TableEvaluator._validateExpectRows("e_A", sio)
 
-  def testMissingOutputFile(self):
+  def testMissingOutputFile_sumonly(self):
     """Test error condition when results table is missing"""
 
     evaluator = pro_fit.evaluators.TableEvaluator("Table",
@@ -290,7 +298,40 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     self.assertEquals(IOError, type(r.exception))
     self.assertEquals("Table", r.evaluatorName)
 
-  def testEmptyOutputFile(self):
+  def testMissingOutputFile(self):
+    """Test error condition when results table is missing when sum_only = False"""
+
+    evaluator = pro_fit.evaluators.TableEvaluator("Table",
+      [
+        {"A": '1.0', "B" : '2.0', "expect": 3.0},
+        {"A": '1.0', "B" : '2.0', "expect": 4.0}
+      ],
+      "nofile.csv",
+      "r_A",
+      0.0,
+      1.0,
+      True)
+
+    resdir = _getResourceDir()
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+
+    evaluated = evaluator(job)
+
+    EER = pro_fit.evaluators._common.ErrorEvaluatorRecord
+    # def __init__(self, name, expectedValue, exception, weight = 1.0, evaluatorName = None ):
+
+    weight = 1.0
+
+    exc = IOError("")
+
+    expectedRecords = [
+      EER('row_0'       , 3.0   , exc        , weight , "Table") ,
+      EER('row_1'       , 4.0   , exc        , weight , "Table") ,
+      EER('table_sum'   , 0.0  ,exc        , 0.0    , "Table") ]
+
+    _compareEvaluatorRecords(self, expectedRecords, evaluated)
+
+  def testEmptyOutputFile_sumonly(self):
     """Test error condition when results table is empty"""
 
     # Create empty file
@@ -328,7 +369,7 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     finally:
       shutil.rmtree(tempdir, ignore_errors = True)
 
-  def testMissingResultsColumn(self):
+  def testMissingResultsColumn_sumonly(self):
     """Check error condition when results table is missing column required by row_compare expression"""
     evaluator = pro_fit.evaluators.TableEvaluator("Table",
       [{"A": '1.0', "B" : '2.0', "expect": 3.0}],
@@ -353,8 +394,8 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     self.assertEquals('r_A', r.exception.expression)
     self.assertEquals("Table", r.evaluatorName)
 
-  def testExpectResultsDifferentLengths_ExpectLonger(self):
-    """Test correct behaviour when expect table and results table have different lengths"""
+  def testExpectResultsDifferentLengths_ExpectLonger_sumonly(self):
+    """Test correct behaviour when expect table and results table have different lengths sum_only = True"""
 
     # Expect longer than results
     evaluator = pro_fit.evaluators.TableEvaluator("Table",
@@ -384,7 +425,43 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     self.assertEquals(False, r.exception.isResultsLonger)
     self.assertEquals("Table", r.evaluatorName)
 
-  def testExpectResultsDifferentLengths_ResultsLonger(self):
+  def testExpectResultsDifferentLengths_ExpectLonger(self):
+    """Test correct behaviour when expect table and results table have different lengths"""
+
+    # Expect longer than results
+    evaluator = pro_fit.evaluators.TableEvaluator("Table",
+      [
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'},
+        {"A": '1.0', "B" : '2.0', "expect": '4.0'},
+        {"A": '1.0', "B" : '2.0', "expect": '5.0'},
+        {"A": '1.0', "B" : '2.0', "expect": '6.0'}
+      ],
+      "three_rows.csv",
+      "r_A",
+      0.0,
+      1.0,
+      True)
+
+    resdir = os.path.join(_getResourceDir(), 'error_conditions')
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+
+    evaluated = evaluator(job)
+
+    ER = pro_fit.evaluators._common.RMSEvaluatorRecord
+    EER = pro_fit.evaluators._common.ErrorEvaluatorRecord
+
+    weight = 1.0
+    exc = pro_fit.evaluators._table.TableLengthException("")
+
+    expectedRecords = [
+      ER('row_0'      , 3   , 1   , weight , "Table")   ,
+      ER('row_1'      , 4   , 4   , weight , "Table")   ,
+      ER('row_2'      , 5   , 7   , weight , "Table")   ,
+      EER('row_3'     , 6   , exc , weight , "Table")   ,
+      EER('table_sum' , 0.0 , exc , 0.0    , "Table") ]
+    _compareEvaluatorRecords(self, expectedRecords, evaluated)
+
+  def testExpectResultsDifferentLengths_ResultsLonger_sumonly(self):
     # Results longer than expect
     evaluator = pro_fit.evaluators.TableEvaluator("Table",
       [
@@ -410,6 +487,36 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     self.assertEquals(pro_fit.evaluators._table.TableLengthException, type(r.exception))
     self.assertEquals(True, r.exception.isResultsLonger)
     self.assertEquals("Table", r.evaluatorName)
+
+  def testExpectResultsDifferentLengths_ResultsLonger(self):
+    # Results longer than expect
+    evaluator = pro_fit.evaluators.TableEvaluator("Table",
+      [
+        {"A": '1.0', "B" : '2.0', "expect": '3.0'},
+        {"A": '1.0', "B" : '2.0', "expect": '4.0'},
+      ],
+      "three_rows.csv",
+      "r_A",
+      0.0,
+      1.0,
+      True)
+
+    resdir = os.path.join(_getResourceDir(), 'error_conditions')
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+
+    evaluated = evaluator(job)
+
+    ER = pro_fit.evaluators._common.RMSEvaluatorRecord
+    EER = pro_fit.evaluators._common.ErrorEvaluatorRecord
+
+    weight = 1.0
+    exc = pro_fit.evaluators._table.TableLengthException("")
+
+    expectedRecords = [
+      ER('row_0'      , 3   , 1   , weight , "Table")   ,
+      ER('row_1'      , 4   , 4   , weight , "Table")   ,
+      EER('table_sum' , 0.0 , exc , 0.0    , "Table") ]
+    _compareEvaluatorRecords(self, expectedRecords, evaluated)
 
   def testValueError(self):
     """Check error handling when expectation and results table values cannot be converted to float"""
