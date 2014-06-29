@@ -1,8 +1,8 @@
-import unittest
 import ConfigParser
-
+import math
 import os
 import shutil
+import unittest
 
 from atsim import pro_fit
 import testutil
@@ -12,7 +12,6 @@ def _getResourceDir():
       os.path.dirname(__file__),
       'resources',
       'table_evaluator')
-
 
 from tests.common import MockJobFactory
 mockJobFactory = MockJobFactory('Runner', "TableJob", [])
@@ -37,7 +36,6 @@ def _compareEvaluatorRecords(testcase, expect, actual):
   testutil.compareCollection(testcase,
     todicts(expect),
     todicts(actual))
-
 
 class TableEvaluatorTestCase(unittest.TestCase):
   """Tests for atsim.pro_fit.evaluators.TableEvaluator"""
@@ -100,6 +98,96 @@ class TableEvaluatorTestCase(unittest.TestCase):
 
     _compareEvaluatorRecords(self, expectedRecords, evaluated)
 
+  def testLabelColumn(self):
+    """Test label_column configuration option."""
+    resdir = _getResourceDir()
+    resdir = os.path.join(resdir, 'label_column_and_weights')
+
+    # Configure the evaluator
+    parser = ConfigParser.SafeConfigParser()
+    parser.optionxform = str
+    with open(os.path.join(resdir, 'label_column.cfg')) as infile:
+      parser.readfp(infile)
+
+    evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
+      'Table',
+      resdir,
+      parser.items('Evaluator:Table'))
+
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+    evaluated = evaluator(job)
+
+    ER = pro_fit.evaluators._common.RMSEvaluatorRecord
+
+    weight = 1.0
+
+    table_sum = sum([math.sqrt((50.0  - (10+20+30))**2.0),
+                     math.sqrt((110.0 - (40+50+60))**2.0)])
+    expectedRecords = [
+      ER('Hello_0'       , 50.0   ,      10+20+30   , weight , "Table") ,
+      ER('Goodbye_1'     , 110.0   ,     40+50+60    , weight , "Table") ,
+      ER('table_sum'   ,   0.0  , table_sum , 0.0    , "Table") ]
+
+    _compareEvaluatorRecords(self, expectedRecords, evaluated)
+
+  def testWeight_Column(self):
+    """Test weight_column configuration option."""
+    resdir = _getResourceDir()
+    resdir = os.path.join(resdir, 'label_column_and_weights')
+
+    # Configure the evaluator
+    parser = ConfigParser.SafeConfigParser()
+    parser.optionxform = str
+    with open(os.path.join(resdir, 'weight_column.cfg')) as infile:
+      parser.readfp(infile)
+
+    evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
+      'Table',
+      resdir,
+      parser.items('Evaluator:Table'))
+
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+    evaluated = evaluator(job)
+
+    ER = pro_fit.evaluators._common.RMSEvaluatorRecord
+
+    table_sum = sum([math.sqrt((50.0  - (10+20+30))**2.0),
+                     math.sqrt((110.0 - (40+50+60))**2.0)*2.0])
+    expectedRecords = [
+      ER('row_0'     , 50.0  , 10+20+30  , 1.0 , "Table")   ,
+      ER('row_1'     , 110.0 , 40+50+60  , 2.0 , "Table")   ,
+      ER('table_sum' , 0.0   , table_sum , 0.0 , "Table") ]
+
+    _compareEvaluatorRecords(self, expectedRecords, evaluated)
+
+  def testWeight_ColumnAndWeight(self):
+    """Test weight_column together with weight configuration option."""
+    resdir = _getResourceDir()
+    resdir = os.path.join(resdir, 'label_column_and_weights')
+
+    # Configure the evaluator
+    parser = ConfigParser.SafeConfigParser()
+    parser.optionxform = str
+    with open(os.path.join(resdir, 'weight_and_weight_column.cfg')) as infile:
+      parser.readfp(infile)
+
+    evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
+      'Table',
+      resdir,
+      parser.items('Evaluator:Table'))
+
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+    evaluated = evaluator(job)
+
+    ER = pro_fit.evaluators._common.RMSEvaluatorRecord
+
+    table_sum = sum([math.sqrt((50.0  - (10+20+30))**2.0) * 5.0,
+                     math.sqrt((110.0 - (40+50+60))**2.0) * 2.0 * 5.0])
+    expectedRecords = [
+      ER('row_0'     , 50.0  , 10+20+30  , 1.0 * 5.0 , "Table")   ,
+      ER('row_1'     , 110.0 , 40+50+60  , 2.0 * 5.0 , "Table")   ,
+      ER('table_sum' , 0.0   , table_sum , 0.0 , "Table") ]
+    _compareEvaluatorRecords(self, expectedRecords, evaluated)
 
 
 class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
@@ -159,6 +247,20 @@ class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
 
     pro_fit.evaluators.TableEvaluator._validateExpectColumns(sio)
 
+    sio.seek(0)
+    with self.assertRaises(pro_fit.fittool.ConfigException):
+      pro_fit.evaluators.TableEvaluator._validateExpectColumns(sio, label_column="Boom")
+
+    sio.seek(0)
+    pro_fit.evaluators.TableEvaluator._validateExpectColumns(sio, label_column="A")
+
+    sio.seek(0)
+    with self.assertRaises(pro_fit.fittool.ConfigException):
+      pro_fit.evaluators.TableEvaluator._validateExpectColumns(sio, weight_column="Boom")
+
+    sio.seek(0)
+    pro_fit.evaluators.TableEvaluator._validateExpectColumns(sio, weight_column="A")
+
   def testParseVariablesUnknownSymbolResolver(self):
     """Test the cexprtk unknown symbol resolver callback used to identify row_compare variables"""
     import cexprtk
@@ -205,11 +307,11 @@ class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
 
     # Test that non-numeric values in fields un-used by expression passes.
     sio = StringIO.StringIO()
-    print >> sio, "A,B,C,expect"
-    print >> sio, "1,X,X,2"
-    print >> sio, "3,4,5,6"
-    print >> sio, "7,8,X,9"
-    print >> sio, "1,X,7,10"
+    print >> sio, "A,B,C,expect,weight"
+    print >> sio, "1,X,X,2,1"
+    print >> sio, "3,4,5,6,X"
+    print >> sio, "7,8,X,9,3"
+    print >> sio, "1,X,7,10,11"
     sio.seek(0)
 
     with self.assertRaises(TableEvaluatorConfigException):
@@ -219,6 +321,13 @@ class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
     sio.seek(0)
     with self.assertRaises(TableEvaluatorConfigException):
       TableEvaluator._validateExpectRows("e_A + e_B", sio)
+
+    sio.seek(0)
+    TableEvaluator._validateExpectRows("e_A", sio)
+
+    sio.seek(0)
+    with self.assertRaises(TableEvaluatorConfigException):
+      TableEvaluator._validateExpectRows("e_A", sio, weight_column = 'weight')
 
   def testSumOnlyValidate(self):
     """Test sum_only configuration option for TableEvaluator"""
