@@ -67,7 +67,7 @@ General Fields
 --------------
 .. _pprofit-evaluators-DLPOLY_STATIS-start_time:
 
-:Name: start_time
+:Name: ``start_time``
 :Arg Type: float
 :Description: If specified, averages are extracted from STATIS file from ``start_time`` onwards.
 	If this field does not appear then averages are calculated for the entire ``STATIS`` file.
@@ -75,67 +75,67 @@ General Fields
 STATIS Fields
 -------------
 
-:Name: alpha 
+:Name: ``alpha`` 
 :Description: Simulation box angle alpha.
 
 \ 
 
-:Name: beta 
+:Name: ``beta`` 
 :Description: Simulation box angle beta.
 
 \ 
 
-:Name: engang 
+:Name: ``engang`` 
 :Description: Valence angle and 3-body potential energy.
 
 \ 
 
-:Name: engbnd 
+:Name: ``engbnd`` 
 :Description: Chemical bond energy.
 
 \ 
 
-:Name: engcfg 
+:Name: ``engcfg`` 
 :Description: Conﬁgurational energy.
 
 \ 
 
-:Name: engcns 
+:Name: ``engcns`` 
 :Description: Total extended system energy (i.e. the conserved quantity).
 
 \ 
 
-:Name: engcpe 
+:Name: ``engcpe`` 
 :Description: Electrostatic energy.
 
 \ 
 
-:Name: engdih 
+:Name: ``engdih`` 
 :Description: Dihedral, inversion, and 4-body potential energy.
 
 \ 
 
-:Name: engshl 
+:Name: ``engshl`` 
 :Description: Core-shell potential energy.
 
 \ 
 
-:Name: engsrp 
+:Name: ``engsrp`` 
 :Description: Short-range potential energy.
 
 \ 
 
-:Name: engtet 
+:Name: ``engtet`` 
 :Description: Tethering energy.
 
 \ 
 
-:Name: enthal 
+:Name: ``enthal`` 
 :Description: Enthalpy (total energy + PV).
 
 \ 
 
-:Name: gamma 
+:Name: ``gamma`` 
 :Description: Simulation box angle gamma.
 
 \ 
@@ -148,140 +148,140 @@ STATIS Fields
 
 \ 
 
-:Name: press 
+:Name: ``press`` 
 :Description: Pressure.
 
 \ 
 
-:Name: stressxx 
+:Name: ``stressxx`` 
 :Description: xx component of stress tensor.
 
 \ 
 
-:Name: stressxy 
+:Name: ``stressxy`` 
 :Description: xy component of stress tensor.
 
 \ 
 
-:Name: stressxz 
+:Name: ``stressxz`` 
 :Description: xz component of stress tensor.
 
 \ 
 
-:Name: stressyx 
+:Name: ``stressyx`` 
 :Description: yx component of stress tensor.
 
 \ 
 
-:Name: stressyy 
+:Name: ``stressyy`` 
 :Description: yy component of stress tensor.
 
 \ 
 
-:Name: stressyz 
+:Name: ``stressyz`` 
 :Description: yz component of stress tensor.
 
 \ 
 
-:Name: stresszx 
+:Name: ``stresszx`` 
 :Description: zx component of stress tensor.
 
 \ 
 
-:Name: stresszy 
+:Name: ``stresszy`` 
 :Description: zy component of stress tensor.
 
 \ 
 
-:Name: stresszz 
+:Name: ``stresszz`` 
 :Description: zz component of stress tensor.
 
 \ 
 
-:Name: temp 
+:Name: ``temp`` 
 :Description: Temperature.
 
 \ 
 
-:Name: tmprot 
+:Name: ``tmprot`` 
 :Description: Rotational temperature.
 
 \ 
 
-:Name: tmpshl 
+:Name: ``tmpshl`` 
 :Description: Shell temperature.
 
 \ 
 
-:Name: vir 
+:Name: ``vir`` 
 :Description: Total virial.
 
 \ 
 
-:Name: virang 
+:Name: ``virang`` 
 :Description: Valence angle and 3-body virial.
 
 \ 
 
-:Name: virbnd 
+:Name: ``virbnd`` 
 :Description: Bond virial.
 
 \ 
 
-:Name: vircon 
+:Name: ``vircon`` 
 :Description: Constraint bond virial.
 
 \ 
 
-:Name: vircpe 
+:Name: ``vircpe`` 
 :Description: Electrostatic virial.
 
 \ 
 
-:Name: virpmf 
+:Name: ``virpmf`` 
 :Description: PMF constraint virial.
 
 \ 
 
-:Name: virshl 
+:Name: ``virshl`` 
 :Description: Pressure.
 
 \ 
 
-:Name: virsrp 
+:Name: ``virsrp`` 
 :Description: Short-range virial.
 
 \ 
 
-:Name: virtet 
+:Name: ``virtet`` 
 :Description: Tethering virial.
 
 \ 
 
-:Name: volume 
+:Name: ``volume`` 
 :Description: Simulation box volume.
 
 Additional Fields for NPT Runs
 ------------------------------
 The following fields can only be used for DL_POLY jobs using NPT/NST thermodynamics ensembles.
 
-:Name: cella_x
+:Name: ``cella_x``
 	
-	cella_y 
+	``cella_y`` 
 
-	cella_z
+	``cella_z``
 	
-	cellb_x
+	``cellb_x``
 	
-	cellb_y
+	``cellb_y``
 	
-	cellb_z
+	``cellb_z``
 	
-	cellc_x
+	``cellc_x``
 	
-	cellc_y
+	``cellc_y``
 	
-	cellc_z
+	``cellc_z``
 :Description: x, y or z components of simulation cell a,b and c vectors.
 
 .. _pprofit-evaluators-gulp:
@@ -306,7 +306,7 @@ See description :ref:`above <pprofit-evaluators-DLPOLY_STATIS-fielddescription>`
 Required Fields
 ---------------
 
-:Name: filename
+:Name: ``filename``
 :Arg type: string
 :Description: Name of file within job directory containing GULP output.
 :Example: If your job's ``runjob`` script directed Gulp output into ``output.res`` you would use the following field definition:
@@ -316,45 +316,45 @@ Required Fields
 Other Fields
 ------------
 
-:Name: cell_alpha
+:Name: ``cell_alpha``
 
-	cell_beta
+	``cell_beta``
 
-	cell_gamma
+	``cell_gamma``
 :Description: Fields specifying simulation cell angles: alpha, beta and gamma.
 
 \ 
 
-:Name: cell_a
+:Name: ``cell_a``
 
-	cell_b
+	``cell_b``
 
-	cell_c
+	``cell_c``
 :Description: Simulation a,b and c cell vector lengths.
 
 \ 
 
-:Name: elastic_c11, elastic_c12, elastic_c13, elastic_c14, elastic_c15, elastic_c16
+:Name: ``elastic_c11``, ``elastic_c12``, ``elastic_c13``, ``elastic_c14``, ``elastic_c15``, ``elastic_c16``
 
-	elastic_c21, elastic_c22, elastic_c23, elastic_c24, elastic_c25, elastic_c26
+	``elastic_c21``, ``elastic_c22``, ``elastic_c23``, ``elastic_c24``, ``elastic_c25``, ``elastic_c26``
 
-	elastic_c31, elastic_c32, elastic_c33, elastic_c34, elastic_c35, elastic_c36
+	``elastic_c31``, ``elastic_c32``, ``elastic_c33``, ``elastic_c34``, ``elastic_c35``, ``elastic_c36``
 
-	elastic_c41, elastic_c42, elastic_c43, elastic_c44, elastic_c45, elastic_c46
+	``elastic_c41``, ``elastic_c42``, ``elastic_c43``, ``elastic_c44``, ``elastic_c45``, ``elastic_c46``
 
-	elastic_c51, elastic_c52, elastic_c53, elastic_c54, elastic_c55, elastic_c56
+	``elastic_c51``, ``elastic_c52``, ``elastic_c53``, ``elastic_c54``, ``elastic_c55``, ``elastic_c56``
 
-	elastic_c61, elastic_c62, elastic_c63, elastic_c64, elastic_c65, elastic_c66
+	``elastic_c61``, ``elastic_c62``, ``elastic_c63``, ``elastic_c64``, ``elastic_c65``, ``elastic_c66``
 :Description: Members of the elastic constant tensor.
 
 \ 
 
-:Name: lattice_energy
+:Name: ``lattice_energy``
 :Description: Final system energy following optimisation.
 
 \ 
 
-:Name: negative_phonon_penalty
+:Name: ``negative_phonon_penalty``
 :Description: Evaluates to 1.0 if negative phonon frequencies are detected. Otherwise returns 0.0. This field is useful for imposing a penalty to systems that yield unphysical negative phonon frequencies.
 :Notes: Ensure that the GULP ``phon`` keyword is specified in GULP input.
 :Example: Apply a penalty of 100.0 when negative phonons detected:
@@ -363,27 +363,27 @@ Other Fields
 
 \ 
 
-:Name: optimisation_penalty
+:Name: ``optimisation_penalty``
 :Description: Evaluates to 1.0 if energy minimisation ends with a status other than "Optimisation achieved". Otherwise returns 0.0. This field is useful for imposing a penalty to systems that :may fail to optimise but may otherwise yield good, if spurious, matches to expected propety values.
 :Example: Apply a penalty of 100.0 (i.e. multiply bad optimisation value of 1.0 by weight of 100.0) when optimisation run fails:
 	``optimisation_penalty : 100.0``
 
 \ 
 
-:Name: bulkmodulus_hill, 
+:Name: ``bulkmodulus_hill``, 
 
-	bulkmodulus_reuss, 
+	``bulkmodulus_reuss``, 
 
-	bulkmodulus_voigt
+	``bulkmodulus_voigt``
 :Description: Evaluates to RMS differences betwen Hill, Reuss and Voigt versions of the bulk modulus.
 
 \ 
 
-:Name: shearmodulus_hill,
+:Name: ``shearmodulus_hill``,
 
-	shearmodulus_reuss
+	``shearmodulus_reuss``,
 
-	shearmodulus_voigt 
+	``shearmodulus_voigt`` 
 :Description: Evaluates using Hill, Reuss and Voigt versions of the shear modulus.
 
 
@@ -401,7 +401,7 @@ Gulp_DRV
 Required Fields
 ---------------
 
-:Name: filename
+:Name: ``filename``
 :Description: Name of file from which to extract values.
 
 
@@ -506,4 +506,128 @@ To find the second occurence of this regular expression then the evaluator defin
 	type : Regex
 	filename : output.txt
 	A : /^VARIABLE: (.*)/ 10.0 1.0 2:2
+
+
+.. _pprofit-evaluators-table:
+
+Table
+^^^^^
+:Type-Name: ``Table``
+:Description:  Compares tabular data. A table of expected results is provided in a CSV file and is compared with a results CSV file generated by a job. The evaluator calculates a merit value through row by row comparison of the expect and results tables.
+
+.. figure:: images/table_evaluator.svg
+    :align: center
+
+    The Table evaluator accepts CSV formatted files with a header row. The expectation table contains an ``expect`` column whilst the results table is generated by the job associated with the evaluator. The evaluator's merit value is calculated by applying the ``row_compare`` expression to the two tables, one row at a time. The root, squared difference between the ``row_compare`` and ``expect`` values are then summed and weighted to produce the the evaluator's merit value.
+
+Required Fields
+---------------
+
+:Name: ``expect_filename``
+:Arg Type: string
+:Description: File name of CSV file containing expectation values for this evaluator. Path is specified relative to job directory.
+
+\
+
+:Name: ``results_filename``
+:Arg Type: string
+:Description: Path to results table CSV file. This is given relative to job output directory. The job should create a CSV formatted file, with a header row. The columns of of the results table map on to the ``r_VARNAME`` variables used within the ``row_compare`` expression. 
+
+\
+
+:Name: ``row_compare``
+:Arg Type: string
+:Description: This field defines a mathematical expression that is evaluated for each row and compared to the contents of the ``expect`` column within the expectation table. The merit value for each row is given as the square root of the squared difference between ``expect`` and ``row_compare``. 
+
+  Values from both the expectation and results tables can be used within expressions by using an `e_` or `r_` prefix respectively:
+  
+    * ``e_COLUMN`` defines expect variables:
+      
+      * e.g. ``e_X``  within an expression would take values from the ``X`` column of the expectation table.
+      
+    * ``r_COLUMN`` defines results variables:
+   
+      * e.g. ``r_Y`` represents the ``Y`` column from the results table.
+
+  A more complete description of the functions and operators supported for expressions is given in :ref:`expression-syntax`.
+  
+:Example: A fitting run has been created in which atomic positions, resulting from an energy minimisation are compared to an experimental structure. The minimisation job has been configured to output the minimised structure as a CSV file (``minimised.csv``) containing the columns ``X``, ``Y`` and ``Z`` for the relaxed cartesian coordinates. These positions are compared to a file named ``structure.csv`` containing the experimental coordinates in the same order as they appear in ``minimised.csv``. The ``structure.csv`` file also contains the columns ``X``, ``Y`` and ``Z`` in addition to a column ``expect``. The ``expect`` column contains a value of 0.0 for each row (for reasons that will become apparent below).
+
+  The following extract from a ``job.cfg`` file shows how the ``Table`` evaluator can be used to compare the predicted and experimental structures::
+  
+    [Evaluator:Structure]
+    type : Table
+    expect_filename : structure.csv
+    results_filename : minimised.csv
+    row_compare : sqrt((e_X - r_X)^2 + (e_Y - r_Y)^2 + (e_Z - r_Z)^2)
+    
+  The ``row_compare`` expression calculates the magnitude of the separation vector between the coordinates in the expectation and results tables. For a perfect match, this magnitude would be 0.0. As the values in the ``expect`` column are all zero the merit value for each row in the tables is obtained by comparing the magnitude with zero. The ``Table`` evaluator will therefore give the smallest merit values to structures that most closely match experiment.
+
+\
+
+
+Optional Fields
+---------------
+:Name: ``label_column``
+:Arg Type: string
+:Description: By default the result of each row comparison are labelled according the row index (e.g. ``row_0, row_1, row_2, ... row_n``). The ``label_column`` option can be used to provide more descriptive labels.
+
+	The ``label_column`` field value specifies a column within the expectation table. For each row comparison the value of this column is used as the row label prefix. 
+
+:Example: ``label_column : label`` 
+	Specifies the ``label`` column from the expectation table. When used with the following table these row names would be obtained.
+	
+	* **Row 0:** ``Oxygen_0``
+	* **Row 1:** ``Titanium_1``
+	* **Row 2:** ``Lanthanum_2``
+
+
+		=  =  =  ======  =========
+		A  B  C  expect   *label* 
+		=  =  =  ======  =========
+		0  1  2      10  Oxygen
+		2  3  4      11  Titanium
+		5  6  7       9  Lanthanum
+		=  =  =  ======  =========
+
+\
+
+:Name: ``sum_only``
+:Arg Type: boolean
+:Default: ``False``
+:Description: Setting ``sum_only`` to ``True`` causes this evaluator to generate a single record  containing the sum of each row comparison between the expectation and results table.
+
+	By default ``sum_only`` is ``False``, meaning that the ``Table`` evaluator emits an evaluator record for each comparison between the expectation and results table. These give the root squared difference between the value in the expectation table's ``expect`` column and the value obtained by evaluating the ``row_compare`` expression. In addition an evaluator record named ``table_sum`` is returned containing the sum of these values.
+
+	In certain cases having a large number of row-comparison values may be confusing. Setting ``sum_only`` can therefore be useful in reducing the amount of data stored in the ``fitting_run.db`` file and appearing in the ``pprofitmon`` GUI.
+:Example: ``sum_only : True``
+
+	Would mean that a single record, giving the sum of the row comparison values, would be generated by the ``Table`` evaluator. 
+
+	``sum_only : False``
+
+	Causes the evaluator to generate one record for every row in the expectation table. In addition a record named ``table_sum`` is created with a weight of 0.0, giving the sum of weighted merit values obtained from each row comparison.
+
+\
+
+:Name: ``weight``
+:Arg Type: float
+:Default: 1.0
+:Description: Weighting factor for merit values calculated by this evaluator. The behaviour of this option is changed when it is used in conjunction with ``sum_only`` and ``weight_column`` options. 
+
+	* If ``weight_column`` is ``True``:
+
+		- The merit-value for each row comparison between expectation and results tables is multiplied by the value in the column named ``weight_column``. 
+		- If ``sum_only`` is ``True``, the sum of these row merit values is calculated to give the ``table_sum`` evaluator record. **This sum is then multiplied by the value given by the** ``weight`` **option** (i.e. ``weight`` is applied to the sum and not to each row's merit-value).  
+		- If ``sum_only`` is ``False``, then ``weight`` is applied to each row's merit-value in addition to the value from the ``weight_column``.
+
+	* As a result, by specifying a ``weight`` of 0.0. The evaluator can effectively be turned off. The values will still be reported to ``pprofitmon`` and can be used in meta-evaluators but will not contribute to the global merit-value.
+
+\
+
+:Name: ``weight_column``
+:Arg Type: string
+:Description: Specifies a column within the expect table. When given, the values from the column are used to weight the merit-value calculated for each row comparison.
+:Note: Following weighting by ``weight_column`` the merit-value is further multiplied the value given by the ``weight`` field. 
+
 

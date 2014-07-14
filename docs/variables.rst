@@ -67,7 +67,7 @@ Calculated variables are defined with the optional ``[CalculatedVariables]`` sec
 	VARIABLE_NAME : EXPRESSION
 
 
-Where ``VARIABLE_NAME`` is the label used to refer to the calculated variable within the fitting system. ``EXPRESSION`` is an arithmetic expression which can contain references to variables from the :ref:`[Variables] <pprofit-variables-variables>` section. The functions and operators that can be used in expressions are the same as for the ``Formula`` meta-evaluator and are described :ref:`here <pprofit-metaevaluators-expressionsyntax>`.
+Where ``VARIABLE_NAME`` is the label used to refer to the calculated variable within the fitting system. ``EXPRESSION`` is an arithmetic expression which can contain references to variables from the :ref:`[Variables] <pprofit-variables-variables>` section. For the functions and operators that can be used in expressions see :ref:`expression-syntax`.
 
 Example
 ^^^^^^^

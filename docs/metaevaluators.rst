@@ -109,14 +109,7 @@ The following gives an example of an expression and its associated weight field:
 Expression Syntax
 """""""""""""""""
 
-The expression parser used by the meta-evaluator supports standard arithmetic operators and mathematical functions. In addition variables defined using ``variable_*`` syntax can be included in expressions. Expressions are parsed using the exprtk library, although summarised below, more information about accepted syntax and available functions can be found here: http://partow.net/programming/exprtk/
-
-	* Mathematical operators: ``+, -, *, /, %, ^``
-	* Functions: ``min, max, avg, sum, abs, ceil, floor, round, roundn, exp, log, log10, logn, root, sqrt, clamp, inrange``
-	* Trigonometry ``sin, cos, tan, acos, asin, atan, atan2, cosh, cot, csc, sec, sinh, tanh, d2r, r2d, d2g, g2d, hyp``
-	* Equalities, Inequalities: ``==, <>, !=, <, <=, >, >=``
-	* Boolean logic ``and, mand, mor, nand, nor, not, or, xor, xnor``
-
+For the operators and functions supported for meta-evaluator expressions see :ref:`expression-syntax`.  In addition expressions can contain variables defined using ``variable_*`` syntax.
 
 Defining Variables
 ------------------

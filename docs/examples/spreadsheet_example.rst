@@ -85,7 +85,7 @@ Create ``GULP`` Job
     .. literalinclude:: spreadsheet_example/fit_files/Gulp_UO2/runjob
     
   
-  * This states that ``gulp`` should take a file named ``input.gin`` (**note:** the ``.in`` suffix is dropped after template processing) and create an output file named ``output.gout``.
+  * This states that ``gulp`` should take a file named ``input.gin``  and create an output file named ``output.gout``. **Note:** the ``.in`` suffix is dropped from ``input.gin.in`` to produce ``input.gin`` during template processing.
   * If your ``gulp`` binary is not on your path, or had a non standard name, this can also be specified within ``runjob``.
 
 * **Create an Evaluator in job.cfg to extract relaxed lattice constant from output.gout**:

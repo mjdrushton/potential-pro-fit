@@ -141,8 +141,6 @@ class TableEvaluator(object):
     rowWeight *= self._rowWeight
     return rowWeight
 
-
-
   def _handleTableLengthErrors(self, rowid, rowName, expectRow, resultsRow, job ):
     # Results table longer than expect table ?
     if not expectRow:
