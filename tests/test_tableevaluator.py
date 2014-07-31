@@ -67,6 +67,64 @@ class TableEvaluatorTestCase(unittest.TestCase):
     self.assertAlmostEquals(46.983161698072, rec.extractedValue)
     self.assertAlmostEquals(2.0 * 46.983161698072, rec.meritValue)
 
+  def testEndToEnd_expect_value(self):
+    """Test TableEvaluator with expect_value cfg option"""
+    resdir = _getResourceDir()
+    resdir = os.path.join(resdir, 'end_to_end')
+
+    # Configure the evaluator
+    parser = ConfigParser.SafeConfigParser()
+    parser.optionxform = str
+    with open(os.path.join(resdir, 'expect_value.cfg')) as infile:
+      parser.readfp(infile)
+
+    evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
+      'Table',
+      resdir,
+      parser.items('Evaluator:Table'))
+
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+    evaluated = evaluator(job)
+
+    ER = pro_fit.evaluators._common.RMSEvaluatorRecord
+
+    expectedRecords = [
+      ER('row_0'       , 3 ,  10        , 1.0 , "Table") ,
+      ER('row_1'       , 3 ,  9        , 1.0 , "Table") ,
+      ER('row_2'       , 3 ,  8        , 1.0 , "Table") ,
+      ER('table_sum'   , 0  , 7+6+5         , 0.0    , "Table") ]
+
+    _compareEvaluatorRecords(self, expectedRecords, evaluated)
+
+  def testEndToEnd_expect_value_no_expect_column(self):
+    """Test TableEvaluator with expect_value cfg option without expect column in expectation CSV"""
+    resdir = _getResourceDir()
+    resdir = os.path.join(resdir, 'end_to_end')
+
+    # Configure the evaluator
+    parser = ConfigParser.SafeConfigParser()
+    parser.optionxform = str
+    with open(os.path.join(resdir, 'expect_value_nocol.cfg')) as infile:
+      parser.readfp(infile)
+
+    evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
+      'Table',
+      resdir,
+      parser.items('Evaluator:Table'))
+
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+    evaluated = evaluator(job)
+
+    ER = pro_fit.evaluators._common.RMSEvaluatorRecord
+
+    expectedRecords = [
+      ER('row_0'       , 3 ,  10        , 1.0 , "Table") ,
+      ER('row_1'       , 3 ,  9        , 1.0 , "Table") ,
+      ER('row_2'       , 3 ,  8        , 1.0 , "Table") ,
+      ER('table_sum'   , 0  , 7+6+5         , 0.0    , "Table") ]
+
+    _compareEvaluatorRecords(self, expectedRecords, evaluated)
+
   def testEndToEnd(self):
     """Test for when individual evaluator records are returned for each row"""
     resdir = _getResourceDir()
@@ -239,6 +297,10 @@ class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
     with self.assertRaises(pro_fit.fittool.ConfigException):
       pro_fit.evaluators.TableEvaluator._validateExpectColumns(sio)
 
+    sio.seek(0)
+    pro_fit.evaluators.TableEvaluator._validateExpectColumns(sio, expect_value = 4.0)
+    sio.seek(0)
+
     #
     sio = StringIO.StringIO()
     print >>sio, "A,B,expect"
@@ -304,6 +366,12 @@ class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
 
     with self.assertRaises(TableEvaluatorConfigException):
       TableEvaluator._validateExpectRows("e_A + e_B + e_C", sio)
+
+    sio = StringIO.StringIO()
+    print >> sio, "A,B,C"
+    print >> sio, "1,2,3"
+    sio.seek(0)
+    TableEvaluator._validateExpectRows("e_A + e_B + e_C", sio, expect_value = 3.0)
 
     # Test that non-numeric values in fields un-used by expression passes.
     sio = StringIO.StringIO()

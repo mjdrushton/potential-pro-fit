@@ -57,7 +57,8 @@ class TableEvaluator(object):
     rowWeight,
     recordPerRow,
     label_column = None,
-    weight_column = None):
+    weight_column = None,
+    expect_value = None):
     """Create TableEvaluator.
 
     :param str name: evaluator name.
@@ -73,7 +74,9 @@ class TableEvaluator(object):
       used as prefix of the name for each row's evaluator record. Record names are ``LABEL_ROWID``.
       If ``label_column`` is ``None`` then record names are ``row_ROWID``.
     :param str weight_column: If specified, then values from column named 'weight_column' in expect table
-      will be used to provide row weights. Each row weight is multiplied by the ``rowWeight`` parameter."""
+      will be used to provide row weights. Each row weight is multiplied by the ``rowWeight`` parameter.
+    :param float expect_value: When specified, this value is used as 'expect' value for every row_comparison
+      and the 'expect' column within the expectation table is not required."""
 
     self._name = name
     self._expectedTable = list(expectCSVReader)
@@ -84,6 +87,7 @@ class TableEvaluator(object):
     self._recordPerRow = recordPerRow
     self._labelColumn = label_column
     self._weightColumn = weight_column
+    self._expect_value = expect_value
 
   def __call__(self, job):
     resultsFilename = os.path.join(job.path, 'output', self._resultsFilename)
@@ -141,6 +145,12 @@ class TableEvaluator(object):
     rowWeight *= self._rowWeight
     return rowWeight
 
+  def _getExpectValue(self, row):
+    """:return float: Return row['expect'] or self._expect_value if it is set."""
+    if self._expect_value:
+      return self._expect_value
+    return float(row['expect'])
+
   def _handleTableLengthErrors(self, rowid, rowName, expectRow, resultsRow, job ):
     # Results table longer than expect table ?
     if not expectRow:
@@ -150,7 +160,7 @@ class TableEvaluator(object):
       return self._makeErrorRowRecord(tle, rowName, 0, rowid, job)
 
     # Expect table long than results table ?
-    expect = float(expectRow['expect'])
+    expect = self._getExpectValue(expectRow)
     if not resultsRow:
       # Expect table longer than results table
       tle = TableLengthException("Expect table has more rows than results table (current row=%d). Results filename: '%s'" % (
@@ -160,7 +170,7 @@ class TableEvaluator(object):
     return None
 
   def _compareRow(self, rowid, rowName, expectRow, resultsRow, job ):
-    expect = float(expectRow['expect'])
+    expect = self._getExpectValue(expectRow)
     try:
       cmpval = self._rowCompare.compare(expectRow, resultsRow)
     except ValueError as ve:
@@ -218,7 +228,7 @@ class TableEvaluator(object):
       rowRecord = self._makeErrorRowRecord(
         errorRecord.exception,
         rowName,
-        float(expectRow['expect']),
+        self._getExpectValue(expectRow),
         i, job)
       retrows.append(rowRecord)
     return retrows
@@ -266,6 +276,7 @@ class TableEvaluator(object):
     supportedFields = set([
       'results_filename',
       'expect_filename',
+      'expect_value',
       'row_compare',
       'weight',
       'weight_column',
@@ -309,9 +320,17 @@ class TableEvaluator(object):
       with open(csvfilename, 'rUb') as csvfile:
         label_column = cfgdict.get('label_column', None)
         weight_column = cfgdict.get('weight_column', None)
+        expect_value = cfgdict.get('expect_value', None)
+
+        if expect_value:
+          try:
+            expect_value = float(expect_value)
+          except ValueError:
+            raise ConfigException("Could not parse 'expect_value' into float: '%s'" % expect_value)
+
 
         # Check that expect file contains the columns that it should.
-        cls._validateExpectColumns(csvfile, csvfilename, label_column)
+        cls._validateExpectColumns(csvfile, csvfilename, label_column, weight_column, expect_value)
         csvfile.seek(0)
         # Check that row_compare can be parsed into an expression.
         cls._validateExpression(row_compare, csvfile, csvfilename)
@@ -319,7 +338,8 @@ class TableEvaluator(object):
         # Step through the expect file, checking its integrity.
         cls._validateExpectRows(row_compare, csvfile,
           csvFilename = csvfilename,
-          weight_column = weight_column)
+          weight_column = weight_column,
+          expect_value = expect_value)
 
         #TODO: Log warning if row_compare does not reference any r_ or e_ variables.
 
@@ -332,11 +352,13 @@ class TableEvaluator(object):
         cls._logger.debug("   sum_only         : '%s'" % sum_only)
 
         if label_column:
-          cls._logger.debug("   label_column         : '%s'" % label_column)
+          cls._logger.debug("   label_column     : '%s'" % label_column)
 
         if weight_column:
-          cls._logger.debug("   weight_column        : '%s'" % weight_column)
+          cls._logger.debug("   weight_column    : '%s'" % weight_column)
 
+        if expect_value:
+          cls._logger.debug("   expect_value     : '%s'" % expect_value)
 
         if sum_only:
           sumWeight = weight
@@ -360,7 +382,8 @@ class TableEvaluator(object):
           rowWeight,        # rowWeight
           recordPerRow,     # recordPerRow
           label_column = label_column,
-          weight_column = weight_column)
+          weight_column = weight_column,
+          expect_value = expect_value)
     except IOError:
       raise ConfigException("Could not open file given by 'expect_filename': %s" % csvfilename)
 
@@ -410,7 +433,7 @@ class TableEvaluator(object):
       raise UnknownVariableException(expression, callback.otherVariables)
 
   @staticmethod
-  def _validateExpectColumns(expectCSVFile, csvfilename = "", label_column = None, weight_column = None):
+  def _validateExpectColumns(expectCSVFile, csvfilename = "", label_column = None, weight_column = None, expect_value = None):
     """Check that expectCSVFile contains necessary columns, based on ``expression``.
 
     Objects that are sub-classes of ConfigException are raised if problems are detected.
@@ -424,7 +447,7 @@ class TableEvaluator(object):
       raise TableHeaderException("Could not read column names from header of table : %s " % csvfilename)
 
     csvFieldNames = set(dr.fieldnames)
-    if not 'expect' in csvFieldNames:
+    if not expect_value and not 'expect' in csvFieldNames:
       TableEvaluator._logger.debug("'expect' column not found, 'expect_filename' columns: %s" % dr.fieldnames)
       raise TableEvaluatorConfigException("File given by 'expect_filename' did no contain column named 'expect'.")
 
@@ -437,7 +460,7 @@ class TableEvaluator(object):
       raise TableEvaluatorConfigException("File given by 'expect_filename' did no contain column named '%s' specified by 'weight_column' option." % weight_column)
 
   @classmethod
-  def _validateExpectRows(cls, expression, expectCSVFile, csvFilename = "", weight_column = None):
+  def _validateExpectRows(cls, expression, expectCSVFile, csvFilename = "", weight_column = None, expect_value = None):
     """Steps through expectCSVFile and raises a TableEvaluatorConfigException if
     any value required by e_ prefix variable within ``expression`` cannot be converted
     into a float.
@@ -450,7 +473,8 @@ class TableEvaluator(object):
     st = cexprtk.Symbol_Table({})
     cexprExpression = cexprtk.Expression(expression, st, callback)
     requiredVariables = callback.expectVariables
-    requiredVariables.append('expect')
+    if not expect_value:
+      requiredVariables.append('expect')
 
     if weight_column:
       requiredVariables.append(weight_column)
