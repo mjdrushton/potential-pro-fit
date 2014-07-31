@@ -147,7 +147,7 @@ class TableEvaluator(object):
 
   def _getExpectValue(self, row):
     """:return float: Return row['expect'] or self._expect_value if it is set."""
-    if self._expect_value:
+    if self._expect_value != None:
       return self._expect_value
     return float(row['expect'])
 
@@ -322,7 +322,7 @@ class TableEvaluator(object):
         weight_column = cfgdict.get('weight_column', None)
         expect_value = cfgdict.get('expect_value', None)
 
-        if expect_value:
+        if expect_value != None:
           try:
             expect_value = float(expect_value)
           except ValueError:
@@ -357,7 +357,7 @@ class TableEvaluator(object):
         if weight_column:
           cls._logger.debug("   weight_column    : '%s'" % weight_column)
 
-        if expect_value:
+        if expect_value != None:
           cls._logger.debug("   expect_value     : '%s'" % expect_value)
 
         if sum_only:
@@ -447,7 +447,7 @@ class TableEvaluator(object):
       raise TableHeaderException("Could not read column names from header of table : %s " % csvfilename)
 
     csvFieldNames = set(dr.fieldnames)
-    if not expect_value and not 'expect' in csvFieldNames:
+    if expect_value == None and not 'expect' in csvFieldNames:
       TableEvaluator._logger.debug("'expect' column not found, 'expect_filename' columns: %s" % dr.fieldnames)
       raise TableEvaluatorConfigException("File given by 'expect_filename' did no contain column named 'expect'.")
 
@@ -473,7 +473,7 @@ class TableEvaluator(object):
     st = cexprtk.Symbol_Table({})
     cexprExpression = cexprtk.Expression(expression, st, callback)
     requiredVariables = callback.expectVariables
-    if not expect_value:
+    if expect_value == None:
       requiredVariables.append('expect')
 
     if weight_column:
