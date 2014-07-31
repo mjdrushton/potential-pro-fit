@@ -349,7 +349,7 @@ def _invokeMinimizer(cfg, logger, logsql):
     if os.path.exists('fitting_run.db'):
       logger.info("Removing existing 'fitting_run.db'")
       os.remove('fitting_run.db')
-    sqlreporter = pro_fit.reporters.SQLiteReporter('/Users/mr498/Desktop/fmatch/fitting_run.db',cfg.variables, cfg.merit.variableTransform, cfg.title)
+    sqlreporter = pro_fit.reporters.SQLiteReporter('fitting_run.db',cfg.variables, cfg.merit.variableTransform, cfg.title)
     stepCallback.append(sqlreporter)
 
   minimizer = cfg.minimizer
