@@ -53,6 +53,11 @@ ul.horizontal-list li
 	padding : 2px;
 }
 
+.ui-layout-center
+{
+	overflow : hidden !important;
+};
+
 #candidate_data
 {
 	overflow: hidden !important;
