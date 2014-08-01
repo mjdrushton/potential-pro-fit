@@ -2,6 +2,7 @@
 {
 	font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
    	font-weight: 300;
+   	font-size : 11pt;
 }
 
 h3
@@ -82,6 +83,20 @@ ul.horizontal-list li
 	color : rgb(102, 102, 102);
 }
 
+#global_status table.iteration_summary .label {
+    font-weight: bold;
+}
+
+#global_status table.iteration_summary .best
+{
+		color :  #FF41B4;
+}
+
+#global_status table.iteration_summary .selected
+{
+		color :  #D3D6FF;
+}
+
 #status
 {
 	position : absolute;
@@ -95,7 +110,7 @@ ul.horizontal-list li
 #title 
 {
 	color : rgb(102, 102, 102);
-	font-size: 32pt;
+	font-size: 18pt;
 	text-align: center;
 }
 

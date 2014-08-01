@@ -33,28 +33,28 @@
         <div id='global_status'>
             <table class='iteration_summary'>
                 <tr>
-                    <td>Current:</td>
+                    <td class="label">Current:</td>
                     <td data-bind="
                         text: current_iteration_summary.iteration_number, 
                         tooltip: 'Current iteration number'"></td>
-                    <td>=</td>
-                    <td data-bind="
+                    <td class="label">=</td>
+                    <td class="value" data-bind="
                         format_number: current_iteration_summary.minimum.merit_value(),
                         tooltip: 'Merit value for current iteration'"></td>
                 </tr>
-                <tr>
-                    <td>Best:</td>
+                <tr class="best">
+                    <td class="label" >Best:</td>
                     <td data-bind="
                         text: best_iteration_summary.iteration_number, 
                         tooltip: 'Iteration that gave best merit-value'"></td>
-                    <td>=</td>
-                    <td data-bind="
+                    <td class="label">=</td>
+                    <td class="value" data-bind="
                         format_number: best_iteration_summary.minimum.merit_value(),
                         tooltip: 'Best ever merit-value'"></td>
                 </tr>
-                 <tr>
-                    <td>Selected:</td>
-                    <td data-bind="text: selected_iteration_summary.iteration_number"></td>
+                 <tr class="selected">
+                    <td class="label">Selected:</td>
+                    <td class="value" data-bind="text: selected_iteration_summary.iteration_number"></td>
                 </tr>
             </table>
 
