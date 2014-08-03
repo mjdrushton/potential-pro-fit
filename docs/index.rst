@@ -22,6 +22,6 @@ Contents
   pprofitmon/pprofitmon
   configuration
   examples/examples
-  fittingrundb
+  extending/index
   sshlogin   
   acknowledgements

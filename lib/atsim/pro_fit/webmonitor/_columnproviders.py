@@ -159,15 +159,15 @@ class _VariablesColumnProvider(object):
 class _EvaluatorColumnProvider(object):
   """Column provider for evaluator values.
 
-  Column-label has format:
+  Column-label has format::
 
     evaluator:JOB_NAME:EVALUATOR_NAME:VALUE_NAME:VALUE_TYPE
 
-  Where:
-    JOB_NAME - Name of job
-    EVALUATOR_NAME - Name of evaluator for which value should be produced
-    VALUE_NAME - Name of value extracted by evaluator
-    VALUE_TYPE - 'merit' or 'extract' which give merit value or extracted value for evaluator respectively."""
+  * **Where:**
+    - ``JOB_NAME`` - Name of job
+    - ``EVALUATOR_NAME`` - Name of evaluator for which value should be produced
+    - ``VALUE_NAME`` - Name of value extracted by evaluator
+    - ``VALUE_TYPE`` - 'merit' or 'extract' which give merit value or extracted value for evaluator respectively."""
 
   _labelSplitRegex = re.compile(r'^evaluator:(?P<jobName>.*?):(?P<evaluatorName>.*):(?P<valueName>.*):(?P<valueType>merit|extract|percent)$')
 

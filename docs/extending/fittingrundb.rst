@@ -1,5 +1,7 @@
+.. _extending_fitting_rundb:
+
 **************
-fitting_run.db
+fitting_run.db 
 **************
 
 During a fitting run, :ref:`pprofit` creates an `sqlite <http://sqlite.org>`_ database named ``fitting_run.db`` into which job and evaluator information are reported during a fitting run. 

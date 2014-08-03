@@ -60,8 +60,16 @@ class Fitting:
   @cherrypy.expose
   @tools.json_out(on=True)
   def current_iteration(self):
-    """Returns json containing current generation (i.e. the largest iteration found in the 'candidates' table).
-    Resulting JSON contains a single key: 'current_iteration'"""
+    """Returns JSON containing current generation (i.e. the largest iteration found in the ``candidates`` table of the :ref:`extending_fitting_rundb`).
+    Resulting JSON is of form:
+
+    .. code-block:: javascript
+
+      {
+        'current_iteration' : current fitting run step (int)
+      }
+
+    '"""
     configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
     select = sa.select([sa.func.max(metadata.tables['candidates'].c.iteration_number).label('max_iteration')])
     results = session.execute(select)
@@ -72,13 +80,21 @@ class Fitting:
   @cherrypy.expose
   @tools.json_out(on=True)
   def best_candidate(self):
-    """Returns json containing identity of best candidate within database.
+    """Returns JSON containing identity of best candidate within database.
 
-    returned record has following format:
-      {'id' :  id of solution within candidates table,
-       'iteration_number' : generation number in which best candidate was found,
-       'candidate_number' : solution number within generation,
-       'merit_value' : best merit value}"""
+    Returned JSON record has following format:
+
+    .. code-block:: javascript
+
+      {
+        'id' :  id of solution within candidates table,
+        'iteration_number' : generation number in which best candidate was found,
+        'candidate_number' : solution number within generation,
+        'merit_value' : best merit value
+      }
+
+
+      """
     configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
     table = metadata.tables['candidates']
     query = sa.select([
@@ -96,7 +112,16 @@ class Fitting:
   @tools.json_out(on=True)
   def run_status(self):
     """Returns json containing status of run.
-    Resulting JSON contains a single key: 'run_status'"""
+
+    Resulting JSON contains a single key: 'run_status'
+
+    .. code-block:: javascript
+
+      { 'run_status' : status of run }
+
+    ``run_status`` can have values of ``Running``, ``Finished`` or ``Error``.
+
+    """
     configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
     table = metadata.tables['runstatus']
     query = sa.select([table.c.runstatus, table.c.title])
@@ -107,28 +132,36 @@ class Fitting:
   @cherrypy.expose
   @tools.json_out(on=True)
   def iteration_overview(self, iterationNumber):
-    """Returns overview and statistics for a given iteration_overview.
+    """Returns overview and statistics for a given iteration.
 
-    Parameter:
-      iterationNumber: iteration for which statistics should be returned.
+    :parameter int iterationNumber: iteration for which statistics should be returned.
 
     Resulting JSON has the following format:
-      {
-      'iteration_number' : iteration to which statistics relate,
-      'num_candidates' : iteration population size,
-      'mean' : average merit value,
-      'standard_deviation' : merit value standard deviation,
-      'minimum' : CANDIDATE_RECORD for population member with minimum merit value,
-      'maximum' : CANDIDATE_RECORD for population member with maximum merit value,
-    }
 
-    CANDIDATE_RECORD has format:
+    .. code-block:: javascript
+
+        {
+        'iteration_number' : iteration to which statistics relate,
+        'num_candidates' : iteration population size,
+        'mean' : average merit value,
+        'standard_deviation' : merit value standard deviation,
+        'minimum' : CANDIDATE_RECORD for population member with minimum merit value,
+        'maximum' : CANDIDATE_RECORD for population member with maximum merit value,
+      }
+
+    The format of ``CANDIDATE_RECORD`` as returned for ``'minimum'`` and ``'maximum'`` has
+    following format:
+
+    .. code-block:: javascript
+
       {
        'id' :  id of solution within candidates table,
        'iteration_number' : generation number in which best candidate was found,
        'candidate_number' : solution number within generation,
        'merit_value' : best merit value
-      }"""
+      }
+
+      """
     configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
     table = metadata.tables['candidates']
 
@@ -201,16 +234,24 @@ class Fitting:
   def variables(self, iterationNumber, candidateNumber):
     """Returns json representing variables for given iterationNumber and candidateNumber within that iteration.
 
-    JSON is a list of records of the following form:
+    :parameter int iterationNumber: Number of the iteration for which information is returned.
+    :parameter int candidateNumber: Index of candidate within population of parameter sets for given iteration.
+
+    Returned JSON has the form:
+
+    .. code-block:: javascript
+
       {
-        variable_name : name of variable,
-        fit_flag      : boolean, true if variable is changed during fitting ,
-        low_bound     : variable low bound or null if no bound set,
-        upper_bound   : variable's upper bound or null if no bound set,
-        calculated_flag : boolean, true if variable is a calculated variable,
-        calculation_expression : calculated_flag is true then this field gives the expression used to calculate field,
-        value : current value of variable
-      }"""
+        'variable_name' : name of variable,
+        'fit_flag'      : boolean, true if variable is changed during fitting ,
+        'low_bound'     : variable low bound or null if no bound set,
+        'upper_bound'   : variable's upper bound or null if no bound set,
+        'calculated_flag' : boolean, true if variable is a calculated variable,
+        'calculation_expression' : calculated_flag is true then this field gives the expression used to calculate field,
+        'value' : current value of variable
+      }
+
+    """
     configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
     variables = metadata.tables['variables']
     variable_keys = metadata.tables['variable_keys']
@@ -243,7 +284,14 @@ class Fitting:
   def evaluated(self, iterationNumber, candidateNumber):
     """Returns json representing evaluator fields for given iterationNumber and candidateNumber within that iteration.
 
-    JSON is a list of records of the following form:
+    :parameter int iterationNumber: Number of the iteration for which information is returned.
+    :parameter int candidateNumber: Index of candidate within population of parameter sets for given iteration.
+
+    Returned JSON has the form:
+
+    .. code-block:: javascript
+
+
       {
         'evaluator_name' : Name of evaluator that generated record (format JOB:EVALUATOR_NAME),
         'value_name' : Name of value within evaluator,
@@ -253,7 +301,9 @@ class Fitting:
         'merit_value' : Merit value as used for global merit value sum,
         'error_message' : If error occurred this field contains error message, null otherwise,
         'job_name' : Name of job to which this record belongs.
-      }"""
+      }
+
+    """
 
     cid = self._getCandidateID(iterationNumber, candidateNumber)
 
@@ -349,9 +399,9 @@ class _Columns(object):
   for a particular key and passing to summarising stat functions"""
 
   def __init__(self, results, columnLabels, columnProviders):
-    """@param results SQL Result set (normally iteration filtered at this point) wrapped by this object.
-       @param columnLabels Columns for which this class will provide data.
-       @param primaryColumn Primary column label for which stats should be collected"""
+    """:param results: SQL Result set (normally iteration filtered at this point) wrapped by this object.
+       :param columnLabels: Columns for which this class will provide data.
+       :param primaryColumn: Primary column label for which stats should be collected"""
 
     self.results = results
     self.columnLabels = columnLabels
@@ -387,11 +437,11 @@ class IterationSeries:
     iteration_number and candidate_number for the iteration series defined by the arguments to this
     method.
 
-    @param primaryColumnKey Column key used to choose iteration/candidate pairs.
-    @param iterationFilter Keyword used in iteration selection.
-    @param candidateFilter Keyword used to identify candidate within each iteration.
+    :param primaryColumnKey: Column key used to choose iteration/candidate pairs.
+    :param iterationFilter: Keyword used in iteration selection.
+    :param candidateFilter: Keyword used to identify candidate within each iteration.
 
-    @return Context manager returns tuple (connection, meta) where connection is the connection associated with
+    :return: Context manager returns tuple (connection, meta) where connection is the connection associated with
       temporary table and meta is MetaData containing temporary table definition."""
 
     # Create the table
@@ -425,10 +475,10 @@ class IterationSeries:
     """Get SQLAlchemy results for the relevant iteration/candidate pairs for
     primaryColumnKey, iterationFilter, candidateFilter.
 
-    @param primaryColumnKey Column key used to choose iteration/candidate pairs.
-    @param iterationFilter Keyword used in iteration selection.
-    @param candidateFilter Keyword used to identify candidate within each iteration.
-    @return SQLAlchemy results"""
+    :param primaryColumnKey: Column key used to choose iteration/candidate pairs.
+    :param iterationFilter: Keyword used in iteration selection.
+    :param candidateFilter: Keyword used to identify candidate within each iteration.
+    :return: SQLAlchemy results"""
     iterationFilterFunc = {'all' : _NullFilter,
                            'running_min' : _RunningMinFilter,
                            'running_max' : _RunningMaxFilter}[iterationFilter]
@@ -453,6 +503,130 @@ class IterationSeries:
   @cherrypy.expose
   @tools.json_out(on=True)
   def merit_value(self, iterationFilter, candidateFilter, columns=None):
+    """Returns a data table where each row represents an iteration within the fitting run. The primary data column
+    returned by this JSON call is candidate merit value.
+
+
+    **Filtering**
+
+    * The candidates chosen for inclusion in the data table are controlled using the ``candidateFilter`` parameter:
+
+      - If ``candidateFilter`` is ``min``, then the candidate with the **lowest** merit value is selected for each
+        iteration.
+      - If it is ``max`` then the candidate with the **largest** merit is chosen.
+
+    * The ``iterationFilter`` parameter can be used to filter the the rows returned:
+
+      - ``all`` : when ``iterationFilter`` has this value, no row filtering takes place and all iterations are returned.
+      - ``running_min``: only includes rows where the merit value decreases with respect to the previous row.
+        + If iteration 0,1,2 and 3 had merit values of 10,11,8,4, using ``running_min`` would return values for iterations
+          0,2 and 3.
+        + As the merit value increased between iterations 0 and 1, iteration 1 is removed from the
+          table.
+      - ``running_max``: similar to ``running_min`` with only those rows constituting an increase in overall merit value
+        being included.
+
+
+    **Column Selection**
+
+    * By default the following columns are included in the table returned by ``/fitting/iteration_series/merit_value``:
+
+      - ``"iteration_number"``: step number of ``pprofit`` run.
+      - ``"candidate_number"``: column showing the id of the candidate selected for each row.
+      - ``"merit_value"``: column containing the merit value obtained for each row's selected candidate.
+
+    * Additional columns can be specified through the optional ``columns`` parameter specified in the URL query string.
+    * The argument to ``columns`` is a string containing a comma separated list of column keys.
+    * Column keys fall into different categories identified by a prefix:
+
+      - ``evaluator:`` Include evaluator values (see :ref:`extending_json_iterationseries_columns_evaluator`).
+      - ``variable:``  Include variable values in table  (see :ref:`extending_json_iterationseries_columns_variable`).
+      - ``stat:`` Popuation statistics columns (see :ref:`extending_json_iterationseries_columns_stats`).
+      - ``it:`` Iteration meta-data (see :ref:`extending_json_iterationseries_columns_itmetadata`).
+
+
+    **JSON Format**
+
+    This call returns JSON with the following general format.
+
+    .. code-block:: javascript
+
+      {
+        'columns' : COLUMN_LIST,
+        'values' : VALUE_LIST
+      }
+
+    **Where:**
+      * ``COLUMN_LIST`` is a list of column keys. For ``/fitting/iteration_series/merit_value/...``, ``COLUMN_LIST``
+        has the form:
+
+          .. code-block:: javascript
+
+            ["iteration_number", "candidate_number", "merit_value"]
+
+
+          - Where the "iteration_number", "candidate_number", "merit_value", define the default columns described above.
+          - If additional columns have been specified using the optional ``columns`` argument, the column names
+            appear at the end of the ``COLUMN_LIST``.
+
+      *  ``VALUE_LIST`` is a list containing sub-lists, one per iteration selected. Each iteration is represented by a
+          list of values. One value appears per column defined in ``COLUMN_LIST``.
+
+
+    **Example of JSON Output:**
+
+    * The URL::
+
+      /fitting/iteration_series/merit_value/all/min
+
+
+    * when used with the ``pprofitmon`` server produces:
+
+      .. code-block:: javascript
+
+        {
+          "columns": ["iteration_number", "candidate_number", "merit_value"],
+          "values": [
+            [0, 0, 259.83689200000003],
+            [1, 0, 193.31817600000002],
+            [2, 0, 222.484335],
+            [3, 0, 205.81304400000002],
+            [4, 0, 151.776856],
+            [5, 0, 101.330231],
+          ]
+        }
+
+
+    * Which represents the table:
+
+      +------------------+------------------+--------------------+
+      | iteration_number | candidate_number | merit_value        |
+      +==================+==================+====================+
+      | 0                | 0                | 259.83689200000003 |
+      +------------------+------------------+--------------------+
+      | 1                | 0                | 193.31817600000002 |
+      +------------------+------------------+--------------------+
+      | 2                | 0                | 222.484335         |
+      +------------------+------------------+--------------------+
+      | 3                | 0                | 205.81304400000002 |
+      +------------------+------------------+--------------------+
+      | 4                | 0                | 151.776856         |
+      +------------------+------------------+--------------------+
+      | 5                | 0                | 101.330231         |
+      +------------------+------------------+--------------------+
+
+    ---
+
+    :param iterationFilter: Describes row filter. Can be one of ``all``, ``running_min`` and ``running_max``.
+    :param candidateFilter: Determines the candidate selected from each iteration.
+      The value of this parameter can be one of ``min`` and ``max``.
+    :param columns: Comma separated list of additional column keys to include in the returned table.
+
+
+    """
+
+
+
     primaryColumnKey = 'merit_value'
     configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
 
@@ -478,7 +652,7 @@ class IterationSeries:
 def _setPort(portNumber):
   """Sets the port on which the web monitor runs.
 
-  @param portNumber Port number"""
+  :param portNumber: Port number"""
   cherrypy.config.update({'server.socket_port': portNumber})
 
 def _processCommandLineOptions():
