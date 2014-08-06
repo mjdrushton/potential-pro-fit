@@ -1,3 +1,4 @@
+.. _examples_spreadsheet_example:
 
 Example Using the Spreadsheet Minimiser
 =======================================
@@ -116,10 +117,23 @@ Before being able to run ``pprofit`` it is necessary to make some changes to the
   * Although variable values of 1.0 are specified, these are not used during the ``pprofit`` run, as variable values will be read from the spreadsheet being used to drive the run.
   * Note that the ``*`` at the end of the variable definitions indicate that both are optimisation variables. 
 
+* **Create Spreadsheet:**
+
+  * The original Jackson and Read paper surveyed the following ranges: :math:`750 \leq A \leq 2200`\ eV and :math:`0.2 \leq \rho \leq 0.5`\ Å [Read2010]_\ . These ranges have also been adopted for the present example. 
+  * To support the spreadsheet minimiser, the :ref:`ppmakegrid <tools_ppmakegrid>` tool is provided. This allows CSV formatted grids to be generated that sample a given range with a given grid-resolution. In order to create a 20⨉20 grid with the required ranges and write this into a file names ``spreadsheet.csv`` use the following command
+  
+    .. code-block:: bash
+
+      ppmakegrid --range A:750,2200,20  rho:0.2,0.5,20 -o spreadsheet.csv
+    
+
+  * (Alternatively you can download the :download:`spreadsheet_example/spreadsheet.csv` file and place it in the same directory as ``fit.cfg``).
+
+
+
 * **Set-Up Spreadsheet Minimizer:** ``pprofit`` needs to be told to read variables from a spreadsheet.
 
-  * The original Jackson and Read paper surveyed the following ranges: :math:`750 \leq A \leq 2200`\ eV and :math:`0.2 \leq \rho \leq 0.5`\ Å [Read2010]_\ . These ranges have also been adopted for the present example. A CSV file is provided covering these ranges using a 20\ :math:`\times`\ 20 grid.
-  * Download the :download:`spreadsheet_example/spreadsheet.csv` file and place it in the same directory as ``fit.cfg``. 
+   
   * Find the ``[Minimizer]`` section of ``fit.cfg`` and edit it such that it reads::
 
       [Minimizer]

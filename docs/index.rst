@@ -18,9 +18,8 @@ Contents
 .. toctree::
   :maxdepth: 3 
     
-  pprofit
-  pprofitmon/pprofitmon
   configuration
+  tools
   examples/examples
   fittingrundb
   sshlogin   

@@ -36,7 +36,7 @@ class GridGenerator(object):
     iterables = [self._makeAxis(prange) for prange in self._parameterRanges]
     iterable = itertools.product(*iterables)
     for i, v in enumerate(iterable):
-      self.rows = i
+      self.rows = i+1
       # import pdb;pdb.set_trace()
       yield dict(v)
 
