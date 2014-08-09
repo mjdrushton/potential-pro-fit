@@ -36,19 +36,37 @@ class Root:
     """Serve index.html performing jinja template substitution"""
     return {}
 
-  @cherrypy.expose
-  def resources(self, *args):
-    """Serve static resources from files stored in pkg_resources"""
+  def _serveFromPkg(self, *args):
     resourceurl = ['webresources','static']
     resourceurl.extend(args)
     resourceurl = "/".join(resourceurl)
-
     junk, extension = os.path.splitext(resourceurl)
-
     try:
       data = pkgutil.get_data(__package__, resourceurl)
     except IOError:
       raise cherrypy.NotFound
+    return extension, data
+
+  def _serveFromFile(self, *args):
+    staticpath = cherrypy.request.config.get('static_path', None)
+    filepath = os.path.join(staticpath, *args)
+    try:
+      with open(filepath) as infile:
+        data = infile.read()
+    except IOError:
+      raise cherrypy.NotFound
+    junk, extension = os.path.splitext(filepath)
+    return extension, data
+
+
+  @cherrypy.expose
+  def resources(self, *args):
+    """Serve static resources from files stored in pkg_resources"""
+    staticpath = cherrypy.request.config.get('static_path', None)
+    if not staticpath:
+      extension,data = self._serveFromPkg(*args)
+    else:
+      extension,data = self._serveFromFile(*args)
 
     # Set response headers based on extension
     cherrypy.response.headers['Content-Type']= self.extensionToResponseHeader.get(extension, 'text/html')
@@ -655,6 +673,13 @@ def _setPort(portNumber):
   :param portNumber: Port number"""
   cherrypy.config.update({'server.socket_port': portNumber})
 
+def _setStaticPath(staticPath):
+  """Set the path from which static files should be served.
+
+  :param str staticPath: Path to static files. If not specified serve files from egg"""
+  cherrypy.config.update({'static_path' : staticPath})
+
+
 def _processCommandLineOptions():
   parser = optparse.OptionParser()
   parser.add_option("-p", "--port", dest="port", metavar = "PORT",
@@ -663,11 +688,19 @@ def _processCommandLineOptions():
     type="int",
     action = "store")
 
+  developgroup = optparse.OptionGroup(parser, "Developer Options",
+    description = "Options useful for developers of pprofitmon")
+  developgroup.add_option("-s", "--static-files", dest="static_files", metavar = "PATH",
+    help = "Serve statice files (css/javascript/images) from PATH rather than pprofit egg file.")
+
+  parser.add_option_group(developgroup)
+
   if not os.path.exists('fit.cfg'):
     parser.error("pprofitmon must be run from same directory as fitting run.")
 
   options, args = parser.parse_args()
   _setPort(options.port)
+  _setStaticPath(options.static_files)
 
 def _setupCherryPy(sqliteURL):
   root = Root()
