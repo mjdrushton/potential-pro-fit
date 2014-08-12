@@ -167,9 +167,10 @@ class _EvaluatorColumnProvider(object):
     - ``JOB_NAME`` - Name of job
     - ``EVALUATOR_NAME`` - Name of evaluator for which value should be produced
     - ``VALUE_NAME`` - Name of value extracted by evaluator
-    - ``VALUE_TYPE`` - 'merit' or 'extract' which give merit value or extracted value for evaluator respectively."""
+    - ``VALUE_TYPE`` - 'merit_value', 'extracted_value' or 'percent_difference' which give merit, extracted or percentage
+      difference value for evaluator respectively."""
 
-  _labelSplitRegex = re.compile(r'^evaluator:(?P<jobName>.*?):(?P<evaluatorName>.*):(?P<valueName>.*):(?P<valueType>merit|extract|percent)$')
+  _labelSplitRegex = re.compile(r'^evaluator:(?P<jobName>.*?):(?P<evaluatorName>.*):(?P<valueName>.*):(?P<valueType>merit_value|extracted_value|percent_difference)$')
 
 
   def __init__(self, conn, tempMeta, columnLabel):
@@ -196,7 +197,7 @@ class _EvaluatorColumnProvider(object):
     valueName = groupdict['valueName']
     valueType = groupdict['valueType']
 
-    allowedValues = ['merit', 'extract', 'percent']
+    allowedValues = ['merit_value', 'extracted_value', 'percent_difference']
     if not (valueType in allowedValues):
       raise KeyError("Requested value should be one of %s for column label: %s", (str(allowedValues), self.columnLabel))
 
@@ -204,11 +205,11 @@ class _EvaluatorColumnProvider(object):
     tj = _metadata.tables['jobs']
     te = _metadata.tables['evaluated']
 
-    # Dictionary mapping valuetype to tuple containing columns and a row dictionary poste process function used to extract column.
+    # Dictionary mapping valuetype to tuple containing columns and a row dictionary post process function used to extract column.
     extracols, self.rowpostprocess = {
-      'merit'   : ([te.c.merit_value], operator.itemgetter('merit_value')),
-      'extract' : ([te.c.extracted_value], operator.itemgetter('extracted_value')),
-      'percent' : ([te.c.extracted_value, te.c.expected_value], calculatePercentageDifference)}[valueType]
+      'merit_value'   : ([te.c.merit_value], operator.itemgetter('merit_value')),
+      'extracted_value' : ([te.c.extracted_value], operator.itemgetter('extracted_value')),
+      'percent_difference' : ([te.c.extracted_value, te.c.expected_value], calculatePercentageDifference)}[valueType]
 
     columns = [
       tt.c.candidate_id,

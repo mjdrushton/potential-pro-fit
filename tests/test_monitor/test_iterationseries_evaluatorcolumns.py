@@ -13,10 +13,10 @@ class IterationSeriesMetaEvaluatorColumnTestCase(CherryPyDBTestCaseBase):
 
   def testMetaEvaluatorColumns(self):
     """Test that evaluator columns targetting meta evaluators can be accessed."""
-    baserequest = 'merit_value/all/min?columns=evaluator:meta_evaluator:Gd_Ea:deltaD18_16:extract'
+    baserequest = 'merit_value/all/min?columns=evaluator:meta_evaluator:Gd_Ea:deltaD18_16:extracted_value'
     j = self.fetchJSON(baserequest)
     expect = {
-               'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'evaluator:meta_evaluator:Gd_Ea:deltaD18_16:extract'],
+               'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'evaluator:meta_evaluator:Gd_Ea:deltaD18_16:extracted_value'],
                'values'  : [
                             [0                , 0                , 2416.94923768057,  0.186157195071552],
                             [1                , 0                , 2296.32138117195, 0.101604334555792],
@@ -32,19 +32,19 @@ class IterationSeries_Evaluators_TestCase(CherryPyDBTestCaseBase):
   def testEvaluatorColumnLabelSplit(self):
     """Test _EvaluatorColumnProvider._splitColumnLabel()"""
     from atsim.pro_fit.webmonitor._columnproviders import _EvaluatorColumnProvider
-    actual = _EvaluatorColumnProvider._splitColumnLabel("evaluator:CaO:CaO:Gulp:elastic_c12:merit")
+    actual = _EvaluatorColumnProvider._splitColumnLabel("evaluator:CaO:CaO:Gulp:elastic_c12:merit_value")
     expect = dict(jobName = 'CaO',
       evaluatorName = 'CaO:Gulp',
       valueName = 'elastic_c12',
-      valueType = 'merit')
+      valueType = 'merit_value')
     self.assertEquals(expect,actual)
 
   def testValueTypeMerit(self):
     """Tests for the evaluator: column types"""
-    baserequest = 'merit_value/all/min?columns=evaluator:CaO:CaO:Gulp:elastic_c12:merit'
+    baserequest = 'merit_value/all/min?columns=evaluator:CaO:CaO:Gulp:elastic_c12:merit_value'
     j = self.fetchJSON(baserequest)
     expect = {
-               'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'evaluator:CaO:CaO:Gulp:elastic_c12:merit'],
+               'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'evaluator:CaO:CaO:Gulp:elastic_c12:merit_value'],
                'values'  : [
                     [0 ,2, 973.78207, 56.2145],
                     [1 ,3, 973.78207, 56.2145],
@@ -57,10 +57,10 @@ class IterationSeries_Evaluators_TestCase(CherryPyDBTestCaseBase):
     testutil.compareCollection(self, expect, j)
 
   def testValueTypeExtract(self):
-    baserequest = 'merit_value/all/min?columns=evaluator:CaO:CaO:Gulp:elastic_c12:extract'
+    baserequest = 'merit_value/all/min?columns=evaluator:CaO:CaO:Gulp:elastic_c12:extracted_value'
     j = self.fetchJSON(baserequest)
     expect = {
-               'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'evaluator:CaO:CaO:Gulp:elastic_c12:extract'],
+               'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'evaluator:CaO:CaO:Gulp:elastic_c12:extracted_value'],
                'values'  : [
                     [0 ,2, 973.78207,1.5955],
                     [1 ,3, 973.78207,1.5955],
@@ -73,10 +73,10 @@ class IterationSeries_Evaluators_TestCase(CherryPyDBTestCaseBase):
     testutil.compareCollection(self, expect, j)
 
   def testMultipleEvaluatorColumns(self):
-    baserequest = 'merit_value/all/min?columns=evaluator:CaO:CaO:Gulp:elastic_c12:merit,evaluator:MgO:MgO:Gulp:cell_a:extract'
+    baserequest = 'merit_value/all/min?columns=evaluator:CaO:CaO:Gulp:elastic_c12:merit_value,evaluator:MgO:MgO:Gulp:cell_a:extracted_value'
     j = self.fetchJSON(baserequest)
     expect = {
-               'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'evaluator:CaO:CaO:Gulp:elastic_c12:merit', 'evaluator:MgO:MgO:Gulp:cell_a:extract'],
+               'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'evaluator:CaO:CaO:Gulp:elastic_c12:merit_value', 'evaluator:MgO:MgO:Gulp:cell_a:extracted_value'],
                'values'  : [
                     [0 ,2, 973.78207, 56.2145, 5.061349],
                     [1 ,3, 973.78207, 56.2145, 5.061349],
@@ -91,11 +91,11 @@ class IterationSeries_Evaluators_TestCase(CherryPyDBTestCaseBase):
 
   def testValueTypePercentDiff(self):
     """Test calculation of percentage differences for evaluator columns (i.e. test value type of percent)"""
-    baserequest = 'merit_value/all/max?columns=evaluator:CaO:CaO:Gulp:cell_a:percent'
+    baserequest = 'merit_value/all/max?columns=evaluator:CaO:CaO:Gulp:cell_a:percent_difference'
     j = self.fetchJSON(baserequest)
 
     expect =  {
-               'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'evaluator:CaO:CaO:Gulp:cell_a:percent'],
+               'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'evaluator:CaO:CaO:Gulp:cell_a:percent_difference'],
                'values'  : [
                               [0 , 1 , 56979.43601 , -3.50646435252546   ] ,
                               [1 , 0 , 5283.62466  , -43.669112450634  ]  ,
