@@ -28,7 +28,8 @@ setup(name="potential-pro-fit",
     'console_scripts' : [
       'pprofit = atsim.pro_fit.tools.fittingTool:main',
       'pprofitmon = atsim.pro_fit.webmonitor:main',
-      'csvbuild = atsim.pro_fit.tools.csvbuild:main'
+      'csvbuild = atsim.pro_fit.tools.csvbuild:main',
+      'ppmakegrid = atsim.pro_fit.tools.ppmakegrid:main'
     ]
   },
 

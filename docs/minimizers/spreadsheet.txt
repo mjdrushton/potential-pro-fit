@@ -10,7 +10,13 @@ Spreadsheet
       * ``start_row`` and ``end_row`` : allows a subset of the spreadsheet rows to be selected.
       * ``row_step`` : allows rows to be skipped (e.g. allowing every other row to be selected).
         
-  
+ 
+.. seealso::
+
+  :ref:`examples_spreadsheet_example`
+
+
+
 .. figure:: images/spreadsheet.svg
     :align: center
 

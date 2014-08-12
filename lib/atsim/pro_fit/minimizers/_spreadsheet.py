@@ -140,7 +140,7 @@ class SpreadsheetMinimizer(object):
         for row in rowit:
           pass
       except _RowColException as rce:
-        msg = "In spreadsheet: '%s', %s for col: '%s', line: %d, value = '%s'" % (filename, rce.message, rce.columnKey, rce.lineno)
+        msg = "In spreadsheet: '%s', %s for col: '%s', line: %d, value = '%s'" % (filename, rce.message, rce.columnKey, rce.lineno, rce.value)
         raise ConfigException(msg)
       except  _MissingColumnException as mce:
         raise ConfigException("Spreadsheet did not contain column for fitting variable named '%s'" % mce.columnKey)
