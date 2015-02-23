@@ -141,6 +141,23 @@ class FitConfigTestCase(unittest.TestCase):
           jobfactorymodules = [mockfactories],
           minimizermodules =  [pro_fit.minimizers])
 
+  def testErrorOnMultipleMinimizers(self):
+    """Test that a configuration error is thrown when multiple minimizers are specified"""
+    cfgFilename = os.path.join( _getResourceDir(), os.path.pardir, 'multiple_minimizers', 'fit.cfg')
+    import mockrunners
+    import mockeval1
+    import mockeval2
+    import mockfactories
+
+    with self.assertRaises(pro_fit.fittool.MultipleSectionConfigException):
+      cfgobject = pro_fit.fittool.FitConfig(cfgFilename,
+          runnermodules = [mockrunners],
+          evaluatormodules = [mockeval1, mockeval2],
+          metaevaluatormodules = [pro_fit.metaevaluators],
+          jobfactorymodules = [mockfactories],
+          minimizermodules =  [pro_fit.minimizers])
+
+
 
   def testParseBounds(self):
     """Test bound parsing for pro_fit.Variables"""

@@ -51,7 +51,6 @@ class TableEvaluatorTestCase(unittest.TestCase):
     with open(os.path.join(resdir, 'evaluator.cfg')) as infile:
       parser.readfp(infile)
 
-    # import pdb;pdb.set_trace()
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
       resdir,
@@ -142,7 +141,6 @@ class TableEvaluatorTestCase(unittest.TestCase):
       parser.items('Evaluator:Table'))
 
     job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
-    # import pdb;pdb.set_trace()
     evaluated = evaluator(job)
 
     ER = pro_fit.evaluators._common.RMSEvaluatorRecord

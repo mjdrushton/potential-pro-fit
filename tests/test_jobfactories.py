@@ -41,8 +41,6 @@ class TemplateJobFactoryTestCase(unittest.TestCase):
       ('A', 5.0,  False) ])
 
     # Create the directory
-    #import pdb
-    #pdb.set_trace()
     job = factory.createJob(self.tempd, variables)
 
     # Compare the directory and check it contains what it should
