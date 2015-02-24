@@ -168,3 +168,13 @@ class SkipWhiteSpaceDictReader(csv.DictReader):
         v = v.strip()
       vals.append((k,v))
     return dict(vals)
+
+
+class MultiCallback(list):
+  """Class for combining callbacks"""
+
+  def __call__(self, *args, **kwargs):
+    retvals = []
+    for cb in self:
+      retvals.append(cb(*args, **kwargs))
+    return retvals
