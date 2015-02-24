@@ -22,5 +22,7 @@ Minimizer Reference
 
 .. include:: single.txt
 
+.. include:: simulated_annealing.txt
+
 .. include:: spreadsheet.txt
 

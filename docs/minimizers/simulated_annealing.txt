@@ -1,0 +1,86 @@
+.. _pprofit-minimizers-Simulated_Annealing:
+
+Simulated_Annealing
+^^^^^^^^^^^^^^^^^^^
+
+:Type-Name: Simulated_Annealing
+:Description: Minimizer based on Inspyred's SA minimizer.
+
+Algorithm Description
+=====================
+
+Evolutionary computation representing simulated annealing. This scheme attempts to prevent a minimization from becoming trapped in shallow minima by introducing a degree of random variation into the solutions accepted by the minimization algorithm. The system is effectively quenched from high temperature: an initial temperature specified (through the ``temperature`` parameter) which is reduced as the minimization run proceeds (the rate at which the temperature drops is specified using the ``cooling_rate`` parameter).
+
+During the initial stages of the quench from high temperature, candidate solutions may be accepted even if they increase the merit value. The higher the temperature, the greater the probability that such non-improving solutions will pass forward to the next iteration of the algorithm. By introducing entropy in this manner, the algorithm aims to allow the system to jump out of shallow basins.
+
+As the algorithm proceeds, the temperature decreases and with it, the entropy allowed in the solutions also decreases. This means that the chances of hopping out of basins within the merit function's landscape also decreases. Consequently, this allows the algorithm to hone in on a particular minimum during the latter stages of a minimization run.
+
+.. note::
+  This minimizer wraps the SA implementation provided within the `inspyred library <http://inspyred.github.com>`_ . If you use this minimizer please acknowledge inspyred.
+
+Notes:
+""""""
+
+* Candidate solutions are mutated each iteration according to the ``mutation_rate`` by adding a value randomly selected from a Gaussian distribution with mean and standard deviation controlled by the ``gaussian_mean`` and ``gaussian_stdev`` parameters.
+* Between iterations candidate solutions are either kept, or rejected based on a simulated annealing replacement scheme. 
+  
+  - An initial temperature is specified using the ``temperature`` parameter.
+  - The ``temperature`` is reduced over the course of the fitting run at a rate determined by the  ``cooling_rate`` coefficient (temperature is multiplied by this coefficient at each iteration).
+  - A solution is accepted if it improves the merit value or if it does not then according to the following probability (where :math:`P` is probability, :math:`T` is temperature, :math:`m_i` the merit value for iteration :math:`i`and :math:`m_{i+1}` the merit value for the candidate solution to be accepted or rejected):
+
+.. math:: P(m) = \exp \left( \frac{- \left| m_{i} - m_{i+1} \right|}{T} \right)
+
+
+
+Optional Fields
+===============
+
+:Name: cooling_rate
+:Arg-type: float
+:Default: 0.01
+:Bounds: 0.0-1.0
+:Description: Coefficient by which temperature should be reduced.
+
+\
+
+:Name: gaussian_mean
+:Arg-type: float
+:Default: 0.0
+:Description: Mean of Gaussian distribution used during mutation.
+
+\
+
+:Name: gaussian_stdev
+:Arg-type: float
+:Default: 1.0
+:Description: Standard deviation of Gaussian distribution used during mutation.
+
+\
+
+:Name: max_iterations
+:Arg-type: int
+:Default: 1000
+:Description: Terminate optimisation after this number of iterations.
+
+\
+
+:Name: mutation_rate
+:Arg-type: float
+:Default: 0.1
+:Bounds: 0.0-1.0
+:Description: Probability that offspring fit parameter will undergo Gaussian mutation.
+
+\
+
+:Name: random_seed
+:Arg-type: int
+:Default: current time
+:Description: Random seed used during optimisation.
+
+\
+
+:Name: temperature
+:Arg-type: float
+:Default: 0.0
+:Bounds: 0.0-Inf
+:Description: Initial temperature.
