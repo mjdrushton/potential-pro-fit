@@ -245,3 +245,21 @@ def _RandomSeed(clsname, key):
     else:
       return int(time.time())
   return f
+
+def _ChoiceConvert(clsname, key, choices):
+  choices = set(choices)
+  choicestring = sorted(list(choices))
+  if len(choicestring) == 2:
+    choicestring = " or ".join(choicestring)
+  else:
+    choicestring = ", ".join(choicestring)
+
+
+  def f(v):
+    v = v.strip()
+    if not v in choices:
+      raise ConfigException("Could not parse option '%s' for %s. Value '%s' should be one of %s. " % (key, clsname, v, choicestring))
+    return v
+  return f
+
+

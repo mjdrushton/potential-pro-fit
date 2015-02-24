@@ -1,0 +1,82 @@
+.. _pprofit-minimizers-Simulated_Annealing:
+
+Particle_Swarm
+^^^^^^^^^^^^^^
+
+:Type-Name: Particle_Swarm
+:Description: Minimizer based on Inspyred's PSO minimizer.
+
+Algorithm Description
+=====================
+
+Particle swarm optimiser.
+
+
+.. note::
+  This minimizer wraps the PSO implementation provided within the `inspyred library <http://inspyred.github.com>`_ . If you use this minimizer please acknowledge inspyred. The approach used by the optimizer was described in [Deb and Padhye]_ please recognise their work if you make use of the Particle_Swarm minimizer.
+  
+
+
+Optional Fields
+===============
+
+:Name: cognitive_rate
+:Arg-type: float
+:Default: 2.1
+:Bounds: >0.0
+:Description: The rate at which the particle's current position influences its movement. 
+
+\
+
+:Name: inertia
+:Arg-type: float
+:Default: 0.5
+:Bounds: >0.0
+:Description: Inertia constant to be used in particle updating.
+
+\
+
+:Name: max_iterations
+:Arg-type: int
+:Default: 1000
+:Description: Terminate optimisation after this number of iterations.
+
+\
+
+:Name: neighbourhood_size
+:Arg-type: int
+:Default: 3
+:Bounds: >2 and < population_size - 1
+:Description: Number of neighbours for each particle when ``topology`` is set to ``ring``.
+
+\
+
+:Name: population_size
+:Arg-type: int
+:Default: 64
+:Bounds: >=2
+:Description: Size of population.
+
+\
+
+:Name: random_seed
+:Arg-type: int
+:Default: current time
+:Description: Random seed used during optimisation.
+
+\
+
+:Name: social_rate
+:Arg-type: float
+:Default: 2.1
+:Bounds: >0.0
+:Description: The rate at which the particle's neighbors influence its movement.
+
+\
+
+:Name: topology
+:Arg-type: str
+:Options: 'star' or 'ring'
+:Description: Defines the neighbours of particles in the population. If 'star' then each particle is connected to all other particles. If 'ring' then all particles within a specific neighbourhood size are connected (set using the ``neighbourhood_size`` configuration option).
+
+.. [Deb and Padhye] Deb and Padhye, “Development of Efficient Particle Swarm Optimizers by Using Concepts from Evolutionary Algorithms”, GECCO 2010, pp. 55–62

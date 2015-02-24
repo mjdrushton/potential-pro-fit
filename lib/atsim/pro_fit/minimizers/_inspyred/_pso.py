@@ -7,6 +7,7 @@ from _inspyred_common import _BoundedVariableBaseClass
 from _inspyred_common import _IntConvert
 from _inspyred_common import _FloatConvert
 from _inspyred_common import _RandomSeed
+from _inspyred_common import _ChoiceConvert
 from _inspyred_common import _EvolutionaryComputationMinimizerBaseClass
 
 import inspyred
@@ -21,7 +22,7 @@ class Particle_SwarmMinimizer(object):
 
   logger = logging.getLogger("atsim.pro_fit.minimizers.Particle_SwarmMinimizer")
 
-  def __init__(self, initialVariables, **args):
+  def __init__(self, initialVariables, topology, **args):
     # Configure the terminator
     terminator = inspyred.ec.terminators.generation_termination
 
@@ -32,9 +33,7 @@ class Particle_SwarmMinimizer(object):
 
     pso = inspyred.swarm.PSO(r)
     pso.terminator = terminator
-
-    #TODO: allow different topologies to be specified.
-    # pso.topology =
+    pso.topology = topology
 
     self._minimizer = _EvolutionaryComputationMinimizerBaseClass(
       initialVariables,
@@ -75,15 +74,16 @@ class Particle_SwarmMinimizer(object):
     cfgdict = dict(configitems)
     del cfgdict['type']
 
-
-
+    clsname = "Particle_Swarm minimizer"
     defaults = dict(
-      inertia = (0.5, _FloatConvert("Particle_Swarm minimizer", "inertia", (0, float("inf")))),
-      cognitive_rate = (2.1, _FloatConvert("Particle_Swarm minimizer", "cognitive_rate", (0, float("inf")))),
-      social_rate = (2.1, _FloatConvert("Particle_Swarm minimizer", "social_rate", (0, float("inf")))),
-      max_iterations = (1000, _IntConvert("Particle_Swarm minimizer", "max_iterations", (1, float("inf")))),
-      population_size = (64, _IntConvert("DEA minimizer", "population_size", (2, float("inf")))),
-      random_seed = (None, _RandomSeed("Particle_Swarm minimizer", "random_seed")))
+      topology = ("star", _ChoiceConvert(clsname, "topology", ["star", "ring"])),
+      neighbourhood_size = (3, _IntConvert(clsname, "neighbourhood_size")),
+      inertia = (0.5, _FloatConvert(clsname, "inertia", (0, float("inf")))),
+      cognitive_rate = (2.1, _FloatConvert(clsname, "cognitive_rate", (0, float("inf")))),
+      social_rate = (2.1, _FloatConvert(clsname, "social_rate", (0, float("inf")))),
+      max_iterations = (1000, _IntConvert(clsname, "max_iterations", (1, float("inf")))),
+      population_size = (64, _IntConvert(clsname, "population_size", (2, float("inf")))),
+      random_seed = (None, _RandomSeed(clsname, "random_seed")))
 
     # Throw if cfgdict has any keys not in defaults
     for k in cfgdict.iterkeys():
@@ -95,9 +95,27 @@ class Particle_SwarmMinimizer(object):
     for k, (default, converter) in defaults.iteritems():
       optiondict[k] = converter(cfgdict.get(k, converter(default)))
 
+    # Configure topology
+    if optiondict["topology"] == "star":
+      if cfgdict.has_key("neighbourhood_size"):
+        raise ConfigException("Particle_Swarm Minimizer, the 'neighbourhood_size' option can only be used with 'topology' = 'ring'")
+      del optiondict["neighbourhood_size"]
+      topology = inspyred.swarm.topologies.star_topology
+    else:
+      # Check bounds for ring topology
+      nsize = optiondict['neighbourhood_size']
+      if nsize <2 or nsize > optiondict['population_size'] -1:
+        raise ConfigException("Particle_Swarm Minimizer, the value of the 'neighbourhood_size' option should be between 2 and %d (population_size-1)" % (optiondict['population_size']-1,))
+      topology = inspyred.swarm.topologies.ring_topology
+
+
     # Log the options
     Particle_SwarmMinimizer.logger.info("Configuring Particle_SwarmMinimizer with following options:")
     for k, v in optiondict.iteritems():
       Particle_SwarmMinimizer.logger.info("%s = %s" % (k,v))
 
-    return Particle_SwarmMinimizer(variables, **optiondict)
+    del optiondict['topology']
+
+
+    return Particle_SwarmMinimizer(variables, topology, **optiondict)
+
