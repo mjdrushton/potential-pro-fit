@@ -15,6 +15,8 @@ During the initial stages of the quench from high temperature, candidate solutio
 
 As the algorithm proceeds, the temperature decreases and with it, the entropy allowed in the solutions also decreases. This means that the chances of hopping out of basins within the merit function's landscape also decreases. Consequently, this allows the algorithm to hone in on a particular minimum during the latter stages of a minimization run.
 
+In order to tune the ``temperature`` and ``cooling_rate`` parameters, the minimizer's temperature can be assigned to a variable using the ``temperature_variable`` configuration option. With this, the temperature for a particular iteration can be accessed in the ``fitting_run.db`` and also the monitor.
+
 .. note::
   This minimizer wraps the SA implementation provided within the `inspyred library <http://inspyred.github.com>`_ . If you use this minimizer please acknowledge inspyred.
 
@@ -26,7 +28,7 @@ Notes:
   
   - An initial temperature is specified using the ``temperature`` parameter.
   - The ``temperature`` is reduced over the course of the fitting run at a rate determined by the  ``cooling_rate`` coefficient (temperature is multiplied by this coefficient at each iteration).
-  - A solution is accepted if it improves the merit value or if it does not then according to the following probability (where :math:`P` is probability, :math:`T` is temperature, :math:`m_i` the merit value for iteration :math:`i`and :math:`m_{i+1}` the merit value for the candidate solution to be accepted or rejected):
+  - A solution is accepted if it improves the merit value or if it does not then according to the following probability (where :math:`P` is probability, :math:`T` is temperature, :math:`m_i` the merit value for iteration :math:`i` and :math:`m_{i+1}` the merit value for the candidate solution to be accepted or rejected):
 
 .. math:: P(m) = \exp \left( \frac{- \left| m_{i} - m_{i+1} \right|}{T} \right)
 
@@ -84,3 +86,10 @@ Optional Fields
 :Default: 0.0
 :Bounds: 0.0-Inf
 :Description: Initial temperature.
+
+\
+
+:Name: temperature_variable
+:Arg-type: str
+:Default: None
+:Description: If specified, the minimizer's temperature will be assigned to this variable. The variable cannot be a fitting variable (i.e. it cannot be marked with ``*`` in ``fit.cfg``).
