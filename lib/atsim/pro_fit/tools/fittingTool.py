@@ -11,7 +11,7 @@ import tempfile
 
 import jinja2
 
-from _util import MultiCallback
+from atsim.pro_fit._util import MultiCallback
 
 class _FittingToolException(Exception):
   pass

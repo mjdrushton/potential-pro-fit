@@ -4,6 +4,9 @@ import inspyred
 
 from .._common import MinimizerResults
 
+from atsim.pro_fit._util import MultiCallback
+
+
 class VariableException(Exception):
   """Exception raised by inspyred related classes when a problem is found with
   input atsim.pro_fit.fittool.Variables instances"""
@@ -183,6 +186,21 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
     generator = Generator(self._initialVariables)
     evaluator = Evaluator(self._initialVariables, merit)
     observer = Observer(self.stepCallback)
+    origobserver = observer
+
+
+    # Respect any callbacks already registered on the inspyred minimizer
+    if self._ec.bounder:
+      bounder = MultiCallback([self._ec.bounder, bounder], retLast = True)
+
+    if self._ec.generator:
+      generator = MultiCallback([self._ec.generator, generator], retLast = True)
+
+    if self._ec.evaluator:
+      evaluator = MultiCallback([self._ec.evaluator, evaluator], retLast = True)
+
+    if self._ec.observer:
+      observer = MultiCallback([self._ec.observer, observer], retLast = True)
 
     self._ec.observer = observer
 
@@ -193,8 +211,7 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
       pop_size = self._populationSize,
       maximize = False,
       **self._args)
-    return observer.bestMinimizerResults
-
+    return origobserver.bestMinimizerResults
 
 
 def _convertFactory(clsname, key, convfunc, bounds):
@@ -209,7 +226,6 @@ def _convertFactory(clsname, key, convfunc, bounds):
         raise ConfigException("Option value does not lie within bounds (%s, %s). Option key '%s' for %s: %s" % (bounds[0], bounds[1], key, clsname, v))
     return v
   return f
-
 
 
 def _IntConvert(clsname, key, bounds = None):

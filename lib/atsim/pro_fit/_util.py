@@ -173,8 +173,28 @@ class SkipWhiteSpaceDictReader(csv.DictReader):
 class MultiCallback(list):
   """Class for combining callbacks"""
 
+  __name__ = "atsim.pro_fit._util.MultiCallback"
+
+  def __init__(self, *args, **kwargs):
+    """Create MultiCallback from a list of callables.
+
+    If keyword argument 'retLast' is True then value returned by calling this object
+    will be the value returned by the final callable registered with MultiCallback.
+    Otherwise return value will be a list of the return values, one per callable
+    registered with this object"""
+    list.__init__(self, *args)
+
+    self.retLast = False
+    if kwargs.has_key('retLast'):
+      self.retLast = kwargs['retLast']
+
+
   def __call__(self, *args, **kwargs):
     retvals = []
     for cb in self:
-      retvals.append(cb(*args, **kwargs))
+      rv = cb(*args, **kwargs)
+      retvals.append(rv)
+
+    if self.retLast:
+      return rv
     return retvals
