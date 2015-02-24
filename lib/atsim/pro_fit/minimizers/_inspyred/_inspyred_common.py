@@ -6,6 +6,8 @@ from .._common import MinimizerResults
 
 from atsim.pro_fit._util import MultiCallback
 
+from atsim.pro_fit.fittool import ConfigException
+
 
 class VariableException(Exception):
   """Exception raised by inspyred related classes when a problem is found with

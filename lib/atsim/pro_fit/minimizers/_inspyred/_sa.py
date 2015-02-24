@@ -3,6 +3,7 @@ import logging
 import math
 
 from _inspyred_common import _BoundedVariableBaseClass
+from _inspyred_common import VariableException
 from _inspyred_common import _IntConvert
 from _inspyred_common import _FloatConvert
 from _inspyred_common import _RandomSeed
