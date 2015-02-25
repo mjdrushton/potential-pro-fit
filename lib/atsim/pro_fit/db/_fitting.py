@@ -1,21 +1,11 @@
 """Module for querying the fitting_run.db"""
 
 import math
-
 import sqlalchemy as sa
+from _util import calculatePercentageDifference
+import _metadata
 
-import reporters
-
-metadata = reporters.SQLiteReporter.getMetaData()
-
-def calculatePercentageDifference(rowdict):
-  try:
-    expect =  rowdict['expected_value']
-    extract = rowdict['extracted_value']
-    return ((extract-expect)/float(expect))*100.0
-  except (ZeroDivisionError, ValueError,TypeError):
-    return None
-
+metadata = _metadata.getMetadata()
 
 class Fitting(object):
 
@@ -173,7 +163,6 @@ class Fitting(object):
       'minimum' : minRecord,
       'maximum' : maxRecord
     }
-
 
   def variables(self, iterationNumber, candidateNumber):
     """Returns dictionary representing variables for given iterationNumber and candidateNumber within that iteration's

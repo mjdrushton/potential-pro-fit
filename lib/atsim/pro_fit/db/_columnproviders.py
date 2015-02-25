@@ -1,7 +1,8 @@
-from atsim.pro_fit.reporters import SQLiteReporter
 from _util import calculatePercentageDifference
 
-_metadata = SQLiteReporter.getMetaData()
+from _metadata import getMetadata
+
+_metadata = getMetadata()
 
 import sqlalchemy as sa
 

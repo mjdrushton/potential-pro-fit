@@ -1,13 +1,19 @@
 # -*- coding: utf-8 -*-
-from _cherrypydbtestcase import CherryPyDBTestCaseBase
+
+import unittest
+
+from _dbtestcase import DBTestCase
+
 from .. import testutil
 
-class IterationSeries_CandidateFilter_TestCase(CherryPyDBTestCaseBase):
+from atsim.pro_fit import db
+
+
+class IterationSeries_CandidateFilter_TestCase(DBTestCase):
   dbname = "population_fitting_run.db"
-  baseurl = 'http://localhost:8080/fitting/iteration_series'
 
   def testSeriesMin(self):
-    """Tests for /fitting/iteration_series/merit_value/all/min"""
+    """Tests for 'min' candidateFilter"""
     # Test for merit_value
     # stat = min
     # iteration_number  candidate_number  merit_value
@@ -17,7 +23,7 @@ class IterationSeries_CandidateFilter_TestCase(CherryPyDBTestCaseBase):
     # 3 3 973.78207
     # 4 1 964.64312
     # 5 3 964.64312
-    j = self.fetchJSON('merit_value/all/min')
+    t = db.IterationSeriesTable(self.engine, candidateFilter = "min")
     expect = {
                'columns' : ['iteration_number', 'candidate_number', 'merit_value'],
                'values'  : [
@@ -28,10 +34,12 @@ class IterationSeries_CandidateFilter_TestCase(CherryPyDBTestCaseBase):
                     [4 ,1, 964.64312],
                     [5 ,3, 964.64312]
                   ]}
-    testutil.compareCollection(self, expect, j)
+    actual = {'columns' : t.next(),
+              'values'  : list(t)}
+    testutil.compareCollection(self, expect, actual)
 
   def testSeriesMax(self):
-    """Tests for /fitting/iteration_series/merit_value/all/max"""
+    """Tests for candidateFilter = 'max' """
     # stat = max
     # iteration_number  candidate_number  merit_value
     # 0 1 56979.43601
@@ -40,7 +48,7 @@ class IterationSeries_CandidateFilter_TestCase(CherryPyDBTestCaseBase):
     # 3 2 1546.33659
     # 4 0 2300.90601
     # 5 1 12634.65516
-    j = self.fetchJSON('merit_value/all/max')
+    t = db.IterationSeriesTable(self.engine, candidateFilter = "max")
     expect = {
       'columns' : ['iteration_number', 'candidate_number', 'merit_value'],
       'values'  : [
@@ -52,4 +60,6 @@ class IterationSeries_CandidateFilter_TestCase(CherryPyDBTestCaseBase):
         [5, 1, 12634.65516],
       ]
     }
-    testutil.compareCollection(self, expect, j)
+    actual = {'columns' : t.next(),
+              'values'  : list(t)}
+    testutil.compareCollection(self, expect, actual)

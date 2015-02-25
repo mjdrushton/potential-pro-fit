@@ -7,19 +7,13 @@ import pkgutil
 import os
 import math
 import optparse
-import contextlib
 
 import sqlalchemy as sa
 
 from atsim.pro_fit import reporters, db
 
-
 from atsim.pro_fit._sqlalchemy_cherrypy_integration import session, configure_session
 import  _jinja_cherrypy_integration # noqa
-
-from _columnproviders import  _VariablesColumnProvider, _StatColumnProvider, _EvaluatorColumnProvider
-from _columnproviders import _RunningFilterColumnProvider, _NullFilter, _RunningMaxFilter, _RunningMinFilter
-from _util import calculatePercentageDifference
 
 class Root:
   extensionToResponseHeader = {
@@ -232,15 +226,6 @@ class Fitting:
     return output
 
 
-
-def _formatResults(results):
-  """Takes SA results and formats them in table format expected by the pprofitmon front end."""
-  columns = results.keys()
-  outdict = {'columns' : columns}
-  values = [ list(r) for r in results]
-  outdict['values'] = values
-  return outdict
-
 class _FilterWrapper(object):
   """Wraps results and filters for particular key"""
 
@@ -261,145 +246,13 @@ class _FilterWrapper(object):
     return self.results.keys()
 
 
-def _createColumnProviders(conn, tempMeta, primaryColumnKey, columnLabels):
-  """Creates list of ColumnProvider like objects for _Columns class"""
-  outlist = []
-  statcols = []
-  for cl in columnLabels:
-    if cl.startswith('stat:'):
-      statcols.append(cl)
-    elif cl.startswith('it:is_running_min'):
-      outlist.append(_RunningFilterColumnProvider(primaryColumnKey, cl, _RunningMinFilter()))
-    elif cl.startswith('it:is_running_max'):
-      outlist.append(_RunningFilterColumnProvider(primaryColumnKey, cl, _RunningMaxFilter()))
-    elif cl.startswith('variable:'):
-      outlist.append(_VariablesColumnProvider(conn, tempMeta, cl))
-    elif cl.startswith('evaluator:'):
-      outlist.append(_EvaluatorColumnProvider(conn, tempMeta, cl))
-    else:
-      raise KeyError("Unknown column label: %s" % cl)
-
-  # Create _StatColumnProvider
-  outlist.append(_StatColumnProvider(conn, primaryColumnKey, statcols))
-  return outlist
-
-
-
-
-class _Columns(object):
-  """Maintains a list of columns for IterationSeries.
-
-  In particular is responsible for fetching an entire iteration's data
-  for a particular key and passing to summarising stat functions"""
-
-  def __init__(self, results, columnLabels, columnProviders):
-    """:param results: SQL Result set (normally iteration filtered at this point) wrapped by this object.
-       :param columnLabels: Columns for which this class will provide data.
-       :param primaryColumn: Primary column label for which stats should be collected"""
-
-    self.results = results
-    self.columnLabels = columnLabels
-    self.columnProviders = columnProviders
-
-  def keys(self):
-    columns = list(self.results.keys())
-    columns.extend(self.columnLabels)
-    return columns
-
-  def __iter__(self):
-    rkeys = self.results.keys()
-    for row in self.results:
-      outrow = list(row)
-      rowdict = dict(zip(rkeys, row))
-
-      extracols = []
-      for cp in self.columnProviders:
-        colValPairs = cp(rowdict['iteration_number'],
-          rowdict['candidate_number'], rowdict)
-        extracols.extend(colValPairs)
-      extracols = dict(extracols)
-
-      for cn in self.columnLabels:
-        outrow.append(extracols[cn])
-      yield outrow
-
 class IterationSeries:
-
-  @contextlib.contextmanager
-  def _temporaryCandidateContextManager(self, primaryColumnKey, iterationFilter, candidateFilter):
-    """Context manager that creates (and drops) a temporary table containing
-    iteration_number and candidate_number for the iteration series defined by the arguments to this
-    method.
-
-    :param primaryColumnKey: Column key used to choose iteration/candidate pairs.
-    :param iterationFilter: Keyword used in iteration selection.
-    :param candidateFilter: Keyword used to identify candidate within each iteration.
-
-    :return: Context manager returns tuple (connection, meta) where connection is the connection associated with
-      temporary table and meta is MetaData containing temporary table definition."""
-
-    # Create the table
-    engine = session.get_bind()
-    conn = engine.connect()
-
-    tempMetaData = sa.MetaData(bind=conn)
-
-    t = sa.Table(
-      'temp_iterationseries',
-      tempMetaData,
-      sa.Column('id', sa.Integer, primary_key=True),
-      sa.Column('candidate_id', sa.Integer),
-      sa.Column('iteration_number', sa.Integer),
-      sa.Column('candidate_number', sa.Integer),
-      sa.Column('primary_value', sa.Integer),
-      prefixes = ['TEMPORARY'])
-    t.create(bind=conn, checkfirst=True)
-
-    # Now populate the table
-    popnresults = self._getSeriesCandidates(primaryColumnKey, iterationFilter, candidateFilter)
-    insertQuery = t.insert()
-    insertData = []
-    for row in popnresults:
-      insertData.append(dict(zip(popnresults.keys(), row)))
-    conn.execute(insertQuery, insertData)
-
-    yield conn, tempMetaData
-
-  def _getSeriesCandidates(self, primaryColumnKey, iterationFilter, candidateFilter):
-    """Get SQLAlchemy results for the relevant iteration/candidate pairs for
-    primaryColumnKey, iterationFilter, candidateFilter.
-
-    :param primaryColumnKey: Column key used to choose iteration/candidate pairs.
-    :param iterationFilter: Keyword used in iteration selection.
-    :param candidateFilter: Keyword used to identify candidate within each iteration.
-    :return: SQLAlchemy results"""
-    iterationFilterFunc = {'all' : _NullFilter,
-                           'running_min' : _RunningMinFilter,
-                           'running_max' : _RunningMaxFilter}[iterationFilter]
-
-    candidateFilterFunc = {'min' : sa.func.min,
-                           'max' : sa.func.max}[candidateFilter]
-
-    candidates = metadata.tables['candidates']
-    query = sa.select([
-      candidates.c.id.label('candidate_id'),
-      candidates.c.iteration_number,
-      candidates.c.candidate_number,
-      candidateFilterFunc(candidates.c.merit_value).label('primary_value')
-      ]).group_by(candidates.c.iteration_number)
-
-    results = session.execute(query)
-    results = _FilterWrapper(results, 'primary_value', iterationFilterFunc())
-
-    return results
-
 
   @cherrypy.expose
   @tools.json_out(on=True)
   def merit_value(self, iterationFilter, candidateFilter, columns=None):
     """Returns a data table where each row represents an iteration within the fitting run. The primary data column
     returned by this JSON call is candidate merit value.
-
 
     **Filtering**
 
@@ -518,28 +371,23 @@ class IterationSeries:
 
 
     """
-
-
-
-    primaryColumnKey = 'merit_value'
     configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
 
-    with self._temporaryCandidateContextManager(primaryColumnKey, iterationFilter, candidateFilter) as (conn,tempMeta):
-      t = tempMeta.tables['temp_iterationseries']
-      query = sa.select([
-        t.c.iteration_number,
-        t.c.candidate_number,
-        t.c.primary_value.label(primaryColumnKey)
-        ])
-      results = conn.execute(query)
+    if columns:
+      columns = columns.split(',')
 
-      # Process extra columns
-      if columns:
-        columns = columns.split(',')
-        columnProviders = _createColumnProviders(conn, tempMeta, primaryColumnKey, columns)
-        results = _Columns(results, columns, columnProviders)
+    t = db.IterationSeriesTable(session.get_bind(),
+      primaryColumnKey = 'merit_value',
+      iterationFilter = iterationFilter,
+      candidateFilter = candidateFilter,
+      columns = columns)
 
-      return _formatResults(results)
+    colheads = t.next()
+
+    j = { 'columns' : colheads,
+          'values'  : list(t)}
+
+    return j
 
 
 
