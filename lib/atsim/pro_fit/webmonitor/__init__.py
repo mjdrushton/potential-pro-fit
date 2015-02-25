@@ -11,7 +11,7 @@ import contextlib
 
 import sqlalchemy as sa
 
-from atsim.pro_fit import reporters
+from atsim.pro_fit import reporters, db
 
 
 from atsim.pro_fit._sqlalchemy_cherrypy_integration import session, configure_session
@@ -89,11 +89,8 @@ class Fitting:
 
     '"""
     configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
-    select = sa.select([sa.func.max(metadata.tables['candidates'].c.iteration_number).label('max_iteration')])
-    results = session.execute(select)
-    maxIteration = results.fetchone()[0]
-    results.close()
-    return {'current_iteration' : maxIteration}
+    f = db.Fitting(session)
+    return {'current_iteration' : f.current_iteration()}
 
   @cherrypy.expose
   @tools.json_out(on=True)
@@ -114,15 +111,8 @@ class Fitting:
 
       """
     configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
-    table = metadata.tables['candidates']
-    query = sa.select([
-      table.c.id,
-      table.c.candidate_number,
-      table.c.iteration_number,
-      sa.func.min(table.c.merit_value).label('merit_value')
-      ])
-    results = session.execute(query)
-    row = dict(zip(results.keys(), results.fetchone()))
+    f = db.Fitting(session)
+    row = f.best_candidate()
     return row
 
 
@@ -135,16 +125,15 @@ class Fitting:
 
     .. code-block:: javascript
 
-      { 'run_status' : status of run }
+      { 'run_status' : status of run,
+        'title' : title of run }
 
     ``run_status`` can have values of ``Running``, ``Finished`` or ``Error``.
 
     """
     configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
-    table = metadata.tables['runstatus']
-    query = sa.select([table.c.runstatus, table.c.title])
-    results = session.execute(query)
-    row = dict(zip(results.keys(), results.fetchone()))
+    f = db.Fitting(session)
+    row = f.run_status()
     return row
 
   @cherrypy.expose
@@ -181,71 +170,8 @@ class Fitting:
 
       """
     configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
-    table = metadata.tables['candidates']
-
-    # Get maximum record
-    query = sa.select([
-      table.c.id,
-      table.c.iteration_number,
-      table.c.candidate_number,
-      sa.func.max(table.c.merit_value).label('merit_value')])\
-        .where(table.c.iteration_number == iterationNumber)
-    results = session.execute(query)
-    maxRecord = dict(zip(results.keys(), results.fetchone()))
-
-    # Get minimum record
-    query = sa.select([
-      table.c.id,
-      table.c.iteration_number,
-      table.c.candidate_number,
-      sa.func.min(table.c.merit_value).label('merit_value')])\
-        .where(table.c.iteration_number == iterationNumber)
-    results = session.execute(query)
-    minRecord = dict(zip(results.keys(),results.fetchone()))
-
-    # Get number of population members and mean
-    query = sa.select([
-      sa.func.count(table.c.id),
-      sa.func.avg(table.c.merit_value)])\
-        .where(table.c.iteration_number == iterationNumber)
-    results = session.execute(query)
-    num_candidates, mean = results.fetchone()
-
-    # Calculate standard deviation
-    query = sa.select([table.c.merit_value]).where(table.c.iteration_number == iterationNumber)
-    results = session.execute(query)
-    def calc():
-      stdev = 0.0
-      for row in results:
-        v = row[0]
-        if v == None:
-          return None, None
-        stdev += (v - mean)**2.0
-      stdev /= float(num_candidates)
-      stdev = math.sqrt(stdev)
-      return mean, stdev
-    mean,stdev = calc()
-
-    return {
-      'iteration_number' : int(iterationNumber),
-      'num_candidates' : num_candidates,
-      'mean' : mean,
-      'standard_deviation' : stdev,
-      'minimum' : minRecord,
-      'maximum' : maxRecord
-    }
-
-  def _getCandidateID(self, iterationNumber, candidateNumber):
-    iterationNumber = int(iterationNumber)
-    candidateNumber = int(candidateNumber)
-
-    candidates = metadata.tables['candidates']
-    cidQuery = sa.select([candidates.c.id])\
-      .where(sa.and_(candidates.c.iteration_number == iterationNumber , candidates.c.candidate_number == candidateNumber))
-
-    results = session.execute(cidQuery)
-    cid = results.fetchone()[0]
-    return cid
+    f = db.Fitting(session)
+    return f.iteration_overview(iterationNumber)
 
   @cherrypy.expose
   @tools.json_out(on=True)
@@ -271,30 +197,8 @@ class Fitting:
 
     """
     configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
-    variables = metadata.tables['variables']
-    variable_keys = metadata.tables['variable_keys']
-
-    cid = self._getCandidateID(iterationNumber, candidateNumber)
-
-    query = sa.select([variable_keys.c.variable_name,
-      variable_keys.c.fit_flag,
-      variable_keys.c.low_bound,
-      variable_keys.c.upper_bound,
-      variable_keys.c.calculated_flag,
-      variable_keys.c.calculation_expression,
-      variables.c.value
-      ]).where(sa.and_(variable_keys.c.variable_name == variables.c.variable_name , variables.c.candidate_id == cid))
-
-    results = session.execute(query)
-    output = []
-    for row in results:
-      d = dict(zip(results.keys(), row))
-      if d['low_bound'] and math.isinf(float(d['low_bound'])):
-        d['low_bound'] = None
-
-      if d['upper_bound'] and math.isinf(float(d['upper_bound'])):
-        d['upper_bound'] = None
-      output.append(d)
+    f = db.Fitting(session)
+    output = f.variables(iterationNumber, candidateNumber)
     return output
 
   @cherrypy.expose
@@ -322,39 +226,11 @@ class Fitting:
       }
 
     """
-
-    cid = self._getCandidateID(iterationNumber, candidateNumber)
-
-    # Required query:
-    # SELECT * FROM evaluated JOIN jobs ON evaluated.job_id = jobs.id LEFT OUTER JOIN evaluatorerror ON evaluated.evaluatorerror_id = evaluatorerror.id WHERE jobs.candidate_id = 12;
-
-
-    evaluated = metadata.tables['evaluated']
-    jobs = metadata.tables['jobs']
-    evaluatorerror = metadata.tables['evaluatorerror']
-
-    query = sa.select([
-      evaluated.c.evaluator_name,
-      evaluated.c.value_name,
-      evaluated.c.expected_value,
-      evaluated.c.extracted_value,
-      evaluated.c.weight,
-      evaluated.c.merit_value,
-      evaluatorerror.c.msg.label('error_message'),
-      jobs.c.job_name
-    ], whereclause = jobs.c.candidate_id == cid,
-       from_obj=[sa.sql.expression.Join(evaluated, jobs, evaluated.c.job_id == jobs.c.id)\
-          .outerjoin(evaluatorerror, evaluated.c.evaluatorerror_id == evaluatorerror.c.id)])
-
-    results = session.execute(query)
-
-    output = []
-    for row in results:
-      d = dict(zip(results.keys(), row))
-      d['percent_difference'] = calculatePercentageDifference(d)
-      output.append(d)
-
+    configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
+    f= db.Fitting(session)
+    output = f.evaluated(iterationNumber, candidateNumber)
     return output
+
 
 
 def _formatResults(results):
