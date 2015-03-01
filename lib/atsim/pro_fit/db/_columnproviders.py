@@ -156,6 +156,15 @@ class _VariablesColumnProvider(object):
     assert(iterationNumber == resrow[1] and candidateNumber == resrow[2])
     return [(self.columnLabel, resrow[3])]
 
+  @classmethod
+  def validKeys(cls, engine):
+    """Returns a list of valid variable:VARIABLE_NAME column keys.
+
+    :param engine: SQL Alchemy object supporting execute() method.
+    :return list: List of column keys."""
+
+    return []
+
 
 class _EvaluatorColumnProvider(object):
   """Column provider for evaluator values.
@@ -236,6 +245,17 @@ class _EvaluatorColumnProvider(object):
     return [(self.columnLabel, value)]
 
 
+  @classmethod
+  def validKeys(cls, engine):
+    """Returns a list of valid evaluator: column keys.
+
+    :param engine: SQL Alchemy object supporting execute() method.
+    :return list: List of column keys."""
+
+    return []
+
+
+
 class _StatColumnProvider(object):
   """Class responsible for fetching column of data for a particular iteration and
   then applying different statistical calculations to it."""
@@ -282,3 +302,12 @@ class _StatColumnProvider(object):
       v = calc(values)
       outlist.append((cn, v))
     return outlist
+
+
+  @classmethod
+  def validKeys(cls, engine):
+    """Returns a list of valid stat: column keys.
+
+    :param engine: SQL Alchemy object supporting execute() method.
+    :return list: List of column keys."""
+    return []
