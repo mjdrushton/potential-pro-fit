@@ -60,15 +60,15 @@ class ColumnKeysTestCase(DBTestCase):
   def testEvaluators(self):
     """Test that _columnproviders._EvaluatorColumnProvider() returns correct column keys"""
     expect = [
-      "Gd_x=0.250a Gd_x=0.250a:Volume:V",
+      "Gd_x=0.250a:Gd_x=0.250a:Volume:V",
       "T=1400K_Gd_x=0.1:T=1400K_Gd_x=0.1:Volume:V",
       "T=1400K_Gd_x=0.1:T=1400K_Gd_x=0.1:D:D",
       "T=1600K_Gd_x=0.1:T=1600K_Gd_x=0.1:Volume:V",
       "T=1600K_Gd_x=0.1:T=1600K_Gd_x=0.1:D:D",
       "T=1800K_Gd_x=0.1:T=1800K_Gd_x=0.1:Volume:V",
       "T=1800K_Gd_x=0.1:T=1800K_Gd_x=0.1:D:D",
-      "meta_evaluator:Gd_Ea deltaD18_16",
-      "meta_evaluator:Gd_Ea deltaD18_1"]
+      "meta_evaluator:Gd_Ea:deltaD18_16",
+      "meta_evaluator:Gd_Ea:deltaD18_14"]
 
     expect = [ "evaluator:"+e for e in expect ]
     allexpect = []
@@ -78,6 +78,7 @@ class ColumnKeysTestCase(DBTestCase):
         allexpect.append(e+":"+suffix)
 
     expect = allexpect
+    expect.sort()
     actual = cp._EvaluatorColumnProvider.validKeys(self.engine)
     actual.sort()
     testutil.compareCollection(self, expect, actual)

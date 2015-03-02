@@ -163,7 +163,11 @@ class _VariablesColumnProvider(object):
     :param engine: SQL Alchemy object supporting execute() method.
     :return list: List of column keys."""
 
-    return []
+    tv = _metadata.tables['variable_keys']
+    query = sa.select([tv.c.variable_name ])
+    keys = engine.execute(query).fetchall()
+    keys = ["variable:"+k[0] for k in keys]
+    return keys
 
 
 class _EvaluatorColumnProvider(object):
@@ -181,7 +185,7 @@ class _EvaluatorColumnProvider(object):
       difference value for evaluator respectively."""
 
   _labelSplitRegex = re.compile(r'^evaluator:(?P<jobName>.*?):(?P<evaluatorName>.*):(?P<valueName>.*):(?P<valueType>merit_value|extracted_value|percent_difference)$')
-
+  _suffixes = ['merit_value','extracted_value','percent_difference']
 
   def __init__(self, conn, tempMeta, columnLabel):
     self.conn = conn
@@ -252,7 +256,26 @@ class _EvaluatorColumnProvider(object):
     :param engine: SQL Alchemy object supporting execute() method.
     :return list: List of column keys."""
 
-    return []
+    #select distinct job_name, evaluator_name, value_name from evaluated, jobs where evaluated.job_id = jobs.id;
+
+    et = _metadata.tables['evaluated']
+    jt = _metadata.tables['jobs']
+    query = sa.select(
+      [jt.c.job_name,
+       et.c.evaluator_name,
+       et.c.value_name]).distinct().where(
+        sa.and_(et.c.job_id == jt.c.id))
+
+    results = engine.execute(query)
+
+    keys = []
+    for row in results.fetchall():
+      rowdict = dict(zip(results.keys(), row))
+      key = "evaluator:%(job_name)s:%(evaluator_name)s:%(value_name)s" % rowdict
+      for suffix in cls._suffixes:
+        keys.append(":".join([key, suffix]))
+      keys = [k.encode("utf-8") for k in keys]
+    return keys
 
 
 
@@ -310,4 +333,4 @@ class _StatColumnProvider(object):
 
     :param engine: SQL Alchemy object supporting execute() method.
     :return list: List of column keys."""
-    return []
+    return cls._calculators.keys()

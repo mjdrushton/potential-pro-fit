@@ -164,7 +164,7 @@ class IterationSeriesTable(object):
 
 
   def next(self):
-    return self._iter.next()
+    return list(self._iter.next())
 
   @contextlib.contextmanager
   def _temporaryCandidateContextManager(self, primaryColumnKey, iterationFilter, candidateFilter):

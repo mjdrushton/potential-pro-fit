@@ -85,7 +85,7 @@ Column-label has format::
 	- ``JOB_NAME`` - Name of job
 	- ``EVALUATOR_NAME`` - Name of evaluator for which value should be produced
 	- ``VALUE_NAME`` - Name of value extracted by evaluator
-	- ``VALUE_TYPE`` - 'merit', 'extract' or 'percent' which give merit value, extracted value or difference in percent between expected and extracted value respectively.
+	- ``VALUE_TYPE`` - 'merit_value', 'extracted_value' or 'percent_difference' which give merit value, extracted value or difference in percent between expected and extracted value respectively.
 
 Example:
 ^^^^^^^^
