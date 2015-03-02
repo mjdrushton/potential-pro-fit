@@ -139,9 +139,6 @@ class IterationSeriesTable(object):
       - ``stat:`` Popuation statistics columns (see :ref:`extending_json_iterationseries_columns_stats`).
       - ``it:`` Iteration meta-data (see :ref:`extending_json_iterationseries_columns_itmetadata`).
 
-
-
-
     ---
 
     :param engine: SQL Alchemy engine instance.
@@ -158,13 +155,57 @@ class IterationSeriesTable(object):
 
     self._iter = self._createIterator()
 
+  def next(self):
+    return list(self._iter.next())
 
   def __iter__(self):
     return self
 
+  @classmethod
+  def validKeys(cls, engine):
+    """Returns a list of keys that can be used with the constructor's ``columns`` argument.
 
-  def next(self):
-    return list(self._iter.next())
+    :param engine: SQL Alchemy Engine instance for a valid fitting_run.db.
+    :return list: List of strings giving valid column keys"""
+    keys = []
+    keys.extend(cls.validIterationKeys(engine))
+    keys.extend(cls.validStatisticsKeys(engine))
+    keys.extend(cls.validEvaluatorKeys(engine))
+    keys.extend(cls.validVariableKeys(engine))
+    return keys
+
+  @classmethod
+  def validEvaluatorKeys(cls, engine):
+    """Returns a list of keys relevant to evaluator values that can be used with the constructor's ``columns`` argument.
+
+    :param engine: SQL Alchemy Engine instance for a valid fitting_run.db.
+    :return list: List of strings giving valid column keys"""
+    return sorted(_EvaluatorColumnProvider.validKeys(engine))
+
+  @classmethod
+  def validVariableKeys(cls, engine):
+    """Returns a list of keys relevant to variable values that can be used with the constructor's ``columns`` argument.
+
+    :param engine: SQL Alchemy Engine instance for a valid fitting_run.db.
+    :return list: List of strings giving valid column keys"""
+    return sorted(_VariablesColumnProvider.validKeys(engine))
+
+  @classmethod
+  def validIterationKeys(cls, engine):
+    """Returns a list of keys relevant to iteration (it: prefix) values that can be used with the constructor's ``columns`` argument.
+
+    :param engine: SQL Alchemy Engine instance for a valid fitting_run.db.
+    :return list: List of strings giving valid column keys"""
+    return sorted(_RunningFilterColumnProvider.validKeys(engine))
+
+  @classmethod
+  def validStatisticsKeys(cls, engine):
+    """Returns a list of keys relevant to population statistics (stat: prefix) values that can be used with the constructor's ``columns`` argument.
+
+    :param engine: SQL Alchemy Engine instance for a valid fitting_run.db.
+    :return list: List of strings giving valid column keys"""
+    return sorted(_StatColumnProvider.validKeys(engine))
+
 
   @contextlib.contextmanager
   def _temporaryCandidateContextManager(self, primaryColumnKey, iterationFilter, candidateFilter):

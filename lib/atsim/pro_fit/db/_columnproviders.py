@@ -108,6 +108,15 @@ class _RunningFilterColumnProvider(object):
     return [(self._columnName, self._RunningFilter(rowDict[self._primaryColumnKey]))]
 
 
+  @classmethod
+  def validKeys(cls, engine):
+    """Return list of column keys associated with this column provider.
+
+    :param engine: SQL Alchemy Engine
+    :return: List of strings containing valid column keys"""
+    return ["it:is_running_min", "it:is_running_max"]
+
+
 class _VariablesColumnProvider(object):
   """Column provider for series of variable  values.
 
