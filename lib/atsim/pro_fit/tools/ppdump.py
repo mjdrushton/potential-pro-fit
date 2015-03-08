@@ -51,8 +51,12 @@ def parseCommandLine():
     description = "Options for controlling the dump.")
 
   dumpGroup.add_argument("-o", "--output",
+    dest = 'output_file',
+    nargs = '?',
+    type=argparse.FileType('w'),
+    default = sys.stdout,
     metavar = 'OUTPUT_FILE',
-    help = "write output into OUTPUT_FILE")
+    help = "write output into OUTPUT_FILE. If not specified then output is written to STDOUT.")
 
   dumpGroup.add_argument("-c", "--columns",
     nargs = '*',
@@ -85,9 +89,8 @@ def outputNumIterations(engine):
   f = db.Fitting(engine)
   print f.current_iteration()
 
-def outputTable(engine):
+def outputTable(engine, outfile):
   iterationSeriesTable = db.IterationSeriesTable(engine)
-  outfile = sys.stdout
   for row in iterationSeriesTable:
     print >>outfile, ",".join([str(v) for v in row])
 
@@ -101,7 +104,7 @@ def main():
   elif options.num_iterations:
     outputNumIterations(engine)
   else:
-    outputTable(engine)
+    outputTable(engine, options.output_file)
 
 
 if __name__ == '__main__':

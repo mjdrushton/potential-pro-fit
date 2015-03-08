@@ -52,21 +52,15 @@ def testOption_numiterations():
   actual = _run_ppdump(["-f %s" % dbPath, "--num-iterations"])
   assert_that([expect, '']).is_equal_to(actual)
 
-def testOptionOutput():
-  """Test ppdump --output"""
-  assert False
 
-def testDumpNoOptions():
-  """Test ppdump with default options"""
+def _run_noption_test(outputlines):
   expect = [
     [  'iteration_number','candidate_number', 'merit_value'],
     [  0                 , 0                , 2416.9492376805674],
     [  1                 , 0                , 2296.3213811719497],
     [  2                 , 0                , 2255.5581525661546 ]]
 
-  outputlines = _run_ppdump(["-f %s" % _getdbpath()])
-  outputlines = [ v for v in outputlines if v]
-
+  outputlines = [ v.strip() for v in outputlines if v]
   assert_that(outputlines).is_length(len(expect))
 
   for i,(line, eline) in enumerate(zip(outputlines, expect)):
@@ -76,12 +70,26 @@ def testDumpNoOptions():
     actual = tokens
     if i != 0:
       actual = [ int(tokens[0]), int(tokens[1]), float(tokens[2])]
-
       assert_that(actual[0]).is_equal_to(eline[0])
       assert_that(actual[1]).is_equal_to(eline[1])
       assert_that(actual[2]).is_close_to(eline[2], 1e-5)
-
-
     else:
       assert_that(eline).is_equal_to(actual)
+
+
+def testOptionOutput(tmpdir):
+  """Test ppdump --output"""
+  outputfilename = str(tmpdir.join("output.csv", abs = True))
+  outputlines = _run_ppdump(["-f %s" % _getdbpath(), "-o %s" % outputfilename])
+  assert_that(outputfilename).is_file()
+
+  with open(outputfilename) as infile:
+    lines = infile.readlines()
+    _run_noption_test(lines)
+
+def testDumpNoOptions():
+  """Test ppdump with default options"""
+  outputlines = _run_ppdump(["-f %s" % _getdbpath()])
+  _run_noption_test(outputlines)
+
 
