@@ -16,7 +16,8 @@ class ColumnKeysTestCase(DBTestCase):
 
   dbname = "meta_eval.db"
 
-  def _variableExpect(self):
+  @classmethod
+  def variableExpect(cls):
     return sorted([
           "variable:Ce_charge",
           "variable:O_charge",
@@ -52,14 +53,15 @@ class ColumnKeysTestCase(DBTestCase):
 
   def testVariables(self):
     """Test that _columnproviders._VariablesColumnProvider() returns correct column keys"""
-    expect = self._variableExpect()
+    expect = self.variableExpect()
     expect.sort()
     actual = cp._VariablesColumnProvider.validKeys(self.engine)
     actual.sort()
 
     testutil.compareCollection(self, expect, actual)
 
-  def _evaluatorExpect(self):
+  @classmethod
+  def evaluatorExpect(cls):
     expect = [
       "Gd_x=0.250a:Gd_x=0.250a:Volume:V",
       "T=1400K_Gd_x=0.1:T=1400K_Gd_x=0.1:Volume:V",
@@ -84,13 +86,14 @@ class ColumnKeysTestCase(DBTestCase):
 
   def testEvaluators(self):
     """Test that _columnproviders._EvaluatorColumnProvider() returns correct column keys"""
-    expect = self._evaluatorExpect()
+    expect = self.evaluatorExpect()
     expect.sort()
     actual = cp._EvaluatorColumnProvider.validKeys(self.engine)
     actual.sort()
     testutil.compareCollection(self, expect, actual)
 
-  def _statExpect(self):
+  @classmethod
+  def statExpect(self):
     expect = [
       'stat:min',
       'stat:max',
@@ -105,50 +108,57 @@ class ColumnKeysTestCase(DBTestCase):
 
   def testStat(self):
     """Test that _columnproviders._StatColumnProvider() returns correct column keys"""
-    expect = self._statExpect()
+    expect = self.statExpect()
     actual = cp._StatColumnProvider.validKeys(self.engine)
     actual.sort()
     testutil.compareCollection(self, expect, actual)
 
-  def _runningFilterExpect(self):
+  @classmethod
+  def runningFilterExpect(cls):
     return sorted(["it:is_running_min", "it:is_running_max"])
 
   def testRunningFilter(self):
     """Test validKeys for db._columnProviders._RunningFilterColumnProvider"""
-    expect = self._runningFilterExpect()
+    expect = self.runningFilterExpect()
     expect.sort()
     actual = cp._RunningFilterColumnProvider.validKeys(self.engine)
     actual.sort()
     testutil.compareCollection(self, expect, actual)
 
+  @classmethod
+  def allExpect(cls):
+    expect = itertools.chain(
+      sorted(cls.runningFilterExpect()),
+      sorted(cls.statExpect()),
+      sorted(cls.evaluatorExpect()),
+      sorted(cls.variableExpect()))
+    expect = list(expect)
+    return expect
+
+
   def testIterationSeriesKeys(self):
     """Test db.IterationSeriesTable.validKeys() method"""
-    expect = itertools.chain(
-      sorted(self._runningFilterExpect()),
-      sorted(self._statExpect()),
-      sorted(self._evaluatorExpect()),
-      sorted(self._variableExpect()))
-    expect = list(expect)
     actual = db.IterationSeriesTable.validKeys(self.engine)
+    expect = self.allExpect()
     testutil.compareCollection(self, expect, actual)
 
   def testIterationSeriesEvaluatorKeys(self):
-    expect = sorted(self._evaluatorExpect())
+    expect = sorted(self.evaluatorExpect())
     actual = db.IterationSeriesTable.validEvaluatorKeys(self.engine)
     testutil.compareCollection(self, expect, actual)
 
   def testIterationSeriesVariableKeys(self):
-    expect = sorted(self._variableExpect())
+    expect = sorted(self.variableExpect())
     actual = db.IterationSeriesTable.validVariableKeys(self.engine)
     testutil.compareCollection(self, expect, actual)
 
   def testIterationSeriesIterationKeys(self):
-    expect = sorted(self._runningFilterExpect())
+    expect = sorted(self.runningFilterExpect())
     actual = db.IterationSeriesTable.validIterationKeys(self.engine)
     testutil.compareCollection(self, expect, actual)
 
   def testIterationSeriesStatisticsKeys(self):
-    expect = sorted(self._statExpect())
+    expect = sorted(self.statExpect())
     actual = db.IterationSeriesTable.validStatisticsKeys(self.engine)
     testutil.compareCollection(self, expect, actual)
 

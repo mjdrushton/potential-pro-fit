@@ -1,4 +1,5 @@
 import argparse
+import sys
 
 import sqlalchemy as sa
 from atsim.pro_fit import db
@@ -7,7 +8,6 @@ def parseCommandLine():
   parser = argparse.ArgumentParser(
     prog = "ppdump",
     description = "Dump potential pro-fit fitting_run.db into a CSV file for post-processing.")
-
 
   parser.add_argument("-f", "--dbfilename",
     metavar = "DB_FILENAME",
@@ -85,6 +85,11 @@ def outputNumIterations(engine):
   f = db.Fitting(engine)
   print f.current_iteration()
 
+def outputTable(engine):
+  iterationSeriesTable = db.IterationSeriesTable(engine)
+  outfile = sys.stdout
+  for row in iterationSeriesTable:
+    print >>outfile, ",".join([str(v) for v in row])
 
 def main():
   options = parseCommandLine()
@@ -95,7 +100,8 @@ def main():
     listColumns(engine, options.list_columns)
   elif options.num_iterations:
     outputNumIterations(engine)
-
+  else:
+    outputTable(engine)
 
 
 if __name__ == '__main__':
