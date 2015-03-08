@@ -61,7 +61,7 @@ def parseCommandLine():
   dumpGroup.add_argument("-c", "--columns",
     nargs = '*',
     metavar = "COLUMN_LABEL",
-    help = "List of column keys to be included the dump. If not specified all columns will be included in dump.")
+    help = "List of column keys to be included the dump. If not specified 'iteration_number', 'candidate_number' and 'merit_value' are used.")
 
   options = parser.parse_args()
 
@@ -89,8 +89,8 @@ def outputNumIterations(engine):
   f = db.Fitting(engine)
   print f.current_iteration()
 
-def outputTable(engine, outfile):
-  iterationSeriesTable = db.IterationSeriesTable(engine)
+def outputTable(engine, columns, outfile):
+  iterationSeriesTable = db.IterationSeriesTable(engine, columns = columns)
   for row in iterationSeriesTable:
     print >>outfile, ",".join([str(v) for v in row])
 
@@ -104,7 +104,7 @@ def main():
   elif options.num_iterations:
     outputNumIterations(engine)
   else:
-    outputTable(engine, options.output_file)
+    outputTable(engine, options.columns, options.output_file)
 
 
 if __name__ == '__main__':
