@@ -45,7 +45,6 @@ class IterationSeries_IterationFilter_TestCase(DBTestCase):
       iterationFilter = "running_max",
       candidateFilter = "max")
 
-
     expect = {
       'columns' : ['iteration_number', 'candidate_number', 'merit_value'],
       'values'  : [
@@ -55,3 +54,20 @@ class IterationSeries_IterationFilter_TestCase(DBTestCase):
     actual = {'columns' : t.next(),
               'values'  : list(t)}
     testutil.compareCollection(self, expect, actual)
+
+
+  def testConstructorArguments(self):
+    """Check that IterationSeriesTable throws when incompatible iteration and candidate filters specified"""
+
+    with self.assertRaises(db.BadFilterCombinationException):
+      db.IterationSeriesTable(self.engine,
+        iterationFilter = "running_max",
+        candidateFilter = "all")
+
+    with self.assertRaises(db.BadFilterCombinationException):
+      db.IterationSeriesTable(self.engine,
+        iterationFilter = "running_min",
+        candidateFilter = "all")
+
+
+

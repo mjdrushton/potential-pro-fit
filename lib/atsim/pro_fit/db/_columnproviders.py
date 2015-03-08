@@ -12,6 +12,9 @@ import operator
 import re
 import math
 
+
+
+
 def _mean(data):
   """Calculate mean of values in data.
 

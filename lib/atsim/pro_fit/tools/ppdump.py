@@ -63,6 +63,12 @@ def parseCommandLine():
     metavar = "COLUMN_LABEL",
     help = "List of column keys to be included the dump. If not specified 'iteration_number', 'candidate_number' and 'merit_value' are used.")
 
+  dumpGroup.add_argument("--candidate-filter",
+    nargs = '?',
+    choices = ['all', 'min', 'max'],
+    default = 'min',
+    help = "Selects candidates from each iteration's population. 'all': dumps entire population, 'min': only dumps candidate with minimum primary-value, 'max': dumps candidate with maximum primary-value.")
+
   options = parser.parse_args()
 
   return options
@@ -89,8 +95,12 @@ def outputNumIterations(engine):
   f = db.Fitting(engine)
   print f.current_iteration()
 
-def outputTable(engine, columns, outfile):
-  iterationSeriesTable = db.IterationSeriesTable(engine, columns = columns)
+def outputTable(engine, columns, candidate_filter, outfile):
+  iterationSeriesTable = db.IterationSeriesTable(
+    engine,
+    candidateFilter = candidate_filter,
+    columns = columns)
+
   for row in iterationSeriesTable:
     print >>outfile, ",".join([str(v) for v in row])
 
@@ -104,7 +114,7 @@ def main():
   elif options.num_iterations:
     outputNumIterations(engine)
   else:
-    outputTable(engine, options.columns, options.output_file)
+    outputTable(engine, options.columns, options.candidate_filter, options.output_file)
 
 
 if __name__ == '__main__':

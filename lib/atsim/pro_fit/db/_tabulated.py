@@ -9,6 +9,10 @@ import _metadata
 
 metadata = _metadata.getMetadata()
 
+class BadFilterCombinationException(Exception):
+  """Thrown when a bad combination of candidate and iteration filters are made"""
+  pass
+
 class _FilterWrapper(object):
   """Wraps results and filters for particular key"""
 
@@ -146,6 +150,10 @@ class IterationSeriesTable(object):
     :param candidateFilter: Determines the candidate selected from each iteration.
       The value of this parameter can be one of ``min`` and ``max``.
     :param columns: List of additional column keys to include in the returned table."""
+    if candidateFilter == 'all'  and iterationFilter != 'all':
+      raise BadFilterCombinationException("the 'all' candidate filter can only be used with 'all' iteration filter.")
+
+
     self.engine = engine
 
     self.primaryColumnKey = primaryColumnKey
@@ -254,20 +262,27 @@ class IterationSeriesTable(object):
     :param iterationFilter: Keyword used in iteration selection.
     :param candidateFilter: Keyword used to identify candidate within each iteration.
     :return: SQLAlchemy results"""
+
+    candidates = metadata.tables['candidates']
+
     iterationFilterFunc = {'all' : _NullFilter,
                            'running_min' : _RunningMinFilter,
                            'running_max' : _RunningMaxFilter}[iterationFilter]
 
-    candidateFilterFunc = {'min' : sa.func.min,
-                           'max' : sa.func.max}[candidateFilter]
+    candidateFilterFunc,groupby = {'all' : (lambda c: c, False),
+                           'min' : (sa.func.min, True),
+                           'max' : (sa.func.max, True)}[candidateFilter]
 
-    candidates = metadata.tables['candidates']
+
     query = sa.select([
       candidates.c.id.label('candidate_id'),
       candidates.c.iteration_number,
       candidates.c.candidate_number,
       candidateFilterFunc(candidates.c.merit_value).label('primary_value')
-      ]).group_by(candidates.c.iteration_number)
+      ])
+
+    if groupby:
+      query = query.group_by(candidates.c.iteration_number)
 
     results = self.engine.execute(query)
     results = _FilterWrapper(results, 'primary_value', iterationFilterFunc())

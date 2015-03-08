@@ -6,6 +6,10 @@ def _getdbpath():
   from test_db.test_iterationseries import ColumnKeysTestCase
   return ColumnKeysTestCase.dbPath()
 
+def _getpopdbpath():
+  from test_db.test_iterationseries import IterationSeriesTestCase
+  return IterationSeriesTestCase.dbPath()
+
 def _run_ppdump(args):
   output = subprocess.check_output("ppdump %s" % " ".join(args), shell = True)
   actual = output.split(os.linesep)
@@ -53,12 +57,13 @@ def testOption_numiterations():
   assert_that([expect, '']).is_equal_to(actual)
 
 
-def _check_table(outputlines, extracols = None):
-  expect = [
-    [  'iteration_number','candidate_number', 'merit_value'],
-    [  0                 , 0                , 2416.9492376805674],
-    [  1                 , 0                , 2296.3213811719497],
-    [  2                 , 0                , 2255.5581525661546 ]]
+def _check_table(outputlines, extracols = None, expect = None):
+  if not expect:
+    expect = [
+      [  'iteration_number','candidate_number', 'merit_value'],
+      [  0                 , 0                , 2416.9492376805674],
+      [  1                 , 0                , 2296.3213811719497],
+      [  2                 , 0                , 2255.5581525661546 ]]
 
   if extracols != None:
     for erow, extrarow in zip(expect, extracols):
@@ -83,7 +88,6 @@ def _check_table(outputlines, extracols = None):
       for acol, ecol in zip(actual[3:], eline[3:]):
         # assert_that(acol).is_digit()
         assert_that(acol).is_close_to(ecol, 1e-5)
-
     else:
       assert_that(eline).is_equal_to(actual)
 
@@ -114,10 +118,66 @@ def testOptionColumn():
 
   outputlines = _run_ppdump(["-f %s" % _getdbpath(), "-c %s" % " ".join(colkeys)])
   print outputlines
-  _check_table(outputlines, extracols)
+  _check_table(outputlines, extracols = extracols)
+
 
 def testDumpNoOptions():
   """Test ppdump with default options"""
   outputlines = _run_ppdump(["-f %s" % _getdbpath()])
   _check_table(outputlines)
+
+
+def testCandidateFilterAll():
+  """Test ppdump with --candidate-filter=all"""
+  outputlines = _run_ppdump(["-f %s" % _getpopdbpath(), "--candidate-filter=all"])
+  expect = [['iteration_number','candidate_number','merit_value'],
+            [0,0,3329.44833],
+            [0,1,56979.43601],
+            [0,2,973.78207],
+            [0,3,4336.72706],
+            [1,0,5283.62466],
+            [1,1,5096.59874],
+            [1,2,3329.44833],
+            [1,3,973.78207],
+            [2,0,1546.33659],
+            [2,1,5096.59874],
+            [2,2,3329.44833],
+            [2,3,973.78207],
+            [3,0,980.44924],
+            [3,1,973.78207],
+            [3,2,1546.33659],
+            [3,3,973.78207],
+            [4,0,2300.90601],
+            [4,1,964.64312],
+            [4,2,973.78207],
+            [4,3,973.78207],
+            [5,0,1998.33524],
+            [5,1,12634.65516],
+            [5,2,973.78207],
+            [5,3,964.64312]]
+  _check_table(outputlines, expect = expect)
+
+def testCandidateFilterMin():
+    """Test ppdump with --candidate-filter=min"""
+    outputlines = _run_ppdump(["-f %s" % _getpopdbpath(), "--candidate-filter=min"])
+    expect = [['iteration_number','candidate_number','merit_value'],
+              [0,2,973.78207],
+              [1,3,973.78207],
+              [2,3,973.78207],
+              [3,1,973.78207],
+              [4,1,964.64312],
+              [5,3,964.64312]]
+    _check_table(outputlines, expect = expect)
+
+def testCandidateFilterMax():
+  """Test ppdump with --candidate-filter=max"""
+  outputlines = _run_ppdump(["-f %s" % _getpopdbpath(), "--candidate-filter=max"])
+  expect = [['iteration_number','candidate_number','merit_value'],
+            [0,1,56979.43601],
+            [1,0,5283.62466],
+            [2,1,5096.59874],
+            [3,2,1546.33659],
+            [4,0,2300.90601],
+            [5,1,12634.65516]]
+  _check_table(outputlines, expect = expect)
 
