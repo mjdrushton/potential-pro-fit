@@ -46,6 +46,63 @@ def test_list_columns():
   """Test ppdump --list-columns"""
   _columnKeys_test("--list-columns", "all", sort = False)
 
+def testGetColumnList():
+  from test_db.test_iterationseries import ColumnKeysTestCase
+  import sqlalchemy as sa
+  engine = sa.create_engine("sqlite:///"+_getdbpath())
+  from atsim.pro_fit.tools import ppdump
+
+  columns = ppdump._getColumnList(engine, None, [ppdump._VARIABLE_COLUMN_SET])
+  assert_that(columns).is_equal_to(
+    ColumnKeysTestCase.variableExpect())
+
+  columns = ppdump._getColumnList(engine, None, [ppdump._EVALUATOR_COLUMN_SET])
+  assert_that(columns).is_equal_to(
+    ColumnKeysTestCase.evaluatorExpect())
+
+  expect = []
+  expect.extend(ColumnKeysTestCase.evaluatorExpect())
+  expect.extend(ColumnKeysTestCase.variableExpect())
+
+  columns = ppdump._getColumnList(engine, [], [ppdump._EVALUATOR_COLUMN_SET, ppdump._VARIABLE_COLUMN_SET])
+  assert_that(columns).is_equal_to(expect)
+
+  expect = ['variable:M_charge']
+  expect.extend(ColumnKeysTestCase.evaluatorExpect())
+  expect.extend([ v for v in ColumnKeysTestCase.variableExpect() if v != "variable:M_charge"])
+
+  columns = ppdump._getColumnList(engine, ["variable:M_charge"], [ppdump._EVALUATOR_COLUMN_SET, ppdump._VARIABLE_COLUMN_SET])
+  assert_that(columns).is_equal_to(expect)
+
+
+
+def testColumnSets():
+  """Tests ppdump --variable-columns --evaluator-columns --all-columns options"""
+  from test_db.test_iterationseries import ColumnKeysTestCase
+
+  prefix = "iteration_number,candidate_number,merit_value"
+  vkeys = ",".join(ColumnKeysTestCase.variableExpect())
+  ekeys = ",".join(ColumnKeysTestCase.evaluatorExpect())
+
+  outputlines = _run_ppdump(["-f %s" % _getdbpath(), "--variable-columns"])
+  assert_that(outputlines[0]).is_equal_to(",".join([prefix, vkeys]))
+
+  outputlines = _run_ppdump(["-f %s" % _getdbpath(), "--evaluator-columns"])
+  assert_that(outputlines[0]).is_equal_to(",".join([prefix,ekeys]))
+
+  outputlines = _run_ppdump(["-f %s" % _getdbpath(), "--evaluator-columns --variable-columns"])
+  assert_that(outputlines[0]).is_equal_to(",".join([prefix,ekeys,vkeys]))
+
+  outputlines = _run_ppdump(["-f %s" % _getdbpath(), "-c variable:M_charge --evaluator-columns --variable-columns"])
+
+  expect = ",".join([prefix, "variable:M_charge"])
+  expect = ",".join([expect, ekeys])
+  vfiltered = ",".join([v for v in ColumnKeysTestCase.variableExpect() if v != 'variable:M_charge'])
+  expect = ",".join([expect, vfiltered])
+  assert_that(outputlines[0]).is_equal_to(expect)
+
+
+
 def testOption_numiterations():
   """Test ppdump --num-iterations"""
   dbPath = _getdbpath()

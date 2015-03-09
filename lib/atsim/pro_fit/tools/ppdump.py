@@ -4,6 +4,9 @@ import sys
 import sqlalchemy as sa
 from atsim.pro_fit import db
 
+_VARIABLE_COLUMN_SET = 'variables'
+_EVALUATOR_COLUMN_SET = 'evaluators'
+
 def parseCommandLine():
   parser = argparse.ArgumentParser(
     prog = "ppdump",
@@ -58,10 +61,6 @@ def parseCommandLine():
     metavar = 'OUTPUT_FILE',
     help = "write output into OUTPUT_FILE. If not specified then output is written to STDOUT.")
 
-  dumpGroup.add_argument("-c", "--columns",
-    nargs = '*',
-    metavar = "COLUMN_LABEL",
-    help = "List of column keys to be included the dump. If not specified 'iteration_number', 'candidate_number' and 'merit_value' are used.")
 
   dumpGroup.add_argument("--candidate-filter",
     nargs = '?',
@@ -69,9 +68,49 @@ def parseCommandLine():
     default = 'min',
     help = "Selects candidates from each iteration's population. 'all': dumps entire population, 'min': only dumps candidate with minimum primary-value, 'max': dumps candidate with maximum primary-value.")
 
-  options = parser.parse_args()
+  columnSelectionGroup = parser.add_argument_group("Column Selection")
+  columnSelectionGroup.add_argument("-c", "--columns",
+    nargs = '*',
+    metavar = "COLUMN_LABEL",
+    help = "List of column keys to be included the dump. If not specified 'iteration_number', 'candidate_number' and 'merit_value' are used.")
 
+  columnSelectionGroup.add_argument("--variable-columns",
+    dest = 'column_sets',
+    action = 'append_const',
+    const = _VARIABLE_COLUMN_SET,
+    help = "Add the columns listed by --list-variable-columns to the column selection.")
+
+  columnSelectionGroup.add_argument("--evaluator-columns",
+    dest = 'column_sets',
+    action = 'append_const',
+    const = _EVALUATOR_COLUMN_SET)
+  help = "Add the columns listed by --list-evaluator-columns to the column selection.")
+
+  options = parser.parse_args()
   return options
+
+def _getColumnList(engine, columns, column_sets):
+  outcols = []
+  workingcols = []
+  if columns != None:
+    workingcols.extend(columns)
+
+  if column_sets != None:
+    for cset in column_sets:
+      if cset == _VARIABLE_COLUMN_SET:
+        workingcols.extend(db.IterationSeriesTable.validVariableKeys(engine))
+      elif cset == _EVALUATOR_COLUMN_SET:
+        workingcols.extend(db.IterationSeriesTable.validEvaluatorKeys(engine))
+      else:
+        # Should never get here
+        raise Exception("Unknown column set")
+
+  # Remove any duplicates having them appear in order of first appearance
+  for col in workingcols:
+    if not col in outcols:
+      outcols.append(col)
+  return outcols
+
 
 def listColumns(engine, whichSet = 'all'):
   """List column keys to stdout
@@ -114,7 +153,8 @@ def main():
   elif options.num_iterations:
     outputNumIterations(engine)
   else:
-    outputTable(engine, options.columns, options.candidate_filter, options.output_file)
+    columns = _getColumnList(engine,options.columns, options.column_sets)
+    outputTable(engine, columns, options.candidate_filter, options.output_file)
 
 
 if __name__ == '__main__':
