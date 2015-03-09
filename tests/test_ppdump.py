@@ -38,6 +38,11 @@ def testOption_list_variable_columns():
   """Test ppdump --list-variable-columns"""
   _columnKeys_test("--list-variable-columns", "variable")
 
+def testOption_list_fit_variable_columns():
+  """Test ppdump --list-fit-variable-columns"""
+  _columnKeys_test("--list-fit-variable-columns", "fittingVariable")
+
+
 def testOption_list_evaluator_columns():
   """Test ppdump --list-evaluator-columns"""
   _columnKeys_test("--list-evaluator-columns", "evaluator")
@@ -56,9 +61,16 @@ def testGetColumnList():
   assert_that(columns).is_equal_to(
     ColumnKeysTestCase.variableExpect())
 
+  columns = ppdump._getColumnList(engine, None, [ppdump._FIT_VARIABLE_COLUMN_SET])
+  assert_that(columns).is_equal_to(
+    ColumnKeysTestCase.fittingVariableExpect())
+
+
   columns = ppdump._getColumnList(engine, None, [ppdump._EVALUATOR_COLUMN_SET])
   assert_that(columns).is_equal_to(
     ColumnKeysTestCase.evaluatorExpect())
+
+
 
   expect = []
   expect.extend(ColumnKeysTestCase.evaluatorExpect())
@@ -83,9 +95,14 @@ def testColumnSets():
   prefix = "iteration_number,candidate_number,merit_value"
   vkeys = ",".join(ColumnKeysTestCase.variableExpect())
   ekeys = ",".join(ColumnKeysTestCase.evaluatorExpect())
+  fvkeys = ",".join(ColumnKeysTestCase.fittingVariableExpect())
 
   outputlines = _run_ppdump(["-f %s" % _getdbpath(), "--variable-columns"])
   assert_that(outputlines[0]).is_equal_to(",".join([prefix, vkeys]))
+
+  outputlines = _run_ppdump(["-f %s" % _getdbpath(), "--fit-variable-columns"])
+  assert_that(outputlines[0]).is_equal_to(",".join([prefix, fvkeys]))
+
 
   outputlines = _run_ppdump(["-f %s" % _getdbpath(), "--evaluator-columns"])
   assert_that(outputlines[0]).is_equal_to(",".join([prefix,ekeys]))

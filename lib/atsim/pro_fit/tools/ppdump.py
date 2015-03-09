@@ -5,6 +5,7 @@ import sqlalchemy as sa
 from atsim.pro_fit import db
 
 _VARIABLE_COLUMN_SET = 'variables'
+_FIT_VARIABLE_COLUMN_SET = 'fit-variables'
 _EVALUATOR_COLUMN_SET = 'evaluators'
 
 def parseCommandLine():
@@ -29,6 +30,12 @@ def parseCommandLine():
     dest = 'list_columns',
     action = "store_const", const= "variable",
     help = "list available variable: prefix columns from the database")
+
+  metadataGroup.add_argument("--list-fit-variable-columns",
+    dest = 'list_columns',
+    action = "store_const", const= "fit-variable",
+    help = "list available variable: prefix columns that were free to change during a fitting run")
+
 
   metadataGroup.add_argument("--list-evaluator-columns",
     dest = 'list_columns',
@@ -80,10 +87,17 @@ def parseCommandLine():
     const = _VARIABLE_COLUMN_SET,
     help = "Add the columns listed by --list-variable-columns to the column selection.")
 
+  columnSelectionGroup.add_argument("--fit-variable-columns",
+    dest = 'column_sets',
+    action = 'append_const',
+    const = _FIT_VARIABLE_COLUMN_SET,
+    help = "Add the columns listed by --list-fit-variable-columns to the column selection.")
+
+
   columnSelectionGroup.add_argument("--evaluator-columns",
     dest = 'column_sets',
     action = 'append_const',
-    const = _EVALUATOR_COLUMN_SET)
+    const = _EVALUATOR_COLUMN_SET,
   help = "Add the columns listed by --list-evaluator-columns to the column selection.")
 
   options = parser.parse_args()
@@ -99,6 +113,8 @@ def _getColumnList(engine, columns, column_sets):
     for cset in column_sets:
       if cset == _VARIABLE_COLUMN_SET:
         workingcols.extend(db.IterationSeriesTable.validVariableKeys(engine))
+      elif cset == _FIT_VARIABLE_COLUMN_SET:
+        workingcols.extend(db.IterationSeriesTable.validFittingVariableKeys(engine))
       elif cset == _EVALUATOR_COLUMN_SET:
         workingcols.extend(db.IterationSeriesTable.validEvaluatorKeys(engine))
       else:
@@ -119,6 +135,7 @@ def listColumns(engine, whichSet = 'all'):
   ItT = db.IterationSeriesTable
   colsets = {'all' : ItT.validKeys,
     'variable' : ItT.validVariableKeys,
+    'fit-variable' : ItT.validFittingVariableKeys,
     'evaluator' : ItT.validEvaluatorKeys,
     'it' : ItT.validIterationKeys,
     'stat' : ItT.validStatisticsKeys}

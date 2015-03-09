@@ -17,6 +17,10 @@ class ColumnKeysTestCase(DBTestCase):
   dbname = "meta_eval.db"
 
   @classmethod
+  def fittingVariableExpect(cls):
+    return sorted(['variable:C_Gd_O'])
+
+  @classmethod
   def variableExpect(cls):
     return sorted([
           "variable:Ce_charge",
@@ -151,6 +155,12 @@ class ColumnKeysTestCase(DBTestCase):
     expect = sorted(self.variableExpect())
     actual = db.IterationSeriesTable.validVariableKeys(self.engine)
     testutil.compareCollection(self, expect, actual)
+
+  def testIterationSeriesFittingVariableKeys(self):
+    expect = sorted(self.fittingVariableExpect())
+    actual = db.IterationSeriesTable.validFittingVariableKeys(self.engine)
+    testutil.compareCollection(self, expect, actual)
+
 
   def testIterationSeriesIterationKeys(self):
     expect = sorted(self.runningFilterExpect())

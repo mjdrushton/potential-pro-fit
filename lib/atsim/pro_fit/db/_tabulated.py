@@ -199,6 +199,18 @@ class IterationSeriesTable(object):
     return sorted(_VariablesColumnProvider.validKeys(engine))
 
   @classmethod
+  def validFittingVariableKeys(cls, engine):
+    """Returns a list of keys for variables subject to change in fitting run that can be used with the constructor's ``columns`` argument.
+
+    :param engine: SQL Alchemy Engine instance for a valid fitting_run.db.
+    :return list: List of strings giving valid column keys"""
+    variable_keys = metadata.tables['variable_keys']
+    query = sa.select([variable_keys.c.variable_name]).where(variable_keys.c.fit_flag == True).order_by(variable_keys.c.variable_name)
+    results = engine.execute(query)
+    return [ "variable:%s" % v[0] for v in results.fetchall()]
+
+
+  @classmethod
   def validIterationKeys(cls, engine):
     """Returns a list of keys relevant to iteration (it: prefix) values that can be used with the constructor's ``columns`` argument.
 
