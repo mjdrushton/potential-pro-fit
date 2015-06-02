@@ -524,7 +524,7 @@ class Variables(object):
     @param newvals Updated list of values for fitting variables in same order as keys returned by fitKeys property.
                    If None, then produce copy of current instance.
     @return Copy of current Variables instance, containing updated values."""
-    if newvals == None:
+    if newvals is None:
       return Variables(self.flaggedVariablePairs, self.bounds)
 
     ud = dict(zip(self.fitKeys, newvals))
