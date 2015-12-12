@@ -1,6 +1,6 @@
-**********
-ppmakegrid
-**********
+******
+ppgrid
+******
 
 Tool for creating n-dimensional grids as CSV files suitable for use with the :ref:`Spreadsheet minimiser <pprofit-minimizers-spreadsheet>`.
 
@@ -9,11 +9,11 @@ Usage
 
 ::
 
-	ppmakegrid [OPTIONS] ARGS
+	ppgrid [OPTIONS] ARGS
 
 Create a CSV file containing an n-dimensional grid suitable for use with the pprofit Spreadsheet minimiser.
 
-The arguments to ``ppmakegrid`` specify each grid axis. Grid dimensions and resolution can be specified in one of two ways:
+The arguments to ``ppgrid`` specify each grid axis. Grid dimensions and resolution can be specified in one of two ways:
 
   1. By default each grid axis is specified as::
 
@@ -46,7 +46,7 @@ To create two dimensional 10⨉10 grid for variables A and B with ranges::
 
 the following command line could be used to write grid into a file named grid.csv:
 
-  ``ppmakegrid --range A:10,20,10 B:0,5,10 -o grid.csv``
+  ``ppgrid --range A:10,20,10 B:0,5,10 -o grid.csv``
 
 
 Example 2:
@@ -54,7 +54,7 @@ Example 2:
 To create a 5⨉10⨉5 grid with running from 0 to 5 on axes A,B and C with specific grid increments, writing to STDOUT
 this could be used::
 
-  ppmakegrid A:0,1,5 B:0,0.5,10 C:0,1,5
+  ppgrid A:0,1,5 B:0,0.5,10 C:0,1,5
 
 
 
