@@ -65,12 +65,9 @@ def testGetColumnList():
   assert_that(columns).is_equal_to(
     ColumnKeysTestCase.fittingVariableExpect())
 
-
   columns = ppdump._getColumnList(engine, None, [ppdump._EVALUATOR_COLUMN_SET])
   assert_that(columns).is_equal_to(
     ColumnKeysTestCase.evaluatorExpect())
-
-
 
   expect = []
   expect.extend(ColumnKeysTestCase.evaluatorExpect())
@@ -85,7 +82,6 @@ def testGetColumnList():
 
   columns = ppdump._getColumnList(engine, ["variable:M_charge"], [ppdump._EVALUATOR_COLUMN_SET, ppdump._VARIABLE_COLUMN_SET])
   assert_that(columns).is_equal_to(expect)
-
 
 
 def testColumnSets():
@@ -117,7 +113,6 @@ def testColumnSets():
   vfiltered = ",".join([v for v in ColumnKeysTestCase.variableExpect() if v != 'variable:M_charge'])
   expect = ",".join([expect, vfiltered])
   assert_that(outputlines[0]).is_equal_to(expect)
-
 
 
 def testOption_numiterations():

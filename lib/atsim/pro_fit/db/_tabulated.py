@@ -113,6 +113,7 @@ class IterationSeriesTable(object):
       - If ``candidateFilter`` is ``min``, then the candidate with the **lowest** merit value is selected for each
         iteration.
       - If it is ``max`` then the candidate with the **largest** merit is chosen.
+      - If it is ``all`` then all candidates are dumped - if `all` specified, the `all` must also be used as the ``iterationFilter``.
 
     * The ``iterationFilter`` parameter can be used to filter the the rows returned:
 
