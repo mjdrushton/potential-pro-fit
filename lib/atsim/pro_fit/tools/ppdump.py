@@ -100,7 +100,39 @@ def parseCommandLine():
     const = _EVALUATOR_COLUMN_SET,
   help = "Add the columns listed by --list-evaluator-columns to the column selection.")
 
+  gridGroup = parser.add_argument_group("Grid extraction", description = "Options that allow grid/matrix data-formats to be output. Typically these options are used with fitting_run.db files obtained from runs that make use of ppgrid and the Spreadsheet minimizer")
+  gridGroup.add_argument("--grid",
+    nargs = '?',
+    choices = ['R'],
+    metavar = 'GRID_FORMAT',
+    help = "extract data from fitting_run.db in a gridded format. GRID_FORMAT determines how the grid is output. A value of 'R', creates output that can be loaded into the R programming language using the 'dget' function.")
+
+  gridGroup.add_argument("--gridx",
+    nargs='?',
+    dest = "gridx",
+    metavar = "COLUMN_LABEL",
+    help = "Used with --grid option COLUMN_LABEL gives the column the values of which define the x-axis of the gridded data.")
+
+  gridGroup.add_argument("--gridy",
+    nargs='?',
+    dest = "gridy",
+    metavar = "COLUMN_LABEL",
+    help = "Used with --grid option COLUMN_LABEL gives the column the values of which define the y-axis of the gridded data.")
+
+  gridGroup.add_argument("--gridz",
+    nargs='?',
+    dest = "gridz",
+    metavar = "COLUMN_LABEL",
+    help = "Used with --grid option COLUMN_LABEL gives the column from which the grid data values are taken.")
+
   options = parser.parse_args()
+
+  if options.grid and not (options.gridx and options.gridy and options.gridz):
+      parser.error("--grid cannot be specified without also providing --gridx, --gridy and --gridz options.")
+
+  if not options.grid and (options.gridx or options.gridy or options.gridz):
+      parser.error("--gridx, --gridy and --gridz options cannot be used without also specifying --grid")
+
   return options
 
 def _getColumnList(engine, columns, column_sets):
@@ -160,6 +192,25 @@ def outputTable(engine, columns, candidate_filter, outfile):
   for row in iterationSeriesTable:
     print >>outfile, ",".join([str(v) for v in row])
 
+def outputGrid(engine, gridtype, gridx, gridy, gridz, outfile):
+  """Outputs data in grid formats.
+
+  :param engine: SQLite Engine.
+  :param gridtype: One of the supported grid types (currently 'R')
+  :param gridx: Grid x-axis column label
+  :param gridy: Grid y-axis column label
+  :param gridz: Grid z-axis column label
+  :param outfile: File to which output should be written"""
+
+  iterationSeriesTable = db.IterationSeriesTable(
+    engine,
+    candidateFilter = 'all',
+    iterationFilter = 'all',
+    columns = [gridx, gridy, gridz])
+
+  db.serializeTableForR(iterationSeriesTable, outfile, gridx, gridy, gridz)
+
+
 def main():
   options = parseCommandLine()
 
@@ -169,6 +220,8 @@ def main():
     listColumns(engine, options.list_columns)
   elif options.num_iterations:
     outputNumIterations(engine)
+  elif options.grid:
+    outputGrid(engine, options.grid, options.gridx, options.gridy, options.gridz, options.output_file)
   else:
     columns = _getColumnList(engine,options.columns, options.column_sets)
     outputTable(engine, columns, options.candidate_filter, options.output_file)

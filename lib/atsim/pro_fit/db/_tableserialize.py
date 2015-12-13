@@ -130,14 +130,22 @@ class _RangeDiscoverIterator(object):
 
 
 def _serializeRArray(l):
-  s = "c(" + ",".join([str(v) for v in l])+")"
+  tl = []
+
+  for v in l:
+    if v == None:
+      tl.append('NA')
+    else:
+      tl.append(v)
+
+  s = "c(" + ",".join([str(v) for v in tl])+")"
   return s
 
 def _serializeRMatrix(xdim, ydim, vals):
   s = "structure("+_serializeRArray(vals)+",.Dim=c("+str(xdim)+"L,"+str(ydim)+"L))"
   return s
 
-def serializeTableForR(table, outfile, xcolumn, ycolumn, zcolumn):
+def serializeTableForR(table, outfile, xcolumn, ycolumn, zcolumn, missingValues = None):
   """Convert atsim.pro_fit.db.IterationSeriesTable instance into an R data-structure that can be used to create a
   3D surface plot.
 
@@ -155,7 +163,8 @@ def serializeTableForR(table, outfile, xcolumn, ycolumn, zcolumn):
   :param outfile: Python file into which serialized data should be written.
   :param xcolumn: Valid column key for use with `table` defining x-axis of 3D surface.
   :param ycolumn: Column key for `table` defining the y-axis of 3D surface.
-  :param zcolumn: Column key for `table` z-values."""
+  :param zcolumn: Column key for `table` z-values.
+  :param missingValues: None values will be replaced by the value of this argument if provided."""
 
   rowkeys = table.next()
 
@@ -184,6 +193,9 @@ def serializeTableForR(table, outfile, xcolumn, ycolumn, zcolumn):
     z = row[zidx]
 
     rangeDiscover.feed(x,y)
+
+    if z is None:
+      z = missingValues
     zvals.append(z)
 
   outfile.write("structure(list(x_name='%s',y_name='%s',z_name='%s'," % (xcolumn, ycolumn, zcolumn))

@@ -1,6 +1,14 @@
 import os
 import subprocess
-from assertpy import assert_that
+from assertpy import assert_that,fail
+
+import pytest
+
+try:
+  import rpy2
+  RPY_AVAILABLE=True
+except ImportError:
+  RPY_AVAILABLE=False
 
 def _getdbpath():
   from test_db.test_iterationseries import ColumnKeysTestCase
@@ -41,7 +49,6 @@ def testOption_list_variable_columns():
 def testOption_list_fit_variable_columns():
   """Test ppdump --list-fit-variable-columns"""
   _columnKeys_test("--list-fit-variable-columns", "fittingVariable")
-
 
 def testOption_list_evaluator_columns():
   """Test ppdump --list-evaluator-columns"""
@@ -250,3 +257,11 @@ def testCandidateFilterMax():
             [5,1,12634.65516]]
   _check_table(outputlines, expect = expect)
 
+@pytest.mark.skipif(not RPY_AVAILABLE, reason = "requires rpy2")
+def test_outputRGrid(tmpdir):
+  """Test ppdump with --grid=R"""
+  from test_db.test_serializetable import _getdbpath,_checkRSerializedDB
+  outfilename = str(tmpdir.join("dget.r", abs = True))
+  outputlines = _run_ppdump(["-f '%s'" % _getdbpath(), "-o", outfilename, "--grid=R", "--gridx=variable:A", "--gridy=variable:B", "--gridz=evaluator:mult:mult:val:Z:extracted_value"])
+  assert_that(outfilename).exists()
+  _checkRSerializedDB(outfilename)
