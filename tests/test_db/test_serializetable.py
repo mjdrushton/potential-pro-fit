@@ -49,9 +49,7 @@ def _checkRSerializedDB(filename):
   assert_that(actual_y).is_equal_to(expect_y)
   assert_that(actual_z).is_equal_to(expect_z)
 
-@pytest.mark.skipif(not RPY_AVAILABLE, reason = "requires rpy2")
-def test_serializeTableForR(tmpdir):
-  """Test atsim.pro_fit.db.serializeTableForR()"""
+def _makeTable():
   engine = sa.create_engine("sqlite:///"+_getdbpath())
 
   # Get the IterationSeriesTable
@@ -60,14 +58,53 @@ def test_serializeTableForR(tmpdir):
     iterationFilter = 'all',
     columns = ['evaluator:mult:mult:val:Z:extracted_value', 'variable:A', 'variable:B'])
 
+  return table
+
+def test_serializeTableForGNUPlot():
+  """Test atsim.pro_fit.db.serializeTableForGNUPlot()"""
+  engine = sa.create_engine("sqlite:///"+_getdbpath())
+  table = _makeTable()
+
+  from StringIO import StringIO
+
+  sio = StringIO()
+  db.serializeTableForGNUPlot(table, sio, 'variable:A', 'variable:B', 'evaluator:mult:mult:val:Z:extracted_value')
+
+  sio.seek(0)
+
+  line = sio.next()[:-1]
+  assert_that(line).starts_with('#')
+  a,b,c = line[1:].split()
+  assert_that(a).is_equal_to('variable:A')
+  assert_that(b).is_equal_to('variable:B')
+  assert_that(c).is_equal_to('evaluator:mult:mult:val:Z:extracted_value')
+
+  for i in [1,2,3,4,5]:
+    for j in [0, 2,4,6,8,10]:
+       line = sio.next()[:-1]
+       x,y,z = line.split()
+       x = float(x)
+       y = float(y)
+       z = float(z)
+
+       assert_that(x).is_equal_to(i)
+       assert_that(y).is_equal_to(j)
+       assert_that(z).is_equal_to(i*j)
+
+    line = sio.next()[:-1]
+    assert_that(line).is_empty()
+
+
+@pytest.mark.skipif(not RPY_AVAILABLE, reason = "requires rpy2")
+def test_serializeTableForR(tmpdir):
+  """Test atsim.pro_fit.db.serializeTableForR()"""
+  table = _makeTable()
   filename = str(tmpdir.join("dget.r", abs = True))
   with open(str(filename), "wb") as outfile:
     db.serializeTableForR(table, outfile, 'variable:A', 'variable:B', 'evaluator:mult:mult:val:Z:extracted_value')
 
   assert_that(filename).exists()
   _checkRSerializedDB(filename)
-
-
 
 def test_serializeTableForR_badcolumnkeys(tmpdir):
   """Test that atsim.pro_fit.db.serializeTableForR() throws when bad column keys are specified"""
@@ -161,3 +198,7 @@ def test_serializeTableForR_rangeDiscoveIterator_negativeAxis():
 
   assert_that(rangeDiscover.x_range).is_equal_to([0])
   assert_that(rangeDiscover.y_range).is_equal_to([3,2,1,0])
+
+
+
+

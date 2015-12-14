@@ -103,9 +103,9 @@ def parseCommandLine():
   gridGroup = parser.add_argument_group("Grid extraction", description = "Options that allow grid/matrix data-formats to be output. Typically these options are used with fitting_run.db files obtained from runs that make use of ppgrid and the Spreadsheet minimizer")
   gridGroup.add_argument("--grid",
     nargs = '?',
-    choices = ['R'],
+    choices = ['R', 'GNUPlot'],
     metavar = 'GRID_FORMAT',
-    help = "extract data from fitting_run.db in a gridded format. GRID_FORMAT determines how the grid is output. A value of 'R', creates output that can be loaded into the R programming language using the 'dget' function.")
+    help = "extract data from fitting_run.db in a gridded format. GRID_FORMAT determines how the grid is output. A value of 'R', creates output that can be loaded into the R programming language using the 'dget' function. 'GNUPlot' creates a grid file that can be read using GNUPlot's splot command.")
 
   gridGroup.add_argument("--gridx",
     nargs='?',
@@ -124,6 +124,13 @@ def parseCommandLine():
     dest = "gridz",
     metavar = "COLUMN_LABEL",
     help = "Used with --grid option COLUMN_LABEL gives the column from which the grid data values are taken.")
+
+  gridGroup.add_argument("--grid_missing",
+    nargs ='?',
+    dest = "gridmissing",
+    metavar = "VALUE",
+    type = float,
+    help = "Used with --grid option, if specified, NULL values in the fitting database are written as VALUE in the output grid file rather than None.")
 
   options = parser.parse_args()
 
@@ -192,7 +199,7 @@ def outputTable(engine, columns, candidate_filter, outfile):
   for row in iterationSeriesTable:
     print >>outfile, ",".join([str(v) for v in row])
 
-def outputGrid(engine, gridtype, gridx, gridy, gridz, outfile):
+def outputGrid(engine, gridtype, gridx, gridy, gridz, outfile, gridmissing):
   """Outputs data in grid formats.
 
   :param engine: SQLite Engine.
@@ -200,7 +207,8 @@ def outputGrid(engine, gridtype, gridx, gridy, gridz, outfile):
   :param gridx: Grid x-axis column label
   :param gridy: Grid y-axis column label
   :param gridz: Grid z-axis column label
-  :param outfile: File to which output should be written"""
+  :param outfile: File to which output should be written
+  :param gridmissing: Value to be used when a None value is encountered in z-data"""
 
   iterationSeriesTable = db.IterationSeriesTable(
     engine,
@@ -208,7 +216,11 @@ def outputGrid(engine, gridtype, gridx, gridy, gridz, outfile):
     iterationFilter = 'all',
     columns = [gridx, gridy, gridz])
 
-  db.serializeTableForR(iterationSeriesTable, outfile, gridx, gridy, gridz)
+  serializer = {
+  'R' : db.serializeTableForR,
+  'GNUPlot' : db.serializeTableForGNUPlot }[gridtype]
+
+  serializer(iterationSeriesTable, outfile, gridx, gridy, gridz, gridmissing)
 
 
 def main():
@@ -221,7 +233,7 @@ def main():
   elif options.num_iterations:
     outputNumIterations(engine)
   elif options.grid:
-    outputGrid(engine, options.grid, options.gridx, options.gridy, options.gridz, options.output_file)
+    outputGrid(engine, options.grid, options.gridx, options.gridy, options.gridz, options.output_file, options.gridmissing)
   else:
     columns = _getColumnList(engine,options.columns, options.column_sets)
     outputTable(engine, columns, options.candidate_filter, options.output_file)

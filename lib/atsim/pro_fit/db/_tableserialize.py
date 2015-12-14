@@ -128,6 +128,40 @@ class _RangeDiscoverIterator(object):
     s = [str(t) for t in s]
     return "".join(s)
 
+def _populateArrays(table, xcolumn, ycolumn, zcolumn, missingValues):
+  rowkeys = table.next()
+
+  if not (xcolumn in rowkeys):
+    raise KeyError("xcolumn named '%s' not found in table" % xcolumn)
+
+  if not (ycolumn in rowkeys):
+    raise KeyError("ycolumn named '%s' not found in table" % ycolumn)
+
+  if not (zcolumn in rowkeys):
+    raise KeyError("zcolumn named '%s' not found in table" % zcolumn)
+
+  xidx = rowkeys.index(xcolumn)
+  yidx = rowkeys.index(ycolumn)
+  zidx = rowkeys.index(zcolumn)
+
+  # Now iterate over the table and write the z matrix.
+  # Collect the x and y values on the way.
+
+  rangeDiscover = _RangeDiscoverIterator()
+  zvals = []
+  for row in table:
+    x = row[xidx]
+    y = row[yidx]
+    z = row[zidx]
+
+    rangeDiscover.feed(x,y)
+
+    if z is None:
+      z = missingValues
+    zvals.append(z)
+
+  return rangeDiscover.x_range, rangeDiscover.y_range, zvals
+
 
 def _serializeRArray(l):
   tl = []
@@ -166,49 +200,40 @@ def serializeTableForR(table, outfile, xcolumn, ycolumn, zcolumn, missingValues 
   :param zcolumn: Column key for `table` z-values.
   :param missingValues: None values will be replaced by the value of this argument if provided."""
 
-  rowkeys = table.next()
-
-  if not (xcolumn in rowkeys):
-    raise KeyError("xcolumn named '%s' not found in table" % xcolumn)
-
-  if not (ycolumn in rowkeys):
-    raise KeyError("ycolumn named '%s' not found in table" % ycolumn)
-
-  if not (zcolumn in rowkeys):
-    raise KeyError("zcolumn named '%s' not found in table" % zcolumn)
-
-  xidx = rowkeys.index(xcolumn)
-  yidx = rowkeys.index(ycolumn)
-  zidx = rowkeys.index(zcolumn)
-
-
-  # Now iterate over the table and write the z matrix.
-  # Collect the x and y values on the way.
-
-  rangeDiscover = _RangeDiscoverIterator()
-  zvals = []
-  for row in table:
-    x = row[xidx]
-    y = row[yidx]
-    z = row[zidx]
-
-    rangeDiscover.feed(x,y)
-
-    if z is None:
-      z = missingValues
-    zvals.append(z)
+  x_range, y_range, zvals = _populateArrays(table, xcolumn, ycolumn, zcolumn, missingValues)
 
   outfile.write("structure(list(x_name='%s',y_name='%s',z_name='%s'," % (xcolumn, ycolumn, zcolumn))
 
   # Write the ranges
-  outfile.write("x=%s," % _serializeRArray(rangeDiscover.x_range))
-  outfile.write("y=%s," % _serializeRArray(rangeDiscover.y_range))
+  outfile.write("x=%s," % _serializeRArray(x_range))
+  outfile.write("y=%s," % _serializeRArray(y_range))
 
-  outfile.write("z=%s" % _serializeRMatrix( len(rangeDiscover.x_range),
-                                            len(rangeDiscover.y_range),
+  outfile.write("z=%s" % _serializeRMatrix( len(x_range),
+                                            len(y_range),
                                             zvals))
-
-
   outfile.write("))")
 
+def serializeTableForGNUPlot(table, outfile, xcolumn, ycolumn, zcolumn, missingValues = None):
+  """Write atsim.pro_fit.db.IterationSeriesTable instance to `outfile` in the format read by GNUplot's `splot` command.
+
+  :param table atsim.pro_fit.db.IterationSeriesTable: table to be serialised.
+  :param outfile: Python file into which serialized data should be written.
+  :param xcolumn: Valid column key for use with `table` defining x-axis of 3D surface.
+  :param ycolumn: Column key for `table` defining the y-axis of 3D surface.
+  :param zcolumn: Column key for `table` z-values.
+  :param missingValues: None values will be replaced by the value of this argument if provided."""
+
+  x_range, y_range, zvals = _populateArrays(table, xcolumn, ycolumn, zcolumn, missingValues)
+
+  # Write header row
+  outfile.write("#%s %s %s\n" % (xcolumn, ycolumn, zcolumn))
+
+  zit = iter(zvals)
+  for x in x_range:
+    for y in y_range:
+      zval = zit.next()
+      if zval == None:
+        zval = missingValues
+      outfile.write("%s %s %s\n" % (x,y,zval))
+    outfile.write("\n")
 
