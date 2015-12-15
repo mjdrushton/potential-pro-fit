@@ -36,9 +36,11 @@ def _checkRSerializedDB(filename):
   expect_x = [1.0,2.0,3.0,4.0,5.0]
   expect_y = [0.0,2.0,4.0,6.0,8.0,10.0]
   expect_z = []
-  for x in expect_x:
-    for y in expect_y:
+  for y in expect_y:
+    for x in expect_x:
       expect_z.append(x*y)
+
+  assert_that(expect_z[:6]).is_equal_to([0,0,0,0,0,2])
 
   # ... extract the values from R data structure and compare with lists above.
   actual_x = list(rstruct.rx('x')[0])

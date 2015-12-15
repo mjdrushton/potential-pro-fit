@@ -128,7 +128,7 @@ class _RangeDiscoverIterator(object):
     s = [str(t) for t in s]
     return "".join(s)
 
-def _populateArrays(table, xcolumn, ycolumn, zcolumn, missingValues):
+def _populateArrays(table, xcolumn, ycolumn, zcolumn, missingValues, transposeZ = False):
   rowkeys = table.next()
 
   if not (xcolumn in rowkeys):
@@ -159,6 +159,17 @@ def _populateArrays(table, xcolumn, ycolumn, zcolumn, missingValues):
     if z is None:
       z = missingValues
     zvals.append(z)
+
+
+  if transposeZ:
+    newz = []
+    numcol = len(rangeDiscover.y_range)
+    numrow = len(rangeDiscover.x_range)
+    for col in xrange(numcol):
+      for row in xrange(numrow):
+        zidx = row * numcol + col
+        newz.append(zvals[zidx])
+    zvals = newz
 
   return rangeDiscover.x_range, rangeDiscover.y_range, zvals
 
@@ -200,7 +211,7 @@ def serializeTableForR(table, outfile, xcolumn, ycolumn, zcolumn, missingValues 
   :param zcolumn: Column key for `table` z-values.
   :param missingValues: None values will be replaced by the value of this argument if provided."""
 
-  x_range, y_range, zvals = _populateArrays(table, xcolumn, ycolumn, zcolumn, missingValues)
+  x_range, y_range, zvals = _populateArrays(table, xcolumn, ycolumn, zcolumn, missingValues, transposeZ = True)
 
   outfile.write("structure(list(x_name='%s',y_name='%s',z_name='%s'," % (xcolumn, ycolumn, zcolumn))
 
