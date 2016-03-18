@@ -9,7 +9,8 @@ import logging
 
 class CSVBuildKeyError(KeyError):
   """Raised when a bad substitution variable is encountered."""
-  pass
+  templateFilename = ""
+
 
 def _includeHandler(placeholder, substitutionDict, skelpath):
   if not placeholder.startswith('INCLUDE:'):
@@ -331,7 +332,7 @@ def main():
 
   try:
     buildDirs(dr, templatedir, destpath, suffix, extraVariables = extraVariables, overwrite = options.overwrite)
-  except CSVBuildKeyError,e:
+  except CSVBuildKeyError as e:
     logger = logging.getLogger('csvbuild')
     msg  = "Unknown variable name '%s' specified in template: '%s'" % (e.args[0], e.templateFilename)
     logger.error(msg)
