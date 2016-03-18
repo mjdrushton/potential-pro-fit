@@ -132,7 +132,6 @@ class FormulaMetaEvaluator(unittest.TestCase):
     rmsexpression = pro_fit.metaevaluators.Expression('rmsvalue', "A+B", 1.0, 22.0)
     rmsexpression2 = pro_fit.metaevaluators.Expression('rmsvalue', "A+B", 0.5, 22.0)
 
-    # import pdb;pdb.set_trace()
     metaeval = pro_fit.metaevaluators.FormulaMetaEvaluator("Meta", [rmsexpression, rmsexpression2], variables)
     actual = metaeval([mgojob, caojob])
     testutil.compareCollection(self, [201.0, 201.0/2.0], [er.meritValue for er in actual])

@@ -20,6 +20,10 @@ Minimizer Reference
 
 .. include:: nelder_mead.txt
 
+.. include:: particle_swarm.txt
+
+.. include:: simulated_annealing.txt
+
 .. include:: single.txt
 
 .. include:: spreadsheet.txt

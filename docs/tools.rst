@@ -7,4 +7,4 @@ Command Line Tool Reference
 
 	pprofit
 	pprofitmon/pprofitmon
-	ppmakegrid
+	ppgrid

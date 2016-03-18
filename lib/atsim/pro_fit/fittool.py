@@ -13,11 +13,17 @@ import cexprtk
 class ConfigException(Exception):
   pass
 
+class MultipleSectionConfigException(ConfigException):
+  pass
+
 class FitConfig(object):
   """Object parses fit.cfg at root of a fitTool.py run
   and acts as factory for objects required by the fitting tool"""
 
   _logger = logging.getLogger('atsim.pro_fit.fittool.FitConfig')
+
+  # The set of section names that can be repeated in a fit.cfg file.
+  _repeatedSections = set(['Runner', 'Evaluator'])
 
   def __init__(self, fitCfgFilename, runnermodules, evaluatormodules, metaevaluatormodules, jobfactorymodules, minimizermodules, jobdir = None):
     """Create FitConfig from file containing configuration information.
@@ -35,7 +41,9 @@ class FitConfig(object):
       self.jobdir = jobdir
     else:
       self.jobdir = os.path.join(self._fitRootPath, 'jobs')
-    self._cfg = self._parseConfig(fitCfgFilename)
+    self._validateConfigStructure(fitCfgFilename)
+    cfg = self._parseConfig(fitCfgFilename)
+    self._cfg = cfg
     self._variables = self._createVariables()
     self._variableTransform = self._createVariableTransform()
     self._runners = self._createRunners(runnermodules)
@@ -108,6 +116,36 @@ class FitConfig(object):
     with open(fitCfgFilename, 'rb') as fitCfgFile:
       config.readfp(fitCfgFile)
     return config
+
+  def _validateConfigStructure(self, fitCfgFilename):
+    """Check structure of config file. At the moment this checks for multiple configuration sections
+    that should only be specified once (e.g. multiple Minimizer and Variables sections).
+
+    @param fitCfgFilename Filename of configuration file
+
+    @raises MultipleSectionConfigException Raised if multiple instances of a configuration section are found
+      when only one may be specified."""
+
+    import re
+
+    regex = re.compile('^\s*\[(.*)\]')
+
+    def sectionIterator():
+      with open(fitCfgFilename) as infile:
+        for line in infile:
+          m = regex.match(line)
+          if m:
+            yield m.groups()[0]
+
+    found = set()
+    for sname in sectionIterator():
+      stype = sname.split(":")[0]
+      stype = stype.strip()
+
+      if not (stype in self._repeatedSections) and stype in found:
+        raise MultipleSectionConfigException("Found multiple '%s' sections in fit.cfg file where only one is allowed" % stype)
+      found.add(stype)
+
 
   def _createVariables(self):
     """Create Variables object from parsed configuration"""
@@ -486,7 +524,7 @@ class Variables(object):
     @param newvals Updated list of values for fitting variables in same order as keys returned by fitKeys property.
                    If None, then produce copy of current instance.
     @return Copy of current Variables instance, containing updated values."""
-    if newvals == None:
+    if newvals is None:
       return Variables(self.flaggedVariablePairs, self.bounds)
 
     ud = dict(zip(self.fitKeys, newvals))

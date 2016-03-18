@@ -1,7 +1,8 @@
-from atsim.pro_fit.reporters import SQLiteReporter
 from _util import calculatePercentageDifference
 
-_metadata = SQLiteReporter.getMetaData()
+from _metadata import getMetadata
+
+_metadata = getMetadata()
 
 import sqlalchemy as sa
 
@@ -10,6 +11,9 @@ import contextlib
 import operator
 import re
 import math
+
+
+
 
 def _mean(data):
   """Calculate mean of values in data.
@@ -107,6 +111,15 @@ class _RunningFilterColumnProvider(object):
     return [(self._columnName, self._RunningFilter(rowDict[self._primaryColumnKey]))]
 
 
+  @classmethod
+  def validKeys(cls, engine):
+    """Return list of column keys associated with this column provider.
+
+    :param engine: SQL Alchemy Engine
+    :return: List of strings containing valid column keys"""
+    return ["it:is_running_min", "it:is_running_max"]
+
+
 class _VariablesColumnProvider(object):
   """Column provider for series of variable  values.
 
@@ -155,6 +168,19 @@ class _VariablesColumnProvider(object):
     assert(iterationNumber == resrow[1] and candidateNumber == resrow[2])
     return [(self.columnLabel, resrow[3])]
 
+  @classmethod
+  def validKeys(cls, engine):
+    """Returns a list of valid variable:VARIABLE_NAME column keys.
+
+    :param engine: SQL Alchemy object supporting execute() method.
+    :return list: List of column keys."""
+
+    tv = _metadata.tables['variable_keys']
+    query = sa.select([tv.c.variable_name ])
+    keys = engine.execute(query).fetchall()
+    keys = ["variable:"+k[0] for k in keys]
+    return keys
+
 
 class _EvaluatorColumnProvider(object):
   """Column provider for evaluator values.
@@ -167,10 +193,11 @@ class _EvaluatorColumnProvider(object):
     - ``JOB_NAME`` - Name of job
     - ``EVALUATOR_NAME`` - Name of evaluator for which value should be produced
     - ``VALUE_NAME`` - Name of value extracted by evaluator
-    - ``VALUE_TYPE`` - 'merit' or 'extract' which give merit value or extracted value for evaluator respectively."""
+    - ``VALUE_TYPE`` - 'merit_value', 'extracted_value' or 'percent_difference' which give merit, extracted or percentage
+      difference value for evaluator respectively."""
 
-  _labelSplitRegex = re.compile(r'^evaluator:(?P<jobName>.*?):(?P<evaluatorName>.*):(?P<valueName>.*):(?P<valueType>merit|extract|percent)$')
-
+  _labelSplitRegex = re.compile(r'^evaluator:(?P<jobName>.*?):(?P<evaluatorName>.*):(?P<valueName>.*):(?P<valueType>merit_value|extracted_value|percent_difference)$')
+  _suffixes = ['merit_value','extracted_value','percent_difference']
 
   def __init__(self, conn, tempMeta, columnLabel):
     self.conn = conn
@@ -196,7 +223,7 @@ class _EvaluatorColumnProvider(object):
     valueName = groupdict['valueName']
     valueType = groupdict['valueType']
 
-    allowedValues = ['merit', 'extract', 'percent']
+    allowedValues = ['merit_value', 'extracted_value', 'percent_difference']
     if not (valueType in allowedValues):
       raise KeyError("Requested value should be one of %s for column label: %s", (str(allowedValues), self.columnLabel))
 
@@ -204,11 +231,11 @@ class _EvaluatorColumnProvider(object):
     tj = _metadata.tables['jobs']
     te = _metadata.tables['evaluated']
 
-    # Dictionary mapping valuetype to tuple containing columns and a row dictionary poste process function used to extract column.
+    # Dictionary mapping valuetype to tuple containing columns and a row dictionary post process function used to extract column.
     extracols, self.rowpostprocess = {
-      'merit'   : ([te.c.merit_value], operator.itemgetter('merit_value')),
-      'extract' : ([te.c.extracted_value], operator.itemgetter('extracted_value')),
-      'percent' : ([te.c.extracted_value, te.c.expected_value], calculatePercentageDifference)}[valueType]
+      'merit_value'   : ([te.c.merit_value], operator.itemgetter('merit_value')),
+      'extracted_value' : ([te.c.extracted_value], operator.itemgetter('extracted_value')),
+      'percent_difference' : ([te.c.extracted_value, te.c.expected_value], calculatePercentageDifference)}[valueType]
 
     columns = [
       tt.c.candidate_id,
@@ -232,6 +259,36 @@ class _EvaluatorColumnProvider(object):
     value = self.rowpostprocess(extrarowdict)
     assert(iterationNumber == resrow[1] and candidateNumber == resrow[2])
     return [(self.columnLabel, value)]
+
+
+  @classmethod
+  def validKeys(cls, engine):
+    """Returns a list of valid evaluator: column keys.
+
+    :param engine: SQL Alchemy object supporting execute() method.
+    :return list: List of column keys."""
+
+    #select distinct job_name, evaluator_name, value_name from evaluated, jobs where evaluated.job_id = jobs.id;
+
+    et = _metadata.tables['evaluated']
+    jt = _metadata.tables['jobs']
+    query = sa.select(
+      [jt.c.job_name,
+       et.c.evaluator_name,
+       et.c.value_name]).distinct().where(
+        sa.and_(et.c.job_id == jt.c.id))
+
+    results = engine.execute(query)
+
+    keys = []
+    for row in results.fetchall():
+      rowdict = dict(zip(results.keys(), row))
+      key = "evaluator:%(job_name)s:%(evaluator_name)s:%(value_name)s" % rowdict
+      for suffix in cls._suffixes:
+        keys.append(":".join([key, suffix]))
+      keys = [k.encode("utf-8") for k in keys]
+    return keys
+
 
 
 class _StatColumnProvider(object):
@@ -280,3 +337,12 @@ class _StatColumnProvider(object):
       v = calc(values)
       outlist.append((cn, v))
     return outlist
+
+
+  @classmethod
+  def validKeys(cls, engine):
+    """Returns a list of valid stat: column keys.
+
+    :param engine: SQL Alchemy object supporting execute() method.
+    :return list: List of column keys."""
+    return cls._calculators.keys()

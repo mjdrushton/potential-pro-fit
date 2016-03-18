@@ -1,16 +1,32 @@
 # -*- coding: utf-8 -*-
-from _cherrypydbtestcase import CherryPyDBTestCaseBase
+
+import unittest
+
 from .. import testutil
 
-class IterationSeries_VariablesColumns_TestCase(CherryPyDBTestCaseBase):
-  dbname = "population_fitting_run.db"
-  baseurl = 'http://localhost:8080/fitting/iteration_series'
+from _dbtestcase import DBTestCase
 
+from atsim.pro_fit import db
+
+class IterationSeries_VariablesColumns_TestCase(DBTestCase):
+  dbname = "population_fitting_run.db"
 
   def testVariablesColumns(self):
     """Tests for the variable: column types"""
-    baserequest = 'merit_value/all/min?columns=variable:morse_Ca_O_A'
-    j = self.fetchJSON(baserequest)
+    # baserequest = 'merit_value/all/min?columns=variable:morse_Ca_O_A'
+
+    primary_column = 'merit_value'
+    iteration_filter = 'all'
+    candidate_filter = 'min'
+
+    columns = ['variable:morse_Ca_O_A']
+
+    tableIterator = db.IterationSeriesTable(self.engine,
+      primary_column,
+      iteration_filter,
+      candidate_filter,
+      columns)
+
     expect = {
                'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'variable:morse_Ca_O_A'],
                'values'  : [
@@ -21,22 +37,22 @@ class IterationSeries_VariablesColumns_TestCase(CherryPyDBTestCaseBase):
                     [4 ,1, 964.64312, 0.10328268378764],
                     [5 ,3, 964.64312, 0.10328268378764]
                   ]}
-    testutil.compareCollection(self, expect, j)
+
+    columns = tableIterator.next()
+    actual = {
+      'columns' : columns,
+      'values'  : list(tableIterator)
+    }
+
+
+    testutil.compareCollection(self, expect, actual)
 
   def testVariablesColumnProvider(self):
     """Tests for _VariablesColumnProvider"""
-    import atsim.pro_fit._sqlalchemy_cherrypy_integration as sacpi
-    from atsim.pro_fit.webmonitor import IterationSeries, _formatResults
-    from atsim.pro_fit.webmonitor._columnproviders import _VariablesColumnProvider
-    import sqlalchemy as sa
+    from atsim.pro_fit.db import IterationSeriesTable
+    from atsim.pro_fit.db._columnproviders import _VariablesColumnProvider
 
-    class App(object):
-      config = {'/' : {'tools.SATransaction.dburi' : self.dburl}}
-
-    sacpi.configure_session_for_app(App())
-    session = sacpi.session
-
-    itseries = IterationSeries()
+    itseries = IterationSeriesTable(self.engine)
 
     with itseries._temporaryCandidateContextManager('merit_value', 'running_min', 'min') as (conn,meta):
       col = _VariablesColumnProvider(conn, meta, 'variable:morse_Ca_O_A')
@@ -50,7 +66,10 @@ class IterationSeries_VariablesColumns_TestCase(CherryPyDBTestCaseBase):
          [18,4,1, 0.10328268378764]
       ]}
 
-      actual = _formatResults(col.results)
+      actual = {
+        'columns' : col.results.keys(),
+        'values'  : col.results.fetchall()
+      }
       testutil.compareCollection(self, expect,actual)
 
       # Check that KeyError is raised for a bad variable name

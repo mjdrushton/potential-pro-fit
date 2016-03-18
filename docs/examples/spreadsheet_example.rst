@@ -120,11 +120,11 @@ Before being able to run ``pprofit`` it is necessary to make some changes to the
 * **Create Spreadsheet:**
 
   * The original Jackson and Read paper surveyed the following ranges: :math:`750 \leq A \leq 2200`\ eV and :math:`0.2 \leq \rho \leq 0.5`\ Å [Read2010]_\ . These ranges have also been adopted for the present example. 
-  * To support the spreadsheet minimiser, the :ref:`ppmakegrid <tools_ppmakegrid>` tool is provided. This allows CSV formatted grids to be generated that sample a given range with a given grid-resolution. In order to create a 20⨉20 grid with the required ranges and write this into a file names ``spreadsheet.csv`` use the following command
+  * To support the spreadsheet minimiser, the :ref:`ppgrid <tools_ppmakegrid>` tool is provided. This allows CSV formatted grids to be generated that sample a given range with a given grid-resolution. In order to create a 20⨉20 grid with the required ranges and write this into a file names ``spreadsheet.csv`` use the following command
   
     .. code-block:: bash
 
-      ppmakegrid --range A:750,2200,20  rho:0.2,0.5,20 -o spreadsheet.csv
+      ppgrid --range A:750,2200,20  rho:0.2,0.5,20 -o spreadsheet.csv
     
 
   * (Alternatively you can download the :download:`spreadsheet_example/spreadsheet.csv` file and place it in the same directory as ``fit.cfg``).

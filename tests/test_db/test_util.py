@@ -1,4 +1,4 @@
-from atsim.pro_fit.webmonitor import _util
+import atsim.pro_fit.db._util as _util
 
 import unittest
 
@@ -7,7 +7,7 @@ class UtilTestCase(unittest.TestCase):
 
 	def testPercentDiffBadValues(self):
 	  """Test the atsim.pro_fit.webmonitor._columnproviders._EvaluatorColumnProvider._percentDifference can handle bad values"""
-	  from atsim.pro_fit.webmonitor._columnproviders import _EvaluatorColumnProvider
+	  from atsim.pro_fit.db._columnproviders import _EvaluatorColumnProvider
 	  # First one that should pass
 	  pdiff = _util.calculatePercentageDifference
 	  self.assertEquals(-10, pdiff({'extracted_value': 90, 'expected_value' : 100}))

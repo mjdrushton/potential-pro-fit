@@ -1,13 +1,19 @@
 # -*- coding: utf-8 -*-
-from _cherrypydbtestcase import CherryPyDBTestCaseBase
+
+import unittest
+
 from .. import testutil
 
-class IterationSeries_StatsColumns_TestCase(CherryPyDBTestCaseBase):
+from _dbtestcase import DBTestCase
+
+from atsim.pro_fit import db
+
+
+class IterationSeries_StatsColumns_TestCase(DBTestCase):
   dbname = "population_fitting_run.db"
-  baseurl = 'http://localhost:8080/fitting/iteration_series'
 
   def testSeriesMean(self):
-    """Tests for /fitting/iteration_series/merit_value/all/min?columns=stat:mean"""
+    """Tests for columns=stat:mean"""
     # stat = mean
     #iteration_number merit_value:mean
     #0 16404.84837
@@ -16,7 +22,10 @@ class IterationSeries_StatsColumns_TestCase(CherryPyDBTestCaseBase):
     #3 1118.587493
     #4 1303.278318
     #5 4142.853898
-    j = self.fetchJSON('merit_value/all/min?columns=stat:mean')
+    # j = self.fetchJSON('merit_value/all/min?columns=stat:mean')
+    t = db.IterationSeriesTable(self.engine,
+      columns = [ "stat:mean"])
+
     expect = {
       'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'stat:mean'],
       'values'  : [
@@ -27,11 +36,13 @@ class IterationSeries_StatsColumns_TestCase(CherryPyDBTestCaseBase):
         [4,1, 964.64312, 1303.278318],
         [5,3, 964.64312, 4142.853898]
       ] }
-    testutil.compareCollection(self, expect, j)
+    actual = {'columns' : t.next(),
+              'values'  : list(t)}
+    testutil.compareCollection(self, expect, actual)
 
 
   def testSeriesMedian(self):
-    """Tests for /fitting/iteration_series/merit_value/all/min?columns=stat:median"""
+    """Tests for columns=stat:median"""
     # stat = median
     # id,iteration_number,candidate_number,merit_value
 
@@ -65,7 +76,10 @@ class IterationSeries_StatsColumns_TestCase(CherryPyDBTestCaseBase):
     # 21,5,0,1998.33524
     # 22,5,1,12634.65516
 
-    j = self.fetchJSON('merit_value/all/min?columns=stat:median')
+    # j = self.fetchJSON('merit_value/all/min?columns=stat:median')
+    t = db.IterationSeriesTable(self.engine,
+      columns = [ "stat:median"])
+
     expect = {
       'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'stat:median'],
       'values'  : [
@@ -76,10 +90,12 @@ class IterationSeries_StatsColumns_TestCase(CherryPyDBTestCaseBase):
         [4,1, 964.64312, 973.78207],
         [5,3, 964.64312, (973.78207+1998.33524)/2.0]
       ] }
-    testutil.compareCollection(self, expect, j)
+    actual = {'columns' : t.next(),
+              'values'  : list(t)}
+    testutil.compareCollection(self, expect, actual)
 
   def testSeriesStdDev(self):
-    """Test for/fitting/iteration_series/merit_value/all/min?columns=stat:std_dev"""
+    """Test for columns=stat:std_dev"""
     # stat = std_dev
     #iteration_number merit_value:std_dev
     # 0 23457.51802
@@ -90,7 +106,10 @@ class IterationSeries_StatsColumns_TestCase(CherryPyDBTestCaseBase):
     # 5 4920.71359
 
     #TODO: Add primary column, candidate number and stat:std_dev column header
-    j = self.fetchJSON('merit_value/all/min?columns=stat:std_dev')
+    # j = self.fetchJSON('merit_value/all/min?columns=stat:std_dev')
+    t = db.IterationSeriesTable(self.engine,
+      columns = [ "stat:std_dev"])
+
     expect = {
       'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'stat:std_dev'],
       'values'  : [
@@ -101,11 +120,13 @@ class IterationSeries_StatsColumns_TestCase(CherryPyDBTestCaseBase):
        [4, 1, 964.64312, 575.9927005],
        [5, 3, 964.64312, 4920.71359]
       ] }
-    testutil.compareCollection(self, expect, j)
+    actual = {'columns' : t.next(),
+              'values'  : list(t)}
+    testutil.compareCollection(self, expect, actual)
 
 
   def testSeriesQuartiles(self):
-    """Tests for /fitting/iteration_series/merit_value/all/min with columns=quartile 1,2,3"""
+    """Tests for columns=quartile 1,2,3"""
 
     minData = [[0, 2, 973.78207],
                [1 ,3, 973.78207],
@@ -145,9 +166,10 @@ class IterationSeries_StatsColumns_TestCase(CherryPyDBTestCaseBase):
       2300.90601,
       7316.4952]
 
-    baserequest = 'merit_value/all/min?columns=stat:quartile'
+    # baserequest = 'merit_value/all/min?columns=stat:quartile'
     for q,e in zip(['1', '2', '3'], [quartile1expect, quartile2expect, quartile3expect]):
-      j = self.fetchJSON(baserequest+q)
+      t = db.IterationSeriesTable(self.engine,
+        columns = [ "stat:quartile"+q])
 
       values = []
       for m, qv in zip(minData, e):
@@ -158,11 +180,14 @@ class IterationSeries_StatsColumns_TestCase(CherryPyDBTestCaseBase):
       expect = {
         'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'stat:quartile'+q],
         'values' : values}
-      testutil.compareCollection(self, expect,j)
+      actual = {'columns' : t.next(),
+                'values'  : list(t)}
+      testutil.compareCollection(self, expect, actual)
 
-    j = self.fetchJSON('merit_value/all/min?columns=stat:min,stat:max,stat:quartile1,stat:quartile2,stat:quartile3')
+    # j = self.fetchJSON('merit_value/all/min?columns=stat:min,stat:max,stat:quartile1,stat:quartile2,stat:quartile3')
+    t = db.IterationSeriesTable(self.engine,
+      columns = [ "stat:min","stat:max","stat:quartile1","stat:quartile2","stat:quartile3"])
 
-    #TODO: Update expected data
     expectvalues = []
     for rows in zip(minData, maxData, quartile1expect, quartile2expect, quartile3expect):
       newrow = []
@@ -178,4 +203,6 @@ class IterationSeries_StatsColumns_TestCase(CherryPyDBTestCaseBase):
       'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'stat:min', 'stat:max', 'stat:quartile1', 'stat:quartile2', 'stat:quartile3'],
       'values' : expectvalues }
 
-    testutil.compareCollection(self, expect,j)
+    actual = {'columns' : t.next(),
+              'values'  : list(t)}
+    testutil.compareCollection(self, expect, actual)

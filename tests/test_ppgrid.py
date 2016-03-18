@@ -2,14 +2,14 @@ import unittest
 
 import testutil
 
-from atsim.pro_fit.tools import ppmakegrid
+from atsim.pro_fit.tools import ppgrid
 
 
-class PPMakeGridTestCase(unittest.TestCase):
+class PPGridTestCase(unittest.TestCase):
   """Tests for the ppgrid tool"""
 
   def testGridGenerator(self):
-    gridgen = ppmakegrid.GridGenerator([
+    gridgen = ppgrid.GridGenerator([
       ('A', -1, 1, 6),
       ('B', 0.1, 0.1, 3),
       ('C', 1, 1, 1)])
@@ -42,13 +42,13 @@ class PPMakeGridTestCase(unittest.TestCase):
     # Low, step size, steps style
     opts = ['A:0,0.1,10', 'Blah:-10,5,2']
     expect = [('A', 0.0, 0.1, 10.0),  ('Blah', -10, 5, 2)]
-    actual = ppmakegrid._argsToGridRanges(False, opts)
+    actual = ppgrid._argsToGridRanges(False, opts)
     testutil.compareCollection(self, expect, actual)
 
   def testArgsToGridRanges_RangeStyle(self):
     # Low, step size, steps style
     opts = ['A:0,0.1,11', 'Blah:-10,0,5']
     expect = [('A', 0.0, 0.01, 11),  ('Blah', -10, 2.5, 5)]
-    actual = ppmakegrid._argsToGridRanges(True, opts)
+    actual = ppgrid._argsToGridRanges(True, opts)
     testutil.compareCollection(self, expect, actual)
 
