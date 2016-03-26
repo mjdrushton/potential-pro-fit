@@ -38,6 +38,7 @@ The example will now demonstrate the following:
   * Define ``[Variables]`` section.
   * Set-up the ``[Minimizer]`` section to use ``Spreadsheet`` minimizer.  
 
+4. Analyse the results in :ref:`GNUPLOT <gnuplot_analyse>` or `R`_.
 
 Initialise Fitting Run
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -120,7 +121,7 @@ Before being able to run ``pprofit`` it is necessary to make some changes to the
 * **Create Spreadsheet:**
 
   * The original Jackson and Read paper surveyed the following ranges: :math:`750 \leq A \leq 2200`\ eV and :math:`0.2 \leq \rho \leq 0.5`\ Å [Read2010]_\ . These ranges have also been adopted for the present example. 
-  * To support the spreadsheet minimiser, the :ref:`ppgrid <tools_ppmakegrid>` tool is provided. This allows CSV formatted grids to be generated that sample a given range with a given grid-resolution. In order to create a 20⨉20 grid with the required ranges and write this into a file names ``spreadsheet.csv`` use the following command
+  * To support the spreadsheet minimiser, the :ref:`ppgrid` tool is provided. This allows CSV formatted grids to be generated that sample a given range with a given grid-resolution. In order to create a 20⨉20 grid with the required ranges and write this into a file names ``spreadsheet.csv`` use the following command
   
     .. code-block:: bash
 
@@ -153,12 +154,178 @@ Run ``pprofit``
 
     pprofitmon
     
-* Having invoked ``pprofitmon`` go to http://localhost:8080 in your web browser.
+* Having invoked ``pprofitmon`` go to http://localhost:8080 in your web browser. As the run proceeds the plot will have the appearance shown in the following figure.
+
+.. figure:: images/spreadsheet_monitor.png
+
+
+	Following the ``pprofit`` run the monitor will look something like this. The merit function vs iteration plot has a serrated appearance with each serration being due to the minimizer passing over a group of entries in the ``spreadsheet.csv`` file representing a single row in the grid specified to the ``ppgrid`` tool.
 
 
 Analysing the results
 ---------------------
 
-      
+The ``fitting_run.db`` file created during the ``pprofit`` run now contains property values evaluated at each node of the grid we created earlier. Due to the structure inherent in the grid the ``ppdump`` command can be used to extract the properties of interest in a format that is suitable for plotting in commonly used analysis packages. In the following part of these instructions, we will plot the difference between the predicted and experimental lattice calculated for UO\ :sub:`2` against the A and ϱ potential parameters surveyed. This will give a plot equivalent to figure 9 in the original Read and Jackson paper.
+
+
+.. _gnuplot_analyse:
+
+GNUPLOT
+^^^^^^^
+
+In the first instance, `GNUPLOT`_  will be used to provide the 3D plot of lattice parameter difference  against A and ϱ. 
+
+* As the data in ``fitting_run.db`` has resulted from a grid created ``ppgrid`` it is possible to use the ``ppdump`` command to extract data in a format suitable for use with the `GNUPLOT`_ ``splot`` commands. 
+
+* The ``ppdump`` requires value keys to identify which variable should be used for the x, y and z columns of the plot. Type:
+	
+	.. code:: bash
+
+		ppdump --list-variable-columns
+
+
+* This results in, a list of two keys for the two fitting variables specified in the original ``fit.cfg`` ::
+
+		variable:A
+		variable:rho
+
+* Similarly, to find the evaluator key needed, type:
+	
+	.. code:: bash
+
+		ppdump --list-evaluator-columns
+
+* This gives the list::
+
+		evaluator:Gulp_UO2:Gulp_UO2:Lattice_Constant:cell_a:extracted_value
+		evaluator:Gulp_UO2:Gulp_UO2:Lattice_Constant:cell_a:merit_value
+		evaluator:Gulp_UO2:Gulp_UO2:Lattice_Constant:cell_a:percent_difference
+
+* We will use the raw value extracted from the GULP runs, namely::
+
+	evaluator:Gulp_UO2:Gulp_UO2:Lattice_Constant:cell_a:extracted_value
+
+* Using these column keys a GNUPlot formatted file can be created:
+
+
+	.. code:: bash
+
+		ppdump --grid GNUPlot 	--gridx  variable:A --gridy  variable:rho --gridz  evaluator:Gulp_UO2:Gulp_UO2:Lattice_Constant:cell_a:extracted_value -o gnuplot.dat
+
+* This arranges the A and rho values along the x and y axes respectively and lattice constant along z. The ``--grid`` option specifies that the data should be written in gnuplot's ``splot`` format and ``-o gnuplot.dat`` states that it should be saved to the file named ``gnuplot.dat``.
+
+* This file can now be plotted in GNUPlot. Within GNUPlot type the following::
+
+	set hidden3d
+	set xlabel "A"
+	set ylabel "rho"
+	set zlabel "LP diff"
+	set view 64,250,1,1
+	splot 'gnuplot.dat' using ($1):($2):($3-5.468) with lines title "diff"
+
+* The third component of the ``using`` statement from the previous step deserves some explanation. ``($3-5.468)`` means that a value of 5.468 is subtracted from the z values contained in the ``gnuplot.dat`` data file. As 5.468Å is the experimental lattice parameter for UO\ :sub:`2` this allows the difference between predicted and experimental lattice parameters to be plotted. You should obtain something that looks like the followin figure:
+
+	.. figure:: images/splot.png
+		:align: center
+
+
+		Plot of lattice parameter difference between experimental and predicted values.
+
+* We are particularly interested in identifying the potential parameters that exactly match the experimental lattice parameter. This zero contour can be quickly visualised within GNUPlot. Type the following commands into GNUPlot::
+	
+	set hidden3d
+	set xlabel "A"
+	set ylabel "rho"
+	set zlabel "LP diff"
+	set view 64,250,1,1
+	set contour base
+	set cntrparam levels discrete 0
+	splot 'gnuplot.dat' using ($1):($2):($3-5.468) with lines title "diff"
+\ 
+
+	.. figure:: images/splot_with_zero_contour.png
+		:align: center
+
+
+		The difference surface shown with the zero contour plotted in green on the base of the plot.
+
+* This contour is more usefully viewed from above (``set view 0,0``), to give a 2D plot of the potential parameters giving the best fit to experiment::
+
+	set xlabel "A"
+	set ylabel "rho"
+	set zlabel "LP diff"
+	set view 0,0
+	set contour base
+	set cntrparam levels discrete 0
+	unset surface
+	splot 'gnuplot.dat' using ($1):($2):($3-5.468) with lines title "diff"
+\ 
+
+
+	.. figure:: images/splot_2d_contour_plot.png
+		:align: center
+
+		The contour from the previous step describes a function that links the A and rho potential parameters which should give a perfect match to the experimental lattice parameter of 5.468Å.
+
+* Normally it isn't enough for a potential model to only reproduce the structure's lattice parameter. Often we want to get good reproduction of properties such as bulk modulus whilst still maintaining the lattice parameter. Let's obtain an analytical expression for the zero contour using GNUPlot's features. This expression could then be used in a subsequent fitting run as a constraint, ``pprofit`` can be used to search along this line to find the A and rho values that give a perfect match to lattice parameter and the best match for other properties too.
+
+    - The zero contour can be dumped into a data file using these GNUPlot commands::
+
+    	set contour base
+    	set cntrparam levels discrete 0
+    	unset surface
+    	set table 'contours.dat'
+    	splot 'gnuplot.dat' using ($1):($2):($3-5.468) with lines title "diff"
+    	unset table
+\ 
+
+    - This creates a file named 'contours.dat' containing points along the zero contour:
+    	.. literalinclude:: resources/contours.dat
+
+    - This can be plot using the commands::
+
+    	set xlabel "A"
+    	set ylabel "rho"
+    	plot "contours.dat"
+\ 
+		
+		.. figure:: images/contour_plot.png
+			:align: center
+
+			Plot of the 'contours.dat' file.
+
+	- GNUPlot's ``fit`` command can now be used to perform a least-squares fit to the data. To fit a polynomial :math:`\rho(A) = a*A^2 + b*A + c` type the following into GNUPlot::
+
+		f(x) = a*x**2 + b*x + c
+		a = 1
+		b = 1 
+		c = 1
+		fit f(x) 'contours.dat' using 1:2 via a,b,c
+
+	- The a,b and c quadratic parameters can be extracted from the output of the fit command:
+
+	    + a = 1.49022e-06
+	    + b = -0.00571639
+	    + c = 5.68292
+
+		.. figure:: images/contour_plot_with_fit.png
+			:align: center
+
+			Plot of 'contours.dat' with quadratic fit.
+
+	- A constrained fit could then be made with a modified ``fit.cfg``, where  ``rho`` becomes a :ref:`calculated variable <pprofit-variables-calculatedvariables>` which is linked to ``A`` through the quadratic function. 
+
+		.. literalinclude:: resources/constrained_fit.cfg
+
+	- All that remains to make the constrained fit would be to add the necessary evaluators to the ``job.cfg`` files, allowing extra property values to be extracted from the GULP output.
+
+
+R
+^
+
+
+
+
+.. _GNUPLOT: http://www.gnuplot.info
 
 .. [Read2010] S.D. Read and R.A. Jackson, "Derivation of enhanced potentials for uranium dioxide and the calculation of lattice and intrinsic defect properties" *Journal of Nuclear Materials* **406** (2010) 293. 
