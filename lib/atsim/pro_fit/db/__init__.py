@@ -4,3 +4,4 @@ from _metadata import getMetadata
 from _fitting import Fitting
 from _tabulated import IterationSeriesTable, BadFilterCombinationException
 from _tableserialize import serializeTableForR, serializeTableForGNUPlot
+from _validate import validate

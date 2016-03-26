@@ -1,5 +1,6 @@
 import argparse
 import sys
+import os
 
 import sqlalchemy as sa
 from atsim.pro_fit import db
@@ -7,6 +8,9 @@ from atsim.pro_fit import db
 _VARIABLE_COLUMN_SET = 'variables'
 _FIT_VARIABLE_COLUMN_SET = 'fit-variables'
 _EVALUATOR_COLUMN_SET = 'evaluators'
+
+EXIT_STATUS_DB_FILE_NOT_FOUND = 2
+EXIT_STATUS_DB_CANNOT_OPEN = 3
 
 def parseCommandLine():
   parser = argparse.ArgumentParser(
@@ -140,7 +144,7 @@ def parseCommandLine():
   if not options.grid and (options.gridx or options.gridy or options.gridz):
       parser.error("--gridx, --gridy and --gridz options cannot be used without also specifying --grid")
 
-  return options
+  return parser,options
 
 def _getColumnList(engine, columns, column_sets):
   outcols = []
@@ -224,9 +228,19 @@ def outputGrid(engine, gridtype, gridx, gridy, gridz, outfile, gridmissing):
 
 
 def main():
-  options = parseCommandLine()
+  parser, options = parseCommandLine()
+
+  # Check if dbfile is present.
+  if not os.path.isfile(options.dbfilename):
+    parser.exit(EXIT_STATUS_DB_FILE_NOT_FOUND,
+      "Database could not be found: '%s'" % options.dbfilename)
 
   engine = sa.create_engine("sqlite:///"+options.dbfilename)
+
+  # Check db format
+  if not db.validate(engine):
+    parser.exit(EXIT_STATUS_DB_CANNOT_OPEN,
+      "Database does not have valid structure: '%s'" % options.dbfilename)
 
   if options.list_columns:
     listColumns(engine, options.list_columns)

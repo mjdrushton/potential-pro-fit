@@ -265,3 +265,29 @@ def test_outputRGrid(tmpdir):
   outputlines = _run_ppdump(["-f '%s'" % _getdbpath(), "-o", outfilename, "--grid=R", "--gridx=variable:A", "--gridy=variable:B", "--gridz=evaluator:mult:mult:val:Z:extracted_value"])
   assert_that(outfilename).exists()
   _checkRSerializedDB(outfilename)
+
+
+def test_default_fitting_run_db_does_not_exist(tmpdir):
+  """Test correct behaviour when ppdump assumes default fitting_run.db filename and is invoked in directory that does not contain db file"""
+  os.chdir(str(tmpdir))
+  from atsim.pro_fit.tools import ppdump
+  with pytest.raises(subprocess.CalledProcessError) as excinfo:
+    outputlines = _run_ppdump([])
+  exc = excinfo.value
+  status = exc.returncode
+  assert_that(status).is_equal_to(ppdump.EXIT_STATUS_DB_FILE_NOT_FOUND)
+
+def test_default_fitting_run_db_cannot_be_opened(tmpdir):
+  """Test correct behaviour when ppdump assumes default fitting_run.db filename and is invoked in directory that does not contain db file"""
+  os.chdir(str(tmpdir))
+  from atsim.pro_fit.tools import ppdump
+
+  with open('fitting_run.db', 'wb') as emptyfile:
+    pass
+
+  with pytest.raises(subprocess.CalledProcessError) as excinfo:
+    outputlines = _run_ppdump([])
+  exc = excinfo.value
+  status = exc.returncode
+  assert_that(status).is_equal_to(ppdump.EXIT_STATUS_DB_CANNOT_OPEN)
+
