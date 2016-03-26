@@ -241,6 +241,7 @@ In the first instance, `GNUPLOT`_  will be used to provide the 3D plot of lattic
 	set contour base
 	set cntrparam levels discrete 0
 	splot 'gnuplot.dat' using ($1):($2):($3-5.468) with lines title "diff"
+
 \ 
 
 	.. figure:: images/splot_with_zero_contour.png
@@ -259,6 +260,7 @@ In the first instance, `GNUPLOT`_  will be used to provide the 3D plot of lattic
 	set cntrparam levels discrete 0
 	unset surface
 	splot 'gnuplot.dat' using ($1):($2):($3-5.468) with lines title "diff"
+
 \ 
 
 
@@ -277,6 +279,7 @@ In the first instance, `GNUPLOT`_  will be used to provide the 3D plot of lattic
     	set table 'contours.dat'
     	splot 'gnuplot.dat' using ($1):($2):($3-5.468) with lines title "diff"
     	unset table
+
 \ 
 
     - This creates a file named 'contours.dat' containing points along the zero contour:
@@ -287,6 +290,7 @@ In the first instance, `GNUPLOT`_  will be used to provide the 3D plot of lattic
     	set xlabel "A"
     	set ylabel "rho"
     	plot "contours.dat"
+
 \ 
 		
 		.. figure:: images/contour_plot.png
@@ -294,7 +298,7 @@ In the first instance, `GNUPLOT`_  will be used to provide the 3D plot of lattic
 
 			Plot of the 'contours.dat' file.
 
-	- GNUPlot's ``fit`` command can now be used to perform a least-squares fit to the data. To fit a polynomial :math:`\rho(A) = a*A^2 + b*A + c` type the following into GNUPlot::
+	- GNUPlot's ``fit`` command can now be used to perform a least-squares fit to the data. To fit a polynomial :math:`\rho(A) = aA^2 + bA + c` type the following into GNUPlot::
 
 		f(x) = a*x**2 + b*x + c
 		a = 1
@@ -323,9 +327,87 @@ In the first instance, `GNUPLOT`_  will be used to provide the 3D plot of lattic
 R
 ^
 
+The following shows how to perform the same analyses as those for GNUPlot :ref:`above <gnuplot_analyse>` in the `R programming language <Rweb>`_. It is recommended that you read the GNUPlot example first, as this contains more detail and justification than the description below.
+
+Commands should be run from the directory containing the ``fitting_run.db`` file.
+
+* First use ``ppdump`` to output the contents of ``fitting_run.db`` to a file readable by R. See the :ref:`GNUPLOT example <gnuplot_analyse>` example for details on how to determine appropriate keys for use with the ``--gridx``, ``--gridy`` and ``--gridz`` options:
+
+	.. code:: bash
+
+		ppdump --grid R --gridx  variable:A --gridy  variable:rho --gridz  evaluator:Gulp_UO2:Gulp_UO2:Lattice_Constant:cell_a:extracted_value -o R.dget 
+
+* Now read the data into R using the ``dget`` command. Type the following into your R session:
+
+	.. code:: R
+
+		dat <- dget('R.dget')
+
+* Now subtract 5.468Å to obtain a difference along the z-axis:
+	
+	.. code:: R
+
+		dat$z <- dat$z - 5.468
+
+* Make a 3D plot of the surface (note you may want to use a different 3D plotting library within R such as ``rgl``, this example uses the built in ``persp`` command:
+
+	.. code:: R
+
+		persp(dat, xlab=dat$x_name, ylab=dat$y_name, zlab="LP Diff", theta = -45, ticktype='detailed')
+
+* Notice that the column-keys originally passed to ``ppdump`` are available through the ``x_name``, ``y_name`` and ``z_name`` fields of the ``dat`` object. These were used in the call to ``persp`` to give the axis labels.
+
+	.. figure:: images/R_surface_plot.png
+		:align: center
+
+		Surface plot created in R.
+
+* To create a plot of the zero contour the following could be used:
+
+	.. code:: R
+
+		contour(dat, levels=0, xlab = dat$x_name, ylab = dat$y_name)
+
+\ 
+
+	.. figure:: images/R_surface_zero_contour.png
+		:align: center
+
+		Plot showing the zero contour extracted from the surface plot in R.
+
+* The values defining the zero contour can be extracted using the ``contourLines`` command and stored in a variable called ``zerocontour``:
+
+	.. code:: R
+
+		clines <- contourLines(dat, levels = 0)
+		zerocontour <- clines[[1]]
+
+
+* A quadratic fit to the zero contour data can then be performed thus:
+	
+	.. code:: R
+
+		m <- lm(y ~ poly(x,2,raw=T),zerocontour)
+
+* The coefficients of the fit can then be obtained using ``coef(m)``. A plot of the zero contour and the fit-line can also be made:
+
+	.. code:: R
+
+		plot(zerocontour, xlab= 'A', ylab = 'rho')
+		fitdat <- data.frame(x= seq(min(zerocontour$x), max(zerocontour$x), length.out = 500))
+		fitdat <- cbind(fitdat, y = predict(m, newdata=fitdat))
+		lines(fitdat)
+		
+\ 
+
+	.. figure:: images/R_zero_contour_with_fit.png
+		:align: center
+
+		Plot of the zero-contour and quadratic fit made in R.
 
 
 
 .. _GNUPLOT: http://www.gnuplot.info
+.. _Rweb: https://www.r-project.org
 
 .. [Read2010] S.D. Read and R.A. Jackson, "Derivation of enhanced potentials for uranium dioxide and the calculation of lattice and intrinsic defect properties" *Journal of Nuclear Materials* **406** (2010) 293. 
