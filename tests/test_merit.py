@@ -65,7 +65,7 @@ class MeritTestCase(unittest.TestCase):
 
   def _jobToDict(self, job):
     d = {}
-    infilename = os.path.join(job.path, 'runjob')
+    infilename = os.path.join(job.path, 'job_files', 'runjob')
     with open(infilename, 'rb') as infile:
       infile.next()
 
@@ -95,7 +95,7 @@ class MeritTestCase(unittest.TestCase):
 
   def _outputJobToDict(self, job):
     d = {}
-    outputpath = os.path.join(job.path, 'output')
+    outputpath = os.path.join(job.path, 'job_files', 'output')
     outputfilename = os.path.join(outputpath, 'output.res')
     with open(outputfilename) as infile:
       for line in infile:
@@ -107,7 +107,6 @@ class MeritTestCase(unittest.TestCase):
         d[k] = v
     return d
 
-
   def testCreateJobs(self):
     """Test Merit._prepareJobs()"""
 
@@ -116,7 +115,6 @@ class MeritTestCase(unittest.TestCase):
     jobdicts = []
     for jl in jobs:
       jobdicts.append([ self._jobToDict(j) for j in jl])
-
 
     expect = [ [ #Runner 1.
         # Candidate 1. J1
@@ -148,7 +146,6 @@ class MeritTestCase(unittest.TestCase):
       ]
     testutil.compareCollection(self, expect, jobdicts)
 
-
   def testMeritRunBatches(self):
     """Test Merit._runBatches()"""
     batchPaths, batchedjobs, candidatejoblists = self.merit._prepareJobs(self.candidates)
@@ -168,7 +165,7 @@ class MeritTestCase(unittest.TestCase):
 
     for batch in batchedjobs:
       for job in batch:
-        outputpath = os.path.join(job.path, 'output')
+        outputpath = os.path.join(job.path, 'job_files', 'output')
         self.assertTrue(os.path.isfile(os.path.join(outputpath, 'STATUS')))
         self.assertTrue(os.path.isfile(os.path.join(outputpath, 'runjob')))
         self.assertTrue(os.path.isfile(os.path.join(outputpath, 'output.res')))
@@ -250,7 +247,6 @@ class MeritTestCase(unittest.TestCase):
     self.assertEquals((-2 - 1.0/3.0) - 9.0, metajob1.evaluatorRecords[0][0].meritValue)
     self.assertEquals((-1.0) - 15.0, metajob2.evaluatorRecords[0][0].meritValue)
 
-
   def testDefaultReductionFunction(self):
     """Test fittool._sumValuesReductionFunction()"""
     class ER:
@@ -304,7 +300,7 @@ class MeritTestCase(unittest.TestCase):
         for j in jobs:
           beforeRunDict[i].setdefault('job_variables',[]).append(j.variables.variablePairs)
           beforeRunDict[i].setdefault('job_names',[]).append(j.name)
-          with open(os.path.join(j.path, 'runjob')) as infile:
+          with open(os.path.join(j.path, 'job_files', 'runjob')) as infile:
             for line in infile:
               if line.startswith('#Candidate:'):
                 candid = line.split(':')[1].strip()
@@ -346,7 +342,7 @@ class MeritTestCase(unittest.TestCase):
         for j in jobs:
           afterRunDict[i].setdefault('job_variables',[]).append(j.variables.variablePairs)
           afterRunDict[i].setdefault('job_names',[]).append(j.name)
-          with open(os.path.join(j.path, 'runjob')) as infile:
+          with open(os.path.join(j.path, 'job_files', 'output', 'runjob')) as infile:
             for line in infile:
               if line.startswith('#Candidate:'):
                 candid = line.split(':')[1].strip()
@@ -386,7 +382,6 @@ class MeritTestCase(unittest.TestCase):
 
     testutil.compareCollection(self, expect, afterRunDict)
 
-
   def testAfterEvaluationCallback(self):
     """Test pro_fit.fittool.Merit.afterEvaluation callback"""
     afterEvaluationDict = {}
@@ -400,7 +395,7 @@ class MeritTestCase(unittest.TestCase):
         for j in jobs:
           afterEvaluationDict[i].setdefault('job_variables',[]).append(j.variables.variablePairs)
           afterEvaluationDict[i].setdefault('job_names',[]).append(j.name)
-          with open(os.path.join(j.path, 'runjob')) as infile:
+          with open(os.path.join(j.path, 'job_files', 'output', 'runjob')) as infile:
             for line in infile:
               if line.startswith('#Candidate:'):
                 candid = line.split(':')[1].strip()

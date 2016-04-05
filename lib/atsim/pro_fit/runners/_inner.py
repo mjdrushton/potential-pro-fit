@@ -17,10 +17,11 @@ def _runJob(channel):
       jobpath = msgdata['jobpath']
       jobid = msgdata['jobid']
       oldchdir = os.getcwd()
-      destdir = os.path.join(jobpath, 'output')
+      destdir = os.path.abspath(os.path.join(jobpath, 'job_files', 'output'))
+      rundir = os.path.abspath(os.path.join(jobpath, 'rundir'))
       try:
-        shutil.copytree(jobpath, destdir)
-        os.chdir(destdir)
+        shutil.copytree(os.path.join(jobpath, 'job_files'), rundir)
+        os.chdir(rundir)
         # Make runjob executable
         os.chmod('runjob', stat.S_IRWXU)
         status = subprocess.call('./runjob', shell = True)
@@ -30,6 +31,7 @@ def _runJob(channel):
       except Exception as e:
         channel.send( ('error', dict(errormsg = str(e), batchid = batchid, jobid = jobid)))
       finally:
+        shutil.move(rundir, destdir)
         os.chdir(oldchdir)
     else:
       channel.send( ('error', dict(errormsg = 'Unknown command: %s' % msgtype)))

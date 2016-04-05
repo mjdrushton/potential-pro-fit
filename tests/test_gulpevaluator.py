@@ -17,7 +17,7 @@ def _getResourceDir():
 class GulpDrvParserTestCase(unittest.TestCase):
 
   def setUp(self):
-    self.filename = os.path.join(_getResourceDir(), 'output', 'out.drv')
+    self.filename = os.path.join(_getResourceDir(), 'job_files', 'output', 'out.drv')
     infile = open(self.filename, 'rb')
     from atsim.pro_fit.evaluators._gulp import GulpDrvParser
     self.parser = GulpDrvParser(infile)
@@ -60,7 +60,7 @@ class GulpDrvEvaluatorTestCase(unittest.TestCase):
 
   def testVectorMagnitude(self):
     """Test atsim.pro_fit.evaluators.GulpDrvParser._vectorMagnitude"""
-    with open(os.path.join(_getResourceDir(), 'drv.cfg')) as infile:
+    with open(os.path.join(_getResourceDir(), 'job_files', 'drv.cfg')) as infile:
       self.parser.readfp(infile)
 
       evaluator = pro_fit.evaluators.Gulp_DRVEvaluator.createFromConfig('Gulp:DRV',
@@ -73,7 +73,7 @@ class GulpDrvEvaluatorTestCase(unittest.TestCase):
 
   def testEvaluator(self):
     """Test GulpDrvEvaluator from config to evaluation"""
-    with open(os.path.join(_getResourceDir(), 'drv.cfg')) as infile:
+    with open(os.path.join(_getResourceDir(), 'job_files', 'drv.cfg')) as infile:
       self.parser.readfp(infile)
 
       evaluator = pro_fit.evaluators.Gulp_DRVEvaluator.createFromConfig('Gulp:DRV',
@@ -107,7 +107,7 @@ class GulpEvaluatorTestCase(unittest.TestCase):
 
   def testElastic(self):
     """Test elastic constants"""
-    with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
+    with open(os.path.join(_getResourceDir(), 'job_files', 'job.cfg')) as infile:
       self.parser.readfp(infile)
 
     evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(
@@ -295,7 +295,7 @@ class GulpEvaluatorTestCase(unittest.TestCase):
 
   def testBulkModulus(self):
     """Test GulpEvaluator, bulk modulus extraction"""
-    with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
+    with open(os.path.join(_getResourceDir(), 'job_files', 'job.cfg')) as infile:
       self.parser.readfp(infile)
 
     evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(
@@ -319,7 +319,7 @@ class GulpEvaluatorTestCase(unittest.TestCase):
 
   def testShearModulus(self):
     """Test GulpEvaluator, shear modulus extraction"""
-    with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
+    with open(os.path.join(_getResourceDir(), 'job_files', 'job.cfg')) as infile:
       self.parser.readfp(infile)
 
     evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(
@@ -338,7 +338,7 @@ class GulpEvaluatorTestCase(unittest.TestCase):
 
 
   def testUnitCell(self):
-    with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
+    with open(os.path.join(_getResourceDir(), 'job_files', 'job.cfg')) as infile:
       self.parser.readfp(infile)
 
     evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(
@@ -363,7 +363,7 @@ class GulpEvaluatorTestCase(unittest.TestCase):
 
 
   def testEnergy(self):
-    with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
+    with open(os.path.join(_getResourceDir(), 'job_files', 'job.cfg')) as infile:
       self.parser.readfp(infile)
 
     evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(
@@ -390,7 +390,7 @@ class GulpEvaluatorTestCase(unittest.TestCase):
 
 
   def testPhonon(self):
-    with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
+    with open(os.path.join(_getResourceDir(), 'job_files', 'job.cfg')) as infile:
       self.parser.readfp(infile)
 
     evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(
@@ -406,7 +406,7 @@ class GulpEvaluatorTestCase(unittest.TestCase):
     testutil.compareCollection(self, expect, actual)
 
   def testPhononShrunk(self):
-    with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
+    with open(os.path.join(_getResourceDir(), 'job_files', 'job.cfg')) as infile:
       self.parser.readfp(infile)
 
     evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(
@@ -423,7 +423,7 @@ class GulpEvaluatorTestCase(unittest.TestCase):
 
   def testEvaluationErrors(self):
     """Check that GulpEvaluator returns ErrorEvaluatorRecord for bad values"""
-    with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
+    with open(os.path.join(_getResourceDir(), 'job_files', 'job.cfg')) as infile:
       self.parser.readfp(infile)
 
     evaluator = pro_fit.evaluators.GulpEvaluator.createFromConfig(

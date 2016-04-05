@@ -1,6 +1,9 @@
 import math
+import os
 
 import types
+
+import pytest
 
 """Module containing functions and classes that are shared between different tests"""
 
@@ -73,4 +76,34 @@ def compareCollection(testCase, expect, actual, places = 5, percenttolerance = N
   """Check two collections are the same"""
   path = "collection"
   _compareCollection(path, testCase, expect, actual, places, percenttolerance)
+
+
+def _getVagrantDir():
+  return os.path.join(
+      os.path.dirname(__file__),
+      'vagrant')
+
+@pytest.fixture(scope="session")
+def vagrant_box(request):
+  """py.test fixture that will spin up a vagrant box for the duration of the test runs
+  before destroying it at the end"""
+
+  import vagrant
+
+  vagrantdir = os.path.join(_getVagrantDir(), 'basic')
+  v = vagrant.Vagrant(vagrantdir)
+  status = v.status()
+
+  if status == 'saved':
+    v.resume()
+  else:
+    v.up()
+
+  def finalizer():
+    v.suspend()
+    # v.destroy()
+
+  request.addfinalizer(finalizer)
+  return v
+
 

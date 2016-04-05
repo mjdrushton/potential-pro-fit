@@ -20,13 +20,14 @@ class MockRunner(object):
 def mockfuture(jobs):
   for job in jobs:
     # Copy files.
-    outputdir = os.path.join(job.path, 'output')
-    logger.debug('Outputdir: %s' % outputdir)
-    shutil.copytree(job.path, outputdir)
+    jfdir = os.path.abspath(os.path.join(job.path, 'job_files'))
+    outputdir = os.path.abspath(os.path.join(jfdir, 'output'))
+    rundir = os.path.abspath(os.path.join(job.path, 'rundir'))
+    shutil.copytree(jfdir, rundir)
 
     oldcwd = os.getcwd()
     try:
-      os.chdir(outputdir)
+      os.chdir(rundir)
       #Make runjob executable
       logger.debug('Directory contents: %s' % os.listdir('.'))
       os.chmod('runjob', stat.S_IRWXU)
@@ -36,6 +37,7 @@ def mockfuture(jobs):
         print >>outfile, "%d" % status
       logger.debug('Directory contents after run: %s' % os.listdir('.'))
     finally:
+      os.rename(rundir, outputdir)
       os.chdir(oldcwd)
 
 class MockEvaluator(object):
@@ -43,7 +45,7 @@ class MockEvaluator(object):
     self.evalfunc = evalfunc
 
   def __call__(self, job):
-    opath = os.path.join(job.path, 'output', 'output.res')
+    opath = os.path.join(job.path, 'job_files', 'output', 'output.res')
     logger.debug("Call output path: %s" % opath)
     d = {}
     with open(opath, 'rb') as infile:
@@ -73,9 +75,18 @@ class MockJobFactory(object):
     self.evaluators = evaluators
 
   def createJob(self, destdir, variables):
+    jfdir = os.path.join(destdir, 'job_files')
+    os.mkdir(jfdir)
+
+    rfdir = os.path.join(destdir, 'runner_files')
+    os.mkdir(rfdir)
+
+    with open(os.path.join(rfdir, "testfile"), "w") as testfile:
+      pass
+
     #Create runjob
     logger.debug("createJob destdir: %s" % destdir)
-    runjobfilename = os.path.join(destdir, 'runjob')
+    runjobfilename = os.path.join(jfdir, 'runjob')
     with open(runjobfilename, 'wb') as outfile:
       print >>outfile, "#! /bin/bash"
       print >>outfile, "#Job: %s" % self.name
@@ -84,6 +95,9 @@ class MockJobFactory(object):
       for k,v in variables.variablePairs:
         print >>outfile, "#Variable:%s:%f" % (k,v)
         print >>outfile, "echo %s:%f >> output.res" % (k,v)
+
+      print >>outfile, "ls ../runner_files > runner_files_contents"
+
 
     logger.debug("createJob directory content: %s" % os.listdir(destdir))
     return MockJob(self, destdir, variables)

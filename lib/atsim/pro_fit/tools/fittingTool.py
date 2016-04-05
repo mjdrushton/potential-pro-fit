@@ -47,7 +47,6 @@ def _removeLockFile():
   #Remove lockfile
   os.remove('lockfile')
 
-
 class _DirectoryInitializationException(Exception):
   pass
 
@@ -90,7 +89,6 @@ def _initializeRun(directoryName, logger):
   template.stream(**templateVariables).dump(fitCfgName)
   logger.info("Created: %s" % fitCfgName)
 
-
 def _getValidRunners():
   """Open 'fit.cfg' and produce list of runner names.
   If fit.cfg does not exst or does not contain any runners,
@@ -114,7 +112,6 @@ def _getValidRunners():
         runners.append(runnerkey)
 
   return runners
-
 
 def _initializeJob(jobDescription, logger):
   """Parses jobDescription into JOB_NAME:RUNNER_NAME pair. Then
@@ -168,7 +165,6 @@ def _initializeJob(jobDescription, logger):
   outname = os.path.join(jobDirname, 'runjob')
   template.stream().dump(outname)
   logger.info("Created: %s" % outname)
-
 
 def _setupLogging(verbose):
   """Set-up python logging to display to stderr"""
@@ -282,7 +278,6 @@ def _getSingleStepCfg(jobdir, keepDirectory, pluginmodules):
       return pro_fit.minimizers.SingleStepMinimizer(self.variables, keepDirectory)
   return _getfitcfg(jobdir, cls = CustomConfig, pluginmodules = pluginmodules)
 
-
 def _getCreateFilesCfg(jobdir, keepDirectory, pluginmodules):
   """Creates atsim.pro_fit.fittool.FitConfig like object from configuration files.
   Object is customised such that its minimizer property return SingleStepMinimizer that will
@@ -320,7 +315,6 @@ def _getCreateFilesCfg(jobdir, keepDirectory, pluginmodules):
 
   return _getfitcfg(jobdir, cls = CustomConfig, pluginmodules = pluginmodules)
 
-
 def _invokeMinimizer(cfg, logger, logsql):
   logger.info("Temporary job files will be created in '%s'" % cfg.jobdir)
 
@@ -340,7 +334,7 @@ def _invokeMinimizer(cfg, logger, logsql):
     if os.path.exists('fitting_run.db'):
       logger.info("Removing existing 'fitting_run.db'")
       os.remove('fitting_run.db')
-    sqlreporter = pro_fit.reporters.SQLiteReporter('fitting_run.db',cfg.variables, cfg.merit.variableTransform, cfg.title)
+    sqlreporter = pro_fit.reporters.SQLiteReporter('fitting_run.db',cfg.variables, cfg.merit.calculatedVariables, cfg.title)
     stepCallback.append(sqlreporter)
 
   minimizer = cfg.minimizer
@@ -353,7 +347,6 @@ def _invokeMinimizer(cfg, logger, logsql):
     if logsql:
       sqlreporter.finished(True)
     raise
-
 
 class _PluginException(Exception):
   def __init__(self, filename, childexception):
@@ -379,8 +372,8 @@ def _processPlugins(pathList):
 
   return retlist
 
-
 def main():
+  import pdb;pdb.set_trace()
   # Get command line options
   options = _parseCommandLine()
   logger = _setupLogging(options.verbose)

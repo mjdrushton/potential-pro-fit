@@ -216,7 +216,7 @@ class FitConfigTestCase(unittest.TestCase):
     self.assertEquals("SumThing", metaevaluators[0].name)
 
   def testCalculatedVariables(self):
-    cvars = self.cfgobject.variableTransform
+    cvars = self.cfgobject.calculatedVariables
     self.assertEquals(pro_fit.fittool.CalculatedVariables, type(cvars))
     transvars = cvars(self.cfgobject.variables)
     self.assertAlmostEquals(405.66942 + .75271639, dict(transvars.variablePairs)['cvar'])
@@ -228,6 +228,6 @@ class FitConfigTestCase(unittest.TestCase):
     self.cfgobject._variables = self.cfgobject._createVariables()
 
     with self.assertRaises(pro_fit.fittool.ConfigException):
-      self.cfgobject._createVariableTransform()
+      self.cfgobject._createCalculatedVariables()
 
 

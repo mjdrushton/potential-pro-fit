@@ -45,7 +45,7 @@ class FitConfig(object):
     cfg = self._parseConfig(fitCfgFilename)
     self._cfg = cfg
     self._variables = self._createVariables()
-    self._variableTransform = self._createVariableTransform()
+    self._calculatedVariables = self._createCalculatedVariables()
     self._runners = self._createRunners(runnermodules)
     self._metaevaluators = self._createMetaEvaluators(metaevaluatormodules)
     self._jobfactories = self._createJobFactories(jobfactorymodules, evaluatormodules)
@@ -66,7 +66,6 @@ class FitConfig(object):
     self._minimizer = self._createMinimizer(minimizermodules)
     self._title = self._parseTitle()
 
-
   def title(self):
     return self._title
   title = property(fget=title,
@@ -78,11 +77,11 @@ class FitConfig(object):
       fget = variables,
       doc = """Returns a Variables object representing [Variables] section of fit.cfg""")
 
-  def variableTransform(self):
-    return self._variableTransform
-  variableTransform = property(
-      fget = variableTransform,
-      doc = """Returns a callable that can transform variables before job creation. This is created from the [CalculatedVariables] section of the fit.cfg file.""")
+  def calculatedVariables(self):
+    return self._calculatedVariables
+  calculatedVariables = property(
+      fget = calculatedVariables,
+      doc = """Returns a CalculatedVaraiables instance, this is a callable that can transform variables before job creation. This is created from the [CalculatedVariables] section of the fit.cfg file.""")
 
   def runners(self):
     return self._runners
@@ -146,7 +145,6 @@ class FitConfig(object):
         raise MultipleSectionConfigException("Found multiple '%s' sections in fit.cfg file where only one is allowed" % stype)
       found.add(stype)
 
-
   def _createVariables(self):
     """Create Variables object from parsed configuration"""
     if not self._cfg.has_section('Variables'):
@@ -183,7 +181,7 @@ class FitConfig(object):
       bounds.append(bound)
     return Variables(newpairs, bounds)
 
-  def _createVariableTransform(self):
+  def _createCalculatedVariables(self):
     """Create a callable from parsed configuration"""
     if not self._cfg.has_section('CalculatedVariables'):
       return CalculatedVariables([])
@@ -201,7 +199,6 @@ class FitConfig(object):
           raise ConfigException("Could not parse formula within [CalculatedVariables] for '%s' with expression '%s' : %s" % (name, expression, e.message))
 
       return CalculatedVariables(cfgitems)
-
 
   def _createRunners(self, runnermodules):
     runnerdict = self._findClasses(runnermodules, 'Runner')
@@ -279,7 +276,7 @@ class FitConfig(object):
   def _createMerit(self):
     # Build the merit object
     runners = [v for (k,v) in sorted(self.runners.items())]
-    return Merit(runners, self._jobfactories, self._metaevaluators, self.variableTransform, self.jobdir)
+    return Merit(runners, self._jobfactories, self._metaevaluators, self.calculatedVariables, self.jobdir)
 
   def _createJobFactories(self, jobfactorymodules, evaluatormodules):
     evaldict = self._findClasses(evaluatormodules, 'Evaluator')
@@ -323,7 +320,7 @@ class FitConfig(object):
     runnername = fitcfg.get('Job', 'runner')
     if not self.runners.has_key(runnername):
       raise ConfigException('Unknown runner: "%s" for job named: "%s"' % (runnername, jobname))
-    return jfcls.createFromConfig(path, runnername, jobname, evaluators, fitcfg.items('Job'))
+    return jfcls.createFromConfig(path, self._fitRootPath, runnername, jobname, evaluators, fitcfg.items('Job'))
 
   def _createEvaluators(self, jobname, jobpath, fitcfg, evaldict):
     evaluators = []
@@ -421,7 +418,6 @@ class Variables(object):
       assert(len(bounds) == len(varValPairs))
       self._bounds = bounds
 
-
   def _processPairs(self, pairs):
     d = collections.OrderedDict(
       [ (k,v) for (k,v,isP) in pairs ])
@@ -429,7 +425,6 @@ class Variables(object):
     fitkeys = [ k for (k,v,isP) in pairs if isP ]
     self._varDict = d
     self._fitKeys = fitkeys
-
 
   def variablePairs(self):
     return self._varDict.items()
@@ -510,7 +505,6 @@ class Variables(object):
 
     return (l,h)
 
-
   def flaggedVariablePairs(self):
     fk = set(self.fitKeys)
     return [ (k,v, k in fk) for (k,v) in self.variablePairs ]
@@ -557,7 +551,6 @@ class CalculatedVariables(object):
   arithmetic expressions are evaluated using these variables. A new instance of Variables
   containing the results of this evaluation is then returned. """
 
-
   def __init__(self, nameExpressionTuples):
     """Create CalculatedVariables instance from a list of of (variable_name, expression) tuples.
     Where 'expression' is an arithmetic expression that can be parsed by cexprtk.evaluate_expression.
@@ -593,7 +586,6 @@ class CalculatedVariables(object):
     newvariables = Variables(vartuples, bounds)
     return newvariables
 
-
   @staticmethod
   def createFromConfig(cfgitems):
     for name, expression in cfgitems:
@@ -603,7 +595,6 @@ class CalculatedVariables(object):
         raise ConfigException("Could not parse expression when processing [CalculatedVariables]: %s : %s" % (expression, e.message))
 
     return CalculatedVariables(cfgitems)
-
 
 def _sumValuesReductionFunction(evaluatedJobs):
   """Default reduction function, for each list enter sub lists and sum values"""
@@ -649,11 +640,11 @@ class Merit(object):
                 Where candidateJobPairs is as before and meritValues is a list of merit values one
                 per candidate. """
 
-  def __init__(self, runners, jobfactories, metaevaluators, variableTransform, jobdir):
+  def __init__(self, runners, jobfactories, metaevaluators, calculatedVariables, jobdir):
     """@param runners List of job runners (see atsim.pro_fit.runners module for examples).
        @param jobfactories List of jobfactories (see atsim.pro_fit.jobfactories module for examples).
        @param metaevaluators List of meta-evaluators to apply following job evaluation.
-       @param variableTransform Callable that accepts Variables and returns Variables that are then used during job creation.
+       @param calculatedVariables Callable that accepts Variables and returns Variables that are then used during job creation.
        @param jobdir Directory in which job files should be created"""
 
     # Initialize callbacks to be None
@@ -665,7 +656,7 @@ class Merit(object):
     self._runners = runners
     self._jobfactories = jobfactories
     self._metaevaluators = metaevaluators
-    self.variableTransform = variableTransform
+    self.calculatedVariables = calculatedVariables
     self._jobdir = jobdir
     self._reductionFunction = _sumValuesReductionFunction
 
@@ -727,7 +718,7 @@ class Merit(object):
     candidate_job_lists = []
     batchpaths = []
     for candidate in candidateVariables:
-      candidate = self.variableTransform(candidate)
+      candidate = self.calculatedVariables(candidate)
       cpath = tempfile.mkdtemp(dir=self._jobdir)
       batchpaths.append(cpath)
       candidate_job_lists.append( (candidate, []))
@@ -785,5 +776,4 @@ class Merit(object):
           evaluatorRecords.append(metaEvaluator(batch))
         metaEvaluatorJob = jobfactories.MetaEvaluatorJob("meta_evaluator", evaluatorRecords,batch[0].variables)
         batch.append(metaEvaluatorJob)
-
 

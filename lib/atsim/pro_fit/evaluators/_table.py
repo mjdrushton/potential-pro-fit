@@ -90,7 +90,7 @@ class TableEvaluator(object):
     self._expect_value = expect_value
 
   def __call__(self, job):
-    resultsFilename = os.path.join(job.path, 'output', self._resultsFilename)
+    resultsFilename = os.path.join(job.outputPath, self._resultsFilename)
     self._logger.debug("TableEvaluator processing output file: '%s' for job '%s'" % (self._resultsFilename, job.name))
 
     # Open results file and then compare rows.
@@ -310,7 +310,7 @@ class TableEvaluator(object):
 
     # Check that expect file exists
     if not os.path.isabs(expect_filename):
-      csvfilename = os.path.join(jobpath, expect_filename)
+      csvfilename = os.path.join('job_files', jobpath, expect_filename)
     else:
       csvfilename = expect_filename
 

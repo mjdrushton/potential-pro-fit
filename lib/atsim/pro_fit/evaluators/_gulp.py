@@ -25,8 +25,6 @@ class GulpDrvParser(object):
     self.gradientsStrain = None
     self._parse(infile)
 
-
-
   def _parse(self, infile):
     for line in infile:
       if line.startswith('gradients cartesian eV/Ang'):
@@ -47,7 +45,6 @@ class GulpDrvParser(object):
       retlist.append(g)
     self.gradientsCartesian = retlist
 
-
   def _parseGradientsStrain(self, currline, infile):
     retlist = []
     tokens = infile.next()[:-1].split()
@@ -58,9 +55,6 @@ class GulpDrvParser(object):
     tokens = [float(v) for v in tokens]
     retlist.extend(tokens)
     self.gradientsStrain = self.StrainGradient(*retlist)
-
-
-
 
 
 class Gulp_DRVEvaluator(object):
@@ -106,11 +100,10 @@ class Gulp_DRVEvaluator(object):
     return evalrecords
 
   def _createParser(self, job):
-    outputpath = os.path.join(job.path, 'output', self._filename)
+    outputpath = os.path.join(job.outputPath, self._filename)
     with open(outputpath, 'rb') as infile:
       parser = GulpDrvParser(infile)
     return parser
-
 
   def _atom_gradients(self, parser):
     gradients = parser.gradientsCartesian
@@ -159,8 +152,6 @@ class Gulp_DRVEvaluator(object):
     return Gulp_DRVEvaluator(filename, name, vals)
 
 
-
-
 class GulpEvaluatorException(Exception):
   pass
 
@@ -180,10 +171,11 @@ class _GulpSubEvaluatorBase(object):
     return []
 
   def __call__(self, gulpEvaluator, job):
-    outputpath = os.path.join(job.path, 'output', gulpEvaluator.gulpOutputFilename)
+    outputpath = os.path.join(job.outputPath, gulpEvaluator.gulpOutputFilename)
     with open(outputpath) as infile:
       actual = self.extractValue(infile)
       return FractionalDifferenceEvaluatorRecord(self._name, self._expect, actual, self._weight)
+
 
 class _GulpElasticSubEvaluator(_GulpSubEvaluatorBase):
   """Extracts values from Gulp output files elastic constant matrix"""
@@ -207,6 +199,7 @@ class _GulpElasticSubEvaluator(_GulpSubEvaluatorBase):
         col = col + 1
         allowedFields.append( "elastic_c%d%d" % (row, col) )
     return allowedFields
+
 
 class _GulpBulkModulusSubEvaluator(_GulpSubEvaluatorBase):
   """Extracts bulk modulus from Gulp output files"""
@@ -291,7 +284,7 @@ class _GulpOptimisationPenaltySubEvaluator(object):
     self._name = key
 
   def __call__(self, gulpEvaluator, job):
-    outputpath = os.path.join(job.path, 'output', gulpEvaluator.gulpOutputFilename)
+    outputpath = os.path.join(job.outputPath, gulpEvaluator.gulpOutputFilename)
     with open(outputpath) as infile:
       _find(infile, '*  Output for configuration')
       _find(infile, '  Start of bulk optimisation :')
@@ -316,7 +309,7 @@ class _GulpNegativePhononPenaltySubEvaluator(object):
     self._name = key
 
   def __call__(self, gulpEvaluator, job):
-    outputpath = os.path.join(job.path, 'output', gulpEvaluator.gulpOutputFilename)
+    outputpath = os.path.join(job.outputPath, gulpEvaluator.gulpOutputFilename)
     with open(outputpath) as infile:
       _find(infile, '*  Output for configuration')
       _find(infile, '  Phonon Calculation :')

@@ -128,7 +128,6 @@ def test_serializeTableForR_badcolumnkeys(tmpdir):
 
 def test_serializeTableForR_rangeDiscoveIterator():
   """Tests for atsim.pro_fit._db._tableSerialize._RangeDiscoverIterator()"""
-  # import pdb;pdb.set_trace()
   rangeDiscover = _RangeDiscoverIterator()
 
   rows = [

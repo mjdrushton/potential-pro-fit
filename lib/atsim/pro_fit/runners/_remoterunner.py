@@ -40,8 +40,8 @@ def _copyFilesFromRemote(gw, remotePath, batchDir, localToRemotePathTuples):
 def _redistributeFiles(tempdir, localToRemotePathTuples):
   """Move job/output directories to correct locations"""
   for t in localToRemotePathTuples:
-    outputDir = os.path.join(tempdir, t.remotePath, "output")
-    localDir = os.path.join(t.localPath, "output")
+    outputDir = os.path.join(tempdir, t.remotePath, "job_files", "output")
+    localDir = os.path.join(t.localPath, "job_files", "output")
     shutil.copytree(outputDir, localDir)
 
 class RemoteRunnerFuture(LocalRunnerFuture):
@@ -227,6 +227,13 @@ def _monitorRun(channel):
         break
     channel.send(found)
 
+def _makeTemporaryDirectory(channel):
+  """Function to be executed remotely and create temporary directory"""
+  import tempfile
+  tmpdir = tempfile.mkdtemp()
+  channel.send(tmpdir)
+
+
 class RemoteRunnerBase(object):
 
   _LocalToRemotePathTuple = collections.namedtuple('_LocalToRemotePathTuple', ['localPath', 'remotePath'])
@@ -250,7 +257,7 @@ class RemoteRunnerBase(object):
 
   def _createExtraFiles(self, tempdir, batchdir, localToRemotePathTuples):
     """Method that is called just before file copying,
-    override to add extra files to batch directory before they are uplaoaded."""
+    override to add extra files to batch directory before they are uploaded."""
     pass
 
   def _prepareJobs(self, gw, jobs):
@@ -305,28 +312,44 @@ class RemoteRunnerBase(object):
       username = ''
     host = parsed.hostname
     path = parsed.path
+    port = parsed.port
     if path.startswith("//"):
       path = path[1:]
 
-    return username, host, path
+    return username, host, port, path
 
 class RemoteRunner(RemoteRunnerBase):
   """Runner that uses SSH to run jobs in parallel on a remote machine"""
 
-  def __init__(self, name, url, nprocesses):
+  logger = logging.getLogger("atsim.pro_fit.runners.RemoteRunner")
+
+  def __init__(self, name, url, nprocesses, identityfile=None, extra_ssh_options = []):
     """@param name Name of this runner.
        @param url Host and remote directory of remote host where jobs should be run in the form ssh://[username@]host/remote_path
-       @param nprocesses Number of processes that can be run in parallel by this runner"""
+       @param nprocesses Number of processes that can be run in parallel by this runner
+       @param identityfile Path of a private key to be used with this runner's SSH transport. If None, the default's used by
+                         the platform's ssh command are used.
+       @param extra_ssh_options List of (key,value) tuples that are added to the ssh_config file used when making ssh connections."""
     super(RemoteRunner, self).__init__()
-    self.name = name
-    self.username, self.hostname, self.remotePath = self._urlParse(url)
-    # Create a common url used to create execnet gateways
-    if self.username:
-      gwurl = "ssh=%s@%s" % (self.username, self.hostname)
-    else:
-      gwurl = "ssh=%s" % (self.hostname,)
 
-    self.gwurl = gwurl
+    self.name = name
+    self.username, self.hostname, self.port, self.remotePath = self._urlParse(url)
+
+    # Create a common url used to create execnet gateways
+    self.gwurl, sshcfgfile = RemoteRunner.makeExecnetConnectionSpec(self.username, self.hostname, self.port, identityfile, extra_ssh_options)
+
+    if not self.remotePath:
+      # Create an appropriate remote path.
+      self._createTemporaryRemoteDirectory()
+
+    if sshcfgfile:
+      self._sshcfgfile = sshcfgfile
+
+      # If _remoted_is_temp is True the runner needs to clean it up on termination.
+      self._remoted_is_temp = True
+    else:
+      #... if it's False then don't delete the remote directory.
+      self._remoted_is_temp = False
 
     self._batchinputqueue = Queue.Queue()
     self._i = 0
@@ -356,6 +379,60 @@ class RemoteRunner(RemoteRunnerBase):
     self._batchinputqueue.put(future)
     return future
 
+  def _createTemporaryRemoteDirectory(self):
+    """Makes a remote call to tempfile.mkdtemp() and sets
+      * self.remoted to the name of the created directory.
+      * self._remoted_is_temp is set to True to support correct cleanup behaviour.
+    """
+    gw = execnet.makegateway(self.gwurl)
+    channel = gw.remote_exec(_makeTemporaryDirectory)
+    tmpdir = channel.receive()
+    self.logger.getChild("_createTemporaryRemoteDirectory").debug("Remote temporary directory: %s", tmpdir)
+    self.remotePath = tmpdir
+
+
+  @staticmethod
+  def makeExecnetConnectionSpec(username, host, port, identityfile = None, extraoptions = []):
+    gwurl = "ssh="
+    sshcfg = tempfile.NamedTemporaryFile(mode="w+")
+
+    if port:
+      sshcfg.write("Port %s\n" % port)
+
+    if username:
+      gwurl += "%s@%s" % (username, host)
+    else:
+      gwurl += host
+
+    if identityfile:
+      identifyfile = os.path.abspath(identityfile)
+
+      if not os.path.isfile(identityfile):
+        # Check that the identityfile can be opened
+        with open(identityfile, 'r') as infile:
+          pass
+
+      sshcfg.write("IdentityFile %s\n" % identityfile)
+
+    for k,v in extraoptions:
+      sshcfg.write("%s %s \n" % (k,v))
+
+    logger = logging.getLogger("atsim.pro_fit.runners.RemoteRunner.makeExecnetConnectionSpec")
+    logger.debug("Execnet url: '%s' for username = '%s', host = '%s', port= '%s', identityfile = '%s'" % (gwurl, username, host, port, identityfile))
+
+    sshcfg.flush()
+    sshcfg.seek(0)
+    for line in sshcfg:
+      logger.debug("ssh_config contents: %s" % line)
+
+    from execnet import XSpec
+
+    xspec = XSpec(gwurl)
+    xspec.ssh_config = sshcfg.name
+
+    return xspec, sshcfg
+
+
   @staticmethod
   def createFromConfig(runnerName, fitRootPath, cfgitems):
     allowedkeywords = set(['nprocesses', 'type', 'remotehost'])
@@ -383,17 +460,14 @@ class RemoteRunner(RemoteRunnerBase):
     if not remotehost.startswith("ssh://"):
       raise ConfigException("remotehost configuration item must start with ssh://")
 
-    username, host, path = RemoteRunner._urlParse(remotehost)
+    username, host, port,  path = RemoteRunner._urlParse(remotehost)
     if not host:
       raise ConfigException("remotehost configuration item should be of form ssh://[username@]hostname/remote_path")
 
     # Attempt connection and check remote directory exists
     group = execnet.Group()
     try:
-      if username:
-        gwurl = "ssh=%s@%s" % (username, host)
-      else:
-        gwurl = "ssh=%s" % host
+      gwurl, sshcfg = RemoteRunner.makeExecnetConnectionSpec(username, host, port)
       gw = group.makegateway(gwurl)
 
       # Check existence of remote directory
@@ -403,8 +477,9 @@ class RemoteRunner(RemoteRunnerBase):
       if not status:
         raise ConfigException("Remote directory does not exist or is not read/writable:'%s'" % path)
 
-
       channel.waitclose()
+      if sshcfg:
+        sshcfg.close()
     except execnet.gateway_bootstrap.HostNotFound:
       raise ConfigException("Couldn't connect to host: %s" % gwurl)
     finally:
@@ -481,7 +556,7 @@ class PBSRunner(RemoteRunnerBase):
 
     self.name = name
     self._i = 0
-    self.username, self.hostname, self.remotePath = self._urlParse(url)
+    self.username, self.hostname, self.port, self.remotePath = self._urlParse(url)
     # Create a common url used to create execnet gateways
     if self.username:
       gwurl = "ssh=%s@%s" % (self.username, self.hostname)
@@ -583,7 +658,7 @@ class PBSRunner(RemoteRunnerBase):
     if not remotehost.startswith("ssh://"):
       raise ConfigException("remotehost configuration item must start with ssh://")
 
-    username, host, path = PBSRunner._urlParse(remotehost)
+    username, host, port, path = PBSRunner._urlParse(remotehost)
     if not host:
       raise ConfigException("remotehost configuration item should be of form ssh://[username@]hostname/remote_path")
 

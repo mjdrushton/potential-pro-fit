@@ -3,13 +3,11 @@ import os
 import math
 
 from atsim import pro_fit
+from atsim.pro_fit.jobfactories import Job
+
 
 def _getResourceDirectory():
   return os.path.join(os.path.abspath(os.path.dirname(__file__)), "resources", "dlpoly_evaluator")
-
-class MockJob(object):
-  def __init__(self, path):
-    self.path = path
 
 class DLPolySTATISEvaluator(unittest.TestCase):
   """Tests for atsim.pro_fit.evaluators.DLPOLY_STATISEvaluator"""
@@ -19,7 +17,7 @@ class DLPolySTATISEvaluator(unittest.TestCase):
     keyExpectPairs = [ ("volume", 84000.0, 2.0)]
     evaluator = pro_fit.evaluators.DLPOLY_STATISEvaluator("STATIS_Eval", startTime, keyExpectPairs)
     volumeExpect = math.sqrt((17849.1273 - 84000.0)**2.0)
-    job = MockJob(_getResourceDirectory())
+    job = Job(None, _getResourceDirectory(), None)
 
     evaluated = evaluator(job)
     self.assertEquals(1, len(evaluated))
@@ -37,7 +35,7 @@ class DLPolySTATISEvaluator(unittest.TestCase):
     startTime = 80.0
     keyExpectPairs = [ ("msd_O", 0.41, 2.0)]
     evaluator = pro_fit.evaluators.DLPOLY_STATISEvaluator("STATIS_Eval", startTime, keyExpectPairs)
-    job = MockJob(_getResourceDirectory())
+    job = Job(None, _getResourceDirectory(), None)
     evaluated = evaluator(job)
     r = evaluated[0]
     self.assertAlmostEquals(0.414975, r.extractedValue)
@@ -47,7 +45,7 @@ class DLPolySTATISEvaluator(unittest.TestCase):
     startTime = 80.0
     keyExpectPairs = [ ("cella_x", 23.99687, 2.0)]
     evaluator = pro_fit.evaluators.DLPOLY_STATISEvaluator("STATIS_Eval", startTime, keyExpectPairs)
-    job = MockJob(_getResourceDirectory())
+    job = Job(None, _getResourceDirectory(), None)
     evaluated = evaluator(job)
     r = evaluated[0]
     self.assertAlmostEquals(23.99687, r.extractedValue)
@@ -57,7 +55,7 @@ class DLPolySTATISEvaluator(unittest.TestCase):
     startTime = 80.0
     keyExpectPairs = [ ("badkey", 23.0, 2.0)]
     evaluator = pro_fit.evaluators.DLPOLY_STATISEvaluator("STATIS_Eval", startTime, keyExpectPairs)
-    job = MockJob(_getResourceDirectory())
+    job = Job(None, _getResourceDirectory(), None)
     evaluated = evaluator(job)
     r = evaluated[0]
 

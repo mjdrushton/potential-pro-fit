@@ -29,9 +29,9 @@ class DLPOLY_STATISEvaluator(object):
     @param job Job instance for dlpoly run.
     @return List of RMSEvaluatorRecord instances"""
 
-    configFilename = os.path.join(job.path, "output", "CONFIG")
-    controlFilename = os.path.join(job.path, "output", "CONTROL")
-    statisFilename = os.path.join(job.path, "output", "STATIS")
+    configFilename = os.path.join(job.outputPath, "CONFIG")
+    controlFilename = os.path.join(job.outputPath, "CONTROL")
+    statisFilename = os.path.join(job.outputPath, "STATIS")
 
     # Parse the config
     try:

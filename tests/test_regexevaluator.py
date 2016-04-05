@@ -8,7 +8,7 @@ from atsim import pro_fit
 import testutil
 
 def _getResourceDir():
-  return os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'regex_evaluator')
+  return os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'regex_evaluator', 'job_files')
 
 class RegexEvaluatorTestCase(unittest.TestCase):
 

@@ -43,20 +43,21 @@ class TableEvaluatorTestCase(unittest.TestCase):
   def testEndToEnd_onlysum(self):
     """Test TableEvaluator"""
     resdir = _getResourceDir()
-    resdir = os.path.join(resdir, 'end_to_end')
+    resdir_before = os.path.join(resdir, 'end_to_end', 'end_to_end_before_run')
+    resdir_after = os.path.join(resdir, 'end_to_end', 'end_to_end_after_run')
 
     # Configure the evaluator
     parser = ConfigParser.SafeConfigParser()
     parser.optionxform = str
-    with open(os.path.join(resdir, 'evaluator.cfg')) as infile:
+    with open(os.path.join(resdir_before, 'evaluator.cfg')) as infile:
       parser.readfp(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
-      resdir,
+      resdir_before,
       parser.items('Evaluator:Table'))
 
-    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir_after, None)
     evaluated = evaluator(job)
 
     self.assertEqual(1, len(evaluated))
@@ -69,20 +70,21 @@ class TableEvaluatorTestCase(unittest.TestCase):
   def testEndToEnd_expect_value(self):
     """Test TableEvaluator with expect_value cfg option"""
     resdir = _getResourceDir()
-    resdir = os.path.join(resdir, 'end_to_end')
+    resdir_before = os.path.join(resdir, 'end_to_end', 'end_to_end_before_run')
+    resdir_after = os.path.join(resdir, 'end_to_end', 'end_to_end_after_run')
 
     # Configure the evaluator
     parser = ConfigParser.SafeConfigParser()
     parser.optionxform = str
-    with open(os.path.join(resdir, 'expect_value.cfg')) as infile:
+    with open(os.path.join(resdir_before, 'expect_value.cfg')) as infile:
       parser.readfp(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
-      resdir,
+      resdir_before,
       parser.items('Evaluator:Table'))
 
-    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir_after, None)
     evaluated = evaluator(job)
 
     ER = pro_fit.evaluators._common.RMSEvaluatorRecord
@@ -98,20 +100,21 @@ class TableEvaluatorTestCase(unittest.TestCase):
   def testEndToEnd_expect_value_no_expect_column(self):
     """Test TableEvaluator with expect_value cfg option without expect column in expectation CSV"""
     resdir = _getResourceDir()
-    resdir = os.path.join(resdir, 'end_to_end')
+    resdir_before = os.path.join(resdir, 'end_to_end', 'end_to_end_before_run')
+    resdir_after = os.path.join(resdir, 'end_to_end', 'end_to_end_after_run')
 
     # Configure the evaluator
     parser = ConfigParser.SafeConfigParser()
     parser.optionxform = str
-    with open(os.path.join(resdir, 'expect_value_nocol.cfg')) as infile:
+    with open(os.path.join(resdir_before, 'expect_value_nocol.cfg')) as infile:
       parser.readfp(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
-      resdir,
+      resdir_before,
       parser.items('Evaluator:Table'))
 
-    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir_after, None)
     evaluated = evaluator(job)
 
     ER = pro_fit.evaluators._common.RMSEvaluatorRecord
@@ -127,20 +130,21 @@ class TableEvaluatorTestCase(unittest.TestCase):
   def testEndToEnd(self):
     """Test for when individual evaluator records are returned for each row"""
     resdir = _getResourceDir()
-    resdir = os.path.join(resdir, 'end_to_end')
+    resdir_before = os.path.join(resdir, 'end_to_end', 'end_to_end_before_run')
+    resdir_after = os.path.join(resdir, 'end_to_end', 'end_to_end_after_run')
 
     # Configure the evaluator
     parser = ConfigParser.SafeConfigParser()
     parser.optionxform = str
-    with open(os.path.join(resdir, 'evaluator_individual_rows.cfg')) as infile:
+    with open(os.path.join(resdir_before, 'evaluator_individual_rows.cfg')) as infile:
       parser.readfp(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
-      resdir,
+      resdir_before,
       parser.items('Evaluator:Table'))
 
-    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir_after, None)
     evaluated = evaluator(job)
 
     ER = pro_fit.evaluators._common.RMSEvaluatorRecord
@@ -157,20 +161,21 @@ class TableEvaluatorTestCase(unittest.TestCase):
   def testLabelColumn(self):
     """Test label_column configuration option."""
     resdir = _getResourceDir()
-    resdir = os.path.join(resdir, 'label_column_and_weights')
+    resdir_before = os.path.join(resdir, 'label_column_and_weights', 'before_run')
+    resdir_after = os.path.join(resdir, 'label_column_and_weights', 'after_run')
 
     # Configure the evaluator
     parser = ConfigParser.SafeConfigParser()
     parser.optionxform = str
-    with open(os.path.join(resdir, 'label_column.cfg')) as infile:
+    with open(os.path.join(resdir_before, 'label_column.cfg')) as infile:
       parser.readfp(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
-      resdir,
+      resdir_before,
       parser.items('Evaluator:Table'))
 
-    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir_after, None)
     evaluated = evaluator(job)
 
     ER = pro_fit.evaluators._common.RMSEvaluatorRecord
@@ -189,20 +194,21 @@ class TableEvaluatorTestCase(unittest.TestCase):
   def testWeight_Column(self):
     """Test weight_column configuration option."""
     resdir = _getResourceDir()
-    resdir = os.path.join(resdir, 'label_column_and_weights')
+    resdir_before = os.path.join(resdir, 'label_column_and_weights', 'before_run')
+    resdir_after = os.path.join(resdir, 'label_column_and_weights', 'after_run')
 
     # Configure the evaluator
     parser = ConfigParser.SafeConfigParser()
     parser.optionxform = str
-    with open(os.path.join(resdir, 'weight_column.cfg')) as infile:
+    with open(os.path.join(resdir_before, 'weight_column.cfg')) as infile:
       parser.readfp(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
-      resdir,
+      resdir_before,
       parser.items('Evaluator:Table'))
 
-    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir_after, None)
     evaluated = evaluator(job)
 
     ER = pro_fit.evaluators._common.RMSEvaluatorRecord
@@ -219,20 +225,21 @@ class TableEvaluatorTestCase(unittest.TestCase):
   def testWeight_ColumnAndWeight(self):
     """Test weight_column together with weight configuration option."""
     resdir = _getResourceDir()
-    resdir = os.path.join(resdir, 'label_column_and_weights')
+    resdir_before = os.path.join(resdir, 'label_column_and_weights', 'before_run')
+    resdir_after = os.path.join(resdir, 'label_column_and_weights', 'after_run')
 
     # Configure the evaluator
     parser = ConfigParser.SafeConfigParser()
     parser.optionxform = str
-    with open(os.path.join(resdir, 'weight_and_weight_column.cfg')) as infile:
+    with open(os.path.join(resdir_before, 'weight_and_weight_column.cfg')) as infile:
       parser.readfp(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
-      resdir,
+      resdir_before,
       parser.items('Evaluator:Table'))
 
-    job = pro_fit.jobfactories.Job(mockJobFactory, resdir, None)
+    job = pro_fit.jobfactories.Job(mockJobFactory, resdir_after, None)
     evaluated = evaluator(job)
 
     ER = pro_fit.evaluators._common.RMSEvaluatorRecord
@@ -518,8 +525,8 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     try:
       # Create an empty file
       os.chdir(tempdir)
-      os.mkdir('output')
-      f = open(os.path.join('output', 'output.csv'),'w')
+      os.makedirs('job_files', 'output')
+      f = open(os.path.join('job_files,', 'output', 'output.csv'),'w')
       f.close()
 
       # Perform the test
