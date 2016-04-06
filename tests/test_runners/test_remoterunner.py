@@ -13,7 +13,7 @@ from .. import common
 
 from atsim import pro_fit
 
-from ..testutil import vagrant_box
+from ..testutil import vagrant_basic
 
 DIR = 0
 FILE = 1
@@ -122,19 +122,19 @@ def testUrlParse(runfixture):
   assert_that(path).is_equal_to('')
   assert_that(port).is_equal_to(2222)
 
-def testSingle(runfixture, vagrant_box):
-  runner = _createRunner(runfixture,vagrant_box, 1)
+def testSingle(runfixture, vagrant_basic):
+  runner = _createRunner(runfixture,vagrant_basic, 1)
   _runBatch(runner, [runfixture.jobs[0]]).join()
   _testjob(runfixture, 0)
 
-def testAllInSingleBatch(runfixture, vagrant_box):
-  runner = _createRunner(runfixture, vagrant_box, 3)
+def testAllInSingleBatch(runfixture, vagrant_basic):
+  runner = _createRunner(runfixture, vagrant_basic, 3)
   _runBatch(runner, runfixture.jobs).join()
   for job in runfixture.jobs:
     _testjob(runfixture, job.variables.id)
 
-def testAllInMultipleBatch(runfixture, vagrant_box):
-  runner = _createRunner(runfixture, vagrant_box, 3)
+def testAllInMultipleBatch(runfixture, vagrant_basic):
+  runner = _createRunner(runfixture, vagrant_basic, 3)
 
   f1 = _runBatch(runner, runfixture.jobs[:6])
   f2 = _runBatch(runner, runfixture.jobs[6:])
@@ -181,9 +181,9 @@ def _testjob(runfixture, jobid):
   assert_that(jobid).is_equal_to(d[0].meritValue)
 
 
-def testTempDirectoryCleanup(runfixture, vagrant_box):
+def testTempDirectoryCleanup(runfixture, vagrant_basic):
   runfixture.remoted = ""
-  runner = _createRunner(runfixture,vagrant_box, 1)
+  runner = _createRunner(runfixture,vagrant_basic, 1)
   assert_that(runner.remotePath).is_not_none()
   assert_that(runner._remoted_is_temp).is_true()
 
