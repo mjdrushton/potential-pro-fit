@@ -17,6 +17,13 @@ ff02::2 ip6-allrouters
 127.0.0.1   slave
 EOF
 
+# Create public key
+sudo -u vagrant ssh-keygen -t rsa -P '' -f /home/vagrant/.ssh/id_rsa
+sudo -u vagrant cat /home/vagrant/.ssh/id_rsa.pub >> /home/vagrant/.ssh/authorized_keys
+ssh-keyscan -t rsa localhost > /home/vagrant/.ssh/known_hosts
+chown vagrant:vagrant /home/vagrant/.ssh/known_hosts
+
+
 apt-get install -y torque-server torque-scheduler torque-mom torque-client
 
 qterm # kill running jobs

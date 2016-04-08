@@ -1,2 +1,3 @@
 graft lib/atsim/pro_fit/resources
 graft lib/atsim/pro_fit/webmonitor/webresources
+graft lib/atsim/pro_fit/runners/templates
