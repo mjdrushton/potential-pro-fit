@@ -19,7 +19,7 @@ type : NelderMead
 # See documentation for more.
 # =============================================================================
 
-[Runner:Local]
+[Runner:{{runner_name}}]
 type : Local
 nprocesses : {{ncpus}}
 
@@ -27,21 +27,21 @@ nprocesses : {{ncpus}}
 # Variables:
 # Place fitting variables in [Variables] section. 
 # Variables definitions take the form:
-# 	VARIABLE_NAME : INITIAL_VALUE [(LOWERBOUND, UPPERBOUND)] [*]
+#   VARIABLE_NAME : INITIAL_VALUE [(LOWERBOUND, UPPERBOUND)] [*]
 #
 # Where:
-#	VARIABLE_NAME : 
-#		Label by which the variable is identified within the fitting system.
-#	INITIAL_VALUE : 
-#		The starting value for the variable.
-#	(LOWERBOUND, UPPERBOUND) : 
-#		Specify the desired range for a particular variable. 
+#   VARIABLE_NAME : 
+#       Label by which the variable is identified within the fitting system.
+#   INITIAL_VALUE : 
+#       The starting value for the variable.
+#   (LOWERBOUND, UPPERBOUND) : 
+#       Specify the desired range for a particular variable. 
 #       For minimizers supporting bounds these constrain variable values to 
 #       sit in range LOWERBOUND < value < UPPERBOUND.
-#	*: 
-#		An asterisk at the end of a variable line indicates that the variable 
-#		should be optimised during fitting. If no asterisk appears, the 
-#		variable will be held fixed.
+#   *: 
+#       An asterisk at the end of a variable line indicates that the variable 
+#       should be optimised during fitting. If no asterisk appears, the 
+#       variable will be held fixed.
 # =============================================================================
 
 [Variables]
@@ -52,8 +52,8 @@ nprocesses : {{ncpus}}
 # Optional sections, see documentation for more (uncomment to use):
 #
 # [CalculatedVariables]
-# 	Contains formulae that calculate variables from values contained in 
-# 	[Variables] section.
+#   Contains formulae that calculate variables from values contained in 
+#   [Variables] section.
 
 # [MetaEvaluator:EVALUATOR_NAME]
 #   Meta evaluators can be thought of as evaluators that are called after job 

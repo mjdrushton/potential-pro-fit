@@ -54,7 +54,9 @@ def _initializeRun(directoryName, logger):
   """Initialize fitting run directory. Create directoryName and populate with
   skeleton version of files required for a run.
 
-  @param directoryName"""
+  Args:
+   directoryName (string): Path where run should be initialized.
+   logger (logging.Logger): Object used for logging."""
 
   if os.path.exists(directoryName):
     raise _DirectoryInitializationException("Directory already exists: '%s'" % directoryName)
@@ -77,9 +79,12 @@ def _initializeRun(directoryName, logger):
   env = jinja2.Environment(loader=templateLoader)
   template = env.get_template('fit.cfg.jinja')
 
+  runner_name = "Local"
+
   # Get variables required by the template
   import multiprocessing
   templateVariables = {
+    'runner_name' : runner_name,
     'title' : os.path.basename(directoryName),
     'ncpus' : multiprocessing.cpu_count()
   }
@@ -88,6 +93,16 @@ def _initializeRun(directoryName, logger):
   fitCfgName = os.path.join(directoryName, 'fit.cfg')
   template.stream(**templateVariables).dump(fitCfgName)
   logger.info("Created: %s" % fitCfgName)
+
+  # Create runner_files directory
+  dirname = os.path.join(directoryName, 'runner_files', runner_name)
+  try:
+    os.makedirs(dirname)
+    logger.info("Created runner_files directory for the default runner '%s': %s" % (runner_name, dirname))
+  except Exception as e:
+    raise _DirectoryInitializationException("Could not create 'runner_files' directory: %s" % e.message)
+
+
 
 def _getValidRunners():
   """Open 'fit.cfg' and produce list of runner names.
@@ -211,7 +226,6 @@ for description of required directory structure and files."""
     action = "append",
     metavar = "PYTHON_FILE",
     help = "Search python .py with filename PYTHON_FILE for additional meta-evalutaors, evaluators, runners, minimizers and job-factories. Specify -p/--plugin once for each plugin file.")
-
 
   optgroup = optparse.OptionGroup(parser, "Initialisation", "Options for creating fitting runs and jobs")
   optgroup.add_option('-i', '--init',
@@ -373,7 +387,6 @@ def _processPlugins(pathList):
   return retlist
 
 def main():
-  import pdb;pdb.set_trace()
   # Get command line options
   options = _parseCommandLine()
   logger = _setupLogging(options.verbose)
