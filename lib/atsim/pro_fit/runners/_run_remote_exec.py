@@ -81,7 +81,6 @@ class EventLoop(threading.Thread):
       self.busy_flag = False
       self.ready()
 
-
   def jobdone(self, job_id, returncode, **kwargs):
     with lock:
       self.busy_flag = False
@@ -106,6 +105,10 @@ class EventLoop(threading.Thread):
     except:
       self.send(dict(msg="ERROR"))
       return
+
+    # Check that the specified shell exists and is runnable
+    if not (os.path.isfile(self.shell) and os.access(self.shell, os.X_OK)):
+      self.send(dict(msg="ERROR", reason= "shell cannot be executed: '%s'" % self.shell, channel_id = self.channel_id))
 
     self.ready()
 

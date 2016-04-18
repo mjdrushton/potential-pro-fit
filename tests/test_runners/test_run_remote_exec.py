@@ -1,42 +1,14 @@
-
-
-from atsim.pro_fit.runners import _remote_exec
-
-from pytest import fixture
+from atsim.pro_fit.runners import _run_remote_exec
 
 from assertpy import assert_that, fail, contents_of
 
-import execnet
 import collections
-
-import uuid
 import time
 
-@fixture
-def execnet_gw(request):
-  group = execnet.Group()
-  gw = group.makegateway()
-
-  def finalizer():
-    group.terminate(timeout=1.0)
-
-  request.addfinalizer(finalizer)
-  return gw
-
-@fixture
-def channel_id():
-  return str(uuid.uuid4())
-
-def testBadStart(execnet_gw):
-  ch1 = execnet_gw.remote_exec(_remote_exec)
-
-  ch1.send({'msg' : 'START_CHANNEL'})
-  msg = ch1.receive(1.0)
-
-  assert_that(msg["msg"]).is_equal_to("ERROR")
+from _runnercommon import execnet_gw, channel_id
 
 def testAlreadyRunning(execnet_gw, tmpdir, channel_id):
-  ch1 = execnet_gw.remote_exec(_remote_exec)
+  ch1 = execnet_gw.remote_exec(_run_remote_exec)
   ch1.send({'msg' : 'START_CHANNEL', 'channel_id' : channel_id })
   msg = ch1.receive(1.0)
   assert_that(msg).is_equal_to(dict(msg =  "READY", channel_id = channel_id))
@@ -56,7 +28,7 @@ def testAlreadyRunning(execnet_gw, tmpdir, channel_id):
   assert_that(msg).is_equal_to({'msg': 'JOB_START_ERROR', 'channel_id' : channel_id, 'job_id' : (1,2,3), 'reason' : 'BUSY'})
 
 def testJobPathDoesntExist(execnet_gw, tmpdir, channel_id):
-  ch1 = execnet_gw.remote_exec(_remote_exec)
+  ch1 = execnet_gw.remote_exec(_run_remote_exec)
   ch1.send({'msg' : 'START_CHANNEL', 'channel_id' : channel_id })
   msg = ch1.receive(1.0)
   assert_that(msg).is_equal_to(dict(msg =  "READY", channel_id = channel_id))
@@ -66,8 +38,16 @@ def testJobPathDoesntExist(execnet_gw, tmpdir, channel_id):
   msg = ch1.receive(1.0)
   assert_that(msg).is_equal_to(dict(msg =  "READY", channel_id = channel_id))
 
+def testShellDoesntExist(execnet_gw, tmpdir, channel_id):
+  ch1 = execnet_gw.remote_exec(_run_remote_exec)
+  ch1.send({'msg' : 'START_CHANNEL', 'channel_id' : channel_id, 'shell' : '/this/shell/doesnt/exist' })
+  msg = ch1.receive(1.0)
+  assert_that(msg).is_equal_to(dict(msg =  "ERROR", channel_id = channel_id, reason = "shell cannot be executed: '%s'" % '/this/shell/doesnt/exist'))
+
+
+
 def testStart(execnet_gw, tmpdir, channel_id):
-  ch1 = execnet_gw.remote_exec(_remote_exec)
+  ch1 = execnet_gw.remote_exec(_run_remote_exec)
   ch1.send({'msg' : 'START_CHANNEL', 'channel_id' : channel_id })
 
   msg = ch1.receive(1.0)
@@ -101,7 +81,7 @@ def testStart(execnet_gw, tmpdir, channel_id):
   ch1.send(None)
 
 def testEasyKill(execnet_gw, tmpdir, channel_id):
-  ch1 = execnet_gw.remote_exec(_remote_exec)
+  ch1 = execnet_gw.remote_exec(_run_remote_exec)
   ch1.send({'msg' : 'START_CHANNEL', 'channel_id' : channel_id })
 
   msg = ch1.receive(1.0)
@@ -134,7 +114,7 @@ def testEasyKill(execnet_gw, tmpdir, channel_id):
   assert_that(msg).is_equal_to(dict(msg =  "READY", channel_id = channel_id))
 
 def testHardKill(execnet_gw, tmpdir, channel_id):
-  ch1 = execnet_gw.remote_exec(_remote_exec)
+  ch1 = execnet_gw.remote_exec(_run_remote_exec)
   ch1.send({'msg' : 'START_CHANNEL', 'channel_id' : channel_id, 'hardkill_timeout' : 2})
 
   msg = ch1.receive(1.0)

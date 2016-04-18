@@ -2,11 +2,15 @@ import os
 import shutil
 import stat
 import tempfile
+import uuid
+
 
 from .. import common
 from atsim import pro_fit
 
-import pytest
+from pytest import fixture
+
+import execnet
 
 from assertpy import assert_that
 
@@ -75,10 +79,9 @@ class FixtureObj(object):
     self.jobs = jobs
 
 
-@pytest.fixture(scope="function")
+@fixture(scope="function")
 def runfixture(request):
   tempd = tempfile.mkdtemp()
-  # remoted = tempfile.mkdtemp()
   remoted = None
   evaluator = common.MockEvaluator(lambda d: d['A'])
 
@@ -99,7 +102,29 @@ def runfixture(request):
 
   def tearDown():
     shutil.rmtree(fixture.tempd, ignore_errors = True)
-    # shutil.rmtree(fixture.remoted, ignore_errors = True)
 
   request.addfinalizer(tearDown)
   return fixture
+
+@fixture
+def execnet_gw(request):
+  group = execnet.Group()
+  gw = group.makegateway()
+
+  def finalizer():
+    group.terminate(timeout=1.0)
+
+  request.addfinalizer(finalizer)
+  return gw
+
+@fixture
+def channel_id():
+  return str(uuid.uuid4())
+
+def testBadStart(execnet_gw):
+  ch1 = execnet_gw.remote_exec(_run_remote_exec)
+
+  ch1.send({'msg' : 'START_CHANNEL'})
+  msg = ch1.receive(1.0)
+
+  assert_that(msg["msg"]).is_equal_to("ERROR")
