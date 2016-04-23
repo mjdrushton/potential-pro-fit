@@ -11,7 +11,6 @@ def ready(channel, channel_id, remote_path):
 def error(channel, channel_id, reason, **extra_args):
   msg = dict(msg = "ERROR",
              reason = reason)
-
   if channel_id:
     msg['channel_id'] = channel_id
 
@@ -25,7 +24,6 @@ def mktempdir(channel, channel_id):
   except Exception, e:
     error(channel, channel_id, "Couldn't create temporary directory. '%s' " % e)
     return False
-
 
 def process_path(channel, channel_id, remote_path):
   # If the final element of remote_path doesn't exist, but the rest of it does, then make the directory
@@ -56,7 +54,6 @@ def chkpath(channel, channel_id, remote_path):
     error(channel, channel_id, "Directory is not writeable.", remote_path = remote_path)
     return False, remote_path
   return True, remote_path
-
 
 def normalize_path(remote_root, dest_path):
   # import pdb;pdb.set_trace()
@@ -125,19 +122,7 @@ def upload(channel, channel_id, remote_root, msg):
   channel.send(uploaded_msg)
   return True
 
-
-def remote_exec(channel):
-  msg = channel.receive()
-
-  mtype = msg.get('msg', None)
-  if not mtype == 'START_CHANNEL':
-    error(channel, None, 'was expecting msg "START_CHANNEL", got "%s" instead' % mtype)
-    return
-
-  channel_id = msg.get('channel_id', str(uuid.uuid4()))
-
-  remote_path = msg.get('remote_path', None)
-
+def upload_remote_exec(channel, channel_id, remote_path):
   if remote_path is None:
     remote_path = mktempdir(channel, channel_id)
     if not remote_path:
@@ -170,6 +155,27 @@ def remote_exec(channel):
     if mtype == 'UPLOAD':
       upload(channel, channel_id, remote_path, msg)
 
+def start_channel(channel):
+  msg = channel.receive()
+
+  mtype = msg.get('msg', None)
+  channeltypes = {'START_UPLOAD_CHANNEL' : upload_remote_exec,
+                  'START_DOWNLOAD_CHANNEL' : None}
+
+  if not mtype in channeltypes:
+    error(channel,
+          None,
+          'was expecting msg that is one of %s, got "%s" instead' % (
+            ",".join(['"%s"' % ctype for ctype in channeltypes.keys()],
+             mtype))
+          )
+    return
+
+  channel_id = msg.get('channel_id', str(uuid.uuid4()))
+  remote_path = msg.get('remote_path', None)
+
+  channeltypes[mtype](channel, channel_id, remote_path)
+
 
 if __name__ == '__channelexec__':
-  remote_exec(channel)
+  start_channel(channel)

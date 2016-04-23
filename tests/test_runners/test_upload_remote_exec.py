@@ -1,6 +1,6 @@
 from assertpy import assert_that, fail
 
-from atsim.pro_fit.runners import _upload_remote_exec
+from atsim.pro_fit.runners import _file_transfer_remote_exec
 
 from _runnercommon import execnet_gw, channel_id
 
@@ -8,12 +8,12 @@ import uuid
 import os
 
 def testGoodStart_explicit_dir(tmpdir, execnet_gw, channel_id):
-  ch1 = execnet_gw.remote_exec(_upload_remote_exec)
+  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
 
   path = tmpdir.join("0")
   assert_that(path.isdir()).is_false()
 
-  ch1.send({'msg' : 'START_CHANNEL', 'channel_id' : channel_id, 'remote_path' : path.strpath })
+  ch1.send({'msg' : 'START_UPLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : path.strpath })
   msg = ch1.receive(10.0)
   assert_that(msg).is_equal_to(dict(msg =  "READY", channel_id = channel_id, remote_path = path.strpath))
 
@@ -21,8 +21,8 @@ def testGoodStart_explicit_dir(tmpdir, execnet_gw, channel_id):
 
 
 def testGoodStart_tmpdir(execnet_gw, channel_id):
-  ch1 = execnet_gw.remote_exec(_upload_remote_exec)
-  ch1.send({'msg' : 'START_CHANNEL', 'channel_id' : channel_id, 'remote_path' : None })
+  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+  ch1.send({'msg' : 'START_UPLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : None })
 
   msg = ch1.receive(10.0)
   assert_that(msg).contains_key('remote_path')
@@ -36,11 +36,11 @@ def testGoodStart_tmpdir(execnet_gw, channel_id):
 
 
 def testBadStart_destination_unwriteable(tmpdir, execnet_gw, channel_id):
-  ch1 = execnet_gw.remote_exec(_upload_remote_exec)
+  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
 
   tmpdir.chmod(0o500)
   try:
-    ch1.send({'msg' : 'START_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.strpath })
+    ch1.send({'msg' : 'START_UPLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.strpath })
     msg = ch1.receive(10.0)
     assert_that(msg).is_equal_to(dict(msg = "ERROR", channel_id = channel_id, remote_path = tmpdir.strpath, reason = 'Directory is not writeable.'))
   finally:
@@ -48,7 +48,7 @@ def testBadStart_destination_unwriteable(tmpdir, execnet_gw, channel_id):
 
 
 def testSendFile(tmpdir, execnet_gw, channel_id):
-  ch1 = execnet_gw.remote_exec(_upload_remote_exec)
+  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
 
   sourcedir = tmpdir.join("source")
   sourcedir.mkdir()
@@ -63,7 +63,7 @@ def testSendFile(tmpdir, execnet_gw, channel_id):
   assert_that(destdir.isdir()).is_false()
 
   ch1.send(dict(
-    msg = "START_CHANNEL",
+    msg = "START_UPLOAD_CHANNEL",
     remote_path = destdir.strpath))
 
   msg = ch1.receive()
@@ -124,23 +124,23 @@ def testNormalizePath():
   sub = "1/2/3"
 
   expect = "/this/is/the/root/1/2/3"
-  actual =  _upload_remote_exec.normalize_path(root_path, sub)
+  actual =  _file_transfer_remote_exec.normalize_path(root_path, sub)
 
   assert_that(actual).is_equal_to(expect)
 
   sub = "/1/2/3"
-  actual =  _upload_remote_exec.normalize_path(root_path, sub)
+  actual =  _file_transfer_remote_exec.normalize_path(root_path, sub)
   assert_that(actual).is_equal_to(expect)
 
   sub = "/this/is/the/root/1/2/3"
-  actual =  _upload_remote_exec.normalize_path(root_path, sub)
+  actual =  _file_transfer_remote_exec.normalize_path(root_path, sub)
   assert_that(actual).is_equal_to(expect)
 
   sub = "../1/2/3"
-  actual =  _upload_remote_exec.normalize_path(root_path, sub)
+  actual =  _file_transfer_remote_exec.normalize_path(root_path, sub)
   assert_that(actual).is_none()
 
   sub = "/1/2/../../1/2/3"
-  actual = _upload_remote_exec.normalize_path(root_path, sub)
+  actual = _file_transfer_remote_exec.normalize_path(root_path, sub)
   assert_that(actual).is_equal_to("/this/is/the/root/1/2/3")
 
