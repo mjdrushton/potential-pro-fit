@@ -2,6 +2,9 @@ import uuid
 import tempfile
 import os
 
+FILE = 1
+DIR = 2
+
 def ready(channel, channel_id, remote_path):
   channel.send(dict(
     msg = 'READY',
@@ -74,6 +77,19 @@ def normalize_path(remote_root, dest_path):
 
   return dest_path
 
+def extract_mtype(msg, channel, channel_id):
+  try:
+    mtype = msg.get('msg', None)
+  except Exception:
+    error(channel, channel_id, "Malformed message")
+    return None
+
+  if mtype is None:
+    error(channel, channel_id, "'msg' not found in message")
+    return None
+
+  return mtype
+
 def upload(channel, channel_id, remote_root, msg):
 
   if not msg.has_key('id'):
@@ -122,6 +138,77 @@ def upload(channel, channel_id, remote_root, msg):
   channel.send(uploaded_msg)
   return True
 
+def list_dir(channel, channel_id, remote_root, msg):
+
+  # Extract required arguments
+  path = msg.get("remote_path", None)
+  if path is None:
+    error(channel, channel_id, "Could not find 'remote_path' argument in 'LIST' request'")
+    return
+
+  fileid = msg.get("id", None)
+  if fileid is None:
+    error(channel, channel_id, "Could not find 'id' argument in 'LIST' request'")
+    return
+
+  rpath = normalize_path(remote_root, path)
+  if rpath is None:
+    error(channel, channel_id, "'path' argument in 'LIST' request references location outside channel root.", remote_path = path, remote_root = remote_root, id = fileid)
+    return
+  path = rpath
+
+  files = []
+  retmsg = dict(msg = "LIST", id =  fileid, channel_id = channel_id, files = files)
+
+  for f in os.listdir(path):
+    p = normalize_path(remote_root, f)
+    mode = os.stat(p).st_mode
+
+    if os.path.isdir(p):
+      filetype = DIR
+    else:
+      filetype = FILE
+
+    files.append(dict(remote_path = p, type = filetype, mode = mode))
+  channel.send(retmsg)
+
+def download_file(channel,channel_id, remote_root, msg):
+  # Extract required arguments
+  path = msg.get("remote_path", None)
+  if path is None:
+    error(channel, channel_id, "Could not find 'remote_path' argument in 'DOWNLOAD_FILE' request'")
+    return
+
+  fileid = msg.get("id", None)
+  if fileid is None:
+    error(channel, channel_id, "Could not find 'id' argument in 'DOWNLOAD_FILE' request'")
+    return
+
+  rpath = normalize_path(remote_root, path)
+  if rpath is None:
+    error(channel, channel_id, "'path' argument in 'DOWNLOAD_FILE' request references location outside channel root.", remote_path = path, remote_root = remote_root, id = fileid)
+    return
+  path = rpath
+
+  if not os.path.exists(path):
+    error(channel, channel_id, "file does not exist", remote_path = path, id = fileid)
+    return
+
+  if os.path.isdir(path) or not os.path.isfile(path):
+    error(channel, channel_id, "path refers to a directory and cannot be downloaded", remote_path = path, id = fileid)
+    return
+
+  try:
+    with open(path,'rb') as infile:
+      filecontents = infile.read()
+  except IOError:
+    error(channel, channel_id, "permission denied", remote_path = path, id = fileid)
+    return
+
+  mode = os.stat(path).st_mode
+  retmsg = dict(msg = 'DOWNLOAD_FILE', id = fileid, channel_id = channel_id, remote_path = path, file_data = filecontents, mode = mode)
+  channel.send(retmsg)
+
 def upload_remote_exec(channel, channel_id, remote_path):
   if remote_path is None:
     remote_path = mktempdir(channel, channel_id)
@@ -142,25 +229,48 @@ def upload_remote_exec(channel, channel_id, remote_path):
     if msg is None:
       return
 
-    try:
-      mtype = msg.get('msg', None)
-    except Exception:
-      error(channel, channel_id, "Malformed message")
-      continue
-
+    mtype = extract_mtype(msg, channel, channel_id)
     if mtype is None:
-      error(channel, channel_id, "'msg' not found in message")
       continue
 
     if mtype == 'UPLOAD':
       upload(channel, channel_id, remote_path, msg)
+    else:
+      error(channel, channel_id, "Unknown 'msg' type: '%s'" % (mtype,), mtype = mtype)
+
+def download_remote_exec(channel, channel_id, remote_path):
+  if remote_path is None:
+    error(channel, channel_id, "'remote_path' argument not found in START_DOWNLOAD channel request.")
+    return
+
+  remote_path = os.path.normpath(remote_path)
+  if not os.path.isdir(remote_path):
+    error(channel, channel_id, "path does not exist or is not a directory", remote_path = remote_path)
+    return
+
+  ready(channel, channel_id, remote_path)
+
+  for msg in channel:
+    if msg is None:
+      return
+
+    mtype = extract_mtype(msg, channel, channel_id)
+    if mtype is None:
+      continue
+
+    if mtype == 'LIST':
+      list_dir(channel, channel_id, remote_path, msg)
+    elif mtype == 'DOWNLOAD_FILE':
+      download_file(channel, channel_id, remote_path, msg)
+    else:
+      error(channel, channel_id, "Unknown 'msg' type: '%s'" % (mtype,), mtype = mtype)
 
 def start_channel(channel):
   msg = channel.receive()
 
   mtype = msg.get('msg', None)
   channeltypes = {'START_UPLOAD_CHANNEL' : upload_remote_exec,
-                  'START_DOWNLOAD_CHANNEL' : None}
+                  'START_DOWNLOAD_CHANNEL' : download_remote_exec}
 
   if not mtype in channeltypes:
     error(channel,
