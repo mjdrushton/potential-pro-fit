@@ -1,6 +1,7 @@
 import uuid
 import tempfile
 import os
+import traceback
 
 FILE = 1
 DIR = 2
@@ -81,7 +82,7 @@ def extract_mtype(msg, channel, channel_id):
   try:
     mtype = msg.get('msg', None)
   except Exception:
-    error(channel, channel_id, "Malformed message")
+    error(channel, channel_id, "Malformed message", request = msg)
     return None
 
   if mtype is None:
@@ -139,7 +140,6 @@ def upload(channel, channel_id, remote_root, msg):
   return True
 
 def list_dir(channel, channel_id, remote_root, msg):
-
   # Extract required arguments
   path = msg.get("remote_path", None)
   if path is None:
@@ -161,7 +161,7 @@ def list_dir(channel, channel_id, remote_root, msg):
   retmsg = dict(msg = "LIST", id =  fileid, channel_id = channel_id, files = files)
 
   for f in os.listdir(path):
-    p = normalize_path(remote_root, f)
+    p = normalize_path(remote_root, os.path.join(path,f))
     mode = os.stat(p).st_mode
 
     if os.path.isdir(p):
@@ -229,14 +229,17 @@ def upload_remote_exec(channel, channel_id, remote_path):
     if msg is None:
       return
 
-    mtype = extract_mtype(msg, channel, channel_id)
-    if mtype is None:
-      continue
+    try:
+      mtype = extract_mtype(msg, channel, channel_id)
+      if mtype is None:
+        continue
 
-    if mtype == 'UPLOAD':
-      upload(channel, channel_id, remote_path, msg)
-    else:
-      error(channel, channel_id, "Unknown 'msg' type: '%s'" % (mtype,), mtype = mtype)
+      if mtype == 'UPLOAD':
+        upload(channel, channel_id, remote_path, msg)
+      else:
+        error(channel, channel_id, "Unknown 'msg' type: '%s'" % (mtype,), mtype = mtype)
+    except Exception,e:
+      error(channel, channel_id, "Exception: %s" % str(e), traceback = traceback.format_exc())
 
 def download_remote_exec(channel, channel_id, remote_path):
   if remote_path is None:
@@ -253,17 +256,19 @@ def download_remote_exec(channel, channel_id, remote_path):
   for msg in channel:
     if msg is None:
       return
+    try:
+      mtype = extract_mtype(msg, channel, channel_id)
+      if mtype is None:
+        continue
 
-    mtype = extract_mtype(msg, channel, channel_id)
-    if mtype is None:
-      continue
-
-    if mtype == 'LIST':
-      list_dir(channel, channel_id, remote_path, msg)
-    elif mtype == 'DOWNLOAD_FILE':
-      download_file(channel, channel_id, remote_path, msg)
-    else:
-      error(channel, channel_id, "Unknown 'msg' type: '%s'" % (mtype,), mtype = mtype)
+      if mtype == 'LIST':
+        list_dir(channel, channel_id, remote_path, msg)
+      elif mtype == 'DOWNLOAD_FILE':
+        download_file(channel, channel_id, remote_path, msg)
+      else:
+        error(channel, channel_id, "Unknown 'msg' type: '%s'" % (mtype,), mtype = mtype)
+    except Exception,e:
+      error(channel, channel_id, "Exception: %s" % str(e), traceback = traceback.format_exc())
 
 def start_channel(channel):
   msg = channel.receive()
@@ -285,7 +290,6 @@ def start_channel(channel):
   remote_path = msg.get('remote_path', None)
 
   channeltypes[mtype](channel, channel_id, remote_path)
-
 
 if __name__ == '__channelexec__':
   start_channel(channel)
