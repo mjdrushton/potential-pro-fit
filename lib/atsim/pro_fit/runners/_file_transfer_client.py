@@ -93,6 +93,9 @@ class DownloadDirectory(object):
     self.dest_path = dest_path
     self.transaction_id = str(uuid.uuid4())
 
+    if not os.path.exists(self.dest_path):
+      raise IOError("Download destinatio path doesn't exist: '%s'" % self.dest_path)
+
     if download_handler is None:
       download_handler = DownloadHandler(self.remote_path, self.dest_path)
 
@@ -128,6 +131,7 @@ class _DownloadCallback(object):
     self.event = threading.Event()
     self.channel_iter = None
     self.file_q_wait = None
+    self.dir_q_wait = None
     self.dir_q = None
     self.enabled = False
     self._exc = None
@@ -148,8 +152,17 @@ class _DownloadCallback(object):
         return
 
       if mtype == 'ERROR':
-        self._error("Received 'ERROR' message from remote: %s" % msg['reason'])
-        return
+        if msg.get('error_code', None) == ('OSERROR', 'LISTDIR'):
+          self._logger.warning("Could not list directory (skipping contents): '%s'" % msg.get('exc_msg', None))
+          dirid = msg.get('id')
+          self._skip_dir(dirid)
+        elif msg.get('error_code', None) == ('IOERROR', 'FILEOPEN'):
+          self._logger.warning("Could not open file for reading (skipping): '%s'" % msg.get('exc_msg', None))
+          fileid = msg.get('id')
+          self._skip_file(fileid)
+        else:
+          self._error("Received 'ERROR' message from remote: %s" % msg['reason'])
+          return
 
       if mtype == 'LIST':
         self._process_list_dir_response(msg)
@@ -245,6 +258,16 @@ class _DownloadCallback(object):
     else:
       self._list_next_dir()
 
+  def _skip_dir(self, dirid):
+    with _lock:
+      self.dir_q_wait.discard(dirid)
+      self._donext()
+
+  def _skip_file(self, fileid):
+    with _lock:
+      self.file_q_wait.discard(fileid)
+      self._donext()
+
   def _process_list_dir_response(self, msg):
     """Used by callback when LIST is received.
 
@@ -267,7 +290,6 @@ class _DownloadCallback(object):
         elif f['type'] is DIR:
           self._register_directory(f['remote_path'])
           self._write_dir(f)
-
       self._donext()
 
   def _process_download_file_response(self, msg):

@@ -12,9 +12,10 @@ def ready(channel, channel_id, remote_path):
     channel_id = channel_id,
     remote_path = remote_path))
 
-def error(channel, channel_id, reason, **extra_args):
+def error(channel, channel_id, reason, error_code, **extra_args):
   msg = dict(msg = "ERROR",
-             reason = reason)
+             reason = reason,
+             error_code = error_code)
   if channel_id:
     msg['channel_id'] = channel_id
 
@@ -26,7 +27,10 @@ def mktempdir(channel, channel_id):
     tmpdir = tempfile.mkdtemp()
     return tmpdir
   except Exception, e:
-    error(channel, channel_id, "Couldn't create temporary directory. '%s' " % e)
+    error(channel,
+      channel_id,
+      "Couldn't create temporary directory. '%s' " % e,
+      ("IOERROR","MKTEMPDIR"))
     return False
 
 def process_path(channel, channel_id, remote_path):
@@ -37,25 +41,38 @@ def process_path(channel, channel_id, remote_path):
     return True, remote_path
 
   if os.path.exists(remote_path):
-    error(channel, channel_id, "'remote_path' exists but is not a directory '%s'" % remote_path)
+    error(channel,
+      channel_id,
+      "'remote_path' exists but is not a directory '%s'" % remote_path,
+      ("IOERROR","REMOTE_IS_NOT_DIRECTORY"))
     return False, remote_path
 
   rootpath = os.path.dirname(remote_path)
   if not os.path.isdir(rootpath):
-    error(channel, channel_id, "'remote_path' is invalid, neither '%s' or '%s' are existing directories." % (remote_path, rootpath))
+    error(channel,
+      channel_id,
+      "'remote_path' is invalid, neither '%s' or '%s' are existing directories." % (remote_path, rootpath),
+      ("IOERROR","REMOTE_DOES_NOT_EXIST"))
     return False, remote_path
 
   try:
     os.mkdir(remote_path)
     return True, remote_path
   except Exception, e:
-    error(channel, channel_id, "Couldn't create directory. '%s' reason '%s'" % (remote_path, e))
+    error(channel,
+      channel_id,
+      "Couldn't create directory. '%s' reason '%s'" % (remote_path, e),
+      ("IOERROR", "MKDIR_FAILED"))
     return False, remote_path
 
 def chkpath(channel, channel_id, remote_path):
   # Ensure that the destination directory is writeable
   if not os.access(remote_path, os.W_OK):
-    error(channel, channel_id, "Directory is not writeable.", remote_path = remote_path)
+    error(channel,
+      channel_id,
+      "Directory is not writeable.",
+      ("IOERROR", "PERMISSION_DENIED"),
+      remote_path = remote_path)
     return False, remote_path
   return True, remote_path
 
@@ -82,11 +99,19 @@ def extract_mtype(msg, channel, channel_id):
   try:
     mtype = msg.get('msg', None)
   except Exception:
-    error(channel, channel_id, "Malformed message", request = msg)
+    error(channel,
+      channel_id,
+      "Malformed message",
+      ("MSGERROR", "MALFORMED"),
+      request = msg)
     return None
 
   if mtype is None:
-    error(channel, channel_id, "'msg' not found in message")
+    error(channel,
+      channel_id,
+      "'msg' not found in message",
+      ("MSGERROR", "KEYERROR"),
+      key = 'msg')
     return None
 
   return mtype
@@ -94,11 +119,19 @@ def extract_mtype(msg, channel, channel_id):
 def upload(channel, channel_id, remote_root, msg):
 
   if not msg.has_key('id'):
-    error(channel, channel_id, "UPLOAD message does not contain 'id' argument")
+    error(channel,
+      channel_id,
+      "UPLOAD message does not contain 'id' argument",
+      ("MSGERROR", "KEYERROR"),
+      key = 'id')
     return False
 
   if not msg.has_key('remote_path'):
-    error(channel, channel_id, "UPLOAD message does not contain 'remote_path' argument for msg id = '%s'" % msg.get('id', None))
+    error(channel,
+      channel_id,
+      "UPLOAD message does not contain 'remote_path' argument for msg id = '%s'" % msg.get('id', None)
+      ("MSGERROR", "KEYERROR"),
+      key = 'remote_path')
     return False
 
   file_data = msg.get("file_data", "")
@@ -108,7 +141,9 @@ def upload(channel, channel_id, remote_root, msg):
   rp = normalize_path(remote_root, remote_path)
 
   if rp is None:
-    error(channel, channel_id, "Error 'remote_path' cannot be converted to path under upload directory.",
+    error(channel, channel_id,
+    "Error 'remote_path' cannot be converted to path under upload directory.",
+    ("PATHERROR", "NOTCHILD"),
     remote_path = remote_path,
     id = fileid)
     return
@@ -125,6 +160,7 @@ def upload(channel, channel_id, remote_root, msg):
       outfile.write(file_data)
   except Exception,e:
     error(channel, channel_id, "Error writing file: '%s'" % str(e),
+      ("IOERROR", "WRITE"),
       remote_path = remote_path,
       id = fileid)
     return False
@@ -143,24 +179,44 @@ def list_dir(channel, channel_id, remote_root, msg):
   # Extract required arguments
   path = msg.get("remote_path", None)
   if path is None:
-    error(channel, channel_id, "Could not find 'remote_path' argument in 'LIST' request'")
+    error(channel, channel_id,
+      "Could not find 'remote_path' argument in 'LIST' request'",
+      ("MSGERROR", "KEYERROR"),
+      key = "remote_path")
     return
 
   fileid = msg.get("id", None)
   if fileid is None:
-    error(channel, channel_id, "Could not find 'id' argument in 'LIST' request'")
+    error(channel, channel_id,
+      "Could not find 'id' argument in 'LIST' request'",
+      ("MSGERROR", "KEYERROR"),
+      key = 'id')
     return
 
   rpath = normalize_path(remote_root, path)
   if rpath is None:
-    error(channel, channel_id, "'path' argument in 'LIST' request references location outside channel root.", remote_path = path, remote_root = remote_root, id = fileid)
+    error(channel, channel_id,
+      "'path' argument in 'LIST' request references location outside channel root.",
+      ("PATHERROR", "NOTCHILD"),
+      remote_path = path, remote_root = remote_root, id = fileid)
     return
   path = rpath
 
   files = []
   retmsg = dict(msg = "LIST", id =  fileid, channel_id = channel_id, files = files)
 
-  for f in os.listdir(path):
+  try:
+    file_list = os.listdir(path)
+  except OSError,e:
+    error(channel, channel_id,
+      "Could not list directory",
+      ("OSERROR", "LISTDIR"),
+      remote_path = path,
+      exc_msg = str(e),
+      id = fileid)
+    return
+
+  for f in file_list:
     p = normalize_path(remote_root, os.path.join(path,f))
     mode = os.stat(p).st_mode
 
@@ -176,33 +232,53 @@ def download_file(channel,channel_id, remote_root, msg):
   # Extract required arguments
   path = msg.get("remote_path", None)
   if path is None:
-    error(channel, channel_id, "Could not find 'remote_path' argument in 'DOWNLOAD_FILE' request'")
+    error(channel, channel_id,
+    "Could not find 'remote_path' argument in 'DOWNLOAD_FILE' request'",
+    ("MSGERROR", "KEYERROR"),
+    key = 'remote_path')
     return
 
   fileid = msg.get("id", None)
   if fileid is None:
-    error(channel, channel_id, "Could not find 'id' argument in 'DOWNLOAD_FILE' request'")
+    error(channel, channel_id,
+    "Could not find 'id' argument in 'DOWNLOAD_FILE' request'",
+    ("MSGERROR", "KEYERROR"),
+    key = 'id')
     return
 
   rpath = normalize_path(remote_root, path)
   if rpath is None:
-    error(channel, channel_id, "'path' argument in 'DOWNLOAD_FILE' request references location outside channel root.", remote_path = path, remote_root = remote_root, id = fileid)
+    error(channel, channel_id,
+    "'path' argument in 'DOWNLOAD_FILE' request references location outside channel root.",
+    ("PATHERROR", "NOTCHILD"),
+    remote_path = path, remote_root = remote_root, id = fileid)
     return
   path = rpath
 
   if not os.path.exists(path):
-    error(channel, channel_id, "file does not exist", remote_path = path, id = fileid)
+    error(channel, channel_id,
+    "file does not exist",
+    ("IOERROR", "FILEDOESNOTEXIST"),
+    remote_path = path, id = fileid)
     return
 
   if os.path.isdir(path) or not os.path.isfile(path):
-    error(channel, channel_id, "path refers to a directory and cannot be downloaded", remote_path = path, id = fileid)
+    error(channel, channel_id, "path refers to a directory and cannot be downloaded",
+    ("IOERROR", "ISDIR"),
+    remote_path = path, id = fileid)
     return
 
   try:
     with open(path,'rb') as infile:
       filecontents = infile.read()
-  except IOError:
-    error(channel, channel_id, "permission denied", remote_path = path, id = fileid)
+  except IOError,e:
+    error(channel,
+      channel_id,
+      "permission denied",
+      ("IOERROR", "FILEOPEN"),
+      id = fileid,
+      exc_msg = str(e),
+      remote_path = path)
     return
 
   mode = os.stat(path).st_mode
@@ -248,7 +324,9 @@ def download_remote_exec(channel, channel_id, remote_path):
 
   remote_path = os.path.normpath(remote_path)
   if not os.path.isdir(remote_path):
-    error(channel, channel_id, "path does not exist or is not a directory", remote_path = remote_path)
+    error(channel, channel_id, "path does not exist or is not a directory",
+    ("IOERROR", "FILEDOESNOTEXIST"),
+    remote_path = remote_path)
     return
 
   ready(channel, channel_id, remote_path)
@@ -268,7 +346,9 @@ def download_remote_exec(channel, channel_id, remote_path):
       else:
         error(channel, channel_id, "Unknown 'msg' type: '%s'" % (mtype,), mtype = mtype)
     except Exception,e:
-      error(channel, channel_id, "Exception: %s" % str(e), traceback = traceback.format_exc())
+      error(channel, channel_id, "Exception: %s" % str(e),
+      ("EXCEPTION", str(type(e))),
+      traceback = traceback.format_exc())
 
 def start_channel(channel):
   msg = channel.receive()

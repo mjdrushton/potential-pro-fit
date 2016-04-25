@@ -1,15 +1,17 @@
-from assertpy import assert_that, fail
 
 from atsim.pro_fit.runners import _file_transfer_remote_exec
 from atsim.pro_fit.runners._file_transfer_remote_exec import FILE, DIR
 from atsim.pro_fit.runners._file_transfer_client import DownloadDirectory, DownloadHandler
-
+from atsim.pro_fit.runners._file_transfer_client import DirectoryDownloadException
 from _runnercommon import execnet_gw, channel_id
 
 import uuid
 import os
+import shutil
+import stat
 
 import py.path
+from assertpy import assert_that, fail
 
 def testGoodStart(tmpdir, execnet_gw, channel_id):
   ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
@@ -134,14 +136,9 @@ def create_dir_structure(tmpdir):
   dpath = tmpdir.join('dest')
   dpath.mkdir()
 
-def do_dl(tmpdir, channels):
-  rpath = tmpdir.join("remote")
-  dpath = tmpdir.join("dest")
-  dl = DownloadDirectory(channels, rpath.strpath, dpath.strpath)
-  dl.download()
-
-  # Compare the remote and dest directories
-  from filecmp import dircmp
+from filecmp import dircmp
+def cmpdirs(left, right):
+  dcmp = dircmp(left, right)
   def docmp(dcmp):
     try:
       assert [] == dcmp.diff_files
@@ -152,8 +149,17 @@ def do_dl(tmpdir, channels):
       raise
     for subcmp in dcmp.subdirs.values():
       docmp(subcmp)
-  dcmp = dircmp(rpath.strpath, dpath.strpath)
   docmp(dcmp)
+
+def do_dl(tmpdir, channels, dl = None):
+  rpath = tmpdir.join("remote")
+  dpath = tmpdir.join("dest")
+  if dl is None:
+    dl = DownloadDirectory(channels, rpath.strpath, dpath.strpath)
+  dl.download()
+
+  # Compare the remote and dest directories
+  cmpdirs(rpath.strpath, dpath.strpath)
 
 def testDirectoryDownload_single_channel(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
@@ -194,8 +200,93 @@ def testDirectoryDownload_emptytree(tmpdir, execnet_gw, channel_id):
   assert dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.join("remote").strpath) == msg
   do_dl(tmpdir, [ch1])
 
-def testDirectoryDownload_errors(tmpdir, execnet_gw, channel_id):
-  fail("Not implemented")
+def testDirectoryDownload_missing_dest(tmpdir, execnet_gw, channel_id):
+  # Errors to test
+  # Destination doesn't exist
+  rpath = tmpdir.join("remote")
+  rpath.mkdir()
+  dpath = tmpdir.join("dest")
+  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+  ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.join("remote").strpath })
+  msg = ch1.receive(10.0)
+  assert dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.join("remote").strpath) == msg
+
+  try:
+    dl = DownloadDirectory([ch1], rpath.strpath, dpath.strpath)
+    fail("DownloadDirectory.download() should have raised IOError")
+  except IOError,e:
+    pass
+
+def testDirectoryDownload_access_denied(tmpdir, execnet_gw, channel_id):
+  create_dir_structure(tmpdir)
+  # Deny access to the 0/1/2 directory
+  import shutil
+  shutil.copytree(tmpdir.join("remote").strpath, tmpdir.join("source").strpath)
+  shutil.rmtree(tmpdir.join("remote", "0", "1", "2").strpath)
+
+  p = tmpdir.join("remote", "0", "1", "2")
+  try:
+    p.mkdir()
+    p.chmod(0o0)
+
+    tmpdir.join("source", "0", "1", "2").chmod(0o0)
+
+    # Create a download channel.
+    ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+    ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.join("source").strpath })
+    msg = ch1.receive(10.0)
+    assert dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.join("source").strpath) == msg
+
+    dl = DownloadDirectory([ch1], tmpdir.join("source").strpath, tmpdir.join("dest").strpath)
+    dl.download()
+
+    # Check that directory 2 exists and has the correct mode
+    dpath = tmpdir.join("dest","0","1","2")
+    assert dpath.isdir()
+    assert os.stat(dpath.strpath).st_mode == stat.S_IFDIR
+
+    # Now remove directory 2 from remote and dest to allow their comparison
+    dpath.chmod(0o700)
+    shutil.rmtree(dpath.strpath)
+    p.chmod(0o700)
+    shutil.rmtree(p.strpath)
+
+    cmpdirs(tmpdir.join("remote").strpath, tmpdir.join("dest").strpath)
+  finally:
+    if p.exists():
+      p.chmod(0o700)
+    d = tmpdir.join("dest", "0", "1", "2")
+    if d.exists():
+      d.chmod(0o700)
+    d = tmpdir.join("source", "0", "1", "2")
+    if d.exists():
+      d.chmod(0o700)
+
+def testDirectoryDownload_file_access_denied(tmpdir, execnet_gw, channel_id):
+  create_dir_structure(tmpdir)
+
+  shutil.copytree(tmpdir.join("remote").strpath, tmpdir.join("source").strpath)
+
+  tmpdir.join("remote", "0", "One").remove()
+  try:
+    tmpdir.join("source", "0", "One").chmod(0o0)
+
+    # Create a download channel.
+    ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+    ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.join("source").strpath })
+    msg = ch1.receive(10.0)
+    assert dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.join("source").strpath) == msg
+
+    dl = DownloadDirectory([ch1], tmpdir.join("source").strpath, tmpdir.join("dest").strpath)
+    dl.download()
+
+    cmpdirs(tmpdir.join("remote").strpath, tmpdir.join("dest").strpath)
+  finally:
+    d = tmpdir.join("source", "0", "One")
+    if d.exists():
+      d.chmod(0o600)
+
+
 
 
 def testDownloadHandler_rewrite_path():
