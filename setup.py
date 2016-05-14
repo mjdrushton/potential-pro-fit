@@ -1,34 +1,62 @@
 
 from setuptools import setup, find_packages
+from distutils.command.build_py import build_py
 
-from setuptools.command.test import test as TestCommand
 import sys
-
-class PyTest(TestCommand):
-    user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
-
-    def initialize_options(self):
-        TestCommand.initialize_options(self)
-        self.pytest_args = ["tests"]
-
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        #import here, cause outside the eggs aren't loaded
-        import pytest
-        errno = pytest.main(self.pytest_args)
-        sys.exit(errno)
+import os
+import re
+import tempfile
 
 
+def preprocess(infilename):
+  # execnet requires pure modules to create channels (or inline source). This makes code re-use difficult.
+  # To allow some form of code re-use, some of the execnet remote_exec modules are generated at build time.
+  # In C pre-procssor style, the required functions are #INCLUDed into the generated modules.
+  # This is performed by this function which is called during the setup.py build stage by the custom
+  # build_py subclass below.
+  
+  include_regex = re.compile(r'^#INCLUDE "(.*)"')
+  oldir = os.getcwd()
+  outfile, outfilename = tempfile.mkstemp(suffix=".py")
+  outfile = os.fdopen(outfile,'w')
+  try:
+    path = os.path.dirname(infilename)
+    bname = os.path.basename(infilename)
+    os.chdir(path)
+    with open(bname, 'rb') as infile:
+      for inline in infile:
+        m = include_regex.match(inline)
+        if m:
+          includefilename = m.groups()[0]
+          with open(includefilename, 'rb') as includefile:
+            outfile.write(includefile.read())
+        else:
+          outfile.write(inline)
+    return outfilename      
+  finally:
+    outfile.close()
+    os.chdir(oldir)    
 
+preprocess_files = ["lib/atsim/pro_fit/runners/_file_cleanup_remote_exec.py",
+                    "lib/atsim/pro_fit/runners/_file_transfer_remote_exec.py"]
+
+class my_build(build_py):
+    
+    def build_module(self, module, module_file, package):
+      if module_file in preprocess_files:
+        processedfile = preprocess(module_file)
+        try:
+          return build_py.build_module(self, module, processedfile, package)
+        finally:
+          os.remove(processedfile)
+      return build_py.build_module(self, module, module_file, package)
+    
+    
 setup(name="potential-pro-fit",
   package_dir = {'' : 'lib'},
   packages = find_packages('lib', exclude=["tests"]),
   namespace_packages = ["atsim"],
-  cmdclass = {'test' : PyTest},
+  cmdclass = {'build_py' : my_build},
   install_requires = ["setuptools",
                       'sqlalchemy',
                       'cherrypy',
@@ -46,8 +74,6 @@ setup(name="potential-pro-fit",
 
   include_package_data = True,
 
-  #zip_safe = True,
-
   entry_points = {
     'console_scripts' : [
       'pprofit = atsim.pro_fit.tools.fittingTool:main',
@@ -59,8 +85,6 @@ setup(name="potential-pro-fit",
   },
 
   # Meta-data for PyPI
-  # description = "atsim.potentials provides tools for working with pair and embedded atom method potential models including tabulation routines for DL_POLY and LAMMPS",
-  # long_description = open('README.rst').read(),
   author = "M.J.D. Rushton",
   author_email = "m.rushton@imperial.ac.uk",
   license = "Apache License (2.0)",
