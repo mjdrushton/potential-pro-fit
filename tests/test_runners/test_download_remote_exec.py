@@ -82,21 +82,34 @@ def testDownloadFile_bad(tmpdir, execnet_gw, channel_id):
   rpath = tmpdir.join('not_there').strpath
   ch1.send({'msg' : 'DOWNLOAD_FILE', 'id' : 1, 'remote_path' : rpath})
   rcv = ch1.receive(10.0)
-  assert {'msg' : 'ERROR', 'channel_id' : channel_id, 'reason' : 'file does not exist', 'remote_path' :  rpath, 'id' : 1} == rcv
+  assert {'msg' : 'ERROR', 'channel_id' : channel_id,
+          'reason' : 'file does not exist',
+          'error_code' : ('IOERROR', 'FILEDOESNOTEXIST'),
+          'remote_path' :  rpath, 'id' : 1} == rcv
 
   rpath = tmpdir.join('directory')
   rpath.mkdir()
   assert rpath.isdir()
   ch1.send({'msg' : 'DOWNLOAD_FILE', 'id' : 1, 'remote_path' : rpath.strpath})
   rcv = ch1.receive(10.0)
-  assert {'msg' : 'ERROR', 'channel_id' : channel_id, 'reason' : 'path refers to a directory and cannot be downloaded', 'remote_path' :  rpath, 'id' : 1} == rcv
+  assert {'msg' : 'ERROR', 'channel_id' : channel_id,
+          'reason' : 'path refers to a directory and cannot be downloaded',
+          'remote_path' :  rpath, 'id' : 1,
+          'error_code' : ('IOERROR', 'ISDIR')} == rcv
 
   rpath = tmpdir.join('unreadable')
   rpath.write("")
   rpath.chmod(0o0)
   ch1.send({'msg' : 'DOWNLOAD_FILE', 'id' : 1, 'remote_path' : rpath.strpath})
   rcv = ch1.receive(10.0)
-  assert {'msg' : 'ERROR', 'channel_id' : channel_id, 'reason' : 'permission denied', 'remote_path' :  rpath.strpath, 'id' : 1} == rcv
+  assert rcv.has_key('exc_msg')
+  del rcv['exc_msg']
+  assert {'msg' : 'ERROR',
+          'channel_id' : channel_id,
+          'reason' : 'permission denied',
+          'remote_path' :  rpath.strpath,
+          'id' : 1,
+          'error_code': ('IOERROR', 'FILEOPEN')} == rcv
   rpath.chmod(0o600)
 
 def testDownloadFile(tmpdir, execnet_gw, channel_id):

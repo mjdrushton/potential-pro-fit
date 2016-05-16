@@ -42,7 +42,11 @@ def testBadStart_destination_unwriteable(tmpdir, execnet_gw, channel_id):
   try:
     ch1.send({'msg' : 'START_UPLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.strpath })
     msg = ch1.receive(10.0)
-    assert_that(msg).is_equal_to(dict(msg = "ERROR", channel_id = channel_id, remote_path = tmpdir.strpath, reason = 'Directory is not writeable.'))
+    assert msg == dict(msg = "ERROR",
+                       channel_id = channel_id,
+                       remote_path = tmpdir.strpath,
+                       reason = 'Directory is not writeable.',
+                       error_code =  ('IOERROR', 'PERMISSION_DENIED'))
   finally:
     tmpdir.chmod(0o700)
 
