@@ -6,21 +6,7 @@ import traceback
 FILE = 1
 DIR = 2
 
-def ready(channel, channel_id, remote_path):
-  channel.send(dict(
-    msg = 'READY',
-    channel_id = channel_id,
-    remote_path = remote_path))
-
-def error(channel, channel_id, reason, error_code, **extra_args):
-  msg = dict(msg = "ERROR",
-             reason = reason,
-             error_code = error_code)
-  if channel_id:
-    msg['channel_id'] = channel_id
-
-  msg.update(extra_args)
-  channel.send(msg)
+#INCLUDE "_remote_exec_funcs.py.inc"
 
 def mktempdir(channel, channel_id):
   try:
@@ -76,46 +62,6 @@ def chkpath(channel, channel_id, remote_path):
     return False, remote_path
   return True, remote_path
 
-def normalize_path(remote_root, dest_path):
-  # import pdb;pdb.set_trace()
-  dest_path = os.path.normpath(dest_path)
-  if os.path.isabs(dest_path):
-    cp = os.path.commonprefix([remote_root, dest_path])
-    dest_path = dest_path.replace(cp, "", 1)
-    if os.path.isabs(dest_path):
-      dest_path = dest_path[1:]
-
-  dest_path = os.path.join(remote_root, dest_path)
-  dest_path = os.path.realpath(dest_path)
-
-  # Check that the destination path hasn't escaped from the file root
-  cp = os.path.commonprefix([remote_root, dest_path])
-  if cp != remote_root:
-    return None
-
-  return dest_path
-
-def extract_mtype(msg, channel, channel_id):
-  try:
-    mtype = msg.get('msg', None)
-  except Exception:
-    error(channel,
-      channel_id,
-      "Malformed message",
-      ("MSGERROR", "MALFORMED"),
-      request = msg)
-    return None
-
-  if mtype is None:
-    error(channel,
-      channel_id,
-      "'msg' not found in message",
-      ("MSGERROR", "KEYERROR"),
-      key = 'msg')
-    return None
-
-  return mtype
-
 def upload(channel, channel_id, remote_root, msg):
 
   if not msg.has_key('id'):
@@ -126,26 +72,12 @@ def upload(channel, channel_id, remote_root, msg):
       key = 'id')
     return False
 
-  if not msg.has_key('remote_path'):
-    error(channel,
-      channel_id,
-      "UPLOAD message does not contain 'remote_path' argument for msg id = '%s'" % msg.get('id', None)
-      ("MSGERROR", "KEYERROR"),
-      key = 'remote_path')
-    return False
-
   file_data = msg.get("file_data", "")
   mode = msg.get("mode", None)
   fileid = msg['id']
-  remote_path = msg['remote_path']
-  rp = normalize_path(remote_root, remote_path)
+  rp = child_path(channel, channel_id, remote_root, msg)
 
   if rp is None:
-    error(channel, channel_id,
-    "Error 'remote_path' cannot be converted to path under upload directory.",
-    ("PATHERROR", "NOTCHILD"),
-    remote_path = remote_path,
-    id = fileid)
     return
 
   remote_path = rp
@@ -167,6 +99,7 @@ def upload(channel, channel_id, remote_root, msg):
 
   if mode:
     os.chmod(remote_path, mode)
+
 
   uploaded_msg = dict(msg = 'UPLOADED', channel_id = channel_id,
     id = fileid,
@@ -193,12 +126,8 @@ def list_dir(channel, channel_id, remote_root, msg):
       key = 'id')
     return
 
-  rpath = normalize_path(remote_root, path)
+  rpath = child_path(channel, channel_id, remote_root, msg)
   if rpath is None:
-    error(channel, channel_id,
-      "'path' argument in 'LIST' request references location outside channel root.",
-      ("PATHERROR", "NOTCHILD"),
-      remote_path = path, remote_root = remote_root, id = fileid)
     return
   path = rpath
 
@@ -344,9 +273,13 @@ def download_remote_exec(channel, channel_id, remote_path):
       elif mtype == 'DOWNLOAD_FILE':
         download_file(channel, channel_id, remote_path, msg)
       else:
-        error(channel, channel_id, "Unknown 'msg' type: '%s'" % (mtype,), mtype = mtype)
+        error(channel, channel_id,
+          "Unknown 'msg' type: '%s'" % (mtype,),
+          ("MSGERROR", "UNKNOWN_MSGTYPE"),
+          mtype = mtype)
     except Exception,e:
-      error(channel, channel_id, "Exception: %s" % str(e),
+      error(channel, channel_id,
+      "Exception: %s" % str(e),
       ("EXCEPTION", str(type(e))),
       traceback = traceback.format_exc())
 
@@ -362,6 +295,7 @@ def start_channel(channel):
           None,
           'was expecting msg that is one of %s, got "%s" instead' % (
             ",".join(['"%s"' % ctype for ctype in channeltypes.keys()],
+             ("MSGERROR", "UNKNOWN_MSGTYPE"),
              mtype))
           )
     return

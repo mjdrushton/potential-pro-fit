@@ -1,90 +1,268 @@
 
 from atsim.pro_fit.runners import _file_cleanup_remote_exec
+from _runnercommon import execnet_gw, channel_id
 
 import posixpath
+import os
+import time
 
-def testLockTree():
-  lt = _file_cleanup_remote_exec.LockTree("/root/directory")
+import py.path
 
-  lt.add("one")
+def test_file_cleanup_end_to_end(tmpdir, execnet_gw, channel_id):
+  # Create directory structure
+  tmpdir.ensure('one', 'two', 'three', 'four', dir = True)
+  root = tmpdir.join('one')
+  p = tmpdir
 
-  assert lt.rootnode.path == '/root/directory'
-  assert len(lt.rootnode.children) == 1
-  child = lt.rootnode.children['one']
-  assert len(child.children) == 0
-  assert child.path == "one"
-  assert child.islocked
+  for i, subp in enumerate(['one', 'two', 'three', 'four']):
+    p = p.join(subp)
+    for j in xrange(i+1):
+      j += 1
+      p.ensure("%d.txt" % j)
 
-  lt.add("two")
+  two = root.join("two")
+  two.ensure("a", "b", dir = True)
+  two.ensure("a", "c", dir = True)
 
-  assert set() == set(lt.unlocked())
-  assert set(["one", "two"]) == set(lt.locked())
+  def currfiles():
+    files = root.visit()
+    files = [ f.relto(tmpdir) for f in files]
+    return set(files)
 
-  lt.unlock("two")
-  assert set(["two"]) == set(lt.unlocked())
-  assert set(["one"]) == set(lt.locked())
+  allfiles = set(['one/two/a/c',
+                  'one/two',
+                  'one/two/three/1.txt',
+                  'one/two/three/four/1.txt',
+                  'one/two/2.txt',
+                  'one/two/three/four/2.txt',
+                  'one/two/three/3.txt',
+                  'one/two/three/2.txt',
+                  'one/two/three/four/3.txt',
+                  'one/two/a',
+                  'one/two/three',
+                  'one/two/1.txt',
+                  'one/two/three/four',
+                  'one/1.txt',
+                  'one/two/three/four/4.txt',
+                  'one/two/a/b'])
 
-  lt.remove("two")
-  assert set() == set(lt.unlocked())
-  assert set(["one"]) == set(lt.locked())
+  assert currfiles() == allfiles
 
-  lt.add("one/two/three/four")
-  lt.add("one/two/file.txt")
-  assert lt.rootnode.children["one"].islocked
-  assert lt.rootnode.children["one"].children["two"].islocked is None
-  assert lt.rootnode.children["one"].children["two"].children["three"].islocked is None
-  assert lt.rootnode.children["one"].children["two"].children["three"].children["four"].islocked
-  assert lt.rootnode.children["one"].children["two"].children["file.txt"].islocked
+  ch1 = execnet_gw.remote_exec(_file_cleanup_remote_exec)
+  ch1.send({'msg' : 'START_CLEANUP_CHANNEL', 'channel_id' : channel_id, 'remote_path' : root.strpath})
 
-  lt.unlock('/root/directory/one/two')
-  assert set([]) == set(lt.unlocked())
-  assert set(["one/two/three/four", "one", "one/two/file.txt"]) == set(lt.locked())
+  msg = ch1.receive(10)
+  assert msg['msg'] == 'READY'
 
-  lt.unlock_tree("one/two/three")
-  assert lt.rootnode.children["one"].islocked
-  assert lt.rootnode.children["one"].children["two"].islocked is None
-  assert lt.rootnode.children["one"].children["two"].children["three"].islocked is None
-  assert lt.rootnode.children["one"].children["two"].children["three"].children["four"].islocked == False
-  assert lt.rootnode.children["one"].children["two"].children["file.txt"].islocked
+  transid = 'transid'
 
-  assert set([]) == set(lt.unlocked())
-  assert set(["one", "one/two/file.txt", "one/two/three/four"]) == set(lt.locked())
+  ch1.send({'msg' : 'LOCK', 'id' : transid, 'remote_path' : 'two/three/four'})
+  msg = ch1.receive(10)
+  assert msg == {'msg' : 'LOCKED', 'channel_id' : channel_id, 'id' : transid}
 
-  lt.unlock("one")
-  assert set(["one", "one/two/three/four"]) == set(lt.unlocked())
-  assert set(["one/two/file.txt"]) == set(lt.locked())
-  assert not lt.islocked("one/two/three")
+  ch1.send({'msg' : 'LOCK', 'id' : transid, 'remote_path' : ['two', 'two/three']})
+  msg = ch1.receive(10)
+  assert msg == {'msg' : 'LOCKED', 'channel_id' : channel_id, 'id' : transid}
 
-  # lt.unlock("one/two")
-  # assert set(["one/two/three/four"]) == set(lt.unlocked())
-  # assert set([ "one/two", "one", "one/two/file.txt"]) == set(lt.locked())
+  ch1.send({'msg' : 'LOCK', 'id' : transid, 'remote_path' : [
+    'two', 'two/three',
+    'two/a/b', 'two/a/c'
+  ]})
+  msg = ch1.receive(10)
+  assert msg == {'msg' : 'LOCKED', 'channel_id' : channel_id, 'id' : transid}
 
-  lt.unlock("one/two/file.txt")
-  assert set(["one", "one/two/file.txt", "one/two/three/four"]) == set(lt.unlocked())
-  assert set([ ]) == set(lt.locked())
+  # Unlock 'one/two/three/four' - four deleted
+  ch1.send({'msg' : 'UNLOCK', 'id' : transid, 'remote_path' : ['two/three/four']})
+  msg = ch1.receive(10)
+  assert msg == {'msg' : 'UNLOCKED', 'channel_id' : channel_id, 'id' : transid}
+
+  ch1.send({'msg' : 'FLUSH', 'id' : transid })
+  msg = ch1.receive(10)
+  assert msg == {'msg' : 'FLUSHED', 'channel_id' : channel_id, 'id' : transid}
+
+  allfiles = set(['one/two/a/c',
+                  'one/two',
+                  'one/two/three/1.txt',
+                  'one/two/2.txt',
+                  'one/two/three/3.txt',
+                  'one/two/three/2.txt',
+                  'one/two/a',
+                  'one/two/three',
+                  'one/two/1.txt',
+                  'one/1.txt',
+                  'one/two/a/b'])
+
+  assert currfiles() == allfiles
+
+  ch1.send({'msg' : 'UNLOCK', 'id' : transid, 'remote_path' : ['two', 'two/three']})
+  msg = ch1.receive(10)
+  assert msg == {'msg' : 'UNLOCKED', 'channel_id' : channel_id, 'id' : transid}
 
 
-def testLockTree_get():
-  rootdir = "/this/is/the/root"
-  lt = _file_cleanup_remote_exec.LockTree(rootdir)
+  allfiles = set(['one/two/a/c',
+                  'one/two',
+                  'one/two/2.txt',
+                  'one/two/a',
+                  'one/two/1.txt',
+                  'one/1.txt',
+                  'one/two/a/b'])
 
-  lt.add("one/two/three")
-  assert id(lt.rootnode.children["one"]) == id(lt["one"])
-  assert id(lt.rootnode.children["one"].children["two"]) == id(lt["one/two"])
-  assert id(lt.rootnode.children["one"].children["two"].children["three"]) == id(lt["one/two/three"])
+  assert currfiles() == allfiles
 
-  assert id(lt.rootnode.children["one"]) == id(lt[posixpath.join(rootdir, "one")])
-  assert id(lt.rootnode.children["one"].children["two"]) == id(lt[posixpath.join(rootdir, "one/two")])
-  assert id(lt.rootnode.children["one"].children["two"].children["three"]) == id(lt[posixpath.join(rootdir, "one/two/three")])
+ # Unlock 'one/a' - a deleted
+  ch1.send({'msg' : 'UNLOCK', 'id' : transid, 'remote_path' : ['two/a', 'two/a/b']})
+  msg = ch1.receive(10)
+  assert msg == {'msg' : 'UNLOCKED', 'channel_id' : channel_id, 'id' : transid}
 
-  try:
-    lt["one/two/three/four"]
-    assert False, "KeyError not raised"
-  except KeyError:
-    pass
+  ch1.send({'msg' : 'FLUSH', 'id' : transid })
+  msg = ch1.receive(10)
+  assert msg == {'msg' : 'FLUSHED', 'channel_id' : channel_id, 'id' : transid}
 
-def testLockTree_splitpath():
-  lt = _file_cleanup_remote_exec.LockTree("/this/is/the/root")
-  assert ["one"] == lt._splitpath("one")
-  assert ["one"] == lt._splitpath("/this/is/the/root/one")
-  assert ["one", "two", "three"] == lt._splitpath("one/two/three")
+  allfiles = set([
+                  'one/two/a/c',
+                  'one/two',
+                  'one/two/2.txt',
+                  'one/two/a',
+                  'one/two/1.txt',
+                  'one/1.txt'
+                  ])
+
+  assert currfiles() == allfiles
+
+  ch1.close()
+  ch1.waitclose()
+  time.sleep(1)
+  assert not root.exists()
+
+def test_file_cleanup_start(tmpdir, execnet_gw, channel_id):
+  root = tmpdir.ensure('root', dir = True)
+  assert os.path.isdir(root.strpath)
+  ch1 = execnet_gw.remote_exec(_file_cleanup_remote_exec)
+  ch1.send({'msg' : 'START_CLEANUP_CHANNEL', 'channel_id' : channel_id, 'remote_path' : root.strpath })
+  msg = ch1.receive(10.0)
+  assert dict(msg =  "READY", channel_id = channel_id, remote_path = root.strpath) == msg
+  ch1.close()
+  ch1.waitclose()
+  time.sleep(1)
+  assert not os.path.isdir(root.strpath), "Root directory still present after cleanup channel closed."
+
+def test_file_cleanup_BadStart_nonexistent_directory(execnet_gw, channel_id):
+  ch1 = execnet_gw.remote_exec(_file_cleanup_remote_exec)
+
+  badpath = "/this/is/not/a/path"
+  assert not py.path.local(badpath).exists()
+
+  ch1.send({'msg' : 'START_CLEANUP_CHANNEL', 'channel_id' : channel_id, 'remote_path' : badpath })
+  msg = ch1.receive(10.0)
+
+  assert msg.has_key('reason')
+  assert msg['reason'].startswith('path does not exist')
+  del msg['reason']
+  msg == dict(msg =  "ERROR", channel_id = channel_id, remote_path = badpath)
+
+def test_file_cleanup_lock_bad(tmpdir, execnet_gw, channel_id):
+  root = tmpdir.ensure('root', dir = True)
+  assert os.path.isdir(root.strpath)
+  ch1 = execnet_gw.remote_exec(_file_cleanup_remote_exec)
+  ch1.send({'msg' : 'START_CLEANUP_CHANNEL', 'channel_id' : channel_id, 'remote_path' : root.strpath })
+  msg = ch1.receive(10.0)
+  assert dict(msg =  "READY", channel_id = channel_id, remote_path = root.strpath) == msg
+
+  ch1.send({'msg': 'LOCK', 'id' : 'transid', 'remote_path' : '../'})
+  msg = ch1.receive(10.0)
+  expect = {'msg' : 'ERROR',
+    'id' : 'transid',
+    'reason' : 'path does not lie within directory structure',
+    'remote_path' : '../',
+    'error_code' : ("PATHERROR", "NOTCHILD") }
+
+  ch1.send({'msg': 'LOCK', 'id' : 'transid', 'remote_path' : '/'})
+  msg = ch1.receive(10.0)
+  expect = {'msg' : 'ERROR',
+    'id' : 'transid',
+    'reason' : 'path does not lie within directory structure',
+    'remote_path' : '/',
+    'error_code' : ("PATHERROR", "NOTCHILD")}
+
+  ch1.close()
+  ch1.waitclose()
+  time.sleep(1)
+  assert not os.path.isdir(root.strpath)
+
+def test_file_cleanup_unlock_bad(tmpdir, execnet_gw, channel_id):
+  root = tmpdir.ensure('root', dir = True)
+  assert os.path.isdir(root.strpath)
+  ch1 = execnet_gw.remote_exec(_file_cleanup_remote_exec)
+  ch1.send({'msg' : 'START_CLEANUP_CHANNEL', 'channel_id' : channel_id, 'remote_path' : root.strpath })
+  msg = ch1.receive(10.0)
+  assert dict(msg =  "READY", channel_id = channel_id, remote_path = root.strpath) == msg
+
+  ch1.send({'msg': 'LOCK', 'id' : 'transid', 'remote_path' : 'blah'})
+  msg = ch1.receive(10.0)
+  assert msg['msg'] == "LOCKED"
+
+
+  ch1.send({'msg': 'UNLOCK', 'id' : 'transid', 'remote_path' : '../../'})
+  msg = ch1.receive(10.0)
+  expect = {'msg' : 'ERROR',
+    'id' : 'transid',
+    'reason' : 'path does not lie within cleanup directory structure',
+    'remote_path' : '../../',
+    'error_code' : ("PATHERROR", "NOTCHILD")}
+
+
+  ch1.send({'msg': 'UNLOCK', 'id' : 'transid', 'remote_path' : 'boop'})
+  msg = ch1.receive(10.0)
+  expect = {'msg' : 'ERROR',
+    'id' : 'transid',
+    'reason' : 'path is not registered with cleanup agent',
+    'remote_path' : 'boop',
+    'error_code' : ("PATHERROR", "NOT_REGISTERED")}
+
+
+  ch1.close()
+  ch1.waitclose()
+
+def test_file_cleanup_unlock_path_normalize(tmpdir, execnet_gw, channel_id):
+  # Create directory structure
+  tmpdir.ensure('one', dir = True)
+  root = tmpdir.join('one')
+  p = tmpdir
+
+  root.ensure('a', 'b', 'c', 'd', dir = True)
+
+  def currfiles():
+    files = root.visit()
+    files = [ f.relto(tmpdir) for f in files]
+    return set(files)
+
+  allfiles = set(['one/a','one/a/b','one/a/b/c', 'one/a/b/c/d'])
+  assert currfiles() == allfiles
+
+  ch1 = execnet_gw.remote_exec(_file_cleanup_remote_exec)
+  ch1.send({'msg' : 'START_CLEANUP_CHANNEL', 'channel_id' : channel_id, 'remote_path' : root.strpath})
+
+  msg = ch1.receive(10)
+  assert msg['msg'] == 'READY'
+
+  transid = 'transid'
+
+  ch1.send({'msg' : 'LOCK', 'id' : transid, 'remote_path' : ['a/../a/b/../b', 'a/b/c/d']})
+  msg = ch1.receive(10)
+  assert msg == {'msg' : 'LOCKED', 'channel_id' : channel_id, 'id' : transid}
+
+  ch1.send({'msg' : 'UNLOCK', 'id' : transid, 'remote_path' : ['a/b/c/d/../../']})
+  msg = ch1.receive(10)
+  assert msg == {'msg' : 'UNLOCKED', 'channel_id' : channel_id, 'id' : transid}
+
+  assert currfiles() == allfiles
+
+  ch1.send({'msg' : 'UNLOCK', 'id' : transid, 'remote_path' : ['a/../a/b/c/d']})
+  msg = ch1.receive(10)
+  assert msg == {'msg' : 'UNLOCKED', 'channel_id' : channel_id, 'id' : transid}
+
+  allfiles = set(['one/a'])
+  assert currfiles() == allfiles
+
+  ch1.close()
+  ch1.waitclose()

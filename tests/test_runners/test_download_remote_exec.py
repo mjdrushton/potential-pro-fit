@@ -286,9 +286,6 @@ def testDirectoryDownload_file_access_denied(tmpdir, execnet_gw, channel_id):
     if d.exists():
       d.chmod(0o600)
 
-
-
-
 def testDownloadHandler_rewrite_path():
   p1 = py.path.local("/One/Two/Three/source")
   p2 = py.path.local("/Five/Six/Seven/dest")
