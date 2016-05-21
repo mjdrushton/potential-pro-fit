@@ -9,12 +9,179 @@ import traceback
 
 from _file_transfer_remote_exec import FILE, DIR
 
+
 _lock = threading.RLock()
 
 _DirectoryRecord = collections.namedtuple("_DirectoryRecord", ['transid', 'path'])
 
 class DirectoryDownloadException(Exception):
   pass
+
+class ChannelException(Exception):
+
+  def __init__(self, message, wiremsg = None):
+    super(ChannelException, self).__init__(message)
+    self.wiremsg = wiremsg
+
+class ChannelCallback(object):
+  """Execnet channels can only have a single callback associated with them. This object is a forwarding callback.
+  It holds its own callback that can be changed and when registered with an execnet channel, forwards to its own callback"""
+
+  def __init__(self, callback = None):
+    self.callback = callback
+
+  def __call__(self, msg):
+    if self.callback:
+      return self.callback(msg)
+    return
+
+class BaseChannel(object):
+  """Base class for DownloadChannel and UploadChannel."""
+
+  _logger = logging.getLogger("atsim.pro_fit.runners._file_transfer_client.BaseChannel")
+
+  def __init__(self, execnet_gw, startmsg, remote_path,  channel_id = None, connection_timeout = 60):
+    """Create an execnet channel (which is wrapped in this object) using the `_file_transfer_remote_exec` as its
+    code.
+
+    Args:
+        execnet_gw (excenet.Gateway): Gateway used to create channel.
+        startmsg (str): The value of the `msg` key in the dictionary sent as first message through channel to initialise it.
+        remote_path (str): Path on remote host providing upload/download root directory.
+        channel_id (None, optional): Channel id - if not specified a uuid will be generated.
+        connection_timeout (int, optional): Timeout in seconds after which connection will fail if 'READY' message not received.
+    """
+    if channel_id is None:
+      self._channel_id = str(uuid.uuid4())
+    else:
+      self._channel_id = channel_id
+
+    self._callback = None
+    self._remote_path = remote_path
+    self._logger.info("Starting channel, id='%s', remote_path='%s'", self.channel_id, self.remote_path)
+    self._channel = self._startChannel(execnet_gw, startmsg, connection_timeout)
+    self._logger.info("Channel started id='%s', remote_path='%s'", self.channel_id, self.remote_path)
+
+
+  def _startChannel(self, execnet_gw, startmsg, connection_timeout):
+    import _file_transfer_remote_exec
+    channel = execnet_gw.remote_exec(_file_transfer_remote_exec)
+    channel.send({'msg' : startmsg, 'channel_id' : self.channel_id, 'remote_path' : self.remote_path })
+    msg = channel.receive(connection_timeout)
+    mtype = msg.get('msg', None)
+
+    if mtype is None or not mtype in ['READY', 'ERROR']:
+      self._logger.warning("Couldn't start channel, id='%s', remote_path='%s'", self.channel_id, self.remote_path)
+      raise ChannelException("Couldn't create channel for channel_id: '%s', was expecting 'READY' got: %s" % (self.channel_id, msg), msg)
+
+    if mtype == 'READY':
+      self._channel_id = msg.get('channel_id', self.channel_id)
+      self._remote_path = msg.get('remote_path', self.remote_path)
+      return channel
+    elif mtype == 'ERROR':
+      self._logger.warning("Couldn't start channel, id='%s', remote_path='%s': ", self.channel_id, self.remote_path, msg.get('reason', ""))
+      raise ChannelException("Couldn't create channel for channel_id: '%s', %s" % (self.channel_id, msg.get('reason', '')), msg)
+
+  @property
+  def remote_path(self):
+    return self._remote_path
+
+  @property
+  def channel_id(self):
+    return self._channel_id
+
+  def setcallback(self, callback):
+    if self._callback is None:
+      self._callback = ChannelCallback(callback)
+      self._channel.setcallback(self._callback)
+    else:
+      self._callback.callback = callback
+
+  def __iter__(self):
+    return self
+
+  def next(self):
+    return self
+
+  def send(self, msg):
+    self._channel.send(msg)
+
+class DownloadChannel(BaseChannel):
+
+  _logger = logging.getLogger("atsim.pro_fit.runners._file_transfer_client.DownloadChannel")
+
+  def __init__(self, execnet_gw, remote_path, channel_id = None):
+    """Create a channel object for use with `DownloadDirectory`
+
+    Args:
+        execnet_gw (execnet.Gateway): Gateway used to create channel objects.
+        remote_path (str): Path defining root of download tree.
+        channel_id (None, optional): ID of this channel (auto generated if not specified)
+    """
+    super(DownloadChannel, self,).__init__(
+      execnet_gw,
+      'START_DOWNLOAD_CHANNEL',
+      remote_path,
+      channel_id)
+
+class MultiChannel(object):
+
+  _logger = logging.getLogger("atsim.pro_fit.runners._file_transfer_client.MultiChannel")
+
+  def __init__(self, execnet_gw, channel_class, remote_path, num_channels = 1, channel_id = None):
+    """Factory class and container for managing multiple Download/UploadChannel instances.
+
+    This class implements a subset of the BaseChannel methods. Importantly, the send() method is not implemented.
+    To send a message, the client must first obtain a channel instance by iterating over this MultiChannel instance
+    (for instance, by calling next() ).
+
+    Args:
+        execnet_gw (execnet.Gateway): Gateway used to create execnet channels.
+        channel_class (class): Class of channel type, this should be DownloadChannel or UploadChannel
+        remote_path (str): Remote path passed to channel_class constructor.
+        num_channels (int): Number of channels that should be created and managed.
+        channel_id (None, optional): Base channel id, this will be appended by the number of each channel managed by multichannel.
+          If `None` an ID will be automatically generated using `uuid.uuid4()`.
+    """
+
+    if channel_id is None:
+      self._channel_id = str(uuid.uuid4())
+    else:
+      self._channel_id = channel_id
+
+    self._logger.info("Starting %d channels with remote_path = '%s' and base channel_id='%s'", num_channels, remote_path, self._channel_id)
+    self._channels = self._start_channels(execnet_gw, channel_class, remote_path, num_channels)
+    self._iter = itertools.cycle(self._channels)
+
+  def _start_channels(self, execnet_gw, channel_class, remote_path, num_channels):
+    channels = []
+    for i in xrange(num_channels):
+      chan_id = "_".join([str(self._channel_id), str(i)])
+      ch = channel_class(execnet_gw, remote_path, chan_id)
+      channels.append(ch)
+    return channels
+
+  def __iter__(self):
+    return self._iter
+
+  def next(self):
+    return self._iter.next()
+
+  def setcallback(self, callback):
+    for ch in self._channels:
+      ch.setcallback(callback)
+
+  def __len__(self):
+    return len(self._channels)
+
+
+class DownloadChannels(MultiChannel):
+  """MultiChannel instance for managing DownloadChannel instances"""
+
+  _logger = logging.getLogger("atsim.pro_fit.runners._file_transfer_client.DownloadChannels")
+
+  def __init__(self, execnet_gw, remote_path, num_channels = 1, channel_id = None):
+    super(DownloadChannels,self).__init__(execnet_gw, DownloadChannel, remote_path, num_channels, channel_id)
 
 class DownloadHandler(object):
   """Class used by DownloadDirectory to handle mapping of remote paths to local
@@ -88,7 +255,6 @@ class DownloadHandler(object):
     """
     return None
 
-
 class DownloadDirectory(object):
   """Class that coordinates an execnet channel started with the _file_transfer_remote_exec to
   allow directory hierarchies to be downloaded."""
@@ -100,7 +266,7 @@ class DownloadDirectory(object):
     paths for the directory download.
 
     Args:
-        dlchannels (list): List of execnet channels started with `_file_transfer_remote_exec` module.
+        dlchannels (DownloadChannel): DownloadChannel instance.
         remote_path (str): Path to directory to be copied (must be within the root path used when creating the execnet channels)
         dest_path (str): Path on local drive into which files will be copied.
     """
@@ -125,13 +291,8 @@ class DownloadDirectory(object):
     log.debug("transaction_id: '%s'" % self.transaction_id)
 
   def _init_channels(self, dlchannels):
-    for channel in dlchannels:
-      try:
-        channel.setcallback(self._callback)
-      except IOError, e:
-        self._logger.debug("Channel already initialised for use with DownloadDirectory: %s", e.message)
-    self._logger.debug("Initialised %d channels." % len(dlchannels))
-    return itertools.cycle(dlchannels)
+    dlchannels.setcallback(self._callback)
+    return iter(dlchannels)
 
   def download(self):
     log = self._logger.getChild("download")
@@ -155,7 +316,6 @@ class _DownloadCallback(object):
     self._exc = None
 
   def __call__(self, msg):
-    print "Callback", msg, self.enabled, id(self)
     try:
       if not self.enabled:
         return
@@ -184,7 +344,6 @@ class _DownloadCallback(object):
           return
 
       if mtype == 'LIST':
-        print "LIST"
         self._process_list_dir_response(msg)
       elif mtype == 'DOWNLOAD_FILE':
         self._process_download_file_response(msg)
@@ -254,7 +413,6 @@ class _DownloadCallback(object):
     msgdict = dict(msg = msg, id = transid)
     msgdict.update(kwargs)
     log.debug("Sending request: '%s'", msgdict)
-    print "Sending request: '%s'" % str(msgdict)
     ch = self._get_channel()
     ch.send(msgdict)
 

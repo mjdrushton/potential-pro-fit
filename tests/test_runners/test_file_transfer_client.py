@@ -1,6 +1,7 @@
 
 from atsim.pro_fit.runners import _file_transfer_remote_exec
 from atsim.pro_fit.runners._file_transfer_client import DownloadDirectory, DownloadHandler
+from atsim.pro_fit.runners._file_transfer_client import DownloadChannel, DownloadChannels, ChannelException
 
 import os
 import shutil
@@ -53,44 +54,38 @@ def do_dl(tmpdir, channels, dl = None, do_cmp = True):
   if do_cmp:
     cmpdirs(rpath.strpath, dpath.strpath)
 
+def testDownloadChannel_BadStart_nonexistent_directory(execnet_gw, channel_id):
+  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+
+  badpath = "/this/is/not/a/path"
+  assert not py.path.local(badpath).exists()
+
+  try:
+    ch = DownloadChannel(execnet_gw, badpath, channel_id = channel_id)
+    assert False,  "ChannelException should have been raised."
+  except ChannelException,e:
+    pass
+
+  assert e.message.endswith('path does not exist or is not a directory')
+
 def testDirectoryDownload_single_channel(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
   # Create a download channel.
-  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
-  ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.join("remote").strpath })
-  msg = ch1.receive(10.0)
-  assert dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.join("remote").strpath) == msg
-  do_dl(tmpdir, [ch1])
-
-def testDirectoryDownload_multiple_channels(tmpdir, execnet_gw, channel_id):
-  create_dir_structure(tmpdir)
-  channels = []
-  for i in range(4):
-    ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
-    ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.join("remote").strpath })
-    msg = ch1.receive(10.0)
-    assert dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.join("remote").strpath) == msg
-    channels.append(ch1)
-  do_dl(tmpdir, channels)
+  ch1 = DownloadChannel(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
+  do_dl(tmpdir, ch1)
 
 def testDirectoryDownload_emptysrc(tmpdir, execnet_gw, channel_id):
   tmpdir.join("remote").mkdir()
   tmpdir.join("dest").mkdir()
-  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
-  ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.join("remote").strpath })
-  msg = ch1.receive(10.0)
-  assert dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.join("remote").strpath) == msg
-  do_dl(tmpdir, [ch1])
+  ch1 = DownloadChannel(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
+  do_dl(tmpdir, ch1)
 
 def testDirectoryDownload_emptytree(tmpdir, execnet_gw, channel_id):
   tmpdir.join("remote").mkdir()
   os.makedirs(tmpdir.join("one", "two", "three", "four").strpath)
   tmpdir.join("dest").mkdir()
-  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
-  ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.join("remote").strpath })
-  msg = ch1.receive(10.0)
-  assert dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.join("remote").strpath) == msg
-  do_dl(tmpdir, [ch1])
+  ch1 = DownloadChannel(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
+  do_dl(tmpdir, ch1)
 
 def testDirectoryDownload_missing_dest(tmpdir, execnet_gw, channel_id):
   # Errors to test
@@ -98,13 +93,10 @@ def testDirectoryDownload_missing_dest(tmpdir, execnet_gw, channel_id):
   rpath = tmpdir.join("remote")
   rpath.mkdir()
   dpath = tmpdir.join("dest")
-  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
-  ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.join("remote").strpath })
-  msg = ch1.receive(10.0)
-  assert dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.join("remote").strpath) == msg
+  ch1 = DownloadChannel(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
 
   try:
-    dl = DownloadDirectory([ch1], rpath.strpath, dpath.strpath)
+    dl = DownloadDirectory(ch1, rpath.strpath, dpath.strpath)
     fail("DownloadDirectory.download() should have raised IOError")
   except IOError,e:
     pass
@@ -124,12 +116,9 @@ def testDirectoryDownload_access_denied(tmpdir, execnet_gw, channel_id):
     tmpdir.join("source", "0", "1", "2").chmod(0o0)
 
     # Create a download channel.
-    ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
-    ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.join("source").strpath })
-    msg = ch1.receive(10.0)
-    assert dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.join("source").strpath) == msg
+    ch1 = DownloadChannel(execnet_gw, tmpdir.join("source").strpath, channel_id = channel_id)
 
-    dl = DownloadDirectory([ch1], tmpdir.join("source").strpath, tmpdir.join("dest").strpath)
+    dl = DownloadDirectory(ch1, tmpdir.join("source").strpath, tmpdir.join("dest").strpath)
     dl.download()
 
     # Check that directory 2 exists and has the correct mode
@@ -163,12 +152,8 @@ def testDirectoryDownload_file_access_denied(tmpdir, execnet_gw, channel_id):
     tmpdir.join("source", "0", "One").chmod(0o0)
 
     # Create a download channel.
-    ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
-    ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.join("source").strpath })
-    msg = ch1.receive(10.0)
-    assert dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.join("source").strpath) == msg
-
-    dl = DownloadDirectory([ch1], tmpdir.join("source").strpath, tmpdir.join("dest").strpath)
+    ch1 = DownloadChannel(execnet_gw, tmpdir.join("source").strpath, channel_id = channel_id)
+    dl = DownloadDirectory(ch1, tmpdir.join("source").strpath, tmpdir.join("dest").strpath)
     dl.download()
 
     cmpdirs(tmpdir.join("remote").strpath, tmpdir.join("dest").strpath)
@@ -189,16 +174,7 @@ def testDownloadHandler_rewrite_path():
 def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
   # Create a download channel.
-  ch1 = None
-  def startchannel(ch1):
-    if not ch1 is None:
-      ch1.close()
-      ch1.waitclose()
-    ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
-    ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.join("remote").strpath })
-    msg = ch1.receive(10.0)
-    assert dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.join("remote").strpath) == msg
-    return ch1
+  ch1 = DownloadChannel(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
 
   class DLH(DownloadHandler):
     def __init__(self, remote_path, dest_path):
@@ -213,15 +189,14 @@ def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
   remote_path = tmpdir.join("remote")
   dest_path = tmpdir.join("dest")
 
-  ch1 = startchannel(ch1)
   dlh = DLH(remote_path.strpath, dest_path.strpath)
   dl = DownloadDirectory(
-      [ch1],
+      ch1,
       remote_path.strpath,
       dest_path.strpath,
       dlh)
 
-  do_dl(tmpdir, [ch1], dl)
+  do_dl(tmpdir, ch1, dl)
   assert dlh.complete_called == True
   assert dlh.completion_exception is None
 
@@ -238,15 +213,14 @@ def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
   dest_path.remove(rec=True)
   dest_path.ensure_dir()
   dlh = ThrowHandler(remote_path.strpath, dest_path.strpath)
-  ch1 = startchannel(ch1)
   dl = DownloadDirectory(
-      [ch1],
+      ch1,
       remote_path.strpath,
       dest_path.strpath,
       dlh)
 
   try:
-    do_dl(tmpdir, [ch1], dl, False)
+    do_dl(tmpdir, ch1, dl, False)
     assert False, "ThrowMe exception should have been raised but wasn't"
   except ThrowMe:
     pass
@@ -256,16 +230,15 @@ def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
   # Now try again when an error-occurs - destination isn't writable should throw an error.
   dest_path.chmod(0o0)
   try:
-    ch1 = startchannel(ch1)
     dlh = DLH(remote_path.strpath, dest_path.strpath)
     dl = DownloadDirectory(
-        [ch1],
+        ch1,
         remote_path.strpath,
         dest_path.strpath,
         dlh)
 
     try:
-      do_dl(tmpdir, [ch1], dl, False)
+      do_dl(tmpdir, ch1, dl, False)
       assert False, "OSError should have been raised."
     except OSError:
       pass
@@ -280,9 +253,8 @@ def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
         return False
 
     dlh = NoRaise(remote_path.strpath, dest_path.strpath)
-    ch1 = startchannel(ch1)
     dl = DownloadDirectory(
-        [ch1],
+        ch1,
         remote_path.strpath,
         dest_path.strpath,
         dlh)
@@ -293,9 +265,8 @@ def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
 
     # Test that DownloadHandler.complete can raise exception and this will be correctly propagated.
     dlh = ThrowHandler(remote_path.strpath, dest_path.strpath)
-    ch1 = startchannel(ch1)
     dl = DownloadDirectory(
-        [ch1],
+        ch1,
         remote_path.strpath,
         dest_path.strpath,
         dlh)
@@ -311,15 +282,17 @@ def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
   finally:
     dest_path.chmod(0o700)
 
+def testDirectoryDownload_multiple_channels(tmpdir, execnet_gw, channel_id):
+  create_dir_structure(tmpdir)
+  channels = []
+  multichannel = DownloadChannels(execnet_gw, tmpdir.join("remote").strpath, 4, channel_id = channel_id)
+  do_dl(tmpdir, multichannel)
+
 def testDirectoryDownload_channel_reuse(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
-  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
-  ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.join("remote").strpath })
-  msg = ch1.receive(10.0)
-  assert dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.join("remote").strpath) == msg
-
-  do_dl(tmpdir, [ch1])
+  ch1 = DownloadChannel(execnet_gw, tmpdir.join("remote").strpath)
+  do_dl(tmpdir, ch1)
   dest_path = tmpdir.join("dest")
   dest_path.remove(rec = True)
   dest_path.ensure_dir()
-  do_dl(tmpdir, [ch1])
+  do_dl(tmpdir, ch1)
