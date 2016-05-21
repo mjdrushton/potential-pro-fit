@@ -109,7 +109,7 @@ class DownloadDirectory(object):
     self.transaction_id = str(uuid.uuid4())
 
     if not os.path.exists(self.dest_path):
-      raise IOError("Download destinatio path doesn't exist: '%s'" % self.dest_path)
+      raise IOError("Download destination path doesn't exist: '%s'" % self.dest_path)
 
     if download_handler is None:
       download_handler = DownloadHandler(self.remote_path, self.dest_path)
@@ -126,7 +126,10 @@ class DownloadDirectory(object):
 
   def _init_channels(self, dlchannels):
     for channel in dlchannels:
-      channel.setcallback(self._callback)
+      try:
+        channel.setcallback(self._callback)
+      except IOError, e:
+        self._logger.debug("Channel already initialised for use with DownloadDirectory: %s", e.message)
     self._logger.debug("Initialised %d channels." % len(dlchannels))
     return itertools.cycle(dlchannels)
 
@@ -152,6 +155,7 @@ class _DownloadCallback(object):
     self._exc = None
 
   def __call__(self, msg):
+    print "Callback", msg, self.enabled, id(self)
     try:
       if not self.enabled:
         return
@@ -180,6 +184,7 @@ class _DownloadCallback(object):
           return
 
       if mtype == 'LIST':
+        print "LIST"
         self._process_list_dir_response(msg)
       elif mtype == 'DOWNLOAD_FILE':
         self._process_download_file_response(msg)
@@ -249,6 +254,7 @@ class _DownloadCallback(object):
     msgdict = dict(msg = msg, id = transid)
     msgdict.update(kwargs)
     log.debug("Sending request: '%s'", msgdict)
+    print "Sending request: '%s'" % str(msgdict)
     ch = self._get_channel()
     ch.send(msgdict)
 
