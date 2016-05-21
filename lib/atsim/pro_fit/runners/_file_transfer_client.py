@@ -74,6 +74,21 @@ class DownloadHandler(object):
     self._logger.debug("rewrite_path: transformed path: '%s'", path)
     return path
 
+  def finish(self, exception = None):
+    """Called when `DirectoryDownload` completes. If an error occurred during download
+    the exception is passed into this method as `exception`. This exception will be raised once `finish` returns unless  finish returns `False`
+    or `finish` raises an exception.
+
+    Args:
+        exception (None, DirectoryDownloadException): Exception describing any error that occurred during download
+          or None if no error occurred.
+
+    Returns:
+        bool : If `False` is returned the exception passed into finish will not be raised.
+    """
+    return None
+
+
 class DownloadDirectory(object):
   """Class that coordinates an execnet channel started with the _file_transfer_remote_exec to
   allow directory hierarchies to be downloaded."""
@@ -172,7 +187,11 @@ class _DownloadCallback(object):
     except Exception,e:
       with _lock:
         self.enabled = False
-        self._exc = sys.exc_info()
+        try:
+          if self.parent.download_handler.finish(e) != False:
+            self._exc = sys.exc_info()
+        except Exception, e:
+          self._exc = sys.exc_info()
         traceback.print_exc()
         self._finish()
 
@@ -254,7 +273,15 @@ class _DownloadCallback(object):
 
   def _donext(self):
     if self._isFinished():
-      self._finish()
+      try:
+        self.parent.download_handler.finish(None)
+      except Exception as e:
+        with _lock:
+          self.enabled = False
+          self._exc = sys.exc_info()
+          traceback.print_exc()
+      finally:
+        self._finish()
     else:
       self._list_next_dir()
 

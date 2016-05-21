@@ -11,7 +11,6 @@ import shutil
 import stat
 
 import py.path
-from assertpy import assert_that, fail
 
 def testGoodStart(tmpdir, execnet_gw, channel_id):
   ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
@@ -28,8 +27,8 @@ def testBadStart_nonexistent_directory(execnet_gw, channel_id):
   ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : badpath })
   msg = ch1.receive(10.0)
 
-  assert_that(msg).contains_key('reason')
-  assert_that(msg['reason']).starts_with('path does not exist')
+  assert msg.has_key('reason')
+  assert msg['reason'].startswith('path does not exist')
   del msg['reason']
   msg == dict(msg =  "ERROR", channel_id = channel_id, remote_path = badpath)
 
@@ -64,12 +63,12 @@ def testListDir(tmpdir, execnet_gw, channel_id):
   ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
   ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.strpath })
   msg = ch1.receive(10.0)
-  assert_that(msg).is_equal_to(dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.strpath))
+  assert msg == dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.strpath)
 
   ch1.send({'msg' : 'LIST', 'id': transid, 'remote_path' : tmpdir.strpath})
   msg = ch1.receive(10.0)
 
-  assert_that(msg).contains_key("files")
+  assert msg.has_key("files")
   msg['files'] = sorted(msg['files'])
   assert expect == msg
 
@@ -164,7 +163,7 @@ def cmpdirs(left, right):
       docmp(subcmp)
   docmp(dcmp)
 
-def do_dl(tmpdir, channels, dl = None):
+def do_dl(tmpdir, channels, dl = None, do_cmp = True):
   rpath = tmpdir.join("remote")
   dpath = tmpdir.join("dest")
   if dl is None:
@@ -172,7 +171,8 @@ def do_dl(tmpdir, channels, dl = None):
   dl.download()
 
   # Compare the remote and dest directories
-  cmpdirs(rpath.strpath, dpath.strpath)
+  if do_cmp:
+    cmpdirs(rpath.strpath, dpath.strpath)
 
 def testDirectoryDownload_single_channel(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
@@ -277,7 +277,6 @@ def testDirectoryDownload_access_denied(tmpdir, execnet_gw, channel_id):
 
 def testDirectoryDownload_file_access_denied(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
-
   shutil.copytree(tmpdir.join("remote").strpath, tmpdir.join("source").strpath)
 
   tmpdir.join("remote", "0", "One").remove()
@@ -307,3 +306,133 @@ def testDownloadHandler_rewrite_path():
   expect = "/Five/Six/Seven/dest/file"
   actual = dlh.rewrite_path({'remote_path' : p1.join('file').strpath})
   assert actual == expect
+
+
+def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
+  create_dir_structure(tmpdir)
+  # Create a download channel.
+  ch1 = None
+  def startchannel(ch1):
+    if not ch1 is None:
+      ch1.close()
+      ch1.waitclose()
+    ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+    ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.join("remote").strpath })
+    msg = ch1.receive(10.0)
+    assert dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.join("remote").strpath) == msg
+    return ch1
+
+  class DLH(DownloadHandler):
+    def __init__(self, remote_path, dest_path):
+      self.complete_called = False
+      self.complete_exception = None
+      super(DLH,self).__init__(remote_path, dest_path)
+
+    def finish(self, error = None):
+      self.complete_called = True
+      self.completion_exception = error
+
+  remote_path = tmpdir.join("remote")
+  dest_path = tmpdir.join("dest")
+
+  ch1 = startchannel(ch1)
+  dlh = DLH(remote_path.strpath, dest_path.strpath)
+  dl = DownloadDirectory(
+      [ch1],
+      remote_path.strpath,
+      dest_path.strpath,
+      dlh)
+
+  do_dl(tmpdir, [ch1], dl)
+  assert dlh.complete_called == True
+  assert dlh.completion_exception is None
+
+  # Now test what happens if no exception is passed to DownloadHandler.finish() but finish itself raises.
+  class ThrowMe(Exception):
+    pass
+
+  class ThrowHandler(DLH):
+    def finish(self, exception = None):
+      super(ThrowHandler, self).finish(exception)
+      raise ThrowMe()
+      return False
+
+  dest_path.remove(rec=True)
+  dest_path.ensure_dir()
+  dlh = ThrowHandler(remote_path.strpath, dest_path.strpath)
+  ch1 = startchannel(ch1)
+  dl = DownloadDirectory(
+      [ch1],
+      remote_path.strpath,
+      dest_path.strpath,
+      dlh)
+
+  try:
+    do_dl(tmpdir, [ch1], dl, False)
+    assert False, "ThrowMe exception should have been raised but wasn't"
+  except ThrowMe:
+    pass
+  assert dlh.complete_called == True
+  assert dlh.completion_exception is None
+
+  # Now try again when an error-occurs - destination isn't writable should throw an error.
+  dest_path.chmod(0o0)
+  try:
+    ch1 = startchannel(ch1)
+    dlh = DLH(remote_path.strpath, dest_path.strpath)
+    dl = DownloadDirectory(
+        [ch1],
+        remote_path.strpath,
+        dest_path.strpath,
+        dlh)
+
+    try:
+      do_dl(tmpdir, [ch1], dl, False)
+      assert False, "OSError should have been raised."
+    except OSError:
+      pass
+
+    assert dlh.complete_called == True
+    assert type(dlh.completion_exception) == OSError
+
+    # Now check supresssion of exception raising.
+    class NoRaise(DLH):
+      def finish(self, error = None):
+        super(NoRaise, self).finish(error)
+        return False
+
+    dlh = NoRaise(remote_path.strpath, dest_path.strpath)
+    ch1 = startchannel(ch1)
+    dl = DownloadDirectory(
+        [ch1],
+        remote_path.strpath,
+        dest_path.strpath,
+        dlh)
+
+    do_dl(tmpdir, [ch1], dl, False)
+    assert dlh.complete_called == True
+    assert type(dlh.completion_exception) == OSError
+
+    # Test that DownloadHandler.complete can raise exception and this will be correctly propagated.
+    dlh = ThrowHandler(remote_path.strpath, dest_path.strpath)
+    ch1 = startchannel(ch1)
+    dl = DownloadDirectory(
+        [ch1],
+        remote_path.strpath,
+        dest_path.strpath,
+        dlh)
+
+    try:
+      do_dl(tmpdir, [ch1], dl, False)
+      assert False, "ThrowMe exception should have been raised but wasn't"
+    except ThrowMe:
+      pass
+    assert dlh.complete_called == True
+    assert type(dlh.completion_exception) == OSError
+
+  finally:
+    dest_path.chmod(0o700)
+
+def testDirectoryDownload_channel_reuse():
+  assert False, "Not implemented"
+
