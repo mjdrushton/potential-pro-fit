@@ -2,6 +2,8 @@ import logging
 import os
 import uuid
 import threading
+import sys
+import traceback
 
 
 from _channel import BaseChannel
@@ -9,6 +11,9 @@ from remote_exec.file_transfer_remote_exec import FILE, DIR
 
 
 class DirectoryUploadException(Exception):
+  pass
+
+class UploadHandlerException(DirectoryUploadException):
   pass
 
 class UploadChannel(BaseChannel):
@@ -28,7 +33,6 @@ class UploadChannel(BaseChannel):
       'START_UPLOAD_CHANNEL',
       remote_path,
       channel_id)
-
 
 class UploadHandler(object):
   """Class used by UploadDirectory for rewriting local paths to remote paths and also acting as a callback to monitor completion of file upload"""
@@ -74,6 +78,20 @@ class UploadHandler(object):
     """
     return self.rewrite_file_path(msg)
 
+  def finish(self, exception = None):
+    """Called when `DirectoryUpload` completes. If an error occurred during download
+    the exception is passed into this method as `exception`. This exception will be raised once `finish` returns unless  finish returns `False`
+    or `finish` raises an exception.
+
+    Args:
+        exception (None, DirectoryUploadException): Exception describing any error that occurred during upload
+          or None if no error occurred.
+
+    Returns:
+        bool : If `False` is returned the exception passed into finish will not be raised.
+    """
+    return None
+
 
   def rewrite_file_path(self, msg):
     return self.rewrite_path(msg)
@@ -82,7 +100,9 @@ class UploadHandler(object):
     return self.rewrite_path(msg)
 
   def transform_path(self, path):
-    assert path.startswith(self.local_root)
+    if not path.startswith(self.local_root):
+      raise UploadHandlerException("Path to be transformed did not start with local_root. Path: '%s', local_root: '%s'" % (path, self.local_root))
+
     path = path.replace(self.local_root, '', 1)
     if path.startswith('/'):
       path = path[1:]
@@ -95,7 +115,6 @@ class UploadHandler(object):
     self._logger.debug("rewrite_path: transformed path: '%s'", path)
     msg['remote_path'] = path
     return msg
-
 
 class UploadDirectory(object):
   """Class that coordinates an UploadChannel to allowing directory hierarchies to be uploaded."""
@@ -113,6 +132,10 @@ class UploadDirectory(object):
     """
     self.remote_path = remote_path
     self.local_path = os.path.abspath(local_path)
+
+    if not os.path.isdir(self.local_path):
+      raise OSError("Path does not exist or is not a directory: '%s'" % self.local_path)
+
     self.transaction_id = str(uuid.uuid4())
 
     self._callback = _UploadCallback(self)
@@ -140,7 +163,6 @@ class UploadDirectory(object):
     # Start the process
     self._callback.start()
     log.info("Finished upload id='%s'", self.transaction_id)
-
 
 class _UploadCallback(object):
   _logger = UploadDirectory._logger.getChild("_UploadCallback")
@@ -183,22 +205,16 @@ class _UploadCallback(object):
     except Exception,e:
       with self._lock:
         self.enabled = False
-        # try:
-        #   if self.parent.upload_handler.finish(e) != False:
-        #     self._exc = sys.exc_info()
-        # except Exception, e:
-        #   self._exc = sys.exc_info()
-        self._exc = sys.exc_info()
+        try:
+          if self.parent.upload_handler.finish(e) != False:
+            self._exc = sys.exc_info()
+        except Exception, e:
+          self._exc = sys.exc_info()
         traceback.print_exc()
         self._finish()
 
   def _error(self, msg):
-    with self._lock:
-      try:
-        raise DirectoryUploadException(msg)
-      except:
-        self._exc = sys.exc_info()
-        self._finish()
+    raise DirectoryUploadException(msg)
 
   def start(self):
     self.event.clear()
@@ -229,7 +245,15 @@ class _UploadCallback(object):
       self._makedirectories(root_path, directories)
       self._uploadfiles(root_path, files)
     except StopIteration:
-      self._finish()
+      try:
+        self.parent.upload_handler.finish(None)
+      except Exception as e:
+        with self._lock:
+          self.enabled = False
+          self._exc = sys.exc_info()
+          traceback.print_exc()
+      finally:
+        self._finish()
 
   def _finish(self):
     with self._lock:
