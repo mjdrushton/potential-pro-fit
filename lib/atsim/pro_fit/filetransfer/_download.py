@@ -7,7 +7,7 @@ import sys
 import traceback
 import itertools
 
-from _channel import BaseChannel, MultiChannel
+from _basechannel import BaseChannel, MultiChannel
 from remote_exec.file_transfer_remote_exec import FILE, DIR
 
 

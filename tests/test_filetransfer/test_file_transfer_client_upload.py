@@ -63,7 +63,6 @@ def testDirectoryUpload_local_nonexistent(tmpdir, execnet_gw, channel_id):
   except OSError:
     pass
 
-
 def testUploadHandler_rewrite_remote_path():
   ulh = UploadHandler('/var/private/source')
 
@@ -174,5 +173,3 @@ def testUploadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
         ulh)
   finally:
     local_path.chmod(0o700)
-
-
