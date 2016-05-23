@@ -14,7 +14,7 @@ def preprocess(infilename):
   # In C pre-procssor style, the required functions are #INCLUDed into the generated modules.
   # This is performed by this function which is called during the setup.py build stage by the custom
   # build_py subclass below.
-  
+
   include_regex = re.compile(r'^#INCLUDE "(.*)"')
   oldir = os.getcwd()
   outfile, outfilename = tempfile.mkstemp(suffix=".py")
@@ -32,16 +32,16 @@ def preprocess(infilename):
             outfile.write(includefile.read())
         else:
           outfile.write(inline)
-    return outfilename      
+    return outfilename
   finally:
     outfile.close()
-    os.chdir(oldir)    
+    os.chdir(oldir)
 
-preprocess_files = ["lib/atsim/pro_fit/runners/_file_cleanup_remote_exec.py",
-                    "lib/atsim/pro_fit/runners/_file_transfer_remote_exec.py"]
+preprocess_files = ["lib/atsim/pro_fit/filetransfer/remote_exec/file_cleanup_remote_exec.py",
+                    "lib/atsim/pro_fit/filetransfer/remote_exec/file_transfer_remote_exec.py"]
 
 class my_build(build_py):
-    
+
     def build_module(self, module, module_file, package):
       if module_file in preprocess_files:
         processedfile = preprocess(module_file)
@@ -50,8 +50,8 @@ class my_build(build_py):
         finally:
           os.remove(processedfile)
       return build_py.build_module(self, module, module_file, package)
-    
-    
+
+
 setup(name="potential-pro-fit",
   package_dir = {'' : 'lib'},
   packages = find_packages('lib', exclude=["tests"]),

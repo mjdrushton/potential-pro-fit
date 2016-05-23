@@ -1,14 +1,14 @@
 from assertpy import assert_that, fail
 
-from atsim.pro_fit.runners import _file_transfer_remote_exec
+from atsim.pro_fit.filetransfer.remote_exec import file_transfer_remote_exec
 
-from _runnercommon import execnet_gw, channel_id
+from _common import execnet_gw, channel_id
 
 import uuid
 import os
 
 def testGoodStart_explicit_dir(tmpdir, execnet_gw, channel_id):
-  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+  ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
 
   path = tmpdir.join("0")
   assert_that(path.isdir()).is_false()
@@ -20,7 +20,7 @@ def testGoodStart_explicit_dir(tmpdir, execnet_gw, channel_id):
   assert_that(path.strpath).is_directory()
 
 def testGoodStart_tmpdir(execnet_gw, channel_id):
-  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+  ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
   ch1.send({'msg' : 'START_UPLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : None })
 
   msg = ch1.receive(10.0)
@@ -34,7 +34,7 @@ def testGoodStart_tmpdir(execnet_gw, channel_id):
   assert_that(msg).is_equal_to(dict(msg = "READY", channel_id = channel_id))
 
 def testBadStart_destination_unwriteable(tmpdir, execnet_gw, channel_id):
-  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+  ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
 
   tmpdir.chmod(0o500)
   try:
@@ -49,7 +49,7 @@ def testBadStart_destination_unwriteable(tmpdir, execnet_gw, channel_id):
     tmpdir.chmod(0o700)
 
 def testSendFile(tmpdir, execnet_gw, channel_id):
-  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+  ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
 
   sourcedir = tmpdir.join("source")
   sourcedir.mkdir()
@@ -123,28 +123,28 @@ def testNormalizePath():
   sub = "1/2/3"
 
   expect = "/this/is/the/root/1/2/3"
-  actual =  _file_transfer_remote_exec.normalize_path(root_path, sub)
+  actual =  file_transfer_remote_exec.normalize_path(root_path, sub)
 
   assert_that(actual).is_equal_to(expect)
 
   sub = "/1/2/3"
-  actual =  _file_transfer_remote_exec.normalize_path(root_path, sub)
+  actual =  file_transfer_remote_exec.normalize_path(root_path, sub)
   assert_that(actual).is_equal_to(expect)
 
   sub = "/this/is/the/root/1/2/3"
-  actual =  _file_transfer_remote_exec.normalize_path(root_path, sub)
+  actual =  file_transfer_remote_exec.normalize_path(root_path, sub)
   assert_that(actual).is_equal_to(expect)
 
   sub = "../1/2/3"
-  actual =  _file_transfer_remote_exec.normalize_path(root_path, sub)
+  actual =  file_transfer_remote_exec.normalize_path(root_path, sub)
   assert_that(actual).is_none()
 
   sub = "/1/2/../../1/2/3"
-  actual = _file_transfer_remote_exec.normalize_path(root_path, sub)
+  actual = file_transfer_remote_exec.normalize_path(root_path, sub)
   assert_that(actual).is_equal_to("/this/is/the/root/1/2/3")
 
 def testMkfile(tmpdir, execnet_gw, channel_id):
-  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+  ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
 
   destdir = tmpdir.join("dest")
   assert_that(destdir.isdir()).is_false()

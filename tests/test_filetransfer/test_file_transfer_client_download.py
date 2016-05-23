@@ -1,12 +1,12 @@
 
-from atsim.pro_fit.runners._file_transfer_client import DownloadDirectory, DownloadHandler
-from atsim.pro_fit.runners._file_transfer_client import DownloadChannel, DownloadChannels, ChannelException
+from atsim.pro_fit.filetransfer import DownloadDirectory, DownloadHandler
+from atsim.pro_fit.filetransfer import DownloadChannel, DownloadChannels, ChannelException
 
 import os
 import shutil
 import stat
 
-from _runnercommon import execnet_gw, channel_id, create_dir_structure, cmpdirs
+from _common import execnet_gw, channel_id, create_dir_structure, cmpdirs
 
 import py.path
 

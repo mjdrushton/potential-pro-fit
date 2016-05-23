@@ -1,6 +1,6 @@
 
-from atsim.pro_fit.runners import _file_cleanup_remote_exec
-from _runnercommon import execnet_gw, channel_id
+from atsim.pro_fit.filetransfer.remote_exec import file_cleanup_remote_exec
+from _common import execnet_gw, channel_id
 
 import posixpath
 import os
@@ -48,7 +48,7 @@ def test_file_cleanup_end_to_end(tmpdir, execnet_gw, channel_id):
 
   assert currfiles() == allfiles
 
-  ch1 = execnet_gw.remote_exec(_file_cleanup_remote_exec)
+  ch1 = execnet_gw.remote_exec(file_cleanup_remote_exec)
   ch1.send({'msg' : 'START_CLEANUP_CHANNEL', 'channel_id' : channel_id, 'remote_path' : root.strpath})
 
   msg = ch1.receive(10)
@@ -137,7 +137,7 @@ def test_file_cleanup_end_to_end(tmpdir, execnet_gw, channel_id):
 def test_file_cleanup_start(tmpdir, execnet_gw, channel_id):
   root = tmpdir.ensure('root', dir = True)
   assert os.path.isdir(root.strpath)
-  ch1 = execnet_gw.remote_exec(_file_cleanup_remote_exec)
+  ch1 = execnet_gw.remote_exec(file_cleanup_remote_exec)
   ch1.send({'msg' : 'START_CLEANUP_CHANNEL', 'channel_id' : channel_id, 'remote_path' : root.strpath })
   msg = ch1.receive(10.0)
   assert dict(msg =  "READY", channel_id = channel_id, remote_path = root.strpath) == msg
@@ -147,7 +147,7 @@ def test_file_cleanup_start(tmpdir, execnet_gw, channel_id):
   assert not os.path.isdir(root.strpath), "Root directory still present after cleanup channel closed."
 
 def test_file_cleanup_BadStart_nonexistent_directory(execnet_gw, channel_id):
-  ch1 = execnet_gw.remote_exec(_file_cleanup_remote_exec)
+  ch1 = execnet_gw.remote_exec(file_cleanup_remote_exec)
 
   badpath = "/this/is/not/a/path"
   assert not py.path.local(badpath).exists()
@@ -163,7 +163,7 @@ def test_file_cleanup_BadStart_nonexistent_directory(execnet_gw, channel_id):
 def test_file_cleanup_lock_bad(tmpdir, execnet_gw, channel_id):
   root = tmpdir.ensure('root', dir = True)
   assert os.path.isdir(root.strpath)
-  ch1 = execnet_gw.remote_exec(_file_cleanup_remote_exec)
+  ch1 = execnet_gw.remote_exec(file_cleanup_remote_exec)
   ch1.send({'msg' : 'START_CLEANUP_CHANNEL', 'channel_id' : channel_id, 'remote_path' : root.strpath })
   msg = ch1.receive(10.0)
   assert dict(msg =  "READY", channel_id = channel_id, remote_path = root.strpath) == msg
@@ -192,7 +192,7 @@ def test_file_cleanup_lock_bad(tmpdir, execnet_gw, channel_id):
 def test_file_cleanup_unlock_bad(tmpdir, execnet_gw, channel_id):
   root = tmpdir.ensure('root', dir = True)
   assert os.path.isdir(root.strpath)
-  ch1 = execnet_gw.remote_exec(_file_cleanup_remote_exec)
+  ch1 = execnet_gw.remote_exec(file_cleanup_remote_exec)
   ch1.send({'msg' : 'START_CLEANUP_CHANNEL', 'channel_id' : channel_id, 'remote_path' : root.strpath })
   msg = ch1.receive(10.0)
   assert dict(msg =  "READY", channel_id = channel_id, remote_path = root.strpath) == msg
@@ -239,7 +239,7 @@ def test_file_cleanup_unlock_path_normalize(tmpdir, execnet_gw, channel_id):
   allfiles = set(['one/a','one/a/b','one/a/b/c', 'one/a/b/c/d'])
   assert currfiles() == allfiles
 
-  ch1 = execnet_gw.remote_exec(_file_cleanup_remote_exec)
+  ch1 = execnet_gw.remote_exec(file_cleanup_remote_exec)
   ch1.send({'msg' : 'START_CLEANUP_CHANNEL', 'channel_id' : channel_id, 'remote_path' : root.strpath})
 
   msg = ch1.receive(10)

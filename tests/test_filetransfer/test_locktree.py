@@ -1,6 +1,6 @@
 
-from atsim.pro_fit.runners import _file_cleanup_remote_exec
-from _runnercommon import execnet_gw, channel_id
+from atsim.pro_fit.filetransfer.remote_exec import file_cleanup_remote_exec
+from _common import execnet_gw, channel_id
 
 import posixpath
 import os
@@ -9,7 +9,7 @@ import py.path
 
 def testLockTree_2():
   root = "/one"
-  lt = _file_cleanup_remote_exec.LockTree(root)
+  lt = file_cleanup_remote_exec.LockTree(root)
   lt.add('two/three/four')
   lt.add('two')
   lt.add('two/three')
@@ -22,27 +22,27 @@ def testLockTree_2():
   lt.unlock('two/three/four')
   assert set([ 'two', 'two/three', 'two/a/b', 'two/a/c']) == set(lt.locked())
   assert set(['two/three/four']) == set(lt.unlocked())
-  
+
   lt.unlock('two')
   lt.unlock('two/three')
   assert set(['two', 'two/a/b', 'two/a/c']) == set(lt.locked())
   assert set(['two/three', 'two/three/four']) == set(lt.unlocked())
-  
+
 def testLockTree_3():
   root = "/one"
-  lt = _file_cleanup_remote_exec.LockTree(root)
+  lt = file_cleanup_remote_exec.LockTree(root)
   lt.add('two')
   lt.unlock('two')
   lt.add('two/a')
   lt.add('two/three')
   lt.unlock('two/a')
-  
+
   assert set(['two', 'two/three']) == set(lt.locked())
   assert set(['two/a']) == set(lt.unlocked())
 
 
 def testLockTree():
-  lt = _file_cleanup_remote_exec.LockTree("/root/directory")
+  lt = file_cleanup_remote_exec.LockTree("/root/directory")
 
   lt.add("one")
 
@@ -102,7 +102,7 @@ def testLockTree():
 
 def testLockTree_get():
   rootdir = "/this/is/the/root"
-  lt = _file_cleanup_remote_exec.LockTree(rootdir)
+  lt = file_cleanup_remote_exec.LockTree(rootdir)
 
   lt.add("one/two/three")
   assert id(lt.rootnode.children["one"]) == id(lt["one"])
@@ -120,7 +120,7 @@ def testLockTree_get():
     pass
 
 def testLockTree_splitpath():
-  lt = _file_cleanup_remote_exec.LockTree("/this/is/the/root")
+  lt = file_cleanup_remote_exec.LockTree("/this/is/the/root")
   assert ["one"] == lt._splitpath("one")
   assert ["one"] == lt._splitpath("/this/is/the/root/one")
   assert ["one", "two", "three"] == lt._splitpath("one/two/three")

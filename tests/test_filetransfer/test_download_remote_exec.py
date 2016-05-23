@@ -1,21 +1,20 @@
-
-from atsim.pro_fit.runners import _file_transfer_remote_exec
-from atsim.pro_fit.runners._file_transfer_remote_exec import FILE, DIR
+from atsim.pro_fit.filetransfer.remote_exec import file_transfer_remote_exec
+from atsim.pro_fit.filetransfer.remote_exec.file_transfer_remote_exec import FILE, DIR
 
 import os
 
-from _runnercommon import execnet_gw, channel_id
+from _common import execnet_gw, channel_id
 
 import py.path
 
 def testGoodStart(tmpdir, execnet_gw, channel_id):
-  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+  ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
   ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.strpath })
   msg = ch1.receive(10.0)
   assert dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.strpath) == msg
 
 def testBadStart_nonexistent_directory(execnet_gw, channel_id):
-  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+  ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
 
   badpath = "/this/is/not/a/path"
   assert not py.path.local(badpath).exists()
@@ -56,7 +55,7 @@ def testListDir(tmpdir, execnet_gw, channel_id):
    'channel_id' : channel_id,
    'files' : sorted(files)}
 
-  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+  ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
   ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.strpath })
   msg = ch1.receive(10.0)
   assert msg == dict(msg =  "READY", channel_id = channel_id, remote_path = tmpdir.strpath)
@@ -69,7 +68,7 @@ def testListDir(tmpdir, execnet_gw, channel_id):
   assert expect == msg
 
 def testDownloadFile_bad(tmpdir, execnet_gw, channel_id):
-  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+  ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
   ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.strpath })
   msg = ch1.receive(10.0)
 
@@ -108,7 +107,7 @@ def testDownloadFile_bad(tmpdir, execnet_gw, channel_id):
   rpath.chmod(0o600)
 
 def testDownloadFile(tmpdir, execnet_gw, channel_id):
-  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+  ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
   ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : tmpdir.strpath })
   msg = ch1.receive(10.0)
 

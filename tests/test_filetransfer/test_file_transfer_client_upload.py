@@ -1,8 +1,8 @@
-from _runnercommon import execnet_gw, channel_id,  cmpdirs
-from _runnercommon import create_dir_structure as _create_dir_structure
+from _common import execnet_gw, channel_id,  cmpdirs
+from _common import create_dir_structure as _create_dir_structure
 
-from atsim.pro_fit.runners._file_transfer_client import UploadChannel, UploadDirectory, UploadHandler
-from atsim.pro_fit.runners._file_transfer_client import ChannelException
+from atsim.pro_fit.filetransfer import UploadChannel, UploadDirectory, UploadHandler
+from atsim.pro_fit.filetransfer import ChannelException
 
 import py.path
 
