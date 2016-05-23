@@ -19,7 +19,6 @@ def testGoodStart_explicit_dir(tmpdir, execnet_gw, channel_id):
 
   assert_that(path.strpath).is_directory()
 
-
 def testGoodStart_tmpdir(execnet_gw, channel_id):
   ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
   ch1.send({'msg' : 'START_UPLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : None })
@@ -33,7 +32,6 @@ def testGoodStart_tmpdir(execnet_gw, channel_id):
 
   del msg['remote_path']
   assert_that(msg).is_equal_to(dict(msg = "READY", channel_id = channel_id))
-
 
 def testBadStart_destination_unwriteable(tmpdir, execnet_gw, channel_id):
   ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
@@ -49,7 +47,6 @@ def testBadStart_destination_unwriteable(tmpdir, execnet_gw, channel_id):
                        error_code =  ('IOERROR', 'PERMISSION_DENIED'))
   finally:
     tmpdir.chmod(0o700)
-
 
 def testSendFile(tmpdir, execnet_gw, channel_id):
   ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
@@ -121,8 +118,6 @@ def testSendFile(tmpdir, execnet_gw, channel_id):
 
   assert_that(mode).is_equal_to(os.stat(destpath.strpath).st_mode)
 
-
-
 def testNormalizePath():
   root_path = "/this/is/the/root"
   sub = "1/2/3"
@@ -147,4 +142,44 @@ def testNormalizePath():
   sub = "/1/2/../../1/2/3"
   actual = _file_transfer_remote_exec.normalize_path(root_path, sub)
   assert_that(actual).is_equal_to("/this/is/the/root/1/2/3")
+
+def testMkfile(tmpdir, execnet_gw, channel_id):
+  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
+
+  destdir = tmpdir.join("dest")
+  assert_that(destdir.isdir()).is_false()
+
+  ch1.send(dict(
+    msg = "START_UPLOAD_CHANNEL",
+    remote_path = destdir.strpath))
+
+  msg = ch1.receive()
+  assert_that(msg['msg']).is_equal_to("READY")
+  channel_id = msg['channel_id']
+  assert_that(msg['remote_path']).is_equal_to(destdir.strpath)
+  assert_that(destdir.strpath).is_directory()
+
+
+  fileid = str(uuid.uuid4())
+  path1 = destdir.join("path1")
+  ch1.send(dict(msg = 'MKDIR',
+    remote_path = 'path1',
+    id = fileid))
+  msg = ch1.receive(10.0)
+  assert msg == dict(msg = 'MKDIR', id = fileid, channel_id = channel_id, remote_path = path1.strpath)
+
+  assert path1.isdir()
+
+  fileid = str(uuid.uuid4())
+  path2 = destdir.join("path2")
+  ch1.send(dict(msg = 'MKDIR',
+    remote_path = path2.strpath,
+    mode = 0o600,
+    id = fileid))
+  msg = ch1.receive(10.0)
+  assert msg == dict(msg = 'MKDIR', id = fileid, channel_id = channel_id, remote_path = path2.strpath)
+
+  assert path2.isdir()
+  import stat
+  assert stat.S_IMODE(os.stat(path2.strpath).st_mode) == 0o600
 

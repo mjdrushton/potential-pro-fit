@@ -1,5 +1,4 @@
 
-from atsim.pro_fit.runners import _file_transfer_remote_exec
 from atsim.pro_fit.runners._file_transfer_client import DownloadDirectory, DownloadHandler
 from atsim.pro_fit.runners._file_transfer_client import DownloadChannel, DownloadChannels, ChannelException
 
@@ -7,7 +6,7 @@ import os
 import shutil
 import stat
 
-from _runnercommon import execnet_gw, channel_id
+from _runnercommon import execnet_gw, channel_id, create_dir_structure, cmpdirs
 
 import py.path
 
@@ -55,8 +54,6 @@ def do_dl(tmpdir, channels, dl = None, do_cmp = True):
     cmpdirs(rpath.strpath, dpath.strpath)
 
 def testDownloadChannel_BadStart_nonexistent_directory(execnet_gw, channel_id):
-  ch1 = execnet_gw.remote_exec(_file_transfer_remote_exec)
-
   badpath = "/this/is/not/a/path"
   assert not py.path.local(badpath).exists()
 

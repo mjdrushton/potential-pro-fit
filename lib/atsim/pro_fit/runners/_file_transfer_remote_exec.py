@@ -63,7 +63,6 @@ def chkpath(channel, channel_id, remote_path):
   return True, remote_path
 
 def upload(channel, channel_id, remote_root, msg):
-
   if not msg.has_key('id'):
     error(channel,
       channel_id,
@@ -100,13 +99,47 @@ def upload(channel, channel_id, remote_root, msg):
   if mode:
     os.chmod(remote_path, mode)
 
-
   uploaded_msg = dict(msg = 'UPLOADED', channel_id = channel_id,
     id = fileid,
     remote_path = remote_path)
 
   channel.send(uploaded_msg)
   return True
+
+def mkdir(channel, channel_id, remote_root, msg):
+  if not msg.has_key('id'):
+    error(channel,
+      channel_id,
+      "MKDIR message does not contain 'id' argument",
+      ("MSGERROR", "KEYERROR"),
+      key = 'id')
+    return False
+
+  mode = msg.get("mode", 0o777)
+  fileid = msg['id']
+  rp = child_path(channel, channel_id, remote_root, msg)
+
+  if rp is None:
+    return
+
+  remote_path = rp
+
+  try:
+    os.mkdir(remote_path, mode)
+  except OSError, e:
+    error(channel, channel_id, "Error making directory: '%s'" % str(e),
+      ("IOERROR", "OSERROR"),
+      remote_path = remote_path,
+      id = fileid)
+    return False
+
+  dirmade_msg = dict(msg = 'MKDIR', channel_id = channel_id,
+    id = fileid,
+    remote_path = remote_path)
+
+  channel.send(dirmade_msg)
+  return True
+
 
 def list_dir(channel, channel_id, remote_root, msg):
   # Extract required arguments
@@ -241,6 +274,8 @@ def upload_remote_exec(channel, channel_id, remote_path):
 
       if mtype == 'UPLOAD':
         upload(channel, channel_id, remote_path, msg)
+      elif mtype == 'MKDIR':
+        mkdir(channel, channel_id, remote_path, msg)
       else:
         error(channel, channel_id, "Unknown 'msg' type: '%s'" % (mtype,), mtype = mtype)
     except Exception,e:
