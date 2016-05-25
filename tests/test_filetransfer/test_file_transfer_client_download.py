@@ -5,6 +5,7 @@ from atsim.pro_fit.filetransfer import DownloadChannel, DownloadChannels, Channe
 import os
 import shutil
 import stat
+import threading
 
 from _common import execnet_gw, channel_id, create_dir_structure, cmpdirs
 
@@ -293,3 +294,42 @@ def testDirectoryDownload_channel_reuse(tmpdir, execnet_gw, channel_id):
   dest_path.remove(rec = True)
   dest_path.ensure_dir()
   do_dl(tmpdir, ch1)
+
+def testDirectoryDownload_create_multiple_downloads(tmpdir, execnet_gw, channel_id):
+  # import logging
+  # import sys
+  # logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+  source1 = tmpdir.join("source_1")
+  source2 = tmpdir.join("source_2")
+
+  source1.ensure_dir()
+  source2.ensure_dir()
+
+  with source1.join("file.txt").open("w") as outfile:
+    print >>outfile, "Hello"
+
+  with source2.join("file.txt").open("w") as outfile:
+    print >>outfile, "Goodbye"
+
+  dest1 = tmpdir.join("dest_1")
+  dest2 = tmpdir.join("dest_2")
+
+  dest1.ensure_dir()
+  dest2.ensure_dir()
+
+  ch1 = DownloadChannel(execnet_gw, tmpdir.strpath)
+  dl1 = DownloadDirectory(ch1, source1.strpath, dest1.strpath)
+  dl2 = DownloadDirectory(ch1, source2.strpath, dest2.strpath)
+
+  dl1.download()
+  assert dest1.join("file.txt").isfile()
+  line = dest1.join("file.txt").open().next()[:-1]
+  assert line == "Hello"
+
+  dl2.download()
+  assert dest2.join("file.txt").isfile()
+  line = dest2.join("file.txt").open().next()[:-1]
+  assert line == "Goodbye"
+
+
+

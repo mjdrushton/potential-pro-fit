@@ -9,7 +9,7 @@ import itertools
 
 from _basechannel import BaseChannel, MultiChannel
 from remote_exec.file_transfer_remote_exec import FILE, DIR
-
+from atsim.pro_fit._util import MultiCallback
 
 _DirectoryRecord = collections.namedtuple("_DirectoryRecord", ['transid', 'path'])
 
@@ -33,7 +33,6 @@ class DownloadChannel(BaseChannel):
       'START_DOWNLOAD_CHANNEL',
       remote_path,
       channel_id)
-
 
 class DownloadChannels(MultiChannel):
   """MultiChannel instance for managing DownloadChannel instances"""
@@ -130,7 +129,7 @@ class DownloadDirectory(object):
     paths for the directory download.
 
     Args:
-        dlchannels (DownloadChannel): DownloadChannel instance.
+        dlchannels (Dow=nloadChannel): DownloadChannel instance.
         remote_path (str): Path to directory to be copied (must be within the root path used when creating the execnet channels)
         dest_path (str): Path on local drive into which files will be copied.
     """
@@ -155,8 +154,14 @@ class DownloadDirectory(object):
     log.debug("transaction_id: '%s'" % self.transaction_id)
 
   def _init_channels(self, dlchannels):
-    dlchannels.setcallback(self._callback)
-    return iter(dlchannels)
+    if dlchannels.callback == None:
+      dlchannels.callback = MultiCallback()
+
+    if not isinstance(dlchannels.callback, MultiCallback):
+      raise DirectoryDownloadException("Callback already registered with DownloadChannel is not an instance of MultiCallback")
+
+    dlchannels.callback.append(self._callback)
+    return dlchannels
 
   def download(self):
     log = self._logger.getChild("download")
@@ -167,10 +172,8 @@ class DownloadDirectory(object):
 
     log.info("Finished download id='%s'", self.transaction_id)
 
-
 class _DownloadCallback(object):
   _logger = DownloadDirectory._logger.getChild("DownloadCallback")
-
 
   def __init__(self, parent):
     self.parent = parent
@@ -183,11 +186,30 @@ class _DownloadCallback(object):
     self.enabled = False
     self._exc = None
 
+
+  def _is_msg_relevant(self, msg):
+    msgid = msg['id']
+
+    try:
+      (transid, path) = msgid
+    except (TypeError,ValueError):
+      self._logger.debug("Callback ID: '%s'. Unrecognized 'id' field, message will not be processed: '%s'" , self.parent.transaction_id, str(msgid))
+      return False
+
+    retval = transid == self.parent.transaction_id
+
+    if not retval:
+      self._logger.debug("Callback ID: '%s'. Message ID doesn't match transaction_id and will not be processed. %s != %s ", self.parent.transaction_id, transid, self.parent.transaction_id)
+
+    return retval
+
+
   def __call__(self, msg):
     try:
+      self._logger.debug("Callback ID: '%s'. Received message: '%s'", self.parent.transaction_id, msg)
       if not self.enabled:
+        self._logger.debug("Callback ID: '%s'. Callback is not enabled, ignoring message.", self.parent.transaction_id)
         return
-      self._logger.debug("Received message: '%s'", msg)
 
       try:
         mtype = msg.get('msg', None)
@@ -198,13 +220,16 @@ class _DownloadCallback(object):
         self._error("Couldn't extract 'msg' field from message: '%s'" % msg)
         return
 
+      if not self._is_msg_relevant(msg):
+        return
+
       if mtype == 'ERROR':
         if msg.get('error_code', None) == ('OSERROR', 'LISTDIR'):
-          self._logger.warning("Could not list directory (skipping contents): '%s'" % msg.get('exc_msg', None))
+          self._logger.warning("Callback ID: '%s'. Could not list directory (skipping contents): '%s'", self.parent.transaction_id, msg.get('exc_msg', None))
           dirid = msg.get('id')
           self._skip_dir(dirid)
         elif msg.get('error_code', None) == ('IOERROR', 'FILEOPEN'):
-          self._logger.warning("Could not open file for reading (skipping): '%s'" % msg.get('exc_msg', None))
+          self._logger.warning("Callback ID: '%s'. Could not open file for reading (skipping): '%s'", self.parent.transaction_id, msg.get('exc_msg', None))
           fileid = msg.get('id')
           self._skip_file(fileid)
         else:
@@ -230,6 +255,7 @@ class _DownloadCallback(object):
   def _error(self, msg):
     with self._lock:
       try:
+        self._logger.warning("Callback ID: '%s'. Error: %s", self.parent.transaction_id, msg)
         raise DirectoryDownloadException(msg)
       except:
         self._exc = sys.exc_info()
@@ -258,7 +284,8 @@ class _DownloadCallback(object):
 
   def _register_file(self, pathtransid, remote_path):
     """Puts file_id into self.file_q wait and triggers DOWNLOAD_FILE request"""
-    fileid = (pathtransid, os.path.basename(remote_path))
+    transid, junk = pathtransid
+    fileid = (transid, remote_path)
 
     with self._lock:
       self.file_q_wait.add(fileid)
@@ -378,7 +405,12 @@ class _DownloadCallback(object):
     log.debug('writing files: %s', msg)
     self.parent.download_handler.writefile(msg)
 
+  def _unregister_callback(self):
+    cb = self.channel_iter.callback
+    cb.remove(self)
+
   def _finish(self):
     """Disable callback and fire event so that start() returns"""
     self.enabled = False
+    self._unregister_callback()
     self.event.set()

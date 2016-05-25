@@ -8,6 +8,7 @@ import traceback
 
 from _basechannel import BaseChannel
 from remote_exec.file_transfer_remote_exec import FILE, DIR
+from atsim.pro_fit._util import MultiCallback
 
 
 class DirectoryUploadException(Exception):
@@ -39,13 +40,14 @@ class UploadHandler(object):
 
   _logger = logging.getLogger("atsim.pro_fit.runners._file_transfer_client.UploadHandler")
 
-  def __init__(self, local_root):
+  def __init__(self, source_path, dest_path):
     """
-
     Args:
-        local_root (str): Root of the directory structure from which files are being uploaded.
+        source_path (str): Root of the directory structure from which files are being uploaded.
+        dest_path (str): Destination directory
     """
-    self.local_root = local_root
+    self.source_path = source_path
+    self.dest_path = dest_path
 
 
   def mkdir(self, msg):
@@ -100,12 +102,14 @@ class UploadHandler(object):
     return self.rewrite_path(msg)
 
   def transform_path(self, path):
-    if not path.startswith(self.local_root):
-      raise UploadHandlerException("Path to be transformed did not start with local_root. Path: '%s', local_root: '%s'" % (path, self.local_root))
+    if not path.startswith(self.source_path):
+      raise UploadHandlerException("Path to be transformed did not start with source_path. Path: '%s', source_path: '%s'" % (path, self.source_path))
 
-    path = path.replace(self.local_root, '', 1)
+    path = path.replace(self.source_path, '', 1)
     if path.startswith('/'):
       path = path[1:]
+
+    path = os.path.join(self.dest_path, path)
     return path
 
   def rewrite_path(self, msg):
@@ -142,7 +146,7 @@ class UploadDirectory(object):
     self._callback.channel_iter = self._init_channels(ulchannels)
 
     if upload_handler is None:
-      self.upload_handler = UploadHandler(self.local_path )
+      self.upload_handler = UploadHandler(self.local_path, self.remote_path)
     else:
       self.upload_handler = upload_handler
 
@@ -153,8 +157,14 @@ class UploadDirectory(object):
     log.debug("transaction_id: '%s'" % self.transaction_id)
 
   def _init_channels(self, ulchannels):
-    ulchannels.setcallback(self._callback)
-    return iter(ulchannels)
+    if ulchannels.callback == None:
+      ulchannels.callback = MultiCallback()
+
+    if not isinstance(ulchannels.callback, MultiCallback):
+      raise DirectoryDownloadException("Callback already registered with DownloadChannel is not an instance of MultiCallback")
+
+    ulchannels.callback.append(self._callback)
+    return ulchannels
 
   def upload(self):
     log = self._logger.getChild("upload")
@@ -177,12 +187,28 @@ class _UploadCallback(object):
     self.enabled = False
     self._exc = None
 
+  def _is_msg_relevant(self, msg):
+    msgid = msg['id']
+
+    try:
+       transid = msgid[0]
+    except (TypeError,IndexError):
+      self._logger.debug("Callback ID: '%s'. Unrecognized 'id' field, message will not be processed: '%s'" , self.parent.transaction_id, str(msgid))
+      return False
+
+    retval = transid == self.parent.transaction_id
+
+    if not retval:
+      self._logger.debug("Callback ID: '%s'. Message ID doesn't match transaction_id and will not be processed. %s != %s ", self.parent.transaction_id, transid, self.parent.transaction_id)
+
+    return retval
 
   def __call__(self, msg):
     try:
+      self._logger.debug("Callback ID: '%s'. Received message: '%s'", self.parent.transaction_id, msg)
       if not self.enabled:
+        self._logger.debug("Callback ID: '%s'. Callback is not enabled, ignoring message.", self.parent.transaction_id)
         return
-      self._logger.debug("Received message: '%s'", msg)
 
       try:
         mtype = msg.get('msg', None)
@@ -191,6 +217,9 @@ class _UploadCallback(object):
         return
       if mtype == None:
         self._error("Couldn't extract 'msg' field from message: '%s'" % msg)
+        return
+
+      if not self._is_msg_relevant(msg):
         return
 
       if mtype == 'ERROR':
@@ -214,6 +243,7 @@ class _UploadCallback(object):
         self._finish()
 
   def _error(self, msg):
+    self._logger.warning("Callback ID: '%s'. Error: %s", self.parent.transaction_id, msg)
     raise DirectoryUploadException(msg)
 
   def start(self):
@@ -258,6 +288,7 @@ class _UploadCallback(object):
   def _finish(self):
     with self._lock:
       self.enabled = False
+      self._unregister_callback()
       self.event.set()
 
   def _makedirectories(self, root_path, directories):
@@ -397,3 +428,7 @@ class _UploadCallback(object):
   def _get_channel(self):
     ch = self.channel_iter.next()
     return ch
+
+  def _unregister_callback(self):
+    cb = self.channel_iter.callback
+    cb.remove(self)

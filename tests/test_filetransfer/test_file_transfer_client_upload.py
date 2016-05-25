@@ -64,13 +64,24 @@ def testDirectoryUpload_local_nonexistent(tmpdir, execnet_gw, channel_id):
     pass
 
 def testUploadHandler_rewrite_remote_path():
-  ulh = UploadHandler('/var/private/source')
+  ulh = UploadHandler('/var/private/source',
+    'remote')
 
   msg = {'remote_path' : '/var/private/source/hello.txt'}
-  assert { 'remote_path' : "hello.txt" } == ulh.rewrite_file_path(msg)
+  assert { 'remote_path' : "remote/hello.txt" } == ulh.rewrite_file_path(msg)
 
   msg = {'remote_path' : '/var/private/source/one/two'}
-  assert { 'remote_path' : "one/two" } == ulh.rewrite_directory_path(msg)
+  assert { 'remote_path' : "remote/one/two" } == ulh.rewrite_directory_path(msg)
+
+  ulh = UploadHandler('/private/var/folders/t6/11n0g15d5hz5cwz83wt4zgm80000gn/T/pytest-of-mr498/pytest-478/testDirectoryUpload_create_mul0/source_1/',
+    '/private/var/folders/t6/11n0g15d5hz5cwz83wt4zgm80000gn/T/pytest-of-mr498/pytest-478/testDirectoryUpload_create_mul0/dest_1/')
+
+  # Remote-root: /private/var/folders/t6/11n0g15d5hz5cwz83wt4zgm80000gn/T/pytest-of-mr498/pytest-478/testDirectoryUpload_create_mul0
+  # Source: /private/var/folders/t6/11n0g15d5hz5cwz83wt4zgm80000gn/T/pytest-of-mr498/pytest-478/testDirectoryUpload_create_mul0/source_1/
+  # Dest:   /private/var/folders/t6/11n0g15d5hz5cwz83wt4zgm80000gn/T/pytest-of-mr498/pytest-478/testDirectoryUpload_create_mul0/dest_1
+
+  msg = {'remote_path' : '/private/var/folders/t6/11n0g15d5hz5cwz83wt4zgm80000gn/T/pytest-of-mr498/pytest-478/testDirectoryUpload_create_mul0/source_1/file.txt'}
+  assert { 'remote_path' : "/private/var/folders/t6/11n0g15d5hz5cwz83wt4zgm80000gn/T/pytest-of-mr498/pytest-478/testDirectoryUpload_create_mul0/dest_1/file.txt" } == ulh.rewrite_directory_path(msg)
 
 def testUploadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
@@ -173,3 +184,38 @@ def testUploadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
         ulh)
   finally:
     local_path.chmod(0o700)
+
+
+def testDirectoryUpload_create_multiple_uploads(tmpdir, execnet_gw, channel_id):
+  source1 = tmpdir.join("source_1")
+  source2 = tmpdir.join("source_2")
+
+  source1.ensure_dir()
+  source2.ensure_dir()
+
+  with source1.join("file.txt").open("w") as outfile:
+    print >>outfile, "Hello"
+
+  with source2.join("file.txt").open("w") as outfile:
+    print >>outfile, "Goodbye"
+
+  dest1 = tmpdir.join("dest_1")
+  dest2 = tmpdir.join("dest_2")
+
+  dest1.ensure_dir()
+  dest2.ensure_dir()
+
+  ch1 = UploadChannel(execnet_gw, tmpdir.strpath)
+  dl1 = UploadDirectory(ch1, source1.strpath, dest1.strpath)
+  dl2 = UploadDirectory(ch1, source2.strpath, dest2.strpath)
+
+  dl1.upload()
+  assert dest1.join("file.txt").isfile()
+  line = dest1.join("file.txt").open().next()[:-1]
+  assert line == "Hello"
+
+  dl2.upload()
+  assert dest2.join("file.txt").isfile()
+  line = dest2.join("file.txt").open().next()[:-1]
+  assert line == "Goodbye"
+

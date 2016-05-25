@@ -64,6 +64,7 @@ class MultiChannel(object):
     self._logger.info("Starting %d channels with remote_path = '%s' and base channel_id='%s'", num_channels, remote_path, self._channel_id)
     self._channels = self._start_channels(execnet_gw, channel_class, remote_path, num_channels)
     self._iter = itertools.cycle(self._channels)
+    self._callback = None
 
   def _start_channels(self, execnet_gw, channel_class, remote_path, num_channels):
     channels = []
@@ -80,8 +81,14 @@ class MultiChannel(object):
     return self._iter.next()
 
   def setcallback(self, callback):
+    self._callback = callback
     for ch in self._channels:
       ch.setcallback(callback)
+
+  def getcallback(self):
+    return self._callback
+
+  callback = property(fget = getcallback, fset = setcallback)
 
   def __len__(self):
     return len(self._channels)
