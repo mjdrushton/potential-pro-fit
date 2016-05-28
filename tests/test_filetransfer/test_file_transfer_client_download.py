@@ -331,5 +331,57 @@ def testDirectoryDownload_create_multiple_downloads(tmpdir, execnet_gw, channel_
   line = dest2.join("file.txt").open().next()[:-1]
   assert line == "Goodbye"
 
+def testDirectoryDownload_test_nonblocking(tmpdir, execnet_gw, channel_id):
+  import threading
+  import logging
+  import sys
+  logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
+  source1 = tmpdir.join("source_1")
+  source1.ensure_dir()
+
+  with source1.join("file.txt").open("w") as outfile:
+    print >>outfile, "Hello"
+
+  dest1 = tmpdir.join("dest_1")
+
+  dest1.ensure_dir()
+
+  pause_event = threading.Event()
+  download_event = threading.Event()
+  class PauseDownloadHandler(DownloadHandler):
+
+    def writefile(self, msg):
+      download_event.set()
+      pause_event.wait()
+      return super(PauseDownloadHandler, self).writefile(msg)
+
+  class CallEventThread(threading.Thread):
+
+    def __init__(self, dest1, paus_event):
+      self.dest1 = dest1
+      self.pause_event = pause_event
+      super(CallEventThread, self).__init__()
+
+    def run(self):
+      download_event.wait()
+      import time
+      time.sleep(1)
+      self.dest1_state = self.dest1.join("file.txt").exists()
+      self.pause_event.set()
+
+  ct = CallEventThread(dest1, pause_event)
+  ct.start()
+
+  ch1 = DownloadChannel(execnet_gw, tmpdir.strpath)
+  dl1 = DownloadDirectory(ch1, source1.strpath, dest1.strpath, PauseDownloadHandler(source1.strpath, dest1.strpath))
+  finished_event = dl1.download(non_blocking = True)
+  import time
+  time.sleep(2)
+  finished_event.wait(10)
+  assert dest1.join("file.txt").isfile()
+  line = dest1.join("file.txt").open().next()[:-1]
+  assert line == "Hello"
+
+  assert not ct.dest1_state
 

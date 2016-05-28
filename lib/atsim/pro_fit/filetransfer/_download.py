@@ -137,6 +137,8 @@ class DownloadDirectory(object):
     self.dest_path = dest_path
     self.transaction_id = str(uuid.uuid4())
 
+    self.exception = None
+
     if not os.path.exists(self.dest_path):
       raise IOError("Download destination path doesn't exist: '%s'" % self.dest_path)
 
@@ -163,14 +165,35 @@ class DownloadDirectory(object):
     dlchannels.callback.append(self._callback)
     return dlchannels
 
-  def download(self):
+  def download(self, non_blocking = False):
+    """Start the download.
+
+    Downloads can be blocking or non-blocking.
+
+    If blocking, any exceptions encountered during upload will be thrown in the calling
+    thread.
+
+    In the non-blocking case the exception will be caught in callback thread.
+
+    If you need to access the exception information this can be accessed through this object's
+    `exception` property.
+
+    Args:
+        non_blocking (bool, optional): If `True`, download will return immediately after call,
+          if False, then block until download completes.
+
+    Returns:
+        threading.Event: If non_blocking is `True` then upload returns an event object that is signalled when upload finishes.
+    """
     log = self._logger.getChild("download")
     log.info("Starting download id='%s' from remote ('%s') to local ('%s').", self.transaction_id, self.remote_path, self.dest_path)
 
     # Start the process
-    self._callback.start()
-
-    log.info("Finished download id='%s'", self.transaction_id)
+    rv = self._callback.start(non_blocking = non_blocking)
+    if non_blocking:
+      return rv
+    else:
+      log.info("Finished download id='%s'", self.transaction_id)
 
 class _DownloadCallback(object):
   _logger = DownloadDirectory._logger.getChild("DownloadCallback")
@@ -261,7 +284,7 @@ class _DownloadCallback(object):
         self._exc = sys.exc_info()
         self._finish()
 
-  def start(self):
+  def start(self, non_blocking = False):
     self.event.clear()
     self.dir_q = []
     self.dir_q_wait = set()
@@ -271,8 +294,13 @@ class _DownloadCallback(object):
     self._register_directory(self.parent.remote_path)
     self._list_next_dir()
     self.event.wait()
-    if self._exc:
-      raise self._exc
+
+    if not non_blocking:
+      self.event.wait()
+      if self._exc:
+        raise self._exc
+    else:
+      return self.event
 
   def _register_directory(self, remote_path):
     """Puts directory and its id into self.dir_q"""
@@ -413,4 +441,5 @@ class _DownloadCallback(object):
     """Disable callback and fire event so that start() returns"""
     self.enabled = False
     self._unregister_callback()
+    self.parent.exception = self._exc
     self.event.set()

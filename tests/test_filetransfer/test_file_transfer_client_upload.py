@@ -219,3 +219,61 @@ def testDirectoryUpload_create_multiple_uploads(tmpdir, execnet_gw, channel_id):
   line = dest2.join("file.txt").open().next()[:-1]
   assert line == "Goodbye"
 
+def testDirectoryUpload_test_nonblocking(tmpdir, execnet_gw, channel_id):
+  import threading
+  import logging
+  import sys
+  logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
+  # import pdb;pdb.set_trace()
+
+  source1 = tmpdir.join("source_1")
+
+  source1.ensure_dir()
+
+  with source1.join("file.txt").open("w") as outfile:
+    print >>outfile, "Hello"
+
+  dest1 = tmpdir.join("dest_1")
+
+  dest1.ensure_dir()
+
+  pause_event = threading.Event()
+  upload_event = threading.Event()
+  class PauseUploadHandler(UploadHandler):
+
+    def upload(self, msg):
+      upload_event.set()
+      pause_event.wait()
+      return super(PauseUploadHandler, self).upload(msg)
+
+  class CallEventThread(threading.Thread):
+
+    def __init__(self, dest1, paus_event):
+      self.dest1 = dest1
+      self.pause_event = pause_event
+      super(CallEventThread, self).__init__()
+
+    def run(self):
+      upload_event.wait()
+      import time
+      time.sleep(1)
+      self.dest1_state = self.dest1.join("file.txt").exists()
+      self.pause_event.set()
+
+  ct = CallEventThread(dest1, pause_event)
+  ct.start()
+
+  ch1 = UploadChannel(execnet_gw, tmpdir.strpath)
+  dl1 = UploadDirectory(ch1, source1.strpath, dest1.strpath, PauseUploadHandler(source1.strpath, dest1.strpath))
+  finished_event = dl1.upload(non_blocking = True)
+  import time
+  time.sleep(2)
+  finished_event.wait(10)
+  assert dest1.join("file.txt").isfile()
+  line = dest1.join("file.txt").open().next()[:-1]
+  assert line == "Hello"
+
+  assert not ct.dest1_state
+
+

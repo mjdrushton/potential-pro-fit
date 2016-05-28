@@ -137,6 +137,8 @@ class UploadDirectory(object):
     self.remote_path = remote_path
     self.local_path = os.path.abspath(local_path)
 
+    self.exception = None
+
     if not os.path.isdir(self.local_path):
       raise OSError("Path does not exist or is not a directory: '%s'" % self.local_path)
 
@@ -166,13 +168,35 @@ class UploadDirectory(object):
     ulchannels.callback.append(self._callback)
     return ulchannels
 
-  def upload(self):
+  def upload(self, non_blocking = False):
+    """Start the upload.
+
+    Uploads can be blocking or non-blocking.
+
+    If blocking, any exceptions encountered during upload will be thrown in the calling
+    thread.
+
+    In the non-blocking case the exception will be caught in callback thread.
+
+    If you need to access the exception information this can be accessed through this object's
+    `exception` property.
+
+    Args:
+        non_blocking (bool, optional): If `True`, upload will return immediately after call,
+          if False, then block until upload completes.
+
+    Returns:
+        threading.Event: If non_blocking is `True` then upload returns an event object that is signalled when upload finishes.
+    """
     log = self._logger.getChild("upload")
     log.info("Starting upload id='%s' from local ('%s') to remote ('%s').", self.transaction_id, self.local_path, self.remote_path)
 
     # Start the process
-    self._callback.start()
-    log.info("Finished upload id='%s'", self.transaction_id)
+    rv = self._callback.start(non_blocking = non_blocking)
+    if non_blocking:
+      return rv
+    else:
+      log.info("Finished upload id='%s'", self.transaction_id)
 
 class _UploadCallback(object):
   _logger = UploadDirectory._logger.getChild("_UploadCallback")
@@ -246,16 +270,19 @@ class _UploadCallback(object):
     self._logger.warning("Callback ID: '%s'. Error: %s", self.parent.transaction_id, msg)
     raise DirectoryUploadException(msg)
 
-  def start(self):
+  def start(self, non_blocking = False):
     self.event.clear()
     self.enabled = True
     self._upload_wait = set()
     self._walk_iterator = os.walk(self.parent.local_path)
     self._next_iteration()
 
-    self.event.wait()
-    if self._exc:
-      raise self._exc
+    if not non_blocking:
+      self.event.wait()
+      if self._exc:
+        raise self._exc
+    else:
+      return self.event
 
   def _donext(self, msg):
     """Called when a confirmation message received.
@@ -289,6 +316,7 @@ class _UploadCallback(object):
     with self._lock:
       self.enabled = False
       self._unregister_callback()
+      self.parent.exception = self._exc
       self.event.set()
 
   def _makedirectories(self, root_path, directories):
