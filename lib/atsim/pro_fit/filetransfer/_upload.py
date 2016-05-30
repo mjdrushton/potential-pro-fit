@@ -263,6 +263,8 @@ class _UploadCallback(object):
         self._donext(msg)
       elif mtype == 'MKDIR':
         self._donext(msg)
+      elif mtype == 'MKDIRS':
+        self._donext(msg)
 
     except Exception,e:
       with self._lock:
@@ -284,6 +286,7 @@ class _UploadCallback(object):
     self.enabled = True
     self._upload_wait = set()
     self._walk_iterator = os.walk(self.parent.local_path)
+    self._make_dest_path()
     self._next_iteration()
 
     if not non_blocking:
@@ -292,6 +295,12 @@ class _UploadCallback(object):
         raise self._exc
     else:
       return self.event
+
+  def _make_dest_path(self):
+    transid = self._transid(self.parent.local_path, DIR)
+    self._upload_wait.add(transid)
+    request = self._build_msg("MKDIRS", transid, remote_path = self.parent.remote_path)
+    self._channel_send(request)
 
   def _donext(self, msg):
     """Called when a confirmation message received.
@@ -308,9 +317,15 @@ class _UploadCallback(object):
     """Gets the next set of directories and files to be uploaded and makes requests to channels"""
     try:
       root_path, directories, files = self._walk_iterator.next()
+
+      # Move on if directory is empty
+      if not directories and not files:
+        self._next_iteration()
+
       self._makedirectories(root_path, directories)
       self._uploadfiles(root_path, files)
     except StopIteration:
+      self._logger.debug("StopIteration")
       try:
         self.parent.upload_handler.finish(None)
       except Exception as e:

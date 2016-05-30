@@ -185,7 +185,6 @@ def testUploadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
   finally:
     local_path.chmod(0o700)
 
-
 def testDirectoryUpload_create_multiple_uploads(tmpdir, execnet_gw, channel_id):
   source1 = tmpdir.join("source_1")
   source2 = tmpdir.join("source_2")
@@ -276,4 +275,26 @@ def testDirectoryUpload_test_nonblocking(tmpdir, execnet_gw, channel_id):
 
   assert not ct.dest1_state
 
+def testDirectoryUpload_ensure_root(tmpdir, execnet_gw, channel_id):
+  # import logging
+  # import sys
+  # logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+  remote = tmpdir.join("remote")
+  local = tmpdir.join("local")
 
+  remote.ensure_dir()
+  local.ensure_dir()
+
+  with local.join("hello.txt").open("w") as outfile:
+    print >>outfile, "Hello World!"
+
+  local.join("blah").mkdir()
+  dest = remote.join("Batch-0/0")
+
+  ch1 = UploadChannel(execnet_gw, remote.strpath, channel_id = channel_id)
+  ud = UploadDirectory(ch1, local.strpath, dest.strpath)
+  ud.upload()
+
+  assert dest.isdir()
+  assert dest.join("blah").isdir()
+  assert dest.join("hello.txt").read()[:-1] == "Hello World!"

@@ -6,6 +6,7 @@ from _common import execnet_gw, channel_id
 
 import uuid
 import os
+import stat
 
 def testGoodStart_explicit_dir(tmpdir, execnet_gw, channel_id):
   ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
@@ -183,3 +184,29 @@ def testMkfile(tmpdir, execnet_gw, channel_id):
   import stat
   assert stat.S_IMODE(os.stat(path2.strpath).st_mode) == 0o600
 
+def testMkdirs(tmpdir, execnet_gw, channel_id):
+  dest = tmpdir
+  ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
+
+  ch1.send(dict(
+    msg = "START_UPLOAD_CHANNEL",
+    remote_path = dest.strpath))
+
+  msg = ch1.receive()
+  assert_that(msg['msg']).is_equal_to("READY")
+  channel_id = msg['channel_id']
+  assert_that(msg['remote_path']).is_equal_to(dest.strpath)
+
+  transid = str(uuid.uuid4())
+  three_deep = dest.join("one","two","three")
+  ch1.send(dict(msg= 'MKDIRS', remote_path = three_deep.strpath, id = transid, mode = 0o700))
+  msg = ch1.receive(10.0)
+  assert msg == dict(msg = 'MKDIRS', id = transid, channel_id = channel_id, remote_path = three_deep.strpath)
+  assert three_deep.isdir()
+  assert stat.S_IMODE(os.stat(dest.join("one").strpath).st_mode) == 0o700
+  assert stat.S_IMODE(os.stat(dest.join("one", "two").strpath).st_mode) == 0o700
+  assert stat.S_IMODE(os.stat(dest.join("one", "two", "three").strpath).st_mode) == 0o700
+
+  ch1.send(dict(msg= 'MKDIRS', remote_path = three_deep.strpath, id = transid))
+  msg = ch1.receive(10.0)
+  assert msg == dict(msg = 'MKDIRS', id = transid, channel_id = channel_id, remote_path = three_deep.strpath, path_already_exists = True)

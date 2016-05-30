@@ -140,6 +140,43 @@ def mkdir(channel, channel_id, remote_root, msg):
   channel.send(dirmade_msg)
   return True
 
+def mkdirs(channel, channel_id, remote_root, msg):
+  if not msg.has_key('id'):
+    error(channel,
+      channel_id,
+      "MKDIRS message does not contain 'id' argument",
+      ("MSGERROR", "KEYERROR"),
+      key = 'id')
+    return False
+
+  mode = msg.get("mode", 0o777)
+  fileid = msg['id']
+  rp = child_path(channel, channel_id, remote_root, msg)
+
+  if rp is None:
+    return
+
+  remote_path = rp
+
+  dirmade_msg = dict(msg = 'MKDIRS', channel_id = channel_id,
+    id = fileid,
+    remote_path = remote_path)
+
+  if os.path.exists(remote_path):
+    dirmade_msg['path_already_exists'] = True
+  else:
+    try:
+      os.makedirs(remote_path, mode)
+    except OSError, e:
+      error(channel, channel_id, "Error making directory: '%s'" % str(e),
+        ("IOERROR", "OSERROR"),
+        remote_path = remote_path,
+        id = fileid)
+      return False
+  channel.send(dirmade_msg)
+  return True
+
+
 
 def list_dir(channel, channel_id, remote_root, msg):
   # Extract required arguments
@@ -276,10 +313,18 @@ def upload_remote_exec(channel, channel_id, remote_path):
         upload(channel, channel_id, remote_path, msg)
       elif mtype == 'MKDIR':
         mkdir(channel, channel_id, remote_path, msg)
+      elif mtype == 'MKDIRS':
+        mkdirs(channel, channel_id, remote_path, msg)
       else:
-        error(channel, channel_id, "Unknown 'msg' type: '%s'" % (mtype,), mtype = mtype)
+        error(channel, channel_id,
+          "Unknown 'msg' type: '%s'" % (mtype,),
+          ("MSGERROR", "UNKNOWN_MSGTYPE"),
+          mtype = mtype)
     except Exception,e:
-      error(channel, channel_id, "Exception: %s" % str(e), traceback = traceback.format_exc())
+      error(channel, channel_id,
+        "Exception: %s" % str(e),
+        ("EXCEPTION", str(type(e))),
+        traceback = traceback.format_exc())
 
 def download_remote_exec(channel, channel_id, remote_path):
   if remote_path is None:
