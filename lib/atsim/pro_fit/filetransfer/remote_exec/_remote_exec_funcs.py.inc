@@ -30,14 +30,17 @@ def normalize_path(remote_root, dest_path):
     return None
   return dest_path
 
-def normalize_path_with_error(channel, channel_id, remote_root, remote_path):
+def normalize_path_with_error(channel, channel_id, remote_root, remote_path, trans_id = None):
   remote_path = normalize_path(remote_root, remote_path)
   if remote_path is None:
+    kwargs = {'remote_path' : remote_path}
+    if not trans_id is None:
+      kwargs['id'] = trans_id
     error(channel,
       channel_id,
       "path does not lie within directory structure.",
       ("PATHERROR", "NOTCHILD"),
-      remote_path = remote_path)
+      **kwargs)
     return None
   return remote_path
 

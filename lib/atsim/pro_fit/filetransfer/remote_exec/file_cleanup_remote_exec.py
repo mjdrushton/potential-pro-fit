@@ -12,8 +12,6 @@ import types
 
 #INCLUDE "_remote_exec_funcs.py.inc"
 
-log =  open("/Users/mr498/Desktop/log.log", "w")
-
 class FileDeleter(object):
 
   class _DeletionThread(threading.Thread):
@@ -44,17 +42,11 @@ class FileDeleter(object):
 
   def lock(self, remote_path):
     """Register `remote_path` with `FileDeleter`"""
-    print >>log, "Lock", remote_path
     self._locktree.add(remote_path)
-    print >>log, "Locked", list(self._locktree.locked())
-    print >>log, "Unlocked", list(self._locktree.unlocked())
 
   def unlock(self, remote_path):
     """Unlock and delete everything beneath `remote_path`"""
-    print >>log, "Unlock", remote_path
     self._locktree.unlock(remote_path)
-    print >>log, "Locked", list(self._locktree.locked())
-    print >>log, "Unlocked", list(self._locktree.unlocked())
 
     unlocked = list(self._locktree.unlocked(include_root = True))
     for p in unlocked:
@@ -80,7 +72,7 @@ def _getpath(msg, channel, channel_id):
   path = msg.get("remote_path", None)
   if path is None:
     error(channel, channel_id,
-    "Could not find 'remote_path' argument in 'DOWNLOAD_FILE' request'",
+    "Could not find 'remote_path' argument in request'",
     ("MSGERROR", "KEYERROR"),
     key = 'remote_path')
     return
@@ -90,14 +82,14 @@ def _getmsgid(msg, channel, channel_id):
   transid = msg.get("id", None)
   if transid is None:
     error(channel, channel_id,
-    "Could not find 'id' argument in 'DOWNLOAD_FILE' request'",
+    "Could not find 'id' argument in request'",
     ("MSGERROR", "KEYERROR"),
     key = 'id')
     return
   return transid
 
 def _deleter_action(msg, channel, channel_id, remote_root, action, confirm_msg):
-
+  transid = _getmsgid(msg, channel, channel_id)
   def error_action(p):
     try:
       action(p)
@@ -107,7 +99,8 @@ def _deleter_action(msg, channel, channel_id, remote_root, action, confirm_msg):
         "path not registerd with cleanup agent",
         ("PATHERROR", "UNKNOWN_PATH"),
         remote_path = p,
-        keyerror = str(e))
+        keyerror = str(e),
+        id = transid)
     return None
 
   path = _getpath(msg, channel, channel_id)
@@ -119,13 +112,13 @@ def _deleter_action(msg, channel, channel_id, remote_root, action, confirm_msg):
 
   if type(path) is types.ListType or type(path) is types.TupleType:
     for p in path:
-      p  = normalize_path_with_error(channel, channel_id, remote_root, p)
+      p  = normalize_path_with_error(channel, channel_id, remote_root, p, trans_id = transid)
       if p is None:
         return
       if error_action(p) is None:
         return
   else:
-    path  = normalize_path_with_error(channel, channel_id, remote_root, path)
+    path  = normalize_path_with_error(channel, channel_id, remote_root, path, trans_id = transid)
     if path is None:
       return
     if error_action(path) is None:
@@ -201,7 +194,6 @@ def process_path(channel, channel_id, remote_path):
   "'remote_path' is not valid '%s'" % remote_path,
   ("IOERROR","REMOTE_IS_NOT_VALID"))
   return False, remote_path
-
 
 def start_channel(channel):
   msg = channel.receive()

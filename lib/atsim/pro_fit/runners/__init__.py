@@ -27,9 +27,9 @@ in the fit.cfg file.
 
 """
 
-from _localrunner import LocalRunner # noqa
-from _remoterunner import RemoteRunner # noqa
-from _pbsrunner import PBSRunner
+# from _localrunner import LocalRunner # noqa
+# from _remoterunner import RemoteRunner # noqa
+# from _pbsrunner import PBSRunner
 
 class NullFuture:
   def join(self):

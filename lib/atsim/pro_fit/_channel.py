@@ -124,4 +124,8 @@ class AbstractChannel(object):
   def __len__(self):
     return 1
 
+  def close(self, error = None):
+    return self._channel.close(error)
 
+  def waitclose(self, timeout = None):
+    return self._channel.waitclose(timeout)

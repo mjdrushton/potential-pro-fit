@@ -6,7 +6,7 @@ import sys
 import traceback
 
 
-from _basechannel import BaseChannel
+from _basechannel import BaseChannel, MultiChannel
 from remote_exec.file_transfer_remote_exec import FILE, DIR
 from atsim.pro_fit._util import MultiCallback
 
@@ -34,6 +34,15 @@ class UploadChannel(BaseChannel):
       'START_UPLOAD_CHANNEL',
       remote_path,
       channel_id)
+
+class UploadChannels(MultiChannel):
+  """MultiChannel instance for managing UploadChannel instances"""
+
+  _logger = logging.getLogger("atsim.pro_fit.runners._file_transfer_client.UploadChannels")
+
+  def __init__(self, execnet_gw, remote_path, num_channels = 1, channel_id = None):
+    super(UploadChannels,self).__init__(execnet_gw, UploadChannel, remote_path, num_channels, channel_id)
+
 
 class UploadHandler(object):
   """Class used by UploadDirectory for rewriting local paths to remote paths and also acting as a callback to monitor completion of file upload"""

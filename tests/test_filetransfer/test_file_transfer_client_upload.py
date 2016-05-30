@@ -89,10 +89,10 @@ def testUploadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
   ch1 = UploadChannel(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
 
   class ULH(UploadHandler):
-    def __init__(self, local_path):
+    def __init__(self, local_path, remote_path):
       self.complete_called = False
       self.complete_exception = None
-      super(ULH,self).__init__(local_path)
+      super(ULH,self).__init__(local_path, remote_path)
 
     def finish(self, error = None):
       self.complete_called = True
@@ -101,7 +101,7 @@ def testUploadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
   remote_path = tmpdir.join("remote")
   local_path = tmpdir.join("local")
 
-  ulh = ULH(local_path.strpath)
+  ulh = ULH(local_path.strpath, remote_path.strpath)
   ul = UploadDirectory(
       ch1,
       local_path.strpath,
@@ -124,7 +124,7 @@ def testUploadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
 
   remote_path.remove(rec=True)
   remote_path.ensure_dir()
-  ulh = ThrowHandler(local_path.strpath)
+  ulh = ThrowHandler(local_path.strpath, remote_path.strpath)
   ul = UploadDirectory(
       ch1,
       local_path.strpath,
@@ -142,7 +142,7 @@ def testUploadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
   # Now try again when an error-occurs - destination isn't writable should throw an error.
   remote_path.chmod(0o0)
   try:
-    ulh = ULH(local_path.strpath)
+    ulh = ULH(local_path.strpath,remote_path.strpath)
     ul = UploadDirectory(
         ch1,
         local_path.strpath,
@@ -164,7 +164,7 @@ def testUploadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
         super(NoRaise, self).finish(error)
         return False
 
-    ulh = NoRaise(local_path.strpath)
+    ulh = NoRaise(local_path.strpath, remote_path.strpath)
     ul = UploadDirectory(
         ch1,
         local_path.strpath,
@@ -176,7 +176,7 @@ def testUploadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
     assert type(ulh.completion_exception) == DirectoryUploadException
 
     # Test that DownloadHandler.complete can raise exception and this will be correctly propagated.
-    ulh = ThrowHandler(local_path.strpath)
+    ulh = ThrowHandler(local_path.strpath, remote_path.strpath)
     ul = UploadDirectory(
         ch1,
         local_path.strpath,
