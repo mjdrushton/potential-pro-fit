@@ -394,9 +394,6 @@ def cbcheck(call, expect_exception = None):
       assert isinstance(e,expect_exception)
 
 def test_file_cleanup_client_lock_callback(tmpdir, execnet_gw, channel_id):
-  # import logging
-  # import sys
-  # logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
   channel = CleanupChannel(execnet_gw, tmpdir.strpath, channel_id = channel_id)
   client = CleanupClient(channel)
   def call(cb):

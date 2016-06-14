@@ -46,7 +46,7 @@ def runnertestjob(runfixture, jobid):
   expect = [ ('runjob', FILE),
              ('output', DIR)]
   actual = _compareDir(jfdir)
-  assert_that(sorted(actual)).is_equal_to(sorted(expect))
+  assert sorted(expect) == sorted(actual)
 
   # Check output directory contents
   expect = [ ('runjob', FILE),
@@ -56,20 +56,17 @@ def runnertestjob(runfixture, jobid):
 
   output_dir = os.path.join(jfdir, 'output')
   actual = _compareDir(output_dir)
-  assert_that(sorted(actual)).is_equal_to(sorted(expect))
+  assert sorted(expect) == sorted(actual)
 
   # Check file contents
   status = open(os.path.join(output_dir, 'STATUS')).readline()[:-1]
-  assert_that(status).is_equal_to('0')
+  assert status == '0'
 
   common.logger.debug("output.res: %s" % open(os.path.join(output_dir, 'output.res')).read())
-  assert_that(runfixture.jobs[jobid].variables.id).is_equal_to(jobid)
+  assert runfixture.jobs[jobid].variables.id == jobid
 
   d = runfixture.jobfactory.evaluators[0](runfixture.jobs[jobid])
-  assert_that(jobid).is_equal_to(d[0].meritValue)
-
-
-
+  assert jobid == d[0].meritValue
 
 class FixtureObj(object):
   def __init__(self, tempd, remoted, jobfactory, jobs):
@@ -77,7 +74,6 @@ class FixtureObj(object):
     self.remoted = remoted
     self.jobfactory = jobfactory
     self.jobs = jobs
-
 
 @fixture(scope="function")
 def runfixture(request):
@@ -121,10 +117,34 @@ def execnet_gw(request):
 def channel_id():
   return str(uuid.uuid4())
 
-def testBadStart(execnet_gw):
-  ch1 = execnet_gw.remote_exec(_run_remote_exec)
+def create_dir_structure(tmpdir):
+  # Create directory structure to download
+  rpath = tmpdir.join("remote")
+  names = ["One", "Two", "Three"]
 
-  ch1.send({'msg' : 'START_CHANNEL'})
-  msg = ch1.receive(1.0)
+  p = rpath
+  for i,name in enumerate(names):
+    p = p.join(str(i))
+    for name in names:
+      p.join(name).write(name, ensure = True)
 
-  assert_that(msg["msg"]).is_equal_to("ERROR")
+  dpath =  os.path.join(rpath.strpath, "0", "1", "2", "Three")
+  assert os.path.isfile(dpath)
+
+  dpath = tmpdir.join('dest')
+  dpath.mkdir()
+
+from filecmp import dircmp
+def cmpdirs(left, right):
+  dcmp = dircmp(left, right)
+  def docmp(dcmp):
+    try:
+      assert [] == dcmp.diff_files
+      assert [] == dcmp.left_only
+      assert [] == dcmp.right_only
+    except AssertionError:
+      print dcmp.report()
+      raise
+    for subcmp in dcmp.subdirs.values():
+      docmp(subcmp)
+  docmp(dcmp)

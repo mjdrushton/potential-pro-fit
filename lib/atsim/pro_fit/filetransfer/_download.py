@@ -7,7 +7,8 @@ import sys
 import traceback
 import itertools
 
-from _basechannel import BaseChannel, MultiChannel
+from atsim.pro_fit._channel import MultiChannel
+from _basechannel import BaseChannel, ChannelFactory
 from remote_exec.file_transfer_remote_exec import FILE, DIR
 from atsim.pro_fit._util import MultiCallback
 
@@ -40,7 +41,8 @@ class DownloadChannels(MultiChannel):
   _logger = logging.getLogger("atsim.pro_fit.runners._file_transfer_client.DownloadChannels")
 
   def __init__(self, execnet_gw, remote_path, num_channels = 1, channel_id = None):
-    super(DownloadChannels,self).__init__(execnet_gw, DownloadChannel, remote_path, num_channels, channel_id)
+    factory = ChannelFactory(DownloadChannel, remote_path)
+    super(DownloadChannels,self).__init__(execnet_gw, factory, num_channels, channel_id)
 
 class DownloadHandler(object):
   """Class used by DownloadDirectory to handle mapping of remote paths to local
@@ -293,7 +295,7 @@ class _DownloadCallback(object):
     # Put the first directory in the dir_q
     self._register_directory(self.parent.remote_path)
     self._list_next_dir()
-    self.event.wait()
+    # self.event.wait()
 
     if not non_blocking:
       self.event.wait()

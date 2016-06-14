@@ -1,94 +1,236 @@
-
 from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit import filetransfer
 
-import execnet
-import StringIO
-import tarfile
-import os
-import shutil
-import threading
-import tempfile
-import posixpath
-import Queue
-import logging
-
-from _localrunner import LocalRunnerFuture
-from _inner import _InnerRunner
-
-from _remote_common import RemoteRunnerBase, _copyFilesFromRemote
 import _execnet
+import execnet
+import itertools
+import logging
+import posixpath
+import uuid
 
 EXECNET_TERM_TIMEOUT=10
 
+from _runner_batch import RunnerBatch
+from _run_remote_client import RunChannels, RunClient
 
-class RemoteRunnerFuture(LocalRunnerFuture):
-  """Joinable future object as returned by RemoteRunnerFuture.runBatch()"""
+class InnerRemoteRunner(object):
+  """The actual implementation of RemoteRunner.
 
-  def __init__(self, name, e, jobs, execnetURL, remotePath, batchDir, localToRemotePathTuples):
-    """@param name Name future
-    @param e threading.Event used to communicate when batch finished
-    @param jobs List of Job instances belonging to batch
-    @param execnetURL URL used to create execnet gateway.
-    @param remotePath Base directory for batches on remote server
-    @param batchDir Name of batch directory for batch belonging to this future
-    @param localToRemotePathTuples Pairs of localPath, remotePath tuples for each job"""
-    LocalRunnerFuture.__init__(self, name, e, jobs)
-    self._remotePath = remotePath
-    self._batchDir = batchDir
-    self._gwurl = execnetURL
-    self._localToRemotePathTuples = localToRemotePathTuples
+  InnerRemotRunner is used to allow RemoteRunner to just expose the public Runner interface whilst InnerRemoteRunner
+  has a much more extensive interface (required by the RunnerBatch)"""
 
-  def run(self):
-    self._e.wait()
-    group = execnet.Group()
-    group.defaultspec = self._gwurl
-    gw = group.makegateway()
-    try:
-      _copyFilesFromRemote(gw, self._remotePath, self._batchDir, self._localToRemotePathTuples)
-    finally:
-      group.terminate(EXECNET_TERM_TIMEOUT)
-
-class RemoteRunner(RemoteRunnerBase):
-  """Runner that uses SSH to run jobs in parallel on a remote machine"""
-
-  logger = logging.getLogger("atsim.pro_fit.runners.RemoteRunner")
+  _logger = logging.getLogger("atsim.pro_fit.runners.RemoteRunner")
 
   def __init__(self, name, url, nprocesses, identityfile=None, extra_ssh_options = []):
-    """@param name Name of this runner.
-       @param url Host and remote directory of remote host where jobs should be run in the form ssh://[username@]host/remote_path
-       @param nprocesses Number of processes that can be run in parallel by this runner
-       @param identityfile Path of a private key to be used with this runner's SSH transport. If None, the default's used by
-                         the platform's ssh command are used.
-       @param extra_ssh_options List of (key,value) tuples that are added to the ssh_config file used when making ssh connections."""
-    super(RemoteRunner, self).__init__(name, url, identityfile, extra_ssh_options)
+    """Instantiate RemoteRunner.
 
-    self._batchinputqueue = Queue.Queue()
-    self._i = 0
-    self._runner = _InnerRunner(self._batchinputqueue, nprocesses, self.gwurl)
-    self._runner.start()
+    Args:
+        name (str): Name of this runner.
+        url (str): Host and remote directory of remote host where jobs should be run in the form ssh://[username@]host/remote_path
+        nprocesses (int): Number of processes that can be run in parallel by this runner
+        identityfile (file, optional): Path of a private key to be used with this runner's SSH transport. If None, the default's used by
+                      the platform's ssh command are used.
+        extra_ssh_options (list, optional): List of (key,value) tuples that are added to the ssh_config file used when making ssh connections.
+    """
+    self.name = name
+    self._uuid = str(uuid.uuid4())
+
+    self._username, self._hostname, self._port, self._remotePath = _execnet.urlParse(url)
+
+    # Create a common url used to create execnet gateways
+    self._gwurl, sshcfgfile = _execnet.makeExecnetConnectionSpec(self._username, self._hostname, self._port, identityfile, extra_ssh_options)
+
+    if sshcfgfile:
+      self._sshcfgfile = sshcfgfile
+
+    self._gw = execnet.makegateway(self._gwurl)
+
+    # Initialise the remote runners their client.
+    self._runChannel = self._makeRunChannel(nprocesses)
+    self._runClient = RunClient(self._runChannel)
+
+    # Upload and download channel initialisation
+    if not self._remotePath:
+      # Create an appropriate remote path.
+      self._createTemporaryRemoteDirectory()
+    else:
+      self._remotePath = posixpath.join(self._remotePath, self._uuid)
+
+    self._numUpload = self._numDownload = 4
+    self._uploadChannel = self._makeUploadChannel()
+    self._downloadChannel = self._makeDownloadChannel()
+
+    #Cleanup channel initialisation.
+    self._cleanupChannel = self._makeCleanupChannel()
+    self._cleanupClient = filetransfer.CleanupClient(self._cleanupChannel)
+
+    self._batchCount = itertools.count()
+    self._extantBatches = []
+
+    # Register the remote directory with cleanup agent, such that it will be deleted at shutdown.
+    self._cleanupClient.lock(self._remotePath)
 
   def runBatch(self, jobs):
     """Run job batch and return a job future that can be joined.
 
-    @param jobs List of job instances as created by a JobFactory
-    @return RemoteRunnerFuture a job future that supports .join() to block until completion"""
+    Args:
+        jobs (): List of `atsim.pro_fit.jobfactories.Job` as created by a JobFactory.
 
-    self._gwgroup = execnet.Group()
-    self._gwgroup.defaultspec = self.gwurl
-    try:
-      gw = self._gwgroup.makegateway()
-      batchdir, localToRemotePathTuples,minimalJobs = self._prepareJobs(gw, jobs)
-    finally:
-      self._gwgroup.terminate(EXECNET_TERM_TIMEOUT)
+    Returns:
+        object: An object that supports .join() which when joined will block until batch completion """
+    batchId = self._get_batch_id()
+    batchDir = posixpath.join(self._remotePath, batchId)
 
-    # ... finally create the batch job future.
-    event = threading.Event()
-    self._i += 1
-    future = RemoteRunnerFuture('Batch %s' % self._i, event, minimalJobs,
-      self.gwurl, self.remotePath, batchdir, localToRemotePathTuples)
-    future.start()
-    self._batchinputqueue.put(future)
-    return future
+    self._logger.debug("Starting batch %s, containing %d jobs.", batchId, len(jobs))
+    self._logger.debug("%s directory is: '%s'", batchId, batchDir)
+
+    batch = RunnerBatch(self, batchDir, jobs, batchId)
+    self._extantBatches.append(batch)
+    batch.startBatch()
+    return batch
+
+  def _get_batch_id(self):
+    return "Batch-%d" % self._batchCount.next()
+
+  def _makeUploadChannel(self):
+    """Creates the UploadChannel instance associated with this runner. It is actually an instance
+    of filetransfer.UploadChannels() the number of channels held by UploadChannels is determined by the
+    self._numUpload property"""
+    channel = filetransfer.UploadChannels(self._gw, self._remotePath, self._numUpload, "_".join([self.name, 'upload']))
+    return channel
+
+  def _makeDownloadChannel(self):
+    """Creates the DownloadChannel instance associated with this runner. It is actually an instance
+    of filetransfer.DownloadChannels() the number of channels held by DownloadChannels is determined by the
+    self._numDownload property"""
+    channel = filetransfer.DownloadChannels(self._gw, self._remotePath, self._numDownload, "_".join([self.name, 'download']))
+    return channel
+
+  def _makeCleanupChannel(self):
+    channel = filetransfer.CleanupChannel(self._gw, self._remotePath, channel_id = "%s-Cleanup" % self.name)
+    self._remotePath = channel.remote_path
+    return channel
+
+  def _makeRunChannel(self, nprocesses):
+    """Creates the RunChannels instance associated with this runner.
+
+    Args:
+        nprocesses (int): Number of runner channels that will be instantiated within RunChannels object.
+    """
+    channel = RunChannels(self._gw, '%s-Run' % self.name, num_channels = nprocesses)
+    return channel
+
+  def _createTemporaryRemoteDirectory(self):
+    """Makes a remote call to tempfile.mkdtemp() and sets
+      * self._remotePath to the name of the created directory.
+      * self._remoted_is_temp is set to True to support correct cleanup behaviour.
+    """
+    from _execnet import _makeTemporaryDirectory
+    channel = self._gw.remote_exec(_makeTemporaryDirectory)
+    tmpdir = channel.receive()
+    self._logger.getChild("_createTemporaryRemoteDirectory").debug("Remote temporary directory: %s", tmpdir)
+    self._remotePath = tmpdir
+    channel.close()
+    channel.waitclose()
+
+  def lockPath(self, path, callback):
+    """Protect the remote path `path` from deletion by the cleanup agent."""
+    self._cleanupClient.lock(path, callback = callback)
+
+  def unlockPath(self, path):
+    """Unprotect the remote path `path` from deletion by the cleanup agent."""
+
+    def NullCallback(exception):
+      pass
+
+    self._cleanupClient.unlock(path, callback = NullCallback)
+
+  def batchFinished(self, batch, exception):
+    """Called by a batch when it is complete
+
+    Args:
+        batch (RunnerBatch): Batch that has just completed.
+        exception (Exception): None if no errors experienced. An object that can
+          be raised otherwise.
+    """
+    if exception is None:
+      self._logger.info("Batch finished successfully: %s", batch.name)
+    else:
+      self._logger.warning("Batch %s finished with errors: %s", batch.name, exception)
+    self._extantBatches.remove(batch)
+
+  def createUploadDirectory(self, sourcePath, remotePath, uploadHandler):
+    """Create an `filetransfer.UploadDirectory` instance configured to this runner's remote
+    directory.
+
+    Args:
+        sourcePath (str): Path to copy from (local)
+        remotePath (str): Destination path (remote)
+        uploadHandler (filetransfer.UploadHandler): Acts as callback for upload completion.
+
+    Returns:
+        filetransfer.UploadDirectory : Directory instance ready for `upload()` method to be called.
+    """
+    uploadDirectory = filetransfer.UploadDirectory(
+      self._uploadChannel,
+      sourcePath, remotePath, uploadHandler)
+    return uploadDirectory
+
+  def createDownloadDirectory(self, remotePath, localPath, downloadHandler):
+    """Create an `filetransfer.DownloadDirectory` instance configured to this runner's remote
+    directory.
+
+    Args:
+        remotePath (str): Source path (remote)
+        localPath (str): Destination path for download (local)
+        downloadHandler (filetransfer.DownloadHandler): Description
+
+    Returns:
+        filetransfer.DownloadDirectory: Directory instance ready for `download()` method to be called.
+    """
+    downloadDirectory = filetransfer.DownloadDirectory(
+      self._downloadChannel,
+      remotePath, localPath, downloadHandler)
+    return downloadDirectory
+
+  def startJobRun(self, handler):
+    """Run the given job defined by handler.
+
+    Handler is an object with the following properties:
+      * `workingDirectory`: gives the path of this job on the remote machine.
+      * `callback`: Unary callback,  accepting throwable as its argument, which is called on completion of the job.
+
+    Args:
+        handler (object): See above
+    """
+    self._runClient.runCommand(handler.workingDirectory, handler.callback)
+
+
+class RemoteRunner(object):
+  """Runner that uses SSH to run jobs in parallel on a remote machine"""
+
+  def __init__(self, name, url, nprocesses, identityfile=None, extra_ssh_options = []):
+    """Instantiate RemoteRunner.
+
+    Args:
+        name (str): Name of this runner.
+        url (str): Host and remote directory of remote host where jobs should be run in the form ssh://[username@]host/remote_path
+        nprocesses (int): Number of processes that can be run in parallel by this runner
+        identityfile (file, optional): Path of a private key to be used with this runner's SSH transport. If None, the default's used by
+                      the platform's ssh command are used.
+        extra_ssh_options (list, optional): List of (key,value) tuples that are added to the ssh_config file used when making ssh connections.
+    """
+    self._inner = InnerRemoteRunner(name, url, nprocesses, identityfile, extra_ssh_options)
+
+  def runBatch(self, jobs):
+    """Run job batch and return a job future that can be joined.
+
+    Args:
+        jobs (): List of `atsim.pro_fit.jobfactories.Job` as created by a JobFactory.
+
+    Returns:
+        object: An object that supports .join() which when joined will block until batch completion """
+    return self._inner.runBatch(jobs)
 
   @staticmethod
   def createFromConfig(runnerName, fitRootPath, cfgitems):

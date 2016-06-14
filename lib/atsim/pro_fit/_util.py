@@ -1,6 +1,7 @@
 import csv
 import functools
 import itertools
+import threading
 
 import logging
 
@@ -198,3 +199,22 @@ class MultiCallback(list):
     if self.retLast:
       return rv
     return retvals
+
+
+class CallbackRegister(list):
+
+  def __init__(self):
+    self._lock = threading.RLock()
+    super(CallbackRegister, self).__init__()
+
+  def __call__(self, *args, **kwargs):
+
+    with self._lock:
+      for cb in self:
+        if not cb.active:
+          continue
+        processed = cb(*args, **kwargs)
+        if processed:
+          break
+
+      self[:] = [ cb for cb in self if cb.active ]

@@ -5,8 +5,8 @@ import threading
 import sys
 import traceback
 
-
-from _basechannel import BaseChannel, MultiChannel
+from atsim.pro_fit._channel import MultiChannel
+from _basechannel import BaseChannel, ChannelFactory
 from remote_exec.file_transfer_remote_exec import FILE, DIR
 from atsim.pro_fit._util import MultiCallback
 
@@ -41,8 +41,8 @@ class UploadChannels(MultiChannel):
   _logger = logging.getLogger("atsim.pro_fit.runners._file_transfer_client.UploadChannels")
 
   def __init__(self, execnet_gw, remote_path, num_channels = 1, channel_id = None):
-    super(UploadChannels,self).__init__(execnet_gw, UploadChannel, remote_path, num_channels, channel_id)
-
+    factory = ChannelFactory(UploadChannel, remote_path)
+    super(UploadChannels,self).__init__(execnet_gw, factory, num_channels, channel_id)
 
 class UploadHandler(object):
   """Class used by UploadDirectory for rewriting local paths to remote paths and also acting as a callback to monitor completion of file upload"""
@@ -287,7 +287,6 @@ class _UploadCallback(object):
     self._upload_wait = set()
     self._walk_iterator = os.walk(self.parent.local_path)
     self._make_dest_path()
-    self._next_iteration()
 
     if not non_blocking:
       self.event.wait()

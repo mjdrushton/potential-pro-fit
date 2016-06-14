@@ -220,12 +220,6 @@ def testDirectoryUpload_create_multiple_uploads(tmpdir, execnet_gw, channel_id):
 
 def testDirectoryUpload_test_nonblocking(tmpdir, execnet_gw, channel_id):
   import threading
-  import logging
-  import sys
-  logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
-  # import pdb;pdb.set_trace()
-
   source1 = tmpdir.join("source_1")
 
   source1.ensure_dir()
@@ -276,9 +270,6 @@ def testDirectoryUpload_test_nonblocking(tmpdir, execnet_gw, channel_id):
   assert not ct.dest1_state
 
 def testDirectoryUpload_ensure_root(tmpdir, execnet_gw, channel_id):
-  # import logging
-  # import sys
-  # logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
   remote = tmpdir.join("remote")
   local = tmpdir.join("local")
 

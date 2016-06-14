@@ -4,6 +4,7 @@ EXECNET_TERM_TIMEOUT=10
 import logging
 import tempfile
 import execnet
+import os
 
 def urlParse(url):
   """Parse url into username, host, path components

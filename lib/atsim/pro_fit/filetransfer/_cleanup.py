@@ -1,5 +1,6 @@
 from atsim.pro_fit._channel import AbstractChannel
 from remote_exec import file_cleanup_remote_exec
+from atsim.pro_fit._util import CallbackRegister
 
 import logging
 import threading
@@ -31,24 +32,6 @@ class CleanupChannel(AbstractChannel):
   @property
   def channel_id(self):
     return self._channel_id
-
-class CallbackRegister(list):
-
-  def __init__(self):
-    self._lock = threading.RLock()
-    super(CallbackRegister, self).__init__()
-
-  def __call__(self, *args, **kwargs):
-
-    with self._lock:
-      for cb in self:
-        if not cb.active:
-          continue
-        processed = cb(*args, **kwargs)
-        if processed:
-          break
-
-      self[:] = [ cb for cb in self if cb.active ]
 
 class CleanupChannelException(Exception):
   pass

@@ -66,7 +66,7 @@ def e2(d):
 def e3(d):
   return (d['A'] - d['B'] - d['C'] - d['D'])
 
-from atsim.pro_fit.jobfactories import Job as MockJob
+from atsim.pro_fit.jobfactories import Job
 
 class MockJobFactory(object):
   def __init__(self, runnerName, jobName, evaluators):
@@ -100,4 +100,4 @@ class MockJobFactory(object):
 
 
     logger.debug("createJob directory content: %s" % os.listdir(destdir))
-    return MockJob(self, destdir, variables)
+    return Job(self, destdir, variables)

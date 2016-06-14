@@ -39,7 +39,6 @@ class LocalRunnerTestCase(unittest.TestCase):
   def tearDown(self):
     shutil.rmtree(self.tempd, ignore_errors = True)
 
-
   def _compareDir(self, path):
     actual = []
     for f in os.listdir(path):

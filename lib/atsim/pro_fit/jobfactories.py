@@ -68,7 +68,6 @@ class Job(object):
   outputPath = property(fget = outputPath,
     doc =  "Returns the job's output path")
 
-
   def evaluate(self):
     """Applies evaluators to Job. This should be called before evaluatorRecords is queried."""
     self._evaluatorRecords =  [ e(self) for e in self.jobFactory.evaluators ]

@@ -38,8 +38,6 @@ def _createRunner(runfixture, vagrantbox):
 
 #   return runner
 
-
-
 def _runBatch(runner, jobs):
   return runner.runBatch(jobs)
 

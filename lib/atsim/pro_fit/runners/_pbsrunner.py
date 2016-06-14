@@ -1,6 +1,3 @@
-
-# from atsim.pro_fit.fittool import ConfigException
-
 import execnet
 import os
 import collections
@@ -113,7 +110,7 @@ def pbsIdentify(versionString):
   logger.debug("pbsIdentify record: %s" % str(record))
   return record
 
-class PBSRunner(RemoteRunnerBase):
+class PBSRunner(object):
   """Runner that allows a remote PBS queuing system to be used to run jobs.
 
   SSH is used to communicate with server to submit jobs and copy files."""

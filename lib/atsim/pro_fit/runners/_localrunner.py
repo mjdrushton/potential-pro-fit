@@ -3,25 +3,6 @@ from atsim.pro_fit.fittool import ConfigException
 import threading
 import Queue
 
-from _inner import _InnerRunner
-
-class LocalRunnerFuture(threading.Thread):
-  """Joinable future object as returned by LocalRunner.runBatch()"""
-
-  def __init__(self, name, e, jobs):
-    """@param name Name future
-    @param e threading.Event used to communicate when batch finished
-    @param jobs List of Job instances belonging to batch"""
-    threading.Thread.__init__(self)
-    self._e = e
-    self._name = name
-    self._jobs = jobs
-    self.errorJobs = None
-    self.errorFlag = None
-    self.daemon = True
-
-  def run(self):
-    self._e.wait()
 
 class LocalRunner(object):
   """Runner that coordinates parallel job submission to local machine"""
@@ -44,8 +25,6 @@ class LocalRunner(object):
     event = threading.Event()
     self._i += 1
     future = LocalRunnerFuture('Batch %s' % self._i, event, jobs)
-    future.start()
-    self._batchinputqueue.put(future)
     return future
 
   @staticmethod
@@ -68,4 +47,3 @@ class LocalRunner(object):
       raise ConfigException("Could not convert nprocesses configuration item into an integer")
 
     return LocalRunner(runnerName, nprocesses)
-
