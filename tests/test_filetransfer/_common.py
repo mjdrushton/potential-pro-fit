@@ -71,3 +71,5 @@ def cmpdirs(left, right):
     for subcmp in dcmp.subdirs.values():
       docmp(subcmp)
   docmp(dcmp)
+
+

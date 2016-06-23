@@ -4,6 +4,9 @@ import uuid
 import posixpath
 
 from atsim.pro_fit.filetransfer import UploadHandler, DownloadHandler
+from atsim.pro_fit._util import EventWaitThread
+
+from _run_remote_client import RunJobKilledException
 
 _logger = logging.getLogger("atsim.pro_fit.runners")
 
@@ -46,6 +49,12 @@ class RunnerJob(object):
     # The remote directory into which  the job should be copied.
     self._remotePath = None
 
+    self._killed_flag = False
+
+    self._uploadDirectory = None
+    self._jobRun = None
+    self._downloadDirectory = None
+
   @property
   def remotePath(self):
     if self._remotePath is None:
@@ -66,7 +75,7 @@ class RunnerJob(object):
 
   def startUpload(self):
     self._logger.debug("Starting upload for job %s from batch %s" % (self.jobid, self.parentBatch.name))
-    upload = self.parentBatch.createUploadDirectory(self)
+    self._uploadDirectory = self.parentBatch.createUploadDirectory(self)
 
     def callback(exception):
       if not exception is None:
@@ -74,12 +83,21 @@ class RunnerJob(object):
         self.finishJob(exception)
       else:
         self._logger.debug("Starting upload for job %s from batch %s" % (self.jobid, self.parentBatch.name))
-        upload.upload(non_blocking = True)
+        self._uploadDirectory.upload(non_blocking = True)
 
     self.parentBatch.lockJobDirectory(self, callback)
 
   def finishUpload(self, exception):
+    self._uploadDirectory = None
     if not exception is None:
+      try:
+        raise exception
+      except UploadCancelledException:
+        self._logger.warning("Upload terminated for job %s from batch %s" % (self.jobid, self.parentBatch.name))
+        return
+      except:
+        pass
+
       self._logger.warning("Upload finished for job %s from batch %s, with exception: %s" % (self.jobid, self.parentBatch.name, exception))
       self.finishJob(exception)
     self._logger.debug("Upload finished successfully for job %s from batch %s" % (self.jobid, self.parentBatch.name))
@@ -87,10 +105,19 @@ class RunnerJob(object):
 
   def startJobRun(self):
     self._logger.debug("Starting job exection (startJobRun) for job %s from batch %s" % (self.jobid, self.parentBatch.name))
-    self.parentBatch.startJobRun(self)
+    self._jobRun = self.parentBatch.startJobRun(self)
 
   def finishJobRun(self, exception):
+    self._jobRun = None
     if not exception is None:
+      try:
+        raise exception
+      except RunJobKilledException:
+        self._logger.warning("Job killed (finishJobRun) for job %s from batch %s" % (self.jobid, self.parentBatch.name))
+        return
+      except:
+        pass
+
       self._logger.warning("Job execution finished (finishJobRun) for job %s from batch %s, with exception: %s" % (self.jobid, self.parentBatch.name, exception))
       self.finishJob(exception)
     else:
@@ -99,13 +126,20 @@ class RunnerJob(object):
 
   def startDownload(self):
     self._logger.debug("Starting download for job %s from batch %s" % (self.jobid, self.parentBatch.name))
-    download = self.parentBatch.createDownloadDirectory(self)
-    download.download(non_blocking = True)
+    self._downloadDirectory = self.parentBatch.createDownloadDirectory(self)
+    self._downloadDirectory.download(non_blocking = True)
 
   def finishDownload(self, exception):
+    self._downloadDirectory = None
     if exception is None:
       self._logger.debug("Download finished successfully for job %s from batch %s" % (self.jobid, self.parentBatch.name))
     else:
+      try:
+        raise exception
+      except DownloadCancelledException:
+        self._logger.warning("Download cancelled for job %s from batch %s." % (self.jobid, self.parentBatch.name))
+      except:
+        pass
       self._logger.warning("Download finished for job %s from batch %s, with exception: %s" % (self.jobid, self.parentBatch.name, exception))
     self.finishJob(exception)
 
@@ -122,6 +156,30 @@ class RunnerJob(object):
 
   def createRunJobHandler(self):
     return RunnerJobRunClientJob(self)
+
+  def kill(self):
+    """Kill the current job and perform any required cleanup
+
+    Returns:
+        threading.Event: Event that is set() once the job has terminated successfully.
+    """
+    killevents = []
+
+    if self._uploadDirectory:
+      killevents.append(self._uploadDirectory.cancel())
+
+    if self._jobRun:
+      killevents.append(self._jobRun.kill())
+
+    if self._downloadDirectory:
+      killevents.append(self._downloadDirectory.cancel())
+
+    self.parentBatch.unlockJobDirectory(self)
+
+    terminator = EventWaitThread(killevents)
+    terminator.start()
+    return terminator.completeEvent
+
 
 class RunnerJobDownloadHandler(DownloadHandler):
   """Handler that acts as finish() callback for RunnerJob.

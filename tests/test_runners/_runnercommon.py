@@ -148,3 +148,46 @@ def cmpdirs(left, right):
     for subcmp in dcmp.subdirs.values():
       docmp(subcmp)
   docmp(dcmp)
+
+
+def _check_pid(channel):
+  import subprocess
+  for pid in channel:
+    if pid is None:
+      return
+    returncode = subprocess.call(["/bin/ps", "-p", str(pid)])
+    channel.send(returncode == 0)
+
+class CheckPIDS(object):
+
+  def __init__(self, gw):
+    self.channel = gw.remote_exec(_check_pid)
+
+  def checkpids(self, pids, status):
+    for pid in pids:
+      self.channel.send(pid)
+      found = self.channel.receive()
+
+      if status:
+        if found == False:
+          self.channel.send(None)
+          self.channel.waitclose()
+          assert False, "PID not found on remote host: %s" % pid
+      else:
+        if found == True:
+          self.channel.send(None)
+          self.channel.waitclose()
+          assert False, "PID was found on remote host when it should no longer exist: %s" % pid
+
+  def close(self):
+    self.channel.send(None)
+    self.channel.waitclose()
+
+
+def isdir_remote(channel):
+  import os
+  for msg in channel:
+    if msg is None:
+      return
+
+    channel.send(os.path.isdir(msg))

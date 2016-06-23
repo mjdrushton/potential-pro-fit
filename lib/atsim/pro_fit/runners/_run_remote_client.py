@@ -16,6 +16,9 @@ _ncpu = multiprocessing.cpu_count()
 
 _logger = logging.getLogger("atsim.pro_fit.runners")
 
+class RunChannelException(Exception):
+  pass
+
 class RunChannel(AbstractChannel):
 
   _logger = _logger.getChild("RunChannel")
@@ -78,7 +81,6 @@ class RunClient(object):
 
   _logger = _logger.getChild("RunClient")
 
-
   def __init__(self, channel):
     self.channel = channel
     self._base_transid = uuid.uuid4()
@@ -106,8 +108,13 @@ class RunClient(object):
     """
     self._logger.debug("runCommand called for workingDirectory = '%s'", workingDirectory)
     cbobj = self._registerCallback(workingDirectory, callback)
-    cbobj.event.wait()
-    cbobj.raise_exception()
+    if callback is None:
+      cbobj.event.wait()
+      cbobj.raise_exception()
+      return None
+    else:
+      jobRecord = JobRecord(cbobj, self)
+      return jobRecord
 
   def _registerCallback(self, workingDirectory, callback):
     if callback is None:
@@ -123,7 +130,55 @@ class RunClient(object):
   def _transid(self):
     return "%s-%d" % (self._base_transid, self._id_count.next())
 
-class RunChannelException(Exception):
+  def _kill(self, trans_id, channel_id):
+    # Get the channel_id
+    killchannel = self.channel.getChannel(channel_id)
+    killchannel.send({'msg' : 'JOB_KILL', 'job_id' : trans_id })
+
+class JobRecord(object):
+
+  def __init__(self, rjc, runClient):
+    self._runjobcallback = rjc
+    self._runClient = runClient
+
+  @property
+  def workingDirectory(self):
+    return self._runjobcallback.workingDirectory
+
+  @property
+  def trans_id(self):
+    return self._runjobcallback.trans_id
+
+  @property
+  def completion_event(self):
+    return self._runjobcallback.event
+
+  @property
+  def pid(self):
+    return self._runjobcallback.pid
+
+  def kill(self):
+    """Kill the job.
+
+    Returns:
+        threading.Event: Event that is set once job completes.
+    """
+    with self._runjobcallback.lock, self._runClient._submissionCallback.lock:
+      if not self._runjobcallback.active:
+        raise JobAlreadyFinishedException()
+
+      if self._runjobcallback.submitted:
+        self._runClient._kill(self._runjobcallback.trans_id, self._runjobcallback.channel_id)
+      else:
+        self._runClient._submissionCallback.removeCallback(self._runjobcallback)
+        self._runjobcallback.exception = RunJobKilledException()
+        self._runjobcallback.finish()
+      return self.completion_event
+
+class JobAlreadyFinishedException(Exception):
+  pass
+
+class RunJobKilledException(Exception):
   pass
 
 class RunJobCallback(object):
@@ -134,6 +189,7 @@ class RunJobCallback(object):
   _logger = _logger.getChild("atsim.pro_fit.runners.RunJobCallback")
 
   def __init__(self, workingDirectory, callback, trans_id):
+    self.lock = threading.RLock()
     self.workingDirectory = workingDirectory
     self.submitted = False
     self.callback  = callback
@@ -142,43 +198,54 @@ class RunJobCallback(object):
     self.active = True
     self.event = threading.Event()
     self.should_raise = False
+    self.pid = None
+    self.channel_id = None
 
   def __call__(self, msg):
-    if not self.submitted:
-      return False
-
-    self._logger.debug("Callback called job_id=%s, msg = %s", self.trans_id, msg)
-    try:
-      # transid = msg['id']
-      channel_id = msg['channel_id']
-      mtype = msg.get('msg', "")
-
-      if not mtype in ["JOB_START_ERROR", "JOB_END", "ERROR", "JOB_STARTED"]:
-        self._logger.debug("Message not relevant to callback job_id=%s, msg = %s", self.trans_id, msg)
+    with self.lock:
+      if not self.submitted or not self.active:
         return False
 
-      transid = msg.get('job_id', None)
+      self._logger.debug("Callback called job_id=%s, msg = %s", self.trans_id, msg)
+      try:
+        # transid = msg['id']
+        channel_id = msg['channel_id']
+        mtype = msg.get('msg', "")
 
-      if transid != self.trans_id:
-        self._logger.debug("Message not relevant to callback job_id=%s, msg = %s", self.trans_id, msg)
+        if not mtype in ["JOB_START_ERROR", "JOB_END", "ERROR", "JOB_START"]:
+          self._logger.debug("Message not relevant to callback job_id=%s, msg = %s", self.trans_id, msg)
+          return False
+
+        transid = msg.get('job_id', None)
+
+        if transid != self.trans_id:
+          self._logger.debug("Message not relevant to callback job_id=%s, msg = %s", self.trans_id, msg)
+          return False
+
+        if mtype == 'ERROR' or mtype == "JOB_START_ERROR":
+          self.error(msg)
+          return True
+
+        if mtype == "JOB_START":
+          # import pdb;pdb.set_trace()
+          pid = msg.get('pid', None)
+          self.pid = pid
+          self.channel_id = channel_id
+          self._logger.debug("Job id=%s started in directory='%s' with pid=%s", transid, self.workingDirectory, pid)
+          return True
+
+        if mtype == "JOB_END":
+          if msg.get('killed', False):
+            self._logger.warning("Job id=%s (working directory='%s') was killed", transid, self.workingDirectory)
+            self.exception = RunJobKilledException()
+            self.finish()
+          else:
+            self._logger.debug("Job id=%s (working directory='%s') finished with return code %d", transid, self.workingDirectory, msg.get("returncode", "Unknown"))
+            self.finish()
         return False
-
-      if mtype == 'ERROR' or mtype == "JOB_START_ERROR":
-        self.error(msg)
-        return True
-
-      if mtype == "JOB_STARTED":
-        self._logger.debug("Job id=%s started in directory='%s'", transid, self.workingDirectory)
-        return True
-
-      if mtype == "JOB_END":
-        self._logger.debug("Job id=%s (working directory='%s') finished with return code %d", transid, self.workingDirectory, msg.get("returncode", "Unknown"))
+      except Exception:
+        self.exception = sys.exc_info()
         self.finish()
-      return False
-
-    except Exception:
-      self.exception = sys.exc_info()
-      self.finish()
 
   def error(self, msg):
     self._logger.warning("Callback job_id=%s, received ERROR message. msg = %s", self.trans_id, msg)
@@ -186,10 +253,11 @@ class RunJobCallback(object):
     raise RunChannelException("Error, received error: %s. Msg: %s", reason, msg)
 
   def finish(self):
-    self.callback(self.exception)
-    self.active = False
-    self.event.set()
-    return True
+    with self.lock:
+      self.callback(self.exception)
+      self.active = False
+      self.event.set()
+      return True
 
   def raise_exception(self):
     if self.should_raise:
@@ -206,13 +274,13 @@ class SubmissionCallback(object):
   active = True
 
   def __init__(self, channel, trans_id, callbacklist):
+    self.lock = threading.RLock()
     self.channel = channel
     self.trans_id = trans_id
     self.callbacklist = callbacklist
-    self._lock = threading.RLock()
 
   def __call__(self, msg):
-    with self._lock:
+    with self.lock:
       self._logger.debug("Ready Callback, msg = %s", msg)
       mtype = msg.get("msg")
 
@@ -229,8 +297,13 @@ class SubmissionCallback(object):
       return False
 
   def addCallback(self, cb):
-    with self._lock:
+    with self.lock:
       self.callbacklist.append(cb)
+
+  def removeCallback(self, cb):
+    with self.lock:
+      cb.active = False
+      self.callbacklist.remove(cb)
 
   def _findNextJob(self):
     for cb in self.callbacklist:
@@ -249,12 +322,3 @@ class SubmissionCallback(object):
     callback.submitted = True
     self._logger.debug("Submitting job to channel_id = %s: %s", channel.channel_id, sendmsg)
     channel.send(sendmsg)
-
-  def _make_channel_iter(self):
-    ch = self.channel.next()
-    start_channel_id = ch .channel_id
-    yield ch
-    for ch in self.channel:
-      if ch.channel_id == start_channel_id:
-        return
-      yield ch

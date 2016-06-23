@@ -14,6 +14,10 @@ from atsim.pro_fit._util import MultiCallback
 class DirectoryUploadException(Exception):
   pass
 
+
+class UploadCancelledException(DirectoryUploadException):
+  pass
+
 class UploadHandlerException(DirectoryUploadException):
   pass
 
@@ -206,6 +210,15 @@ class UploadDirectory(object):
       return rv
     else:
       log.info("Finished upload id='%s'", self.transaction_id)
+
+  def cancel(self):
+    """Cancel the upload.
+
+    Returns:
+        threading.Event: Event that will be set() once cancellation completes.
+    """
+    return self._callback.cancel()
+
 
 class _UploadCallback(object):
   _logger = UploadDirectory._logger.getChild("_UploadCallback")
@@ -483,3 +496,14 @@ class _UploadCallback(object):
   def _unregister_callback(self):
     cb = self.channel_iter.callback
     cb.remove(self)
+
+  def cancel(self):
+    exc = UploadCancelledException()
+    with self._lock:
+      self.enabled = False
+      try:
+        self.parent.upload_handler.finish(exc)
+      except Exception, e:
+        self._exc = sys.exc_info()
+      self._finish()
+    return self.event

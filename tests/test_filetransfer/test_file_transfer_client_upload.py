@@ -2,7 +2,7 @@ from _common import execnet_gw, channel_id,  cmpdirs
 from _common import create_dir_structure as _create_dir_structure
 
 from atsim.pro_fit.filetransfer import UploadChannel, UploadDirectory, UploadHandler
-from atsim.pro_fit.filetransfer import ChannelException, DirectoryUploadException
+from atsim.pro_fit.filetransfer import ChannelException, DirectoryUploadException, UploadCancelledException
 
 import py.path
 
@@ -289,3 +289,51 @@ def testDirectoryUpload_ensure_root(tmpdir, execnet_gw, channel_id):
   assert dest.isdir()
   assert dest.join("blah").isdir()
   assert dest.join("hello.txt").read()[:-1] == "Hello World!"
+
+
+def testDirectoryUpload_cancel(tmpdir, execnet_gw, channel_id):
+  import threading
+  source1 = tmpdir.join("source_1")
+
+  source1.ensure_dir()
+
+  with source1.join("file.txt").open("w") as outfile:
+    print >>outfile, "Hello"
+
+  dest1 = tmpdir.join("dest_1")
+
+  dest1.ensure_dir()
+
+  pause_event = threading.Event()
+  upload_event = threading.Event()
+  class PauseUploadHandler(UploadHandler):
+
+    def __init__(self, *args, **kwargs):
+      super(PauseUploadHandler, self).__init__(*args, **kwargs)
+      self.finishCalled = False
+      self.exception = None
+
+    def upload(self, msg):
+      pause_event.wait(10)
+      return super(PauseUploadHandler, self).upload(msg)
+
+    def finish(self, exception = None):
+      self.finishCalled =True
+      self.exception = exception
+      return None
+
+  ulh = PauseUploadHandler(source1.strpath, dest1.strpath)
+  ch1 = UploadChannel(execnet_gw, tmpdir.strpath)
+  ul1 = UploadDirectory(ch1, source1.strpath, dest1.strpath, ulh)
+  finished_event = ul1.upload(non_blocking = True)
+  cancel_event = ul1.cancel()
+
+  assert cancel_event.wait(4)
+  assert finished_event.wait(4)
+  assert ulh.finishCalled
+
+  try:
+    raise ulh.exception
+  except UploadCancelledException:
+    pass
+

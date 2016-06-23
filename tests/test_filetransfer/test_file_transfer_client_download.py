@@ -1,5 +1,5 @@
 
-from atsim.pro_fit.filetransfer import DownloadDirectory, DownloadHandler
+from atsim.pro_fit.filetransfer import DownloadDirectory, DownloadHandler, DownloadCancelledException
 from atsim.pro_fit.filetransfer import DownloadChannel, DownloadChannels, ChannelException
 
 import os
@@ -385,3 +385,54 @@ def testDirectoryDownload_test_nonblocking(tmpdir, execnet_gw, channel_id):
 
   assert not ct.dest1_state
 
+def testDirectoryDownload_cancel(tmpdir, execnet_gw, channel_id):
+  import threading
+  import logging
+  import sys
+  logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
+  source1 = tmpdir.join("source_1")
+  source1.ensure_dir()
+
+  with source1.join("file.txt").open("w") as outfile:
+    print >>outfile, "Hello"
+
+  with source1.join("file2.txt").open("w") as outfile:
+    print >>outfile, "Hello"
+
+  dest1 = tmpdir.join("dest_1")
+
+  dest1.ensure_dir()
+
+  pause_event = threading.Event()
+  download_event = threading.Event()
+  class PauseDownloadHandler(DownloadHandler):
+
+    def __init__(self, *args, **kwargs):
+      super(PauseDownloadHandler, self).__init__(*args, **kwargs)
+      self.finishCalled = False
+      self.exception = None
+
+    def writefile(self, msg):
+      pause_event.wait(3)
+      return super(PauseDownloadHandler, self).writefile(msg)
+
+    def finish(self, exception = None):
+      self.finishCalled =True
+      self.exception = exception
+      return None
+
+  ch1 = DownloadChannel(execnet_gw, tmpdir.strpath)
+  dlh = PauseDownloadHandler(source1.strpath, dest1.strpath)
+  dl1 = DownloadDirectory(ch1, source1.strpath, dest1.strpath, dlh)
+  finished_event = dl1.download(non_blocking = True)
+  cancel_event = dl1.cancel()
+  pause_event.set()
+  assert cancel_event.wait(4)
+  assert finished_event.wait(4)
+  assert dlh.finishCalled
+
+  try:
+    raise dlh.exception
+  except DownloadCancelledException:
+    pass

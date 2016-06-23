@@ -118,7 +118,6 @@ class CleanupClient(object):
     self._init_channel()
     self.block_timeout = 60
 
-
   def lock(self, *paths, **kwargs):
     """Lock specified paths.
 

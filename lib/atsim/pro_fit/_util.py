@@ -1,5 +1,6 @@
 import csv
 import functools
+import operator
 import itertools
 import threading
 
@@ -218,3 +219,26 @@ class CallbackRegister(list):
           break
 
       self[:] = [ cb for cb in self if cb.active ]
+
+
+class EventWaitThread(threading.Thread):
+
+  _logger = logging.getLogger("atsim.pro_fit.EventWaitThread")
+
+  def __init__(self, events):
+    threading.Thread.__init__(self)
+    self.events = events
+    self.completeEvent = threading.Event()
+
+  def run(self):
+    # Wait for all the kill events to be set.
+    if self.events:
+      status = True
+      while status:
+        waitcount = sum([e.isSet() for e in self.events])
+        status = not functools.reduce(operator.and_, [e.is_set() for e in self.events])
+    self.completeEvent.set()
+    self.after()
+
+  def after(self):
+    pass

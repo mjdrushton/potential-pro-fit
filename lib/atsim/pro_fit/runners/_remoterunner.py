@@ -7,6 +7,7 @@ import itertools
 import logging
 import posixpath
 import uuid
+import threading
 
 EXECNET_TERM_TIMEOUT=10
 
@@ -202,8 +203,25 @@ class InnerRemoteRunner(object):
 
     Args:
         handler (object): See above
+
+    Returns:
+        (_run_remote_client.JobRecord): Record supporting kill() method.
     """
-    self._runClient.runCommand(handler.workingDirectory, handler.callback)
+    return self._runClient.runCommand(handler.workingDirectory, handler.callback)
+
+  def cleanupFlush(self):
+    """Tell the cleanup agent associated with this runner to process any outstanding  file deletion jobs.
+
+    Returns:
+        threading.Event: Event that will be set() once cleanup has completed.
+    """
+    event = threading.Event()
+    def callback(exception = None):
+      event.set()
+
+    self._cleanupClient.flush(callback)
+
+    return event
 
 
 class RemoteRunner(object):

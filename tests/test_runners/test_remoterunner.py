@@ -16,7 +16,7 @@ from assertpy import assert_that,fail
 
 from atsim import pro_fit
 
-from _runnercommon import runfixture, DIR, FILE, runnertestjob
+from _runnercommon import runfixture, DIR, FILE, runnertestjob, CheckPIDS, isdir_remote
 from .. import common
 from ..testutil import vagrant_basic
 
@@ -163,21 +163,9 @@ def _read_pids(channel):
       return
     channel.send(open(path).read())
 
-def _check_pid(channel):
-  import subprocess
-  for pid in channel:
-    if pid is None:
-      return
-    returncode = subprocess.call(["/bin/ps", "-p", str(pid)])
-    channel.send(returncode == 0)
-
 def testTerminate(tmpdir, runfixture, vagrant_basic):
   """Test runner future's .terminate() method."""
-
-  # TODO: Write a test for when jobs run serially (i.e. one job at a time)
-
   logger = logging.getLogger("test_remoterunner.testTerminate")
-  # import pdb;pdb.set_trace()
   # Create a long running job.
   jobiter = _mklongjob(tmpdir)
   j1 = jobiter.next()
@@ -195,26 +183,25 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
   # Check that the remote job has created the directories it needs.
   gw = _mkexecnetgw(vagrant_basic)
 
-
   # Check for the PID_FILES in
   def checkpaths(channel, f):
-    batchpath = posixpath.join(f._remotePath, f._batchDir)
+    # batchpath = posixpath.join(f._remotePath, f._batchDir)
     # Check five times with a sleep of 1s between attempts
     # if after that remote files don't appear, then they never will
     for i in xrange(5):
       # Check paths
       count = 0
       pids = []
-      for localPath, remotePath in f._localToRemotePathTuples:
-        fullpath = posixpath.join(batchpath, remotePath, "rundir", "JOB_PID")
+      for job in f._extantJobs:
+        fullpath = posixpath.join(job.remotePath, 'job_files', "JOB_PID")
         channel.send(fullpath)
         found = channel.receive()
         logger.debug("checkpaths: '%s' found = '%s'" % (fullpath, found))
         count += found
 
-      logger.debug("checkpaths count on %d attempt: %d (expecting %d)", i, count, len(f._localToRemotePathTuples))
+      logger.debug("checkpaths count on %d attempt: %d (expecting %d)", i, count, len(f._extantJobs))
       time.sleep(1)
-      if count == len(f._localToRemotePathTuples):
+      if count == len(f._extantJobs):
         return
     fail("Remote paths not found")
 
@@ -226,9 +213,9 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
   # ... job should write PID to file.
   def getpids(channel, f):
     paths = []
-    batchpath = posixpath.join(f._remotePath, f._batchDir)
-    for localPath, remotePath in f._localToRemotePathTuples:
-      fullpath = posixpath.join(batchpath, remotePath, "rundir", "JOB_PID")
+    # batchpath = posixpath.join(f.remotePath, f._batchDir)
+    for job in f._extantJobs:
+      fullpath = posixpath.join(job.remotePath, "job_files", "JOB_PID")
       channel.send(fullpath)
       paths.append(channel.receive()[:-1])
     return paths
@@ -238,30 +225,34 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
   channel.send(None)
   channel.waitclose()
 
-  def checkpids(channel, pids, status):
-    for pid in pids:
-      channel.send(pid)
-      found = channel.receive()
-      if found != status:
-        channel.send(None)
-        channel.waitclose()
-        fail("PID not found on remote host: %d" % pid)
-
-  channel = gw.remote_exec(_check_pid)
-  checkpids(channel, b1_pids, True)
+  cp = CheckPIDS(gw)
+  cp.checkpids(b1_pids, True)
 
   # Call terminate - make sure that temporary directories are cleaned up.
   # Ensure job PID has gone.
+  jobs1 = list(b1_future._extantJobs)
+
   b1_term = b1_future.terminate()
-  b1_term.join()
+  b1_term.join(5)
 
-  checkpids(channel, b1_pids, False)
-  channel.send(None)
-  channel.waitclose()
+  cp.checkpids(b1_pids, False)
+  cp.close()
 
+  #Check file cleanup here.
+  cleanupEvent = runner._inner.cleanupFlush()
+  assert cleanupEvent.wait(5)
 
-  #TODO: Check file cleanup here.
+  isdirchannel = gw.remote_exec(isdir_remote)
+  for job in jobs1:
+    isdirchannel.send(job.remotePath)
+    assert not isdirchannel.receive(), "Remote path should not exist but does: %s" % job.remotePath
+
+  # Check that the batch directory has been deleted.
+  isdirchannel.send(b1_future.remoteBatchDir)
+  assert not isdirchannel.receive(), "Remote path should not exist but does: %s" % b1_future.remoteBatchDir
+
   b2_future = _runBatch(runner, batch2)
+  jobs2 = list(b2_future._extantJobs)
   channel = gw.remote_exec(_remote_is_file)
   checkpaths(channel, b2_future)
   channel.send(None)
@@ -272,19 +263,30 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
   channel.send(None)
   channel.waitclose()
 
-  channel = gw.remote_exec(_check_pid)
-  checkpids(channel, b2_pids, True)
+  cp = CheckPIDS(gw)
+  cp.checkpids(b2_pids, True)
 
   b2_term = b2_future.terminate()
-  b2_term.join()
-  checkpids(channel, b2_pids, False)
+  b2_term.join(5)
+  cp.checkpids(b2_pids, False)
 
+  #Check file cleanup here.
+  cleanupEvent = runner._inner.cleanupFlush()
+  assert cleanupEvent.wait(5)
 
-  # TODO: Check file cleanup here.
+  isdirchannel = gw.remote_exec(isdir_remote)
+  for job in jobs2:
+    isdirchannel.send(job.remotePath)
+    assert not isdirchannel.receive(), "Remote path should not exist but does: %s" % job.remotePath
+
+  # Check that the batch directory has been deleted.
+  isdirchannel.send(b2_future.remoteBatchDir)
+  assert not isdirchannel.receive(), "Remote path should not exist but does: %s" % b1_future.remoteBatchDir
 
   # Ensure that future's terminated flag is set.
-
-  fail("Not implemented")
+  isdirchannel.send(None)
+  isdirchannel.close()
+  isdirchannel.waitclose()
 
 def testClose():
   """Test runner's .close() method."""

@@ -28,7 +28,7 @@ class RunCmd(threading.Thread):
       return
 
     self.popen = subprocess.Popen([self.shell, 'runjob'], cwd = self.path, close_fds=True)
-    self.parent.jobstarted(self.job_id)
+    self.parent.jobstarted(self.job_id, self.popen.pid)
 
     self.popen.wait()
 
@@ -53,8 +53,11 @@ class RunCmd(threading.Thread):
         self.popen.wait()
 
   def jobdone(self, killed):
-    with open(os.path.join(self.path, 'STATUS'), 'w') as statusfile:
-      statusfile.write("%s\n" % self.popen.returncode)
+    try:
+      with open(os.path.join(self.path, 'STATUS'), 'w') as statusfile:
+        statusfile.write("%s\n" % self.popen.returncode)
+    except IOError:
+      pass
     self.parent.jobdone(self.job_id, self.popen.returncode, killed = killed)
 
 
@@ -72,9 +75,12 @@ class StatusHeartBeat(object):
     self.eventLoop = eventLoop
     self.heart_beat_period = heart_beat_period
     self.timer = None
+    self.enabled = True
 
   def resetTimer(self):
     with self.lock:
+      if not self.enabled:
+        return
       def timerCallback():
         self.eventLoop.sendStatus()
         self.timer = None
@@ -112,8 +118,8 @@ class EventLoop(threading.Thread):
       self.send(bsy)
       self.last_status_sent = 'BUSY'
 
-  def jobstarted(self, job_id):
-    self.sendargs(msg = 'JOB_START', channel_id = self.channel_id, job_id = job_id)
+  def jobstarted(self, job_id, pid):
+    self.sendargs(msg = 'JOB_START', channel_id = self.channel_id, job_id = job_id, pid = pid)
 
   def jobstarterror(self, job_id, reason):
     self.sendargs(msg ='JOB_START_ERROR', channel_id = self.channel_id, job_id = job_id, reason = reason)
@@ -143,6 +149,7 @@ class EventLoop(threading.Thread):
       self.channel_id = uuid_msg['channel_id']
       self.shell = uuid_msg.get('shell', '/bin/bash')
       self.hardkill_timeout = uuid_msg.get('hardkill_timeout', 60)
+      self.heartbeat.enabled = uuid_msg.get('heartbeat_enabled', True)
     except:
       self.send(dict(msg="ERROR"))
       return

@@ -8,6 +8,9 @@ import posixpath
 
 from _runner_job import RunnerJob
 
+from atsim.pro_fit._util import EventWaitThread
+
+
 _logger = logging.getLogger("atsim.pro_fit.runners")
 
 class RunnerBatch(object):
@@ -76,8 +79,6 @@ class RunnerBatch(object):
     handler = job.createDownloadHandler()
     destPath = job.outputPath
 
-    # self._logger.getChild('createDownloadDirectory').debug("remotePath = %s", remotePath)
-    # self._logger.getChild('createDownloadDirectory').debug("destPath = %s", destPath)
     os.mkdir(destPath)
     download = self.parentRunner.createDownloadDirectory(handler.remoteOutputPath, destPath, handler)
     return download
@@ -85,7 +86,7 @@ class RunnerBatch(object):
   def startJobRun(self, job):
     """Register this job with the parent runner's `RunClient`"""
     handler = job.createRunJobHandler()
-    self.parentRunner.startJobRun(handler)
+    return self.parentRunner.startJobRun(handler)
 
   def jobFinished(self, job):
     self._extantJobs.remove(job)
@@ -142,3 +143,23 @@ class RunnerBatch(object):
         timeout (int): Timeout in seconds or None
     """
     self._event.wait(timeout)
+
+  def terminate(self):
+    terminator = _BatchTerminator(self)
+    terminator.start()
+    return terminator
+
+
+class _BatchTerminator(EventWaitThread):
+
+  def __init__(self, batch):
+    killevents = []
+    for job in batch._extantJobs:
+      killevents.append(job.kill())
+    self.batch = batch
+    EventWaitThread.__init__(self, killevents)
+
+  def after(self):
+    self.batch.batchFinished(None)
+
+

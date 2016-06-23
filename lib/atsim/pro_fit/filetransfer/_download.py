@@ -17,6 +17,9 @@ _DirectoryRecord = collections.namedtuple("_DirectoryRecord", ['transid', 'path'
 class DirectoryDownloadException(Exception):
   pass
 
+class DownloadCancelledException(DirectoryDownloadException):
+  pass
+
 class DownloadChannel(BaseChannel):
 
   _logger = logging.getLogger("atsim.pro_fit.runners._file_transfer_client.DownloadChannel")
@@ -196,6 +199,15 @@ class DownloadDirectory(object):
       return rv
     else:
       log.info("Finished download id='%s'", self.transaction_id)
+
+  def cancel(self):
+    """Cancel the download
+
+    Returns:
+        threading.Event: Event that is set once cancellation is complete.
+    """
+    return self._callback.cancel()
+
 
 class _DownloadCallback(object):
   _logger = DownloadDirectory._logger.getChild("DownloadCallback")
@@ -445,3 +457,15 @@ class _DownloadCallback(object):
     self._unregister_callback()
     self.parent.exception = self._exc
     self.event.set()
+
+  def cancel(self):
+    with self._lock:
+      exc = DownloadCancelledException()
+      self.enabled = False
+      try:
+        self.parent.download_handler.finish(exc)
+      except Exception, e:
+        self._exc = sys.exc_info()
+      self._finish()
+      return self.event
+
