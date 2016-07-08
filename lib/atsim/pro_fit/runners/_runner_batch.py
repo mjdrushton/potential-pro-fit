@@ -1,17 +1,116 @@
-
+import functools
 import logging
-
+import operator
 import os
-import threading
-
 import posixpath
+import Queue
+import sys
+import threading
+import traceback
 
 from _runner_job import RunnerJob
-
-from atsim.pro_fit._util import EventWaitThread
+from atsim.pro_fit._util import EventWaitThread, eventWait_or
 
 
 _logger = logging.getLogger("atsim.pro_fit.runners")
+
+class BatchAlreadyFinishedException(Exception):
+  pass
+
+class BatchKilledException(Exception):
+  pass
+
+class BatchDirectoryLockException(Exception):
+  pass
+
+class _BatchMonitorThread(threading.Thread):
+
+  def __init__(self, batch):
+    threading.Thread.__init__(self)
+    self._logger = batch._logger.getChild("_BatchMonitorThread")
+    self.batch = batch
+    self.extantJobs = set(batch.jobs)
+    self.killedEvent = threading.Event()
+    self.killFinishEvent = threading.Event()
+    self.finishedEvent = threading.Event()
+    self.completedJobQueue = Queue.Queue()
+    self.dirLocked = False
+    self.exception = None
+
+  def run(self):
+    try:
+      self.doLock()
+      self.startJobs()
+      self.monitorJobs()
+      self.finishBatch(None)
+    except:
+      self._logger.debug("run, exception")
+      self.finishBatch(sys.exc_info())
+
+  def doLock(self):
+    self._logger.debug("doLock")
+    lockEvent = threading.Event()
+    def callback(exception):
+      if not exception is None:
+        self._logger.warning("Could not start batch %s, directory lock failed: %s",self.name)
+        self.exception = exception
+      lockEvent.set()
+    self.batch.parentRunner.lockPath(self.batch.remoteBatchDir, callback)
+
+    combinedEvent = eventWait_or([lockEvent, self.killedEvent])
+    while not combinedEvent.wait(0.1):
+      pass
+
+    if lockEvent.is_set() and not self.exception:
+      self.dirLocked = True
+
+    if self.killedEvent.is_set():
+      raise BatchKilledException()
+
+  def startJobs(self):
+    for job in self.extantJobs:
+      job.start()
+
+  def areJobsRunning(self):
+    if self.extantJobs:
+      return True
+    return False
+
+  def monitorJobs(self):
+    self._logger.debug("monitorJobs")
+    while self.areJobsRunning() and not self.killedEvent.is_set():
+      try:
+        job = self.completedJobQueue.get(True, 0.1)
+        self.extantJobs.remove(job)
+        self._logger.debug("monitorJobs job remove - %d jobs remaining", len(self.extantJobs))
+      except Queue.Empty:
+        pass
+
+    if self.killedEvent.is_set():
+        self._logger.debug("monitorJobs killed event")
+        self.killJobs()
+
+  def killJobs(self):
+    self._logger.debug("killJobs")
+    killEvents = [ job.kill() for job in self.extantJobs]
+    ewt = EventWaitThread(killEvents)
+    ewt.start()
+    while not ewt.completeEvent.wait(0.1):
+      pass
+    self.killFinishEvent.set()
+    self._logger.debug("killJobs finished")
+
+  def finishBatch(self, exception):
+    self.exception = exception
+
+    if exception:
+      self._logger.warning("Batch finished with exception: %s", traceback.format_exception(*exception))
+
+    if self.dirLocked:
+      self.batch.parentRunner.unlockPath(self.batch.remoteBatchDir)
+
+    self.finishedEvent.set()
+
 
 class RunnerBatch(object):
 
@@ -21,30 +120,22 @@ class RunnerBatch(object):
     self.name = name
     self.parentRunner = parentRunner
     self.remoteBatchDir = remoteBatchDir
-    self._remoteBatchDirLocked = False
-
     self.jobs = self._createJobInstances(jobs)
-    self.exception = None
-    self._extantJobs = set()
-    self._event = threading.Event()
+    self._monitorThread = _BatchMonitorThread(self)
+    self._finishedEvent = self._monitorThread.finishedEvent
+    self._killedEvent = self._monitorThread.killedEvent
 
   def startBatch(self):
     """Register batch remote path with the cleanup agent and call start() on this batch's
     jobs"""
-    self._event.clear()
-    def callback(exception):
-      if not exception is None:
-        self._logger.warning("Could not start batch %s, directory lock failed: %s",self.name, exception)
-        self.batchFinished(exception)
-      else:
-        self._logger.debug("Starting batch: %s", self.name)
-        self._remoteBatchDirLocked = True
-        for job in self.jobs:
-          self._extantJobs.add(job)
-          job.start()
-    self.parentRunner.lockPath(self.remoteBatchDir, callback)
+    self._logger.debug("Starting batch: %s", self.name)
+    self._monitorThread.start()
 
-  def createUploadDirectory(self, job):
+  @property
+  def isFinished(self):
+    return self._finishedEvent.is_set()
+
+  def createUploadDirectory(self, job, handler):
     """Create an `atsim.pro_fit.filetransfer.UploadDirectory` instance
     for `job`. The `UploadDirectory` will be registered with an upload handler
     that will call the job's  `finishUpload()` method on completion.
@@ -53,17 +144,17 @@ class RunnerBatch(object):
 
     Args:
         job (RunnerJob): Job
+        handler (UploadHandler): Handler for this upload directory.
 
     Returns:
         UploadDirectory: Correctly instantiated directory upload instance.
     """
-    handler = job.createUploadHandler()
     sourcePath = job.sourcePath
     remotePath = job.remotePath
     upload = self.parentRunner.createUploadDirectory(sourcePath, remotePath, handler)
     return upload
 
-  def createDownloadDirectory(self, job):
+  def createDownloadDirectory(self, job, handler):
     """Create an `atsim.pro_fit.filetransfer.DownloadDirectory` instance
     for `job`. The `DownloadDirectory` will be registered with a download handler
     that will call the job's  `finishDownload()` method on completion.
@@ -72,34 +163,23 @@ class RunnerBatch(object):
 
     Args:
         job (RunnerJob): Job
+        handler (DownloadHandler): Handler for the job
 
     Returns:
         DownloadDirectory: Correctly instantiated directory download instance.
     """
-    handler = job.createDownloadHandler()
     destPath = job.outputPath
-
     os.mkdir(destPath)
     download = self.parentRunner.createDownloadDirectory(handler.remoteOutputPath, destPath, handler)
     return download
 
-  def startJobRun(self, job):
+  def startJobRun(self, job, handler):
     """Register this job with the parent runner's `RunClient`"""
-    handler = job.createRunJobHandler()
+    # handler = job.createRunJobHandler()
     return self.parentRunner.startJobRun(handler)
 
   def jobFinished(self, job):
-    self._extantJobs.remove(job)
-    if not self._extantJobs:
-      self.batchFinished(None)
-
-  def batchFinished(self, exception):
-    if self._remoteBatchDirLocked:
-      self.parentRunner.unlockPath(self.remoteBatchDir)
-      self._remoteBatchDirLocked = False
-    self.exception = exception
-    self.parentRunner.batchFinished(self, exception)
-    self._event.set()
+    self._monitorThread.completedJobQueue.put(job)
 
   def lockJobDirectory(self, job, callback):
     """Register the remote directory of `job` with the cleanup agent associated
@@ -142,24 +222,8 @@ class RunnerBatch(object):
     Args:
         timeout (int): Timeout in seconds or None
     """
-    self._event.wait(timeout)
+    return self._finishedEvent.wait(timeout)
 
   def terminate(self):
-    terminator = _BatchTerminator(self)
-    terminator.start()
-    return terminator
-
-
-class _BatchTerminator(EventWaitThread):
-
-  def __init__(self, batch):
-    killevents = []
-    for job in batch._extantJobs:
-      killevents.append(job.kill())
-    self.batch = batch
-    EventWaitThread.__init__(self, killevents)
-
-  def after(self):
-    self.batch.batchFinished(None)
-
-
+    self._killedEvent.set()
+    return self._finishedEvent

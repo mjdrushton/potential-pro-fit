@@ -1,4 +1,5 @@
 from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit._util import EventWaitThread
 from atsim.pro_fit import filetransfer
 
 import _execnet
@@ -8,11 +9,16 @@ import logging
 import posixpath
 import uuid
 import threading
+import traceback
+import sys
 
 EXECNET_TERM_TIMEOUT=10
 
 from _runner_batch import RunnerBatch
 from _run_remote_client import RunChannels, RunClient
+
+class RunnerClosedException(Exception):
+  pass
 
 class InnerRemoteRunner(object):
   """The actual implementation of RemoteRunner.
@@ -33,8 +39,10 @@ class InnerRemoteRunner(object):
                       the platform's ssh command are used.
         extra_ssh_options (list, optional): List of (key,value) tuples that are added to the ssh_config file used when making ssh connections.
     """
+    self.lock = threading.RLock()
     self.name = name
     self._uuid = str(uuid.uuid4())
+    self._closed = False
 
     self._username, self._hostname, self._port, self._remotePath = _execnet.urlParse(url)
 
@@ -79,6 +87,10 @@ class InnerRemoteRunner(object):
 
     Returns:
         object: An object that supports .join() which when joined will block until batch completion """
+
+    if self._closed:
+      raise RunnerClosedException()
+
     batchId = self._get_batch_id()
     batchDir = posixpath.join(self._remotePath, batchId)
 
@@ -86,30 +98,35 @@ class InnerRemoteRunner(object):
     self._logger.debug("%s directory is: '%s'", batchId, batchDir)
 
     batch = RunnerBatch(self, batchDir, jobs, batchId)
-    self._extantBatches.append(batch)
+    with self.lock:
+      self._extantBatches.append(batch)
     batch.startBatch()
     return batch
 
   def _get_batch_id(self):
-    return "Batch-%d" % self._batchCount.next()
+    with self.lock:
+      return "Batch-%d" % self._batchCount.next()
 
   def _makeUploadChannel(self):
     """Creates the UploadChannel instance associated with this runner. It is actually an instance
     of filetransfer.UploadChannels() the number of channels held by UploadChannels is determined by the
     self._numUpload property"""
-    channel = filetransfer.UploadChannels(self._gw, self._remotePath, self._numUpload, "_".join([self.name, 'upload']))
+    with self.lock:
+      channel = filetransfer.UploadChannels(self._gw, self._remotePath, self._numUpload, "_".join([self.name, 'upload']))
     return channel
 
   def _makeDownloadChannel(self):
     """Creates the DownloadChannel instance associated with this runner. It is actually an instance
     of filetransfer.DownloadChannels() the number of channels held by DownloadChannels is determined by the
     self._numDownload property"""
-    channel = filetransfer.DownloadChannels(self._gw, self._remotePath, self._numDownload, "_".join([self.name, 'download']))
+    with self.lock:
+      channel = filetransfer.DownloadChannels(self._gw, self._remotePath, self._numDownload, "_".join([self.name, 'download']))
     return channel
 
   def _makeCleanupChannel(self):
-    channel = filetransfer.CleanupChannel(self._gw, self._remotePath, channel_id = "%s-Cleanup" % self.name)
-    self._remotePath = channel.remote_path
+    with self.lock:
+      channel = filetransfer.CleanupChannel(self._gw, self._remotePath, channel_id = "%s-Cleanup" % self.name)
+      self._remotePath = channel.remote_path
     return channel
 
   def _makeRunChannel(self, nprocesses):
@@ -118,7 +135,8 @@ class InnerRemoteRunner(object):
     Args:
         nprocesses (int): Number of runner channels that will be instantiated within RunChannels object.
     """
-    channel = RunChannels(self._gw, '%s-Run' % self.name, num_channels = nprocesses)
+    with self.lock:
+      channel = RunChannels(self._gw, '%s-Run' % self.name, num_channels = nprocesses)
     return channel
 
   def _createTemporaryRemoteDirectory(self):
@@ -130,7 +148,8 @@ class InnerRemoteRunner(object):
     channel = self._gw.remote_exec(_makeTemporaryDirectory)
     tmpdir = channel.receive()
     self._logger.getChild("_createTemporaryRemoteDirectory").debug("Remote temporary directory: %s", tmpdir)
-    self._remotePath = tmpdir
+    with self.lock:
+      self._remotePath = tmpdir
     channel.close()
     channel.waitclose()
 
@@ -154,11 +173,12 @@ class InnerRemoteRunner(object):
         exception (Exception): None if no errors experienced. An object that can
           be raised otherwise.
     """
-    if exception is None:
-      self._logger.info("Batch finished successfully: %s", batch.name)
-    else:
-      self._logger.warning("Batch %s finished with errors: %s", batch.name, exception)
-    self._extantBatches.remove(batch)
+    with self.lock:
+      if exception is None:
+        self._logger.info("Batch finished successfully: %s", batch.name)
+      else:
+        self._logger.warning("Batch %s finished with errors: %s", batch.name, exception)
+      self._extantBatches.remove(batch)
 
   def createUploadDirectory(self, sourcePath, remotePath, uploadHandler):
     """Create an `filetransfer.UploadDirectory` instance configured to this runner's remote
@@ -172,9 +192,10 @@ class InnerRemoteRunner(object):
     Returns:
         filetransfer.UploadDirectory : Directory instance ready for `upload()` method to be called.
     """
-    uploadDirectory = filetransfer.UploadDirectory(
-      self._uploadChannel,
-      sourcePath, remotePath, uploadHandler)
+    with self.lock:
+      uploadDirectory = filetransfer.UploadDirectory(
+        self._uploadChannel,
+        sourcePath, remotePath, uploadHandler)
     return uploadDirectory
 
   def createDownloadDirectory(self, remotePath, localPath, downloadHandler):
@@ -189,9 +210,10 @@ class InnerRemoteRunner(object):
     Returns:
         filetransfer.DownloadDirectory: Directory instance ready for `download()` method to be called.
     """
-    downloadDirectory = filetransfer.DownloadDirectory(
-      self._downloadChannel,
-      remotePath, localPath, downloadHandler)
+    with self.lock:
+      downloadDirectory = filetransfer.DownloadDirectory(
+        self._downloadChannel,
+        remotePath, localPath, downloadHandler)
     return downloadDirectory
 
   def startJobRun(self, handler):
@@ -223,6 +245,71 @@ class InnerRemoteRunner(object):
 
     return event
 
+  def close(self):
+    """Shuts down the runner
+
+    Returns:
+      threading.Event: Event that will be set() once shutdown has been completed.
+    """
+    with self.lock:
+      if self._closed:
+        raise RunnerClosedException()
+      self._closed = True
+      closeThread = _RemoteRunnerCloseThread(self)
+      closeThread.start()
+      return closeThread.afterEvent
+
+class _RemoteRunnerCloseThread(EventWaitThread):
+
+  _logger = logging.getLogger("atsim.pro_fit.runners.RemoteRunner._RemoteRunnerCloseThread")
+
+  def __init__(self, runner):
+    #REMOVE
+    import logging
+    import sys
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    #END REMOVE
+
+    self.runner = runner
+    self.afterEvent = threading.Event()
+    killevents = [ b.terminate() for b in runner._extantBatches]
+    EventWaitThread.__init__(self, killevents)
+
+
+  def after(self):
+    try:
+      # Unlock batch path
+      # try:
+      #   self.runner._cleanupClient.unlock(self.runner._remotePath)
+      #   self._logger.info("Runner's remote directory unlocked during close()")
+      # except:
+      #   exception = sys.exc_info()
+      #   tbstring = traceback.format_exception(*exception)
+      #   self._logger.warning("Exception raised during cleanup client unlock in close(): %s", exception)
+
+      # Close channels associated with the runner.
+      self.runner._runChannel.broadcast(None)
+      self.runner._runChannel.waitclose(60)
+      self._logger.info("Remote runner's run channels closed.")
+
+      self.runner._uploadChannel.broadcast(None)
+      self.runner._uploadChannel.waitclose(60)
+      self._logger.info("Remote runner's upload channels closed.")
+
+      self.runner._downloadChannel.broadcast(None)
+      self.runner._downloadChannel.waitclose(60)
+      self._logger.info("Remote runner's download channels closed.")
+
+      self.runner._cleanupChannel.send(None)
+      self.runner._cleanupChannel.waitclose(60)
+      self._logger.info("Remote runner's cleanup channel closed.")
+    except:
+      exception = sys.exc_info()
+      tbstring = traceback.format_exception(*exception)
+      self._logger.warning("Exception raised during close(): %s", tbstring)
+    finally:
+      self.afterEvent.set()
+
 
 class RemoteRunner(object):
   """Runner that uses SSH to run jobs in parallel on a remote machine"""
@@ -249,6 +336,14 @@ class RemoteRunner(object):
     Returns:
         object: An object that supports .join() which when joined will block until batch completion """
     return self._inner.runBatch(jobs)
+
+  def close(self):
+    """Shuts down the runner
+
+    Returns:
+      threading.Event: Event that will be set() once shutdown has been completed.
+    """
+    return self._inner.close()
 
   @staticmethod
   def createFromConfig(runnerName, fitRootPath, cfgitems):

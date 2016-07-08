@@ -23,12 +23,11 @@ class FileDeleter(object):
 
     def run(self):
       item = self.queue.get(True)
-      while item:
+      while not item is None:
         if os.path.exists(item):
           shutil.rmtree(item, ignore_errors=True)
         self.queue.task_done()
         item = self.queue.get(True)
-      self.queue.task_done()
       shutil.rmtree(self.root_path, ignore_errors=True)
 
     def put(self, path):

@@ -7,6 +7,7 @@ import os
 class RunCmd(threading.Thread):
 
   def __init__(self, parent, path, job_id, shell, hardkill_timeout):
+    self.lock = threading.RLock()
     self.parent = parent
     self.path = path
     self.job_id = job_id
@@ -18,6 +19,8 @@ class RunCmd(threading.Thread):
     # Shell that should be used to execute runjob
     self.shell = shell
 
+    self.popen = None
+
     threading.Thread.__init__(self)
 
   def run(self):
@@ -27,15 +30,17 @@ class RunCmd(threading.Thread):
       self.parent.jobstarterror(self.job_id, "PATH_ERROR, '%s' does not exist or is not a file." % rjpath)
       return
 
-    self.popen = subprocess.Popen([self.shell, 'runjob'], cwd = self.path, close_fds=True)
-    self.parent.jobstarted(self.job_id, self.popen.pid)
+    with self.lock:
+      self.popen = subprocess.Popen([self.shell, 'runjob'], cwd = self.path, close_fds=True)
+      self.parent.jobstarted(self.job_id, self.popen.pid)
 
     self.popen.wait()
 
-    if self.kill_called:
-      self.jobdone(True)
-    else:
-      self.jobdone(False)
+    with self.lock:
+      if self.kill_called:
+        self.jobdone(True)
+      else:
+        self.jobdone(False)
 
   def killjob(self, job_id, wait = False):
     if not self.kill_called and self.job_id == job_id and not self.popen is None:
@@ -53,12 +58,13 @@ class RunCmd(threading.Thread):
         self.popen.wait()
 
   def jobdone(self, killed):
-    try:
-      with open(os.path.join(self.path, 'STATUS'), 'w') as statusfile:
-        statusfile.write("%s\n" % self.popen.returncode)
-    except IOError:
-      pass
-    self.parent.jobdone(self.job_id, self.popen.returncode, killed = killed)
+    with self.lock:
+      try:
+        with open(os.path.join(self.path, 'STATUS'), 'w') as statusfile:
+          statusfile.write("%s\n" % self.popen.returncode)
+      except IOError:
+        pass
+      self.parent.jobdone(self.job_id, self.popen.returncode, killed = killed)
 
 
 

@@ -8,12 +8,11 @@ import traceback
 from atsim.pro_fit._channel import MultiChannel
 from _basechannel import BaseChannel, ChannelFactory
 from remote_exec.file_transfer_remote_exec import FILE, DIR
-from atsim.pro_fit._util import MultiCallback
+from atsim.pro_fit._util import MultiCallback, NamedEvent
 
 
 class DirectoryUploadException(Exception):
   pass
-
 
 class UploadCancelledException(DirectoryUploadException):
   pass
@@ -219,16 +218,16 @@ class UploadDirectory(object):
     """
     return self._callback.cancel()
 
-
 class _UploadCallback(object):
   _logger = UploadDirectory._logger.getChild("_UploadCallback")
 
   def __init__(self, parent):
     self.parent = parent
-    self.event = threading.Event()
+    self.event = NamedEvent("_UploadCallback")
     self._lock = threading.RLock()
     self._upload_wait = None
     self._walk_iterator = None
+    self._finished = False
 
     self.enabled = False
     self._exc = None
@@ -350,6 +349,9 @@ class _UploadCallback(object):
 
   def _finish(self):
     with self._lock:
+      if self._finished:
+        return
+      self._finished = True
       self.enabled = False
       self._unregister_callback()
       self.parent.exception = self._exc

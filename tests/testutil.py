@@ -100,7 +100,8 @@ def _make_vagrant_fixture(box_name):
       v.up()
 
     def finalizer():
-      v.suspend()
+      pass
+      # v.suspend()
       # v.destroy()
 
     request.addfinalizer(finalizer)

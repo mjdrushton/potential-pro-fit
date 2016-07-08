@@ -221,11 +221,24 @@ class CallbackRegister(list):
       self[:] = [ cb for cb in self if cb.active ]
 
 
+def NamedEvent(name):
+  event = threading.Event()
+  event.name = name
+  return event
+
+
 class EventWaitThread(threading.Thread):
 
   _logger = logging.getLogger("atsim.pro_fit.EventWaitThread")
 
   def __init__(self, events):
+    #REMOVE
+    import logging
+    import sys
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+    #REMOVE END
+
+
     threading.Thread.__init__(self)
     self.events = events
     self.completeEvent = threading.Event()
@@ -235,10 +248,64 @@ class EventWaitThread(threading.Thread):
     if self.events:
       status = True
       while status:
-        waitcount = sum([e.isSet() for e in self.events])
-        status = not functools.reduce(operator.and_, [e.is_set() for e in self.events])
+        self._logState()
+        status = not functools.reduce(operator.and_, [e.wait(2) for e in self.events])
+        self.periodic()
+    self._logger.debug("All events completed, setting completeEvent")
     self.completeEvent.set()
     self.after()
 
+  def _logEventNames(self):
+    names = []
+    for e in self.events:
+      if hasattr(e, 'name'):
+        names.append(e.name)
+      else:
+        names.append("Anon")
+    return names
+
+  def _logState(self):
+    waitcount = sum([e.isSet() for e in self.events])
+    names = [ "(%s,%s)" % (name, e.isSet()) for (name, e) in zip(self._logEventNames(), self.events)]
+    self._logger.debug("%d/%d events complete", waitcount, len(self.events))
+    self._logger.debug("Event state: %s", ",".join(names))
+
+  def periodic(self):
+    pass
+
   def after(self):
     pass
+
+
+class _OrWaitThread(threading.Thread):
+
+  def __init__(self, event, combinedEvent, timeout):
+    threading.Thread.__init__(self)
+    self.event = event
+    self.combinedEvent = combinedEvent
+    self.timeout = timeout
+    self.daemon = True
+
+  def run(self):
+    while not self.event.wait(self.timeout):
+      if self.combinedEvent.is_set():
+        return
+    self.combinedEvent.set()
+
+def eventWait_or(events):
+    """Returns a `threading.Event` that becomes set when any of the `threading.Events` in `events` are set.
+
+    Args:
+        events (list): List of `threading.Events`
+
+    Returns:
+        threading.Event: Event that will become set when any of the events in  the events list are set.
+    """
+    combinedEvent = threading.Event()
+
+    for event in events:
+      t = _OrWaitThread(event, combinedEvent, 0.1)
+      t.start()
+
+    return combinedEvent
+

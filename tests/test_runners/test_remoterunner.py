@@ -8,13 +8,15 @@ import stat
 import tempfile
 import time
 import posixpath
+import itertools
 
 import py.path
 
 import execnet
-from assertpy import assert_that,fail
 
 from atsim import pro_fit
+
+from atsim.pro_fit.runners import RunnerClosedException
 
 from _runnercommon import runfixture, DIR, FILE, runnertestjob, CheckPIDS, isdir_remote
 from .. import common
@@ -72,8 +74,13 @@ def testUrlParse():
   assert port == 2222
 
 def testSingle(runfixture, vagrant_basic):
+  import logging
+  import sys
+  logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
   runner = _createRunner(runfixture,vagrant_basic, 1)
-  _runBatch(runner, [runfixture.jobs[0]]).join()
+
+  batch = _runBatch(runner, [runfixture.jobs[0]])
+  assert batch.join(10)
   runnertestjob(runfixture, 0)
 
 def testAllInSingleBatch(runfixture, vagrant_basic):
@@ -81,6 +88,8 @@ def testAllInSingleBatch(runfixture, vagrant_basic):
   _runBatch(runner, runfixture.jobs).join()
   for job in runfixture.jobs:
     runnertestjob(runfixture, job.variables.id)
+
+  assert runner.close().wait(10)
 
 def testAllInMultipleBatch(runfixture, vagrant_basic):
   runner = _createRunner(runfixture, vagrant_basic, 3)
@@ -92,32 +101,8 @@ def testAllInMultipleBatch(runfixture, vagrant_basic):
   for job in runfixture.jobs:
     runnertestjob(runfixture, job.variables.id)
 
-def testTempDirectoryCleanup(runfixture, vagrant_basic):
-  runfixture.remoted = ""
-  runner = _createRunner(runfixture,vagrant_basic, 1)
-  assert_that(runner.remotePath).is_not_none()
-  assert_that(runner._remoted_is_temp).is_true()
+  assert runner.close().wait(10)
 
-  # Check that a temporary remote path has been created
-  # on the execution host.
-  from atsim.pro_fit.runners._execnet import _remoteCheck
-
-  group = execnet.Group()
-  gw = group.makegateway(runner.gwurl)
-  try:
-    channel = gw.remote_exec(_remoteCheck)
-    path = runner.remotePath
-    channel.send(runner.remotePath)
-    status = channel.receive()
-    assert_that(status).is_true()
-    # msg="Remote directory does not exist or is not read/writable:'%s'" % path)
-    channel.waitclose()
-
-  finally:
-    group.terminate(10)
-
-  # Need to add the test for cleanup.
-  assert(False)
 
 from atsim.pro_fit.jobfactories import Job
 
@@ -134,10 +119,12 @@ def _mklongjob(tmpdir):
     rfdir = tempd.mkdir("runner_files")
     runjob = jfdir.join('runjob').open('w')
 
-    runjob.write("""#! /bin/bash
+    with runjob:
+      runjob.write("""#! /bin/bash
 echo $$ > JOB_PID
 sleep 1200
 """)
+      runjob.flush()
 
     # Create Job instance
     job = Job(jf, str(tempd), [])
@@ -192,18 +179,18 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
       # Check paths
       count = 0
       pids = []
-      for job in f._extantJobs:
+      for job in f.jobs:
         fullpath = posixpath.join(job.remotePath, 'job_files', "JOB_PID")
         channel.send(fullpath)
         found = channel.receive()
         logger.debug("checkpaths: '%s' found = '%s'" % (fullpath, found))
         count += found
 
-      logger.debug("checkpaths count on %d attempt: %d (expecting %d)", i, count, len(f._extantJobs))
+      logger.debug("checkpaths count on %d attempt: %d (expecting %d)", i, count, len(f.jobs))
       time.sleep(1)
-      if count == len(f._extantJobs):
+      if count == len(f.jobs):
         return
-    fail("Remote paths not found")
+    assert count == len(f.jobs), "Remote paths not found"
 
   channel = gw.remote_exec(_remote_is_file)
   checkpaths(channel, b1_future)
@@ -214,7 +201,7 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
   def getpids(channel, f):
     paths = []
     # batchpath = posixpath.join(f.remotePath, f._batchDir)
-    for job in f._extantJobs:
+    for job in f.jobs:
       fullpath = posixpath.join(job.remotePath, "job_files", "JOB_PID")
       channel.send(fullpath)
       paths.append(channel.receive()[:-1])
@@ -230,10 +217,10 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
 
   # Call terminate - make sure that temporary directories are cleaned up.
   # Ensure job PID has gone.
-  jobs1 = list(b1_future._extantJobs)
+  jobs1 = list(b1_future.jobs)
 
   b1_term = b1_future.terminate()
-  b1_term.join(5)
+  assert b1_term.wait(5)
 
   cp.checkpids(b1_pids, False)
   cp.close()
@@ -252,7 +239,7 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
   assert not isdirchannel.receive(), "Remote path should not exist but does: %s" % b1_future.remoteBatchDir
 
   b2_future = _runBatch(runner, batch2)
-  jobs2 = list(b2_future._extantJobs)
+  jobs2 = list(b2_future.jobs)
   channel = gw.remote_exec(_remote_is_file)
   checkpaths(channel, b2_future)
   channel.send(None)
@@ -267,7 +254,7 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
   cp.checkpids(b2_pids, True)
 
   b2_term = b2_future.terminate()
-  b2_term.join(5)
+  assert b2_term.wait(20)
   cp.checkpids(b2_pids, False)
 
   #Check file cleanup here.
@@ -288,6 +275,131 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
   isdirchannel.close()
   isdirchannel.waitclose()
 
-def testClose():
+def testClose(runfixture, vagrant_basic, tmpdir):
   """Test runner's .close() method."""
-  assert(False)
+  #REMOVE
+  import logging
+  import sys
+  logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+  # END REMOVE
+
+  ncpu = 3
+  runner = _createRunner(runfixture, vagrant_basic, ncpu)
+  gw = _mkexecnetgw(vagrant_basic)
+
+  rstatus = runner._inner._gw.remote_status()
+  assert  1 + ncpu +  runner._inner._numDownload + runner._inner._numUpload == rstatus.numchannels
+
+  jobiter = _mklongjob(tmpdir)
+
+  b1_jobs = []
+  for i in xrange(5):
+    b1_jobs.append(jobiter.next())
+
+  b2_jobs = []
+  for i in xrange(5):
+    b2_jobs.append(jobiter.next())
+
+  b1 = runner.runBatch(b1_jobs)
+  b2 = runner.runBatch(b2_jobs)
+
+  running = []
+  while len(running) < ncpu:
+    running =  [ j for j in itertools.chain(b1.jobs,b2.jobs) if "start job run" in j.status ]
+
+  assert len(running) == ncpu
+
+  isdirchannel = gw.remote_exec(isdir_remote)
+  for job in running:
+    isdirchannel.send(job.remotePath)
+    assert isdirchannel.receive(), "Remote path should not exist but does: %s" % job.remotePath
+
+  closeevent = runner.close()
+  assert closeevent.wait(30)
+
+  for job in itertools.chain(b1.jobs, b2.jobs):
+    isdirchannel.send(job.remotePath)
+    assert not isdirchannel.receive(), "Remote path should not exist but does: %s" % job.remotePath
+
+  isdirchannel.send(b1.remoteBatchDir)
+  assert not isdirchannel.receive(), "Batch 1 remote path should not exist but does: %s" % b1_future.remoteBatchDir
+
+  isdirchannel.send(b2.remoteBatchDir)
+  assert not isdirchannel.receive(), "Batch 2 remote path should not exist but does: %s" % b1_future.remoteBatchDir
+
+  isdirchannel.send(runner._inner._remotePath)
+  assert not isdirchannel.receive(), "Runner remote path should not exist but does: %s" % b1_future.remoteBatchDir
+
+  # Check that the runner indicates it has been terminated
+  try:
+    runner.runBatch(b1_jobs)
+    assert False, "RunnerClosed Exception not raised"
+  except RunnerClosedException:
+    pass
+
+  # Check that the download channel have been terminated.
+  # Check that the upload channels have been closed.
+  # Check that the cleanup channel has been terminated
+  rstatus = runner._inner._gw.remote_status()
+  assert rstatus.numchannels == 0
+
+def testBatchTerminate2(runfixture, vagrant_basic, tmpdir):
+  """Test runner's .close() method."""
+  #REMOVE
+  import logging
+  import sys
+  logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+  #END REMOVE
+
+  try:
+    ncpu = 3
+    runner = _createRunner(runfixture, vagrant_basic, ncpu)
+    gw = _mkexecnetgw(vagrant_basic)
+
+    rstatus = runner._inner._gw.remote_status()
+    assert  1 + ncpu +  runner._inner._numDownload + runner._inner._numUpload == rstatus.numchannels
+
+    jobiter = _mklongjob(tmpdir)
+
+    b1_jobs = []
+    for i in xrange(5):
+      b1_jobs.append(jobiter.next())
+
+    b2_jobs = []
+    for i in xrange(5):
+      b2_jobs.append(jobiter.next())
+
+    b1 = runner.runBatch(b1_jobs)
+
+    running = []
+    while len(running) < ncpu:
+      running =  [ j for j in b1.jobs if "start job run" in j.status ]
+
+    assert len(running) == ncpu
+
+    b2 = runner.runBatch(b2_jobs)
+
+    uploaded = []
+    while len(uploaded) < len(b1_jobs)+len(b2_jobs):
+      uploaded = [ j for j in itertools.chain(b1.jobs, b2.jobs) if "finish upload" in j.status]
+
+    # import pdb;pdb.set_trace()
+
+    b1CloseEvent = b1.terminate()
+    b2CloseEvent = b2.terminate()
+
+    resb1 =  b1CloseEvent.wait(5)
+    assert resb1
+    resb2 = b2CloseEvent.wait(5)
+    assert resb2
+
+    jkl = ["start upload", "finish upload", "start job run", "finish job run killed", "finish job killed"]
+
+    # All jobs will have got to the point at which a job has been submitted to the run client...
+    status_expect = [jkl, jkl, jkl, jkl, jkl,
+                     jkl, jkl, jkl, jkl, jkl]
+
+    statuses = [ j.status for j in itertools.chain(b1.jobs, b2.jobs) ]
+    assert status_expect == statuses
+  finally:
+    runner.close()

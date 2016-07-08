@@ -186,3 +186,13 @@ class MultiChannel(object):
 
   def __len__(self):
     return len(self._channels)
+
+  def waitclose(self, timeout = None):
+    for channel in self._channels:
+      channel.waitclose(timeout)
+
+  def broadcast(self, msg):
+    """Send msg to all channels registered with MultiChannel"""
+    self._logger.debug("Broadcasting message to %d channels: %s", len(self), msg)
+    for channel in self._channels:
+      channel.send(msg)

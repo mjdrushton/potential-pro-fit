@@ -10,7 +10,7 @@ import itertools
 from atsim.pro_fit._channel import MultiChannel
 from _basechannel import BaseChannel, ChannelFactory
 from remote_exec.file_transfer_remote_exec import FILE, DIR
-from atsim.pro_fit._util import MultiCallback
+from atsim.pro_fit._util import MultiCallback, NamedEvent
 
 _DirectoryRecord = collections.namedtuple("_DirectoryRecord", ['transid', 'path'])
 
@@ -214,7 +214,7 @@ class _DownloadCallback(object):
 
   def __init__(self, parent):
     self.parent = parent
-    self.event = threading.Event()
+    self.event = NamedEvent("_DownloadCallback")
     self._lock = threading.RLock()
     self.channel_iter = None
     self.file_q_wait = None

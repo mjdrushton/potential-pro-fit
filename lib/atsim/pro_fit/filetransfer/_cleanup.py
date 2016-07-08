@@ -1,6 +1,6 @@
 from atsim.pro_fit._channel import AbstractChannel
 from remote_exec import file_cleanup_remote_exec
-from atsim.pro_fit._util import CallbackRegister
+from atsim.pro_fit._util import CallbackRegister, NamedEvent
 
 import logging
 import threading
@@ -50,7 +50,7 @@ class CleanupAgentCallback(object):
     self.exception = None
     self.expected_msg = expected_msg
     self.active = True
-    self.event = threading.Event()
+    self.event = NamedEvent("CleanupAgentCallback")
     self.should_raise = False
 
   def __call__(self, msg):
@@ -176,8 +176,14 @@ class CleanupClient(object):
     cbobj = self._registerCallback(callback, "FLUSHED")
     msg = {'msg' : 'FLUSH', 'id' : cbobj.trans_id}
     self.channel.send(msg)
-    cbobj.event.wait(self.block_timeout)
-    cbobj.raise_exception()
+
+    if callback is None:
+      cbobj.event.wait(self.block_timeout)
+      if cbobj.should_raise:
+        cbobj.raise_exception()
+      return None
+    else:
+      return cbobj.event
 
   def _registerCallback(self, callback, expectedMessage):
     if callback is None:
@@ -185,7 +191,6 @@ class CleanupClient(object):
       cbobj.should_raise = True
     else:
       cbobj = CleanupAgentCallback(callback, expectedMessage, self.channel.channel_id, self._transid)
-      cbobj.event.set()
     self._cbregister.append(cbobj)
     return cbobj
 
