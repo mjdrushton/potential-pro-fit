@@ -169,12 +169,6 @@ class _RunJobState(threading.Thread):
   _logger = logging.getLogger("atsim.pro_fit.runners._run_remote_client._RunJobState")
 
   def __init__(self, runJobCallback):
-    # REMOVE
-    import logging
-    import sys
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-    # END REMOVE
-
     threading.Thread.__init__(self)
 
     self.runJobCallback = runJobCallback
@@ -296,13 +290,6 @@ class RunJobCallback(object):
   _logger = _logger.getChild("atsim.pro_fit.runners.RunJobCallback")
 
   def __init__(self, workingDirectory, callback, trans_id, runClient):
-
-    # REMOVE
-    import logging
-    import sys
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-    # END REMOVE
-
     self.workingDirectory = workingDirectory
     self.callback  = callback
     self.trans_id = trans_id

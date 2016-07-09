@@ -17,12 +17,6 @@ _logger = logging.getLogger("atsim.pro_fit.runners")
 class _RunnerJobThread(threading.Thread):
 
   def __init__(self, job):
-    #REMOVE
-    import logging
-    import sys
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-    #END REMOVE
-
     threading.Thread.__init__(self)
     self.job = job
     self.killedEvent = self.job._killedEvent
@@ -269,6 +263,9 @@ class RunnerJob(object):
   def remotePath(self):
     if self._remotePath is None:
       junk, job_name  = os.path.split(self.sourcePath)
+      # Make the job_name unique (for population minimizer use)
+      # by using the jobid as a suffix
+      job_name = "_".join([job_name, self.jobid])
       batchdir = self.parentBatch.remoteBatchDir
       self._remotePath = os.path.join(batchdir, job_name)
     return self._remotePath

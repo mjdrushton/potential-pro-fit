@@ -4,6 +4,7 @@ from atsim.pro_fit import filetransfer
 
 import _execnet
 import execnet
+
 import itertools
 import logging
 import posixpath
@@ -52,7 +53,9 @@ class InnerRemoteRunner(object):
     if sshcfgfile:
       self._sshcfgfile = sshcfgfile
 
-    self._gw = execnet.makegateway(self._gwurl)
+    group = execnet.Group()
+    # group.set_execmodel("eventlet", "thread")
+    self._gw = group.makegateway(self._gwurl)
 
     # Initialise the remote runners their client.
     self._runChannel = self._makeRunChannel(nprocesses)
@@ -264,12 +267,6 @@ class _RemoteRunnerCloseThread(EventWaitThread):
   _logger = logging.getLogger("atsim.pro_fit.runners.RemoteRunner._RemoteRunnerCloseThread")
 
   def __init__(self, runner):
-    #REMOVE
-    import logging
-    import sys
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-    #END REMOVE
-
     self.runner = runner
     self.afterEvent = threading.Event()
     killevents = [ b.terminate() for b in runner._extantBatches]
@@ -345,6 +342,10 @@ class RemoteRunner(object):
     """
     return self._inner.close()
 
+  @property
+  def name(self):
+    return self._inner.name
+
   @staticmethod
   def createFromConfig(runnerName, fitRootPath, cfgitems):
     allowedkeywords = set(['nprocesses', 'type', 'remotehost'])
@@ -372,14 +373,14 @@ class RemoteRunner(object):
     if not remotehost.startswith("ssh://"):
       raise ConfigException("remotehost configuration item must start with ssh://")
 
-    username, host, port,  path = RemoteRunner._urlParse(remotehost)
+    username, host, port,  path = _execnet.urlParse(remotehost)
     if not host:
       raise ConfigException("remotehost configuration item should be of form ssh://[username@]hostname/remote_path")
 
     # Attempt connection and check remote directory exists
     group = execnet.Group()
     try:
-      gwurl, sshcfg = RemoteRunner.makeExecnetConnectionSpec(username, host, port)
+      gwurl, sshcfg = _execnet.makeExecnetConnectionSpec(username, host, port)
       gw = group.makegateway(gwurl)
 
       # Check existence of remote directory

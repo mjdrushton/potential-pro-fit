@@ -52,9 +52,24 @@ class my_build(build_py):
       return build_py.build_module(self, module, module_file, package)
 
 
+def package_files(directory):
+  cwd = os.getcwd()
+  os.chdir(directory)
+  paths = []
+  dirname = os.path.basename(directory)
+  for (path, directories, filenames) in os.walk('.'):
+    for filename in filenames:
+      p = os.path.join(dirname, path, filename)
+      p = os.path.normpath(p)
+      paths.append(p)
+  os.chdir(cwd)
+  return paths
+
+pkgs = find_packages('lib', exclude=["tests"])
+
 setup(name="potential-pro-fit",
-  package_dir = {'' : 'lib'},
-  packages = find_packages('lib', exclude=["tests"]),
+  package_dir = {'' : 'lib/'},
+  packages = pkgs,
   namespace_packages = ["atsim"],
   cmdclass = {'build_py' : my_build},
   install_requires = ["setuptools",
@@ -64,7 +79,8 @@ setup(name="potential-pro-fit",
                       'inspyred',
                       'cexprtk',
                       'mystic==0.2a1',
-                      'execnet'],
+                      'execnet>=1.2',
+                      'eventlet'],
   tests_require = ['pytest',
                   'wsgi_intercept',
                    'mechanize',
@@ -73,6 +89,12 @@ setup(name="potential-pro-fit",
   dependency_links = ['https://github.com/uqfoundation/mystic/zipball/master#egg=mystic-0.2a2.dev0'],
 
   include_package_data = True,
+  package_data = {
+    'atsim.pro_fit.webmonitor' : package_files('lib/atsim/pro_fit/webmonitor/webresources'),
+    'atsim.pro_fit' : package_files('lib/atsim/pro_fit/resources'),
+    'atsim.pro_fit' : package_files('lib/atsim/pro_fit/resources'),
+    'atsim.pro_fit.runners' : package_files('lib/atsim/pro_fit/runners/templates')
+  },
 
   entry_points = {
     'console_scripts' : [

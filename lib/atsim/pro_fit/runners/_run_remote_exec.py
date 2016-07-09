@@ -90,6 +90,9 @@ class StatusHeartBeat(object):
       def timerCallback():
         self.eventLoop.sendStatus()
         self.timer = None
+
+      if not self.timer is None:
+        self.timer.cancel()
       self.timer = threading.Timer(self.heart_beat_period, timerCallback)
       self.timer.start()
 

@@ -209,7 +209,7 @@ class RunnerBatch(object):
     retlist = []
     numjobs = len(jobs)
     for i, job in enumerate(jobs):
-      job_name = "%s-%d/%d" % (job.name,i,numjobs)
+      job_name = "%s-%d" % (job.name,i)
       rjob = RunnerJob(self, job, job_name)
       retlist.append(rjob)
     return retlist
