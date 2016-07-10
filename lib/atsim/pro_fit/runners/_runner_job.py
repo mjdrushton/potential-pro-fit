@@ -166,6 +166,8 @@ class _RunnerJobThread(threading.Thread):
       tbstring = traceback.format_exception(*self.exception)
       self._logger.debug("Finish job, job had exception: %s", tbstring)
 
+    unlockWait = None
+
     try:
       self._logger.info("%s, finished.", self.job)
       if exception is None:
@@ -182,15 +184,20 @@ class _RunnerJobThread(threading.Thread):
           self.exception = sys.exc_info()
 
       if self.job._directoryLocked:
-        self.job.parentBatch.unlockJobDirectory(self.job)
-        self.job._directoryLocked = False
+        unlockEvent = self.job.parentBatch.unlockJobDirectory(self.job)
+        class UnlockEventWait(EventWaitThread):
+          def after(slf):
+            self.job._directoryLocked = False
+            self.finishedEvent.set()
+        unlockWait = UnlockEventWait([unlockEvent])
+        unlockWait.start()
 
       self.job.parentBatch.jobFinished(self.job)
       self._logger.debug("Finished set")
     finally:
 
-      self._logger.debug("finishedEvent.set")
-      self.finishedEvent.set()
+      if not unlockWait is None:
+        self.finishedEvent.set()
 
       if not self.exception is None:
         self._logger.warning("%s finished with exception: %s", self, traceback.format_exception(*self.exception))

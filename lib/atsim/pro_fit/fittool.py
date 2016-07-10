@@ -10,6 +10,8 @@ import jobfactories
 
 import cexprtk
 
+from atsim.pro_fit._util import EventWaitThread
+
 class ConfigException(Exception):
   pass
 
@@ -675,9 +677,12 @@ class Merit(object):
 
     batchpaths, batchedJobs, candidate_job_lists = self._prepareJobs(candidates)
     try:
-      futures = self._runBatches(batchedJobs)
-      for f in futures:
-        f.join()
+      finishedEvents = self._runBatches(batchedJobs)
+      batchWaitThread = EventWaitThread(finishedEvents)
+      batchWaitThread.start()
+
+      while not batchWaitThread.completeEvent.wait(0.1):
+        pass
 
       #Call the afterRun callback
       if self.afterRun:
@@ -740,16 +745,16 @@ class Merit(object):
     return (batchpaths,  [ runnerBatches[r.name] for r in self._runners ], candidate_job_lists)
 
   def _runBatches(self, jobBatches):
-    """Execute the runBatch command on the job batches and return the thread like
-    objects returned from each batch submission.
+    """Execute the runBatch command on the job batches and return threading.Event objects
+    indicating when each batch completes
 
     @param jobBatches List of batched jobs as returned by _prepareJobs.
-    @return List of Thread like objects representing each submitted batch"""
-    futures = []
+    @return List of threading.Event objects representing each submitted batch"""
+    events = []
     for runner, batch in zip(self._runners, jobBatches):
       f = runner.runBatch(batch)
-      futures.append(f)
-    return futures
+      events.append(f.finishedEvent)
+    return events
 
   def _cleanBatches(self, batchpaths):
     for p in batchpaths:
@@ -776,4 +781,9 @@ class Merit(object):
           evaluatorRecords.append(metaEvaluator(batch))
         metaEvaluatorJob = jobfactories.MetaEvaluatorJob("meta_evaluator", evaluatorRecords,batch[0].variables)
         batch.append(metaEvaluatorJob)
+
+  def close(self):
+    for runner in self._runners:
+      runner.close()
+
 

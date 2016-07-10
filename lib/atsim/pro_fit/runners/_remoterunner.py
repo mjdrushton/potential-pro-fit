@@ -1,5 +1,5 @@
 from atsim.pro_fit.fittool import ConfigException
-from atsim.pro_fit._util import EventWaitThread
+from atsim.pro_fit._util import EventWaitThread, NamedEvent
 from atsim.pro_fit import filetransfer
 
 import _execnet
@@ -163,10 +163,13 @@ class InnerRemoteRunner(object):
   def unlockPath(self, path):
     """Unprotect the remote path `path` from deletion by the cleanup agent."""
 
-    def NullCallback(exception):
-      pass
+    unlockedEvent = NamedEvent("RemoteRunner unlock path: %s" % path)
 
-    self._cleanupClient.unlock(path, callback = NullCallback)
+    def callback(exception):
+      unlockedEvent.set()
+
+    self._cleanupClient.unlock(path, callback = callback)
+    return unlockedEvent
 
   def batchFinished(self, batch, exception):
     """Called by a batch when it is complete

@@ -8,10 +8,39 @@ import os
 import logging
 import shutil
 import tempfile
+import contextlib
 
 import jinja2
 
-from atsim.pro_fit._util import MultiCallback
+from atsim.pro_fit._util import MultiCallback, EventWaitThread
+
+
+def _monkeyPatchExecnetSIGINT():
+  """The ssh instances launched by execnet were receiving SIGINT before cleanup had completed.
+  Monkeypath execnet.gateway_base.Execmodel.get_execmodel.ExecModel.PopenPiped method to ignore SIGINT in the
+  ssh subprocess"""
+
+  def PopenPiped(self, args):
+    def prefn():
+      import signal
+      signal.signal(signal.SIGINT, signal.SIG_IGN)
+    PIPE = self.subprocess.PIPE
+    return self.subprocess.Popen(args, stdout=PIPE, stdin=PIPE, preexec_fn = prefn)
+
+  from execnet.gateway_base import get_execmodel as get_execmodel_orig
+
+  def get_execmodel(backend):
+    retobj = get_execmodel_orig(backend)
+    import types
+    retobj.PopenPiped = types.MethodType(PopenPiped, retobj)
+    return retobj
+
+  # ... do the monkeypatch
+  import execnet.gateway_base
+  execnet.gateway_base.get_execmodel = get_execmodel
+
+_monkeyPatchExecnetSIGINT()
+
 
 class _FittingToolException(Exception):
   pass
@@ -143,7 +172,6 @@ def _initializeJob(jobDescription, logger):
     runnerName = tokens[1]
   else:
     raise _DirectoryInitializationException("Unable to parse job name whilst initializing job: '%s'" % jobDescription)
-
 
   # Check or get the name of the runner
   validRunners = _getValidRunners()
@@ -354,7 +382,8 @@ def _invokeMinimizer(cfg, logger, logsql):
   minimizer = cfg.minimizer
   minimizer.stepCallback = stepCallback
   try:
-    minimizer.minimize(cfg.merit)
+    with contextlib.closing(cfg.merit):
+      minimizer.minimize(cfg.merit)
     if logsql:
       sqlreporter.finished()
   except:
@@ -407,7 +436,6 @@ def main():
       finally:
         sys.exit(1)
 
-
   if options.init:
     # Initialize directory
     try:
@@ -449,6 +477,8 @@ def main():
       # Perform a minimization run
       logger.info('Performing Minimization run')
       cfg = _getfitcfg(tempdir, pluginmodules= pluginmodules)
+
+    # exitHandler.cfg = cfg
     _invokeMinimizer(cfg, logger,logsql)
   except (_FittingToolException, pro_fit.fittool.ConfigException, pro_fit.minimizers.MinimizerException) as e:
     logger.error(e.message)
@@ -456,3 +486,4 @@ def main():
   finally:
     _removeLockFile()
     shutil.rmtree(tempdir, ignore_errors= True)
+

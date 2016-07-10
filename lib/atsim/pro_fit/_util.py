@@ -232,13 +232,6 @@ class EventWaitThread(threading.Thread):
   _logger = logging.getLogger("atsim.pro_fit.EventWaitThread")
 
   def __init__(self, events):
-    #REMOVE
-    import logging
-    import sys
-    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-    #REMOVE END
-
-
     threading.Thread.__init__(self)
     self.events = events
     self.completeEvent = threading.Event()

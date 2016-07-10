@@ -107,9 +107,19 @@ class _BatchMonitorThread(threading.Thread):
       self._logger.warning("Batch finished with exception: %s", traceback.format_exception(*exception))
 
     if self.dirLocked:
-      self.batch.parentRunner.unlockPath(self.batch.remoteBatchDir)
+      unlockEvent = self.batch.parentRunner.unlockPath(self.batch.remoteBatchDir)
+    else:
+      unlockEvent = threading.Event()
+      unlockEvent.set()
 
-    self.finishedEvent.set()
+    finishedEvent = self.finishedEvent
+    class WaitUnlock(EventWaitThread):
+      def after(slf):
+        self.batch.parentRunner.batchFinished(self.batch, self.exception)
+        finishedEvent.set()
+
+    WaitUnlock([unlockEvent]).start()
+    # self.finishedEvent.set()
 
 
 class RunnerBatch(object):
@@ -202,7 +212,7 @@ class RunnerBatch(object):
     Args:
         job (RunnerJob): Job for which remote directory should be unlocked.
     """
-    self.parentRunner.unlockPath(job.remotePath)
+    return self.parentRunner.unlockPath(job.remotePath)
 
   def _createJobInstances(self, jobs):
     """Create RunnerJob instances from jobfactories.Job instances"""
@@ -227,3 +237,8 @@ class RunnerBatch(object):
   def terminate(self):
     self._killedEvent.set()
     return self._finishedEvent
+
+  @property
+  def finishedEvent(self):
+    return self._finishedEvent
+
