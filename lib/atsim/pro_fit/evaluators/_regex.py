@@ -31,7 +31,7 @@ class _RegexSubEvaluator(object):
     self._configure(m.groups()[1])
 
   def __call__(self, job):
-    outputfilename = os.path.join(job.path, 'output', self._outputFilename)
+    outputfilename = os.path.join(job.outputPath, self._outputFilename)
 
     foundinstance = None
     try:
