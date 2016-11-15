@@ -2,19 +2,22 @@ from atsim.pro_fit.runners._run_remote_client import RunChannels, RunClient, Run
 
 from _runnercommon import execnet_gw, channel_id, CheckPIDS
 
-import threading
+import gevent
+import gevent.event
 
+class TstCallback(object):
 
-class TestCallback(object):
+  logger = logging.getLogger("test_run_remote_client.TstCallback")
 
   def __init__(self, jobid, jobdir):
     self.jobdir = jobdir
     self.jobid = jobid
-    self.event = threading.Event()
+    self.event = gevent.event.Event()
     self.called = False
     self.exception = None
 
   def __call__(self, exception):
+    self.logger.getChild("__call__").info("TstCallback called with '%s'", exception)
     self.called = True
     self.exception = exception
     self.event.set()
@@ -46,7 +49,7 @@ def test_run_remote_client_multiple(tmpdir, execnet_gw, channel_id):
       print >>outfile, "echo %d > job.out" % jobid
       print >>outfile, "sleep 1"
 
-    callback = TestCallback(jobid, jobdir)
+    callback = TstCallback(jobid, jobdir)
     callbacks.append(callback)
 
   runclient = RunClient(channel)
@@ -76,11 +79,10 @@ def test_run_remote_client_kill_job(tmpdir, execnet_gw, channel_id):
     print >>outfile,  "#! /bin/bash"
     print >>outfile,  "sleep 1200"
 
-  callback = TestCallback(None, None)
+  callback = TstCallback(None, None)
   runjob = runclient.runCommand(tmpdir.strpath, callback)
 
-  while runjob.pid is None:
-    pass
+  gevent.wait([runjob.pidSetEvent])
 
   checkpids = CheckPIDS(execnet_gw)
   checkpids.checkpids([runjob.pid], True)
@@ -106,6 +108,9 @@ def test_run_remote_client_kill_job(tmpdir, execnet_gw, channel_id):
   except JobAlreadyFinishedException:
     pass
 
+  channel.broadcast(None)
+
+
 def test_run_remote_client_kill_not_started_job(tmpdir, execnet_gw, channel_id):
   channel = RunChannels(execnet_gw, channel_id, num_channels = 1)
   runclient = RunClient(channel)
@@ -124,14 +129,13 @@ def test_run_remote_client_kill_not_started_job(tmpdir, execnet_gw, channel_id):
     print >>outfile,  "#! /bin/bash"
     print >>outfile,  "sleep 1200"
 
-  callback1 = TestCallback(None, None)
-  callback2 = TestCallback(None, None)
+  callback1 = TstCallback(None, None)
+  callback2 = TstCallback(None, None)
 
   runjob1 = runclient.runCommand(runjob_path1.strpath, callback1)
   runjob2 = runclient.runCommand(runjob_path2.strpath, callback2)
 
-  while runjob1.pid is None:
-    pass
+  runjob1.pidSetEvent.wait()
 
   checkpids = CheckPIDS(execnet_gw)
   checkpids.checkpids([runjob1.pid], True)

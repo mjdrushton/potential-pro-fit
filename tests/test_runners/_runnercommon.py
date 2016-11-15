@@ -4,6 +4,7 @@ import stat
 import tempfile
 import uuid
 
+import atsim.pro_fit._execnet as _execnet
 
 from .. import common
 from atsim import pro_fit
@@ -104,7 +105,7 @@ def runfixture(request):
 
 @fixture
 def execnet_gw(request):
-  group = execnet.Group()
+  group = _execnet.Group()
   gw = group.makegateway()
 
   def finalizer():

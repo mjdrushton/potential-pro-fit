@@ -11,8 +11,9 @@ import tempfile
 import contextlib
 
 import jinja2
+import gevent
 
-from atsim.pro_fit._util import MultiCallback, EventWaitThread
+from atsim.pro_fit._util import MultiCallback
 
 
 def _monkeyPatchExecnetSIGINT():

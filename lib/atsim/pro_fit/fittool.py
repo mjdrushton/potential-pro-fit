@@ -10,7 +10,7 @@ import jobfactories
 
 import cexprtk
 
-from atsim.pro_fit._util import EventWaitThread
+import gevent
 
 class ConfigException(Exception):
   pass
@@ -678,11 +678,7 @@ class Merit(object):
     batchpaths, batchedJobs, candidate_job_lists = self._prepareJobs(candidates)
     try:
       finishedEvents = self._runBatches(batchedJobs)
-      batchWaitThread = EventWaitThread(finishedEvents)
-      batchWaitThread.start()
-
-      while not batchWaitThread.completeEvent.wait(0.1):
-        pass
+      gevent.wait(objects= finishedEvents)
 
       #Call the afterRun callback
       if self.afterRun:
@@ -751,6 +747,7 @@ class Merit(object):
     @param jobBatches List of batched jobs as returned by _prepareJobs.
     @return List of threading.Event objects representing each submitted batch"""
     events = []
+    # import pdb;pdb.set_trace()
     for runner, batch in zip(self._runners, jobBatches):
       f = runner.runBatch(batch)
       events.append(f.finishedEvent)

@@ -1,9 +1,11 @@
 import logging
 import os
 import uuid
-import threading
 import sys
 import traceback
+
+import gevent
+import gevent.queue
 
 from atsim.pro_fit._channel import MultiChannel
 from _basechannel import BaseChannel, ChannelFactory
@@ -106,7 +108,6 @@ class UploadHandler(object):
     """
     return None
 
-
   def rewrite_file_path(self, msg):
     return self.rewrite_path(msg)
 
@@ -198,7 +199,7 @@ class UploadDirectory(object):
           if False, then block until upload completes.
 
     Returns:
-        threading.Event: If non_blocking is `True` then upload returns an event object that is signalled when upload finishes.
+        gevent.event.Event: If non_blocking is `True` then upload returns an event object that is signalled when upload finishes.
     """
     log = self._logger.getChild("upload")
     log.info("Starting upload id='%s' from local ('%s') to remote ('%s').", self.transaction_id, self.local_path, self.remote_path)
@@ -214,7 +215,7 @@ class UploadDirectory(object):
     """Cancel the upload.
 
     Returns:
-        threading.Event: Event that will be set() once cancellation completes.
+        gevent.event.Event: Event that will be set() once cancellation completes.
     """
     return self._callback.cancel()
 
@@ -224,7 +225,6 @@ class _UploadCallback(object):
   def __init__(self, parent):
     self.parent = parent
     self.event = NamedEvent("_UploadCallback")
-    self._lock = threading.RLock()
     self._upload_wait = None
     self._walk_iterator = None
     self._finished = False
@@ -279,15 +279,14 @@ class _UploadCallback(object):
         self._donext(msg)
 
     except Exception,e:
-      with self._lock:
-        self.enabled = False
-        try:
-          if self.parent.upload_handler.finish(e) != False:
-            self._exc = sys.exc_info()
-        except Exception, e:
+      self.enabled = False
+      try:
+        if self.parent.upload_handler.finish(e) != False:
           self._exc = sys.exc_info()
-        traceback.print_exc()
-        self._finish()
+      except Exception, e:
+        self._exc = sys.exc_info()
+      traceback.print_exc()
+      self._finish()
 
   def _error(self, msg):
     self._logger.warning("Callback ID: '%s'. Error: %s", self.parent.transaction_id, msg)
@@ -318,11 +317,10 @@ class _UploadCallback(object):
 
     Performs next iteration if no messages are outstanding"""
     transid = msg['id']
-    with self._lock:
-      self._upload_wait.remove(transid)
+    self._upload_wait.remove(transid)
 
-      if not self._upload_wait:
-        self._next_iteration()
+    if not self._upload_wait:
+      self._next_iteration()
 
   def _next_iteration(self):
     """Gets the next set of directories and files to be uploaded and makes requests to channels"""
@@ -340,22 +338,20 @@ class _UploadCallback(object):
       try:
         self.parent.upload_handler.finish(None)
       except Exception as e:
-        with self._lock:
-          self.enabled = False
-          self._exc = sys.exc_info()
-          traceback.print_exc()
+        self.enabled = False
+        self._exc = sys.exc_info()
+        traceback.print_exc()
       finally:
         self._finish()
 
   def _finish(self):
-    with self._lock:
-      if self._finished:
-        return
-      self._finished = True
-      self.enabled = False
-      self._unregister_callback()
-      self.parent.exception = self._exc
-      self.event.set()
+    if self._finished:
+      return
+    self._finished = True
+    self.enabled = False
+    self._unregister_callback()
+    self.parent.exception = self._exc
+    self.event.set()
 
   def _makedirectories(self, root_path, directories):
     """Makes a series of UploadChannel 'MKDIR' requests for a given parent
@@ -372,11 +368,10 @@ class _UploadCallback(object):
     for d in directories:
       msgdict = self._makedirectory_request(root_path, d)
       transid = msgdict['id']
-      with self._lock:
-        # Send the message
-        self._channel_send(msgdict)
-        # Add the msg id to the upload wait set
-        self._upload_wait.add(transid)
+      # Send the message
+      self._channel_send(msgdict)
+      # Add the msg id to the upload wait set
+      self._upload_wait.add(transid)
 
   def _uploadfiles(self, root_path, files):
     """Makes a series of 'UPLOAD' requests through UploadChannel for the files
@@ -389,10 +384,9 @@ class _UploadCallback(object):
     for f in files:
       msgdict = self._makeupload_request(root_path,f)
       transid = msgdict['id']
-      with self._lock:
-        self._channel_send(msgdict)
-        # Add the msg id to the upload wait set
-        self._upload_wait.add(transid)
+      self._channel_send(msgdict)
+      # Add the msg id to the upload wait set
+      self._upload_wait.add(transid)
 
   def _makedirectory_request(self, root_path, directory):
     """Constructs MKDIR request to be sent through UploadChannel.
@@ -501,11 +495,10 @@ class _UploadCallback(object):
 
   def cancel(self):
     exc = UploadCancelledException()
-    with self._lock:
-      self.enabled = False
-      try:
-        self.parent.upload_handler.finish(exc)
-      except Exception, e:
-        self._exc = sys.exc_info()
-      self._finish()
+    self.enabled = False
+    try:
+      self.parent.upload_handler.finish(exc)
+    except Exception, e:
+      self._exc = sys.exc_info()
+    self._finish()
     return self.event

@@ -6,6 +6,7 @@ import uuid
 
 from pytest import fixture
 
+import atsim.pro_fit._execnet as _execnet
 import execnet
 
 DIR = 0
@@ -27,7 +28,7 @@ def _compareDir(path):
 
 @fixture
 def execnet_gw(request):
-  group = execnet.Group()
+  group = _execnet.Group()
   gw = group.makegateway()
 
   def finalizer():

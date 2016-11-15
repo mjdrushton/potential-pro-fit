@@ -7,7 +7,8 @@ from _common import execnet_gw, channel_id
 import posixpath
 import os
 import time
-import threading
+
+import gevent.event
 
 import py.path
 
@@ -100,6 +101,10 @@ def test_file_cleanup_end_to_end(tmpdir, execnet_gw, channel_id):
   ch1.send({'msg' : 'UNLOCK', 'id' : transid, 'remote_path' : ['two', 'two/three']})
   msg = ch1.receive(10)
   assert msg == {'msg' : 'UNLOCKED', 'channel_id' : channel_id, 'id' : transid}
+
+  ch1.send({'msg' : 'FLUSH', 'id' : transid })
+  msg = ch1.receive(10)
+  assert msg == {'msg' : 'FLUSHED', 'channel_id' : channel_id, 'id' : transid}
 
 
   allfiles = set(['one/two/a/c',
@@ -258,11 +263,20 @@ def test_file_cleanup_unlock_path_normalize(tmpdir, execnet_gw, channel_id):
   msg = ch1.receive(10)
   assert msg == {'msg' : 'UNLOCKED', 'channel_id' : channel_id, 'id' : transid}
 
+  ch1.send({'msg' : 'FLUSH', 'id' : transid })
+  msg = ch1.receive(10)
+  assert msg == {'msg' : 'FLUSHED', 'channel_id' : channel_id, 'id' : transid}
+
+
   assert currfiles() == allfiles
 
   ch1.send({'msg' : 'UNLOCK', 'id' : transid, 'remote_path' : ['a/../a/b/c/d']})
   msg = ch1.receive(10)
   assert msg == {'msg' : 'UNLOCKED', 'channel_id' : channel_id, 'id' : transid}
+
+  ch1.send({'msg' : 'FLUSH', 'id' : transid })
+  msg = ch1.receive(10)
+  assert msg == {'msg' : 'FLUSHED', 'channel_id' : channel_id, 'id' : transid}
 
   allfiles = set(['one/a'])
   assert currfiles() == allfiles
@@ -271,7 +285,6 @@ def test_file_cleanup_unlock_path_normalize(tmpdir, execnet_gw, channel_id):
   ch1.waitclose()
 
 def test_file_cleanup_client(tmpdir, execnet_gw, channel_id):
-
   # Create directory structure
   tmpdir.ensure('one', 'two', 'three', 'four', dir = True)
   root = tmpdir.join('one')
@@ -332,6 +345,7 @@ def test_file_cleanup_client(tmpdir, execnet_gw, channel_id):
   assert currfiles() == allfiles
 
   client.unlock('two', 'two/three')
+  client.flush()
   allfiles = set(['one/two/a/c',
                   'one/two',
                   'one/two/2.txt',
@@ -376,8 +390,8 @@ def cbcheck(call, expect_exception = None):
       self.called = True
       self.event.set()
 
-  evt = threading.Event()
-  pevt = threading.Event()
+  evt = gevent.event.Event()
+  pevt = gevent.event.Event()
   cb = TestCallback(pevt, evt)
   call(cb)
   pevt.set()
@@ -417,7 +431,6 @@ def test_file_cleanup_client_lock_exception(tmpdir, execnet_gw, channel_id):
 def test_file_cleanup_client_unlock_callback(tmpdir, execnet_gw, channel_id):
   import logging
   import sys
-  logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
   channel = CleanupChannel(execnet_gw, tmpdir.strpath, channel_id = channel_id)
   client = CleanupClient(channel)
   client.lock("one")

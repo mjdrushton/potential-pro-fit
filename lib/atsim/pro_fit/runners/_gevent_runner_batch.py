@@ -3,14 +3,14 @@ import logging
 import operator
 import os
 import posixpath
-import Queue
 import sys
-import threading
 import traceback
 
-from _runner_job import RunnerJob
-from atsim.pro_fit._util import EventWaitThread, eventWait_or
+from _gevent_runner_job import RunnerJob
 
+import gevent
+import gevent.event
+import gevent.queue
 
 _logger = logging.getLogger("atsim.pro_fit.runners")
 
@@ -23,17 +23,16 @@ class BatchKilledException(Exception):
 class BatchDirectoryLockException(Exception):
   pass
 
-class _BatchMonitorThread(threading.Thread):
+class _BatchMonitorThread(object):
 
   def __init__(self, batch):
-    threading.Thread.__init__(self)
     self._logger = batch._logger.getChild("_BatchMonitorThread")
     self.batch = batch
     self.extantJobs = set(batch.jobs)
-    self.killedEvent = threading.Event()
-    self.killFinishEvent = threading.Event()
-    self.finishedEvent = threading.Event()
-    self.completedJobQueue = Queue.Queue()
+    self.killedEvent = gevent.event.Event()
+    self.killFinishEvent = gevent.event.Event()
+    self.finishedEvent = gevent.event.Event()
+    self.completedJobQueue = gevent.queue.Queue()
     self.dirLocked = False
     self.exception = None
 
@@ -49,17 +48,14 @@ class _BatchMonitorThread(threading.Thread):
 
   def doLock(self):
     self._logger.debug("doLock")
-    lockEvent = threading.Event()
+    lockEvent = gevent.event.Event()
     def callback(exception):
       if not exception is None:
         self._logger.warning("Could not start batch %s, directory lock failed: %s",self.name)
         self.exception = exception
       lockEvent.set()
     self.batch.parentRunner.lockPath(self.batch.remoteBatchDir, callback)
-
-    combinedEvent = eventWait_or([lockEvent, self.killedEvent])
-    while not combinedEvent.wait(0.1):
-      pass
+    gevent.wait(objects = [lockEvent, self.killedEvent], count = 1)
 
     if lockEvent.is_set() and not self.exception:
       self.dirLocked = True
@@ -83,8 +79,9 @@ class _BatchMonitorThread(threading.Thread):
         job = self.completedJobQueue.get(True, 0.1)
         self.extantJobs.remove(job)
         self._logger.debug("monitorJobs job remove - %d jobs remaining", len(self.extantJobs))
-      except Queue.Empty:
+      except gevent.queue.Empty:
         pass
+      gevent.sleep(0)
 
     if self.killedEvent.is_set():
         self._logger.debug("monitorJobs killed event")
@@ -93,11 +90,7 @@ class _BatchMonitorThread(threading.Thread):
   def killJobs(self):
     self._logger.debug("killJobs")
     killEvents = [ job.kill() for job in self.extantJobs]
-    ewt = EventWaitThread(killEvents)
-    ewt.start()
-    while not ewt.completeEvent.wait(0.1):
-      pass
-    self.killFinishEvent.set()
+    gevent.wait(objects = killEvents)
     self._logger.debug("killJobs finished")
 
   def finishBatch(self, exception):
@@ -109,18 +102,17 @@ class _BatchMonitorThread(threading.Thread):
     if self.dirLocked:
       unlockEvent = self.batch.parentRunner.unlockPath(self.batch.remoteBatchDir)
     else:
-      unlockEvent = threading.Event()
+      unlockEvent = gevent.event.Event()
       unlockEvent.set()
 
     finishedEvent = self.finishedEvent
-    class WaitUnlock(EventWaitThread):
-      def after(slf):
-        self.batch.parentRunner.batchFinished(self.batch, self.exception)
-        finishedEvent.set()
 
-    WaitUnlock([unlockEvent]).start()
-    # self.finishedEvent.set()
+    def after():
+      unlockEvent.wait()
+      self.batch.parentRunner.batchFinished(self.batch, self.exception)
+      finishedEvent.set()
 
+    gevent.Greenlet.spawn(after)
 
 class RunnerBatch(object):
 
@@ -139,7 +131,7 @@ class RunnerBatch(object):
     """Register batch remote path with the cleanup agent and call start() on this batch's
     jobs"""
     self._logger.debug("Starting batch: %s", self.name)
-    self._monitorThread.start()
+    gevent.Greenlet.spawn(self._monitorThread.run)
 
   @property
   def isFinished(self):

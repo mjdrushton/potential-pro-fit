@@ -3,7 +3,6 @@ from remote_exec import file_cleanup_remote_exec
 from atsim.pro_fit._util import CallbackRegister, NamedEvent
 
 import logging
-import threading
 import traceback
 import uuid
 import itertools

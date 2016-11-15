@@ -9,8 +9,8 @@ import uuid
 import jinja2
 
 from _remote_common import RemoteRunnerBase, _copyFilesFromRemote
-import _execnet
-from _execnet import EXECNET_TERM_TIMEOUT
+import atsim.pro_fit._execnet as _execnet
+from atsim.pro_fit._execnet import EXECNET_TERM_TIMEOUT
 
 class PBSRunnerFuture(threading.Thread):
   """Joinable future object as returned by PBSRunner.runBatch()"""
@@ -34,7 +34,7 @@ class PBSRunnerFuture(threading.Thread):
   def run(self):
     # Monitor file completion
     import time
-    group = execnet.Group()
+    group = _execnet.Group()
     group.defaultspec = self._gwurl
     gw = group.makegateway()
 
@@ -166,7 +166,7 @@ class PBSRunner(object):
     @return RemoteRunnerFuture a job future that supports .join() to block until completion"""
     # Copy job files and minimal jobs
     self.logger.debug("runBatch() called.")
-    self._gwgroup = execnet.Group()
+    self._gwgroup = _execnet.Group()
     self._gwgroup.defaultspec = self.gwurl
     try:
       gw = self._gwgroup.makegateway()
@@ -225,7 +225,7 @@ class PBSRunner(object):
       raise ConfigException("remotehost configuration item should be of form ssh://[username@]hostname/remote_path")
 
     # Attempt connection and check remote directory exists
-    group = execnet.Group()
+    group = _execnet.Group()
     try:
       if username:
         gwurl = "ssh=%s@%s" % (username, host)

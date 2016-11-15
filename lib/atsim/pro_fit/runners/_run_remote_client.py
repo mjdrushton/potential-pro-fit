@@ -1,17 +1,18 @@
 """Classes to make the use of _run_remote_exec channels easier"""
 
-
 from atsim.pro_fit._channel import AbstractChannel, MultiChannel
-from atsim.pro_fit._util import CallbackRegister, NamedEvent, eventWait_or
+from atsim.pro_fit._util import CallbackRegister, NamedEvent
 
 import itertools
 import logging
 import multiprocessing
-import threading
 import uuid
 import sys
 import traceback
 from collections import deque
+
+import gevent
+import gevent.event
 
 _ncpu = multiprocessing.cpu_count()
 
@@ -65,8 +66,6 @@ class RunChannels(MultiChannel):
     super(RunChannels, self).__init__(execnet_gw, factory, num_channels, channel_id)
     self._channel_map = dict(zip([c.channel_id for c in self._channels], self._channels))
 
-
-
   def getChannel(self, channel_id):
     """Return underlying channel that has the given channel_id"""
     return self._channel_map[channel_id]
@@ -106,7 +105,7 @@ class RunClient(object):
     self._logger.debug("runCommand called for workingDirectory = '%s'", workingDirectory)
     cbobj = self._registerCallback(workingDirectory, callback)
     if callback is None:
-      cbobj.event.wait()
+      cbobj.finishEvent.wait()
       cbobj.raise_exception()
       return None
     else:
@@ -128,10 +127,11 @@ class RunClient(object):
 
 class JobRecord(object):
 
+  logger = _logger.getChild("JobRecord")
+
   def __init__(self, rjc, runClient):
     self._runjobcallback = rjc
     self._runClient = runClient
-    self.pid = None
 
   @property
   def workingDirectory(self):
@@ -145,11 +145,20 @@ class JobRecord(object):
   def completion_event(self):
     return self._runjobcallback.finishEvent
 
+  @property
+  def pidSetEvent(self):
+    return self._runjobcallback.pidSetEvent
+
+  @property
+  def pid(self):
+    return self._runjobcallback.pid
+
+
   def kill(self):
     """Kill the job.
 
     Returns:
-        threading.Event: Event that is set once job completes.
+        gevent.event.Event: Event that is set once job completes.
     """
     self._runjobcallback.killEvent.set()
     return self.completion_event
@@ -163,27 +172,25 @@ class JobStartException(Exception):
 class RunJobKilledException(Exception):
   pass
 
-class _RunJobState(threading.Thread):
+class _RunJobState(gevent.Greenlet):
   """Class that keeps track of a job's run state"""
 
   _logger = logging.getLogger("atsim.pro_fit.runners._run_remote_client._RunJobState")
 
   def __init__(self, runJobCallback):
-    threading.Thread.__init__(self)
+    gevent.Greenlet.__init__(self)
 
     self.runJobCallback = runJobCallback
-    self.readyEvent = threading.Event()
-    self.jobStartEvent = threading.Event()
-    self.jobEndEvent = threading.Event()
-    self.killEvent = threading.Event()
-    self.finishEvent = threading.Event()
-    self.errorEvent = threading.Event()
+    self.readyEvent = gevent.event.Event()
+    self.jobStartEvent = gevent.event.Event()
+    self.jobEndEvent = gevent.event.Event()
+    self.killEvent = gevent.event.Event()
+    self.finishEvent = gevent.event.Event()
+    self.errorEvent = gevent.event.Event()
 
-  def run(self):
-    waitEvent = eventWait_or([self.readyEvent, self.killEvent])
-    while not waitEvent.wait(0.1):
-      pass
-
+  def _run(self):
+    gevent.wait(objects = [self.readyEvent, self.killEvent], count = 1)
+    # import pdb;pdb.set_trace()
     try:
       if self.killEvent.is_set():
         self.cancelJobBeforeRun()
@@ -235,9 +242,7 @@ class _RunJobState(threading.Thread):
     self.runJobCallback.callback(exception, self.runJobCallback)
 
   def monitorJob(self):
-    waitEvent = eventWait_or([self.jobStartEvent, self.errorEvent])
-    while not waitEvent.wait(0.1):
-      pass
+    gevent.wait(objects = [self.jobStartEvent, self.errorEvent], count = 1)
 
     if self.errorEvent.is_set():
       raise self.runJobCallback.exception
@@ -246,9 +251,7 @@ class _RunJobState(threading.Thread):
       if self.runJobCallback.exception:
         raise self.runJobCallback.exception
 
-      waitEvent = eventWait_or([self.jobEndEvent, self.errorEvent, self.killEvent])
-      while not waitEvent.wait(0.1):
-        pass
+      gevent.wait(objects = [self.jobEndEvent, self.errorEvent, self.killEvent], count = 1)
 
       if self.killEvent.is_set():
         if self.jobEndEvent.is_set():
@@ -273,9 +276,7 @@ class _RunJobState(threading.Thread):
     killchannel.send({'msg' : 'JOB_KILL', 'job_id' : jobid })
 
     # Now wait for the job to finish
-    waitEvent = eventWait_or([self.jobEndEvent, self.errorEvent])
-    while not waitEvent.wait(0.1):
-      pass
+    waitEvent = gevent.wait(objects = [self.jobEndEvent, self.errorEvent], count = 1)
 
     if self.errorEvent.is_set():
       raise self.job.exception
@@ -298,7 +299,10 @@ class RunJobCallback(object):
     self.active = True
     self.should_raise = False
     self.channel_id = None
+    # self.event = gevent.event.Event()
 
+    self.pidSetEvent = gevent.event.Event()
+    self._pid = None
     self._runjobState = _RunJobState(self)
     self.finishEvent = self._runjobState.finishEvent
     self.killEvent = self._runjobState.killEvent
@@ -336,7 +340,7 @@ class RunJobCallback(object):
 
       if mtype == "JOB_START":
         pid = msg.get('pid', None)
-        # self._parentRecord.pid = pid
+        self.pid = pid
         self.channel_id = channel_id
         self._logger.debug("Job id=%s started in directory='%s' with pid=%s", transid, self.workingDirectory, pid)
         self._runjobState.jobStartEvent.set()
@@ -389,6 +393,17 @@ class RunJobCallback(object):
         self._runJobState.errorEvent.set()
         raise self.exception
 
+  def _setPid(self, pid):
+    self._logger.getChild("_setPid").debug("setting pid:%d for object id:%s", pid, id(self))
+
+    self._pid = pid
+    self.pidSetEvent.set()
+
+  def _getPid(self):
+    return self._pid
+
+  pid = property(_getPid, _setPid)
+
 class SubmissionCallback(object):
   """Callback placed first in RunClient callback register.
 
@@ -399,37 +414,35 @@ class SubmissionCallback(object):
   active = True
 
   def __init__(self, channel, trans_id, callbacklist):
-    self.lock = threading.RLock()
     self.channel = channel
     self.trans_id = trans_id
     self.callbacklist = callbacklist
     self.pendingJobs = deque()
 
   def __call__(self, msg):
-    with self.lock:
-      mtype = msg.get("msg")
-      if mtype in ["BUSY", "READY"]:
-        channel_id = msg.get("channel_id")
-        self._statusPing(msg, channel_id)
-        if mtype == "BUSY":
-          return True
-        elif mtype == "READY":
-          cb = self._findNextJob()
-          if not cb is None:
-            self._submitJob(channel_id, cb)
-          return True
-      return False
+    mtype = msg.get("msg")
+    self._logger.getChild("__call__").debug("Received message: %s", msg)
+    if mtype in ["BUSY", "READY"]:
+      channel_id = msg.get("channel_id")
+      self._statusPing(msg, channel_id)
+      if mtype == "BUSY":
+        return True
+      elif mtype == "READY":
+        cb = self._findNextJob()
+        if not cb is None:
+          self._submitJob(channel_id, cb)
+        return True
+    return False
 
   def registerJob(self, cb):
       self.pendingJobs.appendleft(cb)
 
   def removeCallback(self, cb):
-    with self.lock:
-      cb.active = False
-      if cb in self.callbacklist:
-        self.callbacklist.remove(cb)
-      elif cb in self.pendingJobs:
-        self.pendingJobs.remove(cb)
+    cb.active = False
+    if cb in self.callbacklist:
+      self.callbacklist.remove(cb)
+    elif cb in self.pendingJobs:
+      self.pendingJobs.remove(cb)
 
   def _findNextJob(self):
     try:

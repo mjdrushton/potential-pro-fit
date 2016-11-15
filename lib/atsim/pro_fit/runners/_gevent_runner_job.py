@@ -2,25 +2,25 @@ import logging
 import os
 import posixpath
 import sys
-import threading
 import traceback
 import uuid
 
+import gevent
+import gevent.event
+
 from atsim.pro_fit.filetransfer import UploadHandler, DownloadHandler, DownloadCancelledException, UploadCancelledException
-from atsim.pro_fit._util import EventWaitThread, eventWait_or
 
 from _run_remote_client import RunJobKilledException
 
 _logger = logging.getLogger("atsim.pro_fit.runners")
 
 
-class _RunnerJobThread(threading.Thread):
+class _RunnerJobThread(object):
 
   def __init__(self, job):
-    threading.Thread.__init__(self)
     self.job = job
     self.killedEvent = self.job._killedEvent
-    self.finishedEvent = threading.Event()
+    self.finishedEvent = gevent.event.Event()
     self._logger = self.job._logger.getChild("_RunnerJobThread")
     self._waitTimeout = 0.5
     self.exception = None
@@ -42,16 +42,15 @@ class _RunnerJobThread(threading.Thread):
       self._logger.debug("%s calling finishJob", self.job)
       self.finishJob(None)
     except:
-      self.exception = sys.exc_info()
-      tbstring = traceback.format_exception(*self.exception)
+      exception = sys.exc_info()
+      tbstring = traceback.format_exception(*exception)
       self._logger.warning("%s run exception: %s", self.job, tbstring)
-      self.finishJob(self.exception)
-
+      self.finishJob(exception)
+      raise exception
 
   def doLock(self):
     lockEvent = self.job._lockDirectory()
-    while not lockEvent.wait(self._waitTimeout):
-      pass
+    lockEvent.wait()
     exc = self.job.exception
     if not exc is None:
       self._logger.warning("Could not start upload for %s, directory lock failed: %s",self.job, exc)
@@ -65,8 +64,7 @@ class _RunnerJobThread(threading.Thread):
     self.job.status.append("start upload")
     uploadedEvent, uploadDirectory = self.job._startUpload()
     mergedEvent = self._makeEventOrKillEvent(uploadedEvent)
-    while not mergedEvent.wait(self._waitTimeout):
-      pass
+    mergedEvent.wait()
     # Which event occurred?
     if self.killedEvent.is_set():
       if not uploadedEvent.is_set():
@@ -89,16 +87,14 @@ class _RunnerJobThread(threading.Thread):
   def cancelUpload(self, uploadDirectory):
     self._logger.debug("Cancelling upload for %s", self.job)
     cancelEvent = uploadDirectory.cancel()
-    while not cancelEvent.wait(self._waitTimeout):
-      pass
+    cancelEvent.wait()
     self.finishJob(UploadCancelledException())
 
   def doRun(self):
     self.job.status.append("start job run")
     jobRunEvent, jobRun = self.job._startJobRun()
     mergedEvent = self._makeEventOrKillEvent(jobRunEvent)
-    while not mergedEvent.wait(self._waitTimeout):
-      pass
+    mergedEvent.wait()
 
     # Which event occurred?
     if self.killedEvent.is_set():
@@ -123,8 +119,7 @@ class _RunnerJobThread(threading.Thread):
 
   def killJob(self, jobRun):
     killEvent = jobRun.kill()
-    while not killEvent.wait(self._waitTimeout):
-      pass
+    killEvent.wait()
     self.job.status.append("finish job run killed")
     self.finishJob(RunJobKilledException())
     return False
@@ -133,8 +128,7 @@ class _RunnerJobThread(threading.Thread):
     self.job.status.append("start download")
     downloadedEvent, downloadDirectory = self.job._startDownload()
     mergedEvent = self._makeEventOrKillEvent(downloadedEvent)
-    while not mergedEvent.wait(self._waitTimeout):
-      pass
+    mergedEvent.wait()
 
     # Which event occurred?
     if self.killedEvent.is_set():
@@ -157,8 +151,7 @@ class _RunnerJobThread(threading.Thread):
 
   def cancelDownload(self, downloadDirectory):
     cancelEvent = downloadDirectory.cancel()
-    while not cancelEvent.wait(self._waitTimeout):
-      pass
+    cancelEvent.wait()
     self.finishJob(RunJobKilledException())
 
   def finishJob(self, exception):
@@ -185,12 +178,11 @@ class _RunnerJobThread(threading.Thread):
 
       if self.job._directoryLocked:
         unlockEvent = self.job.parentBatch.unlockJobDirectory(self.job)
-        class UnlockEventWait(EventWaitThread):
-          def after(slf):
-            self.job._directoryLocked = False
-            self.finishedEvent.set()
-        unlockWait = UnlockEventWait([unlockEvent])
-        unlockWait.start()
+        def after():
+          unlockEvent.wait()
+          self.job._directoryLocked = False
+          self.finishedEvent.set()
+        gevent.Greenlet.spawn(after)
 
       self.job.parentBatch.jobFinished(self.job)
       self._logger.debug("Finished set")
@@ -202,12 +194,14 @@ class _RunnerJobThread(threading.Thread):
       if not self.exception is None:
         self._logger.warning("%s finished with exception: %s", self, traceback.format_exception(*self.exception))
 
-
   def _makeEventOrKillEvent(self, e):
-    mergedEvent = eventWait_or([e, self.killedEvent])
+    events = [e, self.killedEvent]
+    mergedEvent = gevent.event.Event()
+    def after():
+      gevent.wait(objects = events, count =1)
+      mergedEvent.set()
+    gevent.Greenlet.spawn(after)
     return mergedEvent
-
-
 
 class RunnerJob(object):
 
@@ -251,7 +245,7 @@ class RunnerJob(object):
     self.status = []
 
     self._directoryLocked = False
-    self._killedEvent = threading.Event()
+    self._killedEvent = gevent.event.Event()
     self._jobThread = _RunnerJobThread(self)
 
   @property
@@ -284,11 +278,11 @@ class RunnerJob(object):
       self.sourcePath,
       self.remotePath,
       self.outputPath))
-    self._jobThread.start()
+    gevent.Greenlet.spawn(self._jobThread.run)
 
   def _lockDirectory(self):
     self._logger.debug("Locking directory for job %s from batch %s" % (self.jobid, self.parentBatch.name))
-    lockEvent = threading.Event()
+    lockEvent = gevent.event.Event()
     def callback(exception):
       self.exception = exception
       self._directoryLocked = True
@@ -298,7 +292,7 @@ class RunnerJob(object):
 
   def _startUpload(self):
     self._logger.debug("(startUpload) for %s" % self)
-    event = threading.Event()
+    event = gevent.event.Event()
     handler = RunnerJobUploadHandler(self)
     uploadDirectory = self.parentBatch.createUploadDirectory(self, handler)
     uploadDirectory.upload(non_blocking = True)
@@ -321,7 +315,7 @@ class RunnerJob(object):
     """Kill the current job and perform any required cleanup
 
     Returns:
-        threading.Event: Event that is set() once the job has terminated successfully.
+        gevent.event.Event: Event that is set() once the job has terminated successfully.
     """
     self._killedEvent.set()
     return self._jobThread.finishedEvent
@@ -343,7 +337,7 @@ class RunnerJobDownloadHandler(DownloadHandler):
     self.remoteOutputPath = posixpath.join(job.remotePath, "job_files")
     super(RunnerJobDownloadHandler, self).__init__(self.remoteOutputPath, job.outputPath)
     self.job = job
-    self.finishEvent = threading.Event()
+    self.finishEvent = gevent.event.Event()
 
   def finish(self, exception = None):
     self._logger.debug("finish called for %s", self.job)
@@ -362,7 +356,7 @@ class RunnerJobUploadHandler(UploadHandler):
   def __init__(self, job):
     super(RunnerJobUploadHandler, self).__init__(job.sourcePath, job.remotePath)
     self.job = job
-    self.finishEvent = threading.Event()
+    self.finishEvent = gevent.event.Event()
 
   def finish(self, exception = None):
     self._logger.debug("finish called for %s", self.job)
@@ -374,7 +368,7 @@ class RunnerJobRunClientJob(object):
 
     def __init__(self, job):
       self.job = job
-      self.finishEvent = threading.Event()
+      self.finishEvent = gevent.event.Event()
 
     @property
     def workingDirectory(self):

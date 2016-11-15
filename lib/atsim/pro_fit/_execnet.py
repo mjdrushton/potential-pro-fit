@@ -6,6 +6,14 @@ import tempfile
 import execnet
 import os
 
+
+logger = logging.getLogger("atsim.pro_fit._execnet")
+
+def Group(*args, **kwargs):
+  group = execnet.Group(*args, **kwargs)
+  group.set_execmodel("gevent", "thread")
+  return group
+
 def urlParse(url):
   """Parse url into username, host, path components
 
@@ -50,13 +58,13 @@ def makeExecnetConnectionSpec(username, host, port, identityfile = None, extraop
   for k,v in extraoptions:
     sshcfg.write("%s %s \n" % (k,v))
 
-  logger = logging.getLogger("atsim.pro_fit.runners.makeExecnetConnectionSpec")
-  logger.debug("Execnet url: '%s' for username = '%s', host = '%s', port= '%s', identityfile = '%s'" % (gwurl, username, host, port, identityfile))
+  local_log = logger.getChild("makeExecnetConnectionSpec")
+  local_log.debug("Execnet url: '%s' for username = '%s', host = '%s', port= '%s', identityfile = '%s'" % (gwurl, username, host, port, identityfile))
 
   sshcfg.flush()
   sshcfg.seek(0)
   for line in sshcfg:
-    logger.debug("ssh_config contents: %s" % line)
+    local_log.debug("ssh_config contents: %s" % line)
 
   xspec = execnet.XSpec(gwurl)
   xspec.ssh_config = sshcfg.name

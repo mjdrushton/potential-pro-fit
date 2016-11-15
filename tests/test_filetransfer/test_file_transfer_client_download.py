@@ -57,7 +57,6 @@ def do_dl(tmpdir, channels, dl = None, do_cmp = True):
 def testDownloadChannel_BadStart_nonexistent_directory(execnet_gw, channel_id):
   badpath = "/this/is/not/a/path"
   assert not py.path.local(badpath).exists()
-
   try:
     ch = DownloadChannel(execnet_gw, badpath, channel_id = channel_id)
     assert False,  "ChannelException should have been raised."
@@ -298,7 +297,6 @@ def testDirectoryDownload_channel_reuse(tmpdir, execnet_gw, channel_id):
 def testDirectoryDownload_create_multiple_downloads(tmpdir, execnet_gw, channel_id):
   # import logging
   # import sys
-  # logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
   source1 = tmpdir.join("source_1")
   source2 = tmpdir.join("source_2")
 
@@ -335,7 +333,6 @@ def testDirectoryDownload_test_nonblocking(tmpdir, execnet_gw, channel_id):
   import threading
   import logging
   import sys
-  logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
   source1 = tmpdir.join("source_1")
   source1.ensure_dir()
@@ -389,7 +386,6 @@ def testDirectoryDownload_cancel(tmpdir, execnet_gw, channel_id):
   import threading
   import logging
   import sys
-  logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
   source1 = tmpdir.join("source_1")
   source1.ensure_dir()

@@ -17,9 +17,6 @@
 				"html"
 			],
 			"path": "."
-		},
-		{
-			"path": "/Users/mr498/Documents/Adsorbents/FISPACT/src"
 		}
 	],
 	"python_interpreter": "venv/bin/python",

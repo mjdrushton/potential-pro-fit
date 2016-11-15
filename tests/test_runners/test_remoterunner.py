@@ -12,6 +12,7 @@ import itertools
 
 import py.path
 
+import atsim.pro_fit._execnet as _execnet
 import execnet
 
 from atsim import pro_fit
@@ -48,7 +49,7 @@ def _runBatch(runner, jobs):
 
 def testUrlParse():
   """Test parsing of host directory string"""
-  from atsim.pro_fit.runners._execnet import urlParse
+  from atsim.pro_fit._execnet import urlParse
   username, host, port, path = urlParse("ssh://username@localhost/remote/path")
   assert username == 'username'
   assert host == 'localhost'
@@ -76,7 +77,6 @@ def testUrlParse():
 def testSingle(runfixture, vagrant_basic):
   import logging
   import sys
-  logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
   runner = _createRunner(runfixture,vagrant_basic, 1)
 
   batch = _runBatch(runner, [runfixture.jobs[0]])
@@ -133,7 +133,8 @@ sleep 1200
 
 def _mkexecnetgw(vagrant_basic):
   with py.path.local(vagrant_basic.root).as_cwd():
-    gw = execnet.makegateway("vagrant_ssh=default")
+    group = _execnet.Group()
+    gw = group.makegateway("vagrant_ssh=default")
   return gw
 
 def _remote_is_file(channel):
@@ -277,12 +278,6 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
 
 def testClose(runfixture, vagrant_basic, tmpdir):
   """Test runner's .close() method."""
-  #REMOVE
-  import logging
-  import sys
-  logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-  # END REMOVE
-
   ncpu = 3
   runner = _createRunner(runfixture, vagrant_basic, ncpu)
   gw = _mkexecnetgw(vagrant_basic)
@@ -345,11 +340,6 @@ def testClose(runfixture, vagrant_basic, tmpdir):
 
 def testBatchTerminate2(runfixture, vagrant_basic, tmpdir):
   """Test runner's .close() method."""
-  #REMOVE
-  import logging
-  import sys
-  logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-  #END REMOVE
 
   try:
     ncpu = 3
