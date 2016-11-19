@@ -23,6 +23,9 @@ from _runnercommon import runfixture, DIR, FILE, runnertestjob, CheckPIDS, isdir
 from .. import common
 from ..testutil import vagrant_basic
 
+import gevent
+import gevent.event
+
 def _createRunner(runfixture, vagrantbox, ncpu=1):
   username = vagrantbox.user()
   hostname = vagrantbox.hostname()
@@ -103,7 +106,6 @@ def testAllInMultipleBatch(runfixture, vagrant_basic):
 
   assert runner.close().wait(10)
 
-
 from atsim.pro_fit.jobfactories import Job
 
 def _mklongjob(tmpdir):
@@ -153,7 +155,7 @@ def _read_pids(channel):
 
 def testTerminate(tmpdir, runfixture, vagrant_basic):
   """Test runner future's .terminate() method."""
-  logger = logging.getLogger("test_remoterunner.testTerminate")
+  logger = logging.getLogger(__name__).getChild("testTerminate")
   # Create a long running job.
   jobiter = _mklongjob(tmpdir)
   j1 = jobiter.next()
@@ -298,9 +300,17 @@ def testClose(runfixture, vagrant_basic, tmpdir):
   b1 = runner.runBatch(b1_jobs)
   b2 = runner.runBatch(b2_jobs)
 
-  running = []
-  while len(running) < ncpu:
-    running =  [ j for j in itertools.chain(b1.jobs,b2.jobs) if "start job run" in j.status ]
+
+  def waitForRun():
+    running = []
+    while len(running) < ncpu:
+      running =  [ j for j in itertools.chain(b1.jobs,b2.jobs) if not j.pidSetEvent is None and j.pidSetEvent.is_set() ]
+      gevent.sleep(0.1)
+    return running
+
+  grn = gevent.Greenlet.spawn(waitForRun)
+  grn.join()
+  running = grn.value
 
   assert len(running) == ncpu
 
@@ -361,19 +371,29 @@ def testBatchTerminate2(runfixture, vagrant_basic, tmpdir):
 
     b1 = runner.runBatch(b1_jobs)
 
-    running = []
-    while len(running) < ncpu:
-      running =  [ j for j in b1.jobs if "start job run" in j.status ]
+    def waitForRun():
+      running = []
+      while len(running) < ncpu:
+        running =  [ j for j in b1.jobs if not j.pidSetEvent is None and j.pidSetEvent.is_set() ]
+        gevent.sleep(0.1)
+      return running
 
+    grn = gevent.Greenlet.spawn(waitForRun)
+    grn.join()
+    running = grn.value
     assert len(running) == ncpu
 
     b2 = runner.runBatch(b2_jobs)
 
-    uploaded = []
-    while len(uploaded) < len(b1_jobs)+len(b2_jobs):
-      uploaded = [ j for j in itertools.chain(b1.jobs, b2.jobs) if "finish upload" in j.status]
+    def waitForUpload():
+      uploaded = []
+      while len(uploaded) < len(b1_jobs)+len(b2_jobs):
+        uploaded = [ j for j in itertools.chain(b1.jobs, b2.jobs) if "finish upload" in j.status]
+        gevent.sleep(0.1)
+      return uploaded
 
-    # import pdb;pdb.set_trace()
+    grn = gevent.Greenlet.spawn(waitForUpload)
+    grn.join()
 
     b1CloseEvent = b1.terminate()
     b2CloseEvent = b2.terminate()

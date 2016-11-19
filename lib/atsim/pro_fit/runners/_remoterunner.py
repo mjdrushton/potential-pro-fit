@@ -2,6 +2,10 @@ from atsim.pro_fit.fittool import ConfigException
 from atsim.pro_fit import filetransfer
 
 from atsim.pro_fit._util import NamedEvent
+from _util import BatchNameIterator
+from _exceptions import RunnerClosedException
+
+from atsim.pro_fit.filetransfer import UploadHandler, DownloadHandler
 
 from atsim.pro_fit import _execnet
 import execnet
@@ -15,14 +19,51 @@ import posixpath
 import uuid
 import traceback
 import sys
+import os
 
 EXECNET_TERM_TIMEOUT=10
 
-from _gevent_runner_batch import RunnerBatch
+from _runner_batch import RunnerBatch
 from _run_remote_client import RunChannels, RunClient
 
-class RunnerClosedException(Exception):
-  pass
+class _RunnerJobUploadHandler(UploadHandler):
+  """Handler that acts as finish() callback for RunnerJob.
+
+  Taks RunnerJob instance and will call its `finishUpload()` method when download
+  completes"""
+
+  _logger = logging.getLogger(__name__).getChild('_RunnerJobUploadHandler')
+
+  def __init__(self, job):
+    super(_RunnerJobUploadHandler, self).__init__(job.sourcePath, job.remotePath)
+    self.job = job
+    self.finishEvent = gevent.event.Event()
+
+  def finish(self, exception = None):
+    self._logger.debug("finish called for %s", self.job)
+    self.job.exception = exception
+    self.finishEvent.set()
+    return None
+
+class _RunnerJobDownloadHandler(DownloadHandler):
+  """Handler that acts as finish() callback for RunnerJob.
+
+  Taks RunnerJob instance and will call its `finishDownload()` method when download
+  completes"""
+
+  _logger = logging.getLogger(__name__).getChild('_RunnerJobDownloadHandler')
+
+  def __init__(self,  job):
+    self.remoteOutputPath = posixpath.join(job.remotePath, "job_files")
+    super(_RunnerJobDownloadHandler, self).__init__(self.remoteOutputPath, job.outputPath)
+    self.job = job
+    self.finishEvent = gevent.event.Event()
+
+  def finish(self, exception = None):
+    self._logger.debug("finish called for %s", self.job)
+    self.job.exception = exception
+    self.finishEvent.set()
+    return None
 
 class InnerRemoteRunner(object):
   """The actual implementation of RemoteRunner.
@@ -77,7 +118,7 @@ class InnerRemoteRunner(object):
     self._cleanupChannel = self._makeCleanupChannel()
     self._cleanupClient = filetransfer.CleanupClient(self._cleanupChannel)
 
-    self._batchCount = itertools.count()
+    self._batchNameIterator = BatchNameIterator()
     self._extantBatches = []
 
     # Register the remote directory with cleanup agent, such that it will be deleted at shutdown.
@@ -95,7 +136,7 @@ class InnerRemoteRunner(object):
     if self._closed:
       raise RunnerClosedException()
 
-    batchId = self._get_batch_id()
+    batchId = self._batchNameIterator.next()
     batchDir = posixpath.join(self._remotePath, batchId)
 
     self._logger.debug("Starting batch %s, containing %d jobs.", batchId, len(jobs))
@@ -105,9 +146,6 @@ class InnerRemoteRunner(object):
     self._extantBatches.append(batch)
     batch.startBatch()
     return batch
-
-  def _get_batch_id(self):
-    return "Batch-%d" % self._batchCount.next()
 
   def _makeUploadChannel(self):
     """Creates the UploadChannel instance associated with this runner. It is actually an instance
@@ -177,7 +215,7 @@ class InnerRemoteRunner(object):
       self._logger.warning("Batch %s finished with errors: %s", batch.name, exception)
     self._extantBatches.remove(batch)
 
-  def createUploadDirectory(self, sourcePath, remotePath, uploadHandler):
+  def _createUploadDirectory(self, sourcePath, remotePath, uploadHandler):
     """Create an `filetransfer.UploadDirectory` instance configured to this runner's remote
     directory.
 
@@ -187,29 +225,53 @@ class InnerRemoteRunner(object):
         uploadHandler (filetransfer.UploadHandler): Acts as callback for upload completion.
 
     Returns:
-        filetransfer.UploadDirectory : Directory instance ready for `upload()` method to be called.
-    """
+        (gevent.event.Event, UploadDirectory) Tuple of an event set when upload completes and
+          a correctly instantiated directory upload instance.    """
     uploadDirectory = filetransfer.UploadDirectory(
       self._uploadChannel,
       sourcePath, remotePath, uploadHandler)
-    return uploadDirectory
 
-  def createDownloadDirectory(self, remotePath, localPath, downloadHandler):
+    finishEvent = uploadHandler.finishEvent
+    return finishEvent, uploadDirectory
+
+  def createUploadDirectory(self, job):
+    """Create an `atsim.pro_fit.filetransfer.UploadDirectory` instance
+    for `job`. The `UploadDirectory` will be registered with an upload handler
+    that will call the job's  `finishUpload()` method on completion.
+
+    Upload will occur between `job.sourcePath` and `job.remotePath`.
+
+    Args:
+        job (RunnerJob): Job
+
+    Returns:
+        (gevent.event.Event, UploadDirectory) Tuple of an event set when upload completes and
+          a correctly instantiated directory upload instance.
+    """
+    sourcePath = job.sourcePath
+    remotePath = job.remotePath
+    handler = _RunnerJobUploadHandler(job)
+    finishEvent, upload = self._createUploadDirectory(sourcePath, remotePath, handler)
+    return finishEvent, upload
+
+  def createDownloadDirectory(self, job):
     """Create an `filetransfer.DownloadDirectory` instance configured to this runner's remote
     directory.
 
     Args:
-        remotePath (str): Source path (remote)
-        localPath (str): Destination path for download (local)
-        downloadHandler (filetransfer.DownloadHandler): Description
-
+      job : RunnerJob
     Returns:
-        filetransfer.DownloadDirectory: Directory instance ready for `download()` method to be called.
+        finishEvent, filetransfer.DownloadDirectory: Directory instance ready for `download()` method to be called.
     """
+    downloadHandler = _RunnerJobDownloadHandler(job)
+    remotePath = downloadHandler.remoteOutputPath
+    destPath = job.outputPath
+    os.mkdir(destPath)
+
     downloadDirectory = filetransfer.DownloadDirectory(
       self._downloadChannel,
-      remotePath, localPath, downloadHandler)
-    return downloadDirectory
+      remotePath, destPath, downloadHandler)
+    return downloadHandler.finishEvent, downloadDirectory
 
   def startJobRun(self, handler):
     """Run the given job defined by handler.
@@ -249,14 +311,13 @@ class InnerRemoteRunner(object):
     if self._closed:
       raise RunnerClosedException()
     self._closed = True
-    raise Exception("Finish _RemoteRunnerCloseThread")
     closeThread = _RemoteRunnerCloseThread(self)
     closeThread.start()
     return closeThread.afterEvent
 
 class _RemoteRunnerCloseThread(gevent.Greenlet):
 
-  _logger = logging.getLogger("atsim.pro_fit.runners.RemoteRunner._RemoteRunnerCloseThread")
+  _logger = logging.getLogger(__name__).getChild("_RemoteRunnerCloseThread")
 
   def __init__(self, runner):
     gevent.Greenlet.__init__(self)
@@ -270,15 +331,6 @@ class _RemoteRunnerCloseThread(gevent.Greenlet):
 
   def after(self):
     try:
-      # Unlock batch path
-      # try:
-      #   self.runner._cleanupClient.unlock(self.runner._remotePath)
-      #   self._logger.info("Runner's remote directory unlocked during close()")
-      # except:
-      #   exception = sys.exc_info()
-      #   tbstring = traceback.format_exception(*exception)
-      #   self._logger.warning("Exception raised during cleanup client unlock in close(): %s", exception)
-
       # Close channels associated with the runner.
       self.runner._runChannel.broadcast(None)
       self.runner._runChannel.waitclose(60)

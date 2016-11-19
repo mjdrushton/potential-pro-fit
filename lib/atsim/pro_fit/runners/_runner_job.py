@@ -8,12 +8,9 @@ import uuid
 import gevent
 import gevent.event
 
-from atsim.pro_fit.filetransfer import UploadHandler, DownloadHandler, DownloadCancelledException, UploadCancelledException
+from atsim.pro_fit.filetransfer import  DownloadHandler, DownloadCancelledException, UploadCancelledException
 
 from _run_remote_client import RunJobKilledException
-
-_logger = logging.getLogger("atsim.pro_fit.runners")
-
 
 class _RunnerJobThread(object):
 
@@ -205,7 +202,7 @@ class _RunnerJobThread(object):
 
 class RunnerJob(object):
 
-  _logger = _logger.getChild("RunnerJob")
+  _logger = logging.getLogger(__name__).getChild("RunnerJob")
 
   # Job workflow:
   # 1. Upload job directory:
@@ -234,6 +231,8 @@ class RunnerJob(object):
       self.jobid = jobid
 
     self.parentBatch = parentBatch
+
+    self._jobRun = None
 
     # Local path which will be uploaded to remote-host
     self.sourcePath = job.path
@@ -271,6 +270,19 @@ class RunnerJob(object):
       self._remotePath = os.path.join(batchdir, job_name)
     return self._remotePath
 
+  @property
+  def pid(self):
+    if not self._jobRun:
+      return None
+    return self._jobRun.pid
+
+  @property
+  def pidSetEvent(self):
+    if not self._jobRun:
+      return None
+    return self._jobRun.pidSetEvent
+
+
   def start(self):
     self._logger.info("Starting job %s from batch %s" % (self.jobid, self.parentBatch.name))
     self._logger.debug("Job %s from batch %s has properties, sourcePath = '%s', remotePath = '%s' and outputPath = '%s'" % (self.jobid,
@@ -292,24 +304,24 @@ class RunnerJob(object):
 
   def _startUpload(self):
     self._logger.debug("(startUpload) for %s" % self)
-    event = gevent.event.Event()
-    handler = RunnerJobUploadHandler(self)
-    uploadDirectory = self.parentBatch.createUploadDirectory(self, handler)
+    # event = gevent.event.Event()
+    # handler = RunnerJobUploadHandler(self)
+    finishEvent, uploadDirectory = self.parentBatch.createUploadDirectory(self)
     uploadDirectory.upload(non_blocking = True)
-    return handler.finishEvent, uploadDirectory
+    return finishEvent, uploadDirectory
 
   def _startJobRun(self):
     self._logger.debug("Starting job execution (startJobRun) for %s" % self)
     handler = RunnerJobRunClientJob(self)
     jobRun = self.parentBatch.startJobRun(self, handler)
+    self._jobRun = jobRun
     return handler.finishEvent, jobRun
 
   def _startDownload(self):
       self._logger.debug("Starting download for %s" % self)
-      handler = RunnerJobDownloadHandler(self)
-      downloadDirectory = self.parentBatch.createDownloadDirectory(self, handler)
+      finishEvent, downloadDirectory = self.parentBatch.createDownloadDirectory(self)
       downloadDirectory.download(non_blocking = True)
-      return handler.finishEvent, downloadDirectory
+      return finishEvent, downloadDirectory
 
   def kill(self):
     """Kill the current job and perform any required cleanup
@@ -323,46 +335,6 @@ class RunnerJob(object):
   def __repr__(self):
     return "job %s from batch %s" % (self.jobid, self.parentBatch.name)
 
-
-
-class RunnerJobDownloadHandler(DownloadHandler):
-  """Handler that acts as finish() callback for RunnerJob.
-
-  Taks RunnerJob instance and will call its `finishDownload()` method when download
-  completes"""
-
-  _logger = _logger.getChild('RunnerJobDownloadHandler')
-
-  def __init__(self,  job):
-    self.remoteOutputPath = posixpath.join(job.remotePath, "job_files")
-    super(RunnerJobDownloadHandler, self).__init__(self.remoteOutputPath, job.outputPath)
-    self.job = job
-    self.finishEvent = gevent.event.Event()
-
-  def finish(self, exception = None):
-    self._logger.debug("finish called for %s", self.job)
-    self.job.exception = exception
-    self.finishEvent.set()
-    return None
-
-class RunnerJobUploadHandler(UploadHandler):
-  """Handler that acts as finish() callback for RunnerJob.
-
-  Taks RunnerJob instance and will call its `finishUpload()` method when download
-  completes"""
-
-  _logger = _logger.getChild('RunnerJobUploadHandler')
-
-  def __init__(self, job):
-    super(RunnerJobUploadHandler, self).__init__(job.sourcePath, job.remotePath)
-    self.job = job
-    self.finishEvent = gevent.event.Event()
-
-  def finish(self, exception = None):
-    self._logger.debug("finish called for %s", self.job)
-    self.job.exception = exception
-    self.finishEvent.set()
-    return None
 
 class RunnerJobRunClientJob(object):
 

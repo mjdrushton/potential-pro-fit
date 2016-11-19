@@ -1,0 +1,2 @@
+class RunnerClosedException(Exception):
+  pass

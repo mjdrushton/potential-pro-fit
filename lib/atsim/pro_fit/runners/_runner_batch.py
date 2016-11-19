@@ -6,7 +6,7 @@ import posixpath
 import sys
 import traceback
 
-from _gevent_runner_job import RunnerJob
+from _runner_job import RunnerJob
 
 import gevent
 import gevent.event
@@ -137,7 +137,7 @@ class RunnerBatch(object):
   def isFinished(self):
     return self._finishedEvent.is_set()
 
-  def createUploadDirectory(self, job, handler):
+  def createUploadDirectory(self, job):
     """Create an `atsim.pro_fit.filetransfer.UploadDirectory` instance
     for `job`. The `UploadDirectory` will be registered with an upload handler
     that will call the job's  `finishUpload()` method on completion.
@@ -146,34 +146,27 @@ class RunnerBatch(object):
 
     Args:
         job (RunnerJob): Job
-        handler (UploadHandler): Handler for this upload directory.
 
     Returns:
-        UploadDirectory: Correctly instantiated directory upload instance.
+        (gevent.event.Event, UploadDirectory) Tuple of an event set when upload completes and
+          a correctly instantiated directory upload instance.
     """
-    sourcePath = job.sourcePath
-    remotePath = job.remotePath
-    upload = self.parentRunner.createUploadDirectory(sourcePath, remotePath, handler)
-    return upload
+    return self.parentRunner.createUploadDirectory(job)
 
-  def createDownloadDirectory(self, job, handler):
+  def createDownloadDirectory(self, job):
     """Create an `atsim.pro_fit.filetransfer.DownloadDirectory` instance
-    for `job`. The `DownloadDirectory` will be registered with a download handler
-    that will call the job's  `finishDownload()` method on completion.
+    for `job`.
 
     Download will occur between `job.remotePath` and `job.outputPath`.
 
     Args:
         job (RunnerJob): Job
-        handler (DownloadHandler): Handler for the job
 
     Returns:
-        DownloadDirectory: Correctly instantiated directory download instance.
+        finishEvent, DownloadDirectory: Correctly instantiated directory download instance.
     """
-    destPath = job.outputPath
-    os.mkdir(destPath)
-    download = self.parentRunner.createDownloadDirectory(handler.remoteOutputPath, destPath, handler)
-    return download
+    finishEvent, download = self.parentRunner.createDownloadDirectory(job)
+    return finishEvent, download
 
   def startJobRun(self, job, handler):
     """Register this job with the parent runner's `RunClient`"""

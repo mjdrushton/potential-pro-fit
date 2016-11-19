@@ -136,7 +136,7 @@ class UploadHandler(object):
 class UploadDirectory(object):
   """Class that coordinates an UploadChannel to allowing directory hierarchies to be uploaded."""
 
-  _logger = logging.getLogger("atsim.pro_fit.runners._file_transfer_client.UploadDirectory")
+  _logger = logging.getLogger(__name__).getChild("UploadDirectory")
 
   def __init__(self, ulchannels, local_path, remote_path, upload_handler = None):
     """Specify execnet channels and the source (remote) and destination (local)
@@ -164,7 +164,6 @@ class UploadDirectory(object):
       self.upload_handler = UploadHandler(self.local_path, self.remote_path)
     else:
       self.upload_handler = upload_handler
-
 
     log = self._logger.getChild("__init__")
     log.debug("local_path: '%s'" % self.local_path)

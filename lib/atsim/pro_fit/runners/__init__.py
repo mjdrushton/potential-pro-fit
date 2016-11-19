@@ -27,10 +27,9 @@ in the fit.cfg file.
 
 """
 
-# from _localrunner import LocalRunner # noqa
-# from _remoterunner import RemoteRunner # noqa
-from _gevent_remoterunner import RemoteRunner # noqa
-from _gevent_remoterunner import RunnerClosedException #noqa
+from _localrunner import LocalRunner # noqa
+from _remoterunner import RemoteRunner # noqa
+from _remoterunner import RunnerClosedException #noqa
 # from _pbsrunner import PBSRunner
 
 class NullFuture:
