@@ -78,38 +78,6 @@ class PBSRunnerFuture(threading.Thread):
 class PBSRunnerException(Exception):
   pass
 
-PBSIdentifyRecord = collections.namedtuple("PBSIdentifyRecord", ["arrayFlag", "arrayIDVariable", "flavour"])
-
-def pbsIdentify(versionString):
-  """Given output of qstat --version, return a record containing fields used to configure
-  PBSRunner for the version of PBS being used.
-
-  Record has following fields:
-    arrayFlag - The qsub flag used to specify array job rangs.
-    arrayIDVariable - Environment variable name provided to submission script to identify ID of current array sub-job.
-
-  @param versionString String as returned by qstat --versionString
-  @return Field of the form described above"""
-  logger = logging.getLogger("atsim.pro_fit.runners.PBSRunner.pbsIdentify")
-  import re
-  if re.search("PBSPro", versionString):
-    #PBS Pro
-    logger.info("Identified PBS as: PBSPro")
-    record =  PBSIdentifyRecord(
-      arrayFlag = "-J",
-      arrayIDVariable = "PBS_ARRAY_INDEX",
-      flavour = "PBSPro")
-  else:
-    #TORQUE
-    logger.info("Identified PBS as: TORQUE")
-    record = PBSIdentifyRecord(
-      arrayFlag = "-t",
-      arrayIDVariable = "PBS_ARRAYID",
-      flavour = "TORQUE")
-
-  logger.debug("pbsIdentify record: %s" % str(record))
-  return record
-
 class PBSRunner(object):
   """Runner that allows a remote PBS queuing system to be used to run jobs.
 

@@ -80,37 +80,6 @@ def _remoteCheck(channel):
   permissions = os.access(remoteDir, os.W_OK | os.X_OK | os.R_OK)
   channel.send(status and permissions)
 
-def _remoteCheckPBS(channel):
-  import os
-  remoteDir = channel.receive()
-  status = os.path.isdir(remoteDir)
-  permissions = os.access(remoteDir, os.W_OK | os.X_OK | os.R_OK)
-  channel.send(status and permissions)
-
-  # Attempt to run qstat
-  import subprocess
-  try:
-    p = subprocess.Popen(["qselect"], stdout = subprocess.PIPE, close_fds=True)
-    output, err = p.communicate()
-    channel.send("qselect okay:")
-  except OSError:
-    channel.send("qselect bad")
-
-  try:
-    p = subprocess.Popen(["qsub", "--version"],
-      stdout = subprocess.PIPE,
-      stderr = subprocess.PIPE,
-      close_fds=True)
-    output, err = p.communicate()
-    output = output.strip()
-    err = err.strip()
-    if err:
-      sstring = err
-    else:
-      sstring = output
-    channel.send("qsub okay:"+sstring)
-  except OSError:
-    channel.send("qsub bad")
 
 def _makeTemporaryDirectory(channel):
   """Function to be executed remotely and create temporary directory"""
