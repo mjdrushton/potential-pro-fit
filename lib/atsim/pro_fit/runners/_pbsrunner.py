@@ -1,5 +1,5 @@
 
-# from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit.fittool import ConfigException
 
 import execnet
 import os
@@ -152,6 +152,7 @@ class PBSRunner(RemoteRunnerBase):
       arrayEnd = len(localToRemotePathTuples),
       localToRemotePathTuples = localToRemotePathTuples,
       arrayIDVariable = self._identifyRecord.arrayIDVariable,
+      pbsinclude = self.pbsinclude,
       uuid = uuid_val)
 
     wd = os.path.join(tempdir, batchdir)
