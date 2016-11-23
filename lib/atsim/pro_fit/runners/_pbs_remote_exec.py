@@ -131,11 +131,53 @@ def qrls(pbs_ids):
   if p.returncode != 0:
     raise QRlsException(err.strip())
 
+class QDelException(Exception):
+  pass
+
+def qdel(pbs_ids):
+  args = ["qdel"]
+  args.extend(pbs_ids)
+
+  p = subprocess.Popen(args,
+    stdout = subprocess.PIPE,
+    stderr = subprocess.PIPE,
+    close_fds=True)
+  output, err = p.communicate()
+
+  if p.returncode != 0:
+    raise QKillException(err.strip())
+
+
+def qdel_handler(channel, pbsConfig, channel_id, msg):
+  try:
+    pbs_ids = msg['pbs_ids']
+  except KeyError:
+    error(channel, "required field 'pbs_ids' missing from QDEL request", channel_id = channel_id)
+    return
+
+  try:
+    expanded = []
+    if pbsConfig.flavour == 'TORQUE':
+      for pbs_id in pbs_ids:
+        ids = uncompressTORQUEArrayJobs(pbs_id)
+        expanded.extend(ids)
+    else:
+      expanded.extend(pbs_ids)
+    qdel(pbs_ids)
+  except QDelException,e:
+    error(channel,e.message, channel_id = channel_id)
+    return
+
+  send(channel, 'QDEL',
+    channel_id = channel_id,
+    pbs_ids = pbs_ids)
+
+
 def qrls_handler(channel, pbsConfig, channel_id, msg):
   try:
     pbs_id = msg['pbs_id']
   except KeyError:
-    error(channel, "required field 'jobs' missing from QSUB request", channel_id = channel_id)
+    error(channel, "required field 'pbs_id' missing from QRLS request", channel_id = channel_id)
     return
 
   try:
@@ -183,8 +225,6 @@ def qsub_handler(channel, pbsConfig, channel_id, msg):
   send(channel, 'QSUB',
     channel_id = channel_id,
     pbs_id = output.strip())
-
-
 
 def qselect_handler(channel, pbsConfig, channel_id, msg):
   try:
@@ -270,7 +310,8 @@ def remote_exec(channel):
   msghandlers = dict(
     QSUB = qsub_handler,
     QSELECT = qselect_handler,
-    QRLS = qrls_handler)
+    QRLS = qrls_handler,
+    QDEL = qdel_handler)
 
   msg = channel.receive()
 

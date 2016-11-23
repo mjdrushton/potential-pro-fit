@@ -77,8 +77,6 @@ def send_and_compare(ch, sendmsg, expect):
     pause *= 2.0
   assert msg == expect
 
-
-
 def testStartChannel(vagrant_torque, channel_id):
   gw = _mkexecnetgw(vagrant_torque)
   ch = gw.remote_exec(_pbs_remote_exec)
@@ -219,8 +217,48 @@ def testQRls(clearqueue, channel_id):
   finally:
     clch.send(None)
 
-def testQKill(clearqueue, channel_id):
-  assert False
+def testQDel(clearqueue, channel_id):
+  gw = _mkexecnetgw(clearqueue)
+  ch = gw.remote_exec(_pbs_remote_exec)
+
+  ch.send({'msg' : 'START_CHANNEL', 'channel_id' : channel_id})
+  assert 'READY' == ch.receive(1)['msg']
+
+  clch, runjobs = _mkrunjobs(gw, 6)
+  try:
+    ch.send({'msg' : 'QSUB', 'jobs' : [runjobs[0]]})
+    msg = ch.receive(2)
+    pbs_id_1 = msg['pbs_id']
+
+    ch.send({'msg' : 'QSUB', 'jobs' : [runjobs[1],runjobs[2]]})
+    msg = ch.receive(2)
+    pbs_id_2 = msg['pbs_id']
+
+    ch.send({'msg' : 'QSUB', 'jobs' : runjobs[3:]})
+    msg = ch.receive(2)
+    pbs_id_3 = msg['pbs_id']
+
+    expect = {'msg' : 'QSELECT', 'channel_id' : channel_id, 'pbs_ids' : [pbs_id_1, pbs_id_2, pbs_id_3]}
+    send_and_compare(ch, {'msg' : 'QSELECT'}, expect)
+
+    expect = {'msg' : 'QDEL', 'channel_id' : channel_id, 'pbs_ids' : [pbs_id_1, pbs_id_3]}
+    ch.send({'msg' : 'QDEL', 'channel_id' : channel_id, 'pbs_ids' : [pbs_id_1, pbs_id_3]})
+    msg = ch.receive(2)
+    assert expect == msg, msg
+
+    expect = {'msg' : 'QSELECT', 'channel_id' : channel_id, 'pbs_ids' :[pbs_id_2]}
+    send_and_compare(ch, {'msg' : 'QSELECT'}, expect)
+
+    expect = {'msg' : 'QDEL', 'channel_id' : channel_id, 'pbs_ids' : [pbs_id_2]}
+    ch.send({'msg' : 'QDEL', 'pbs_ids' : [pbs_id_2]})
+    msg = ch.receive(2)
+    assert expect == msg, msg
+
+    expect = {'msg' : 'QSELECT', 'channel_id' : channel_id, 'pbs_ids' :[]}
+    send_and_compare(ch, {'msg' : 'QSELECT'}, expect)
+
+  finally:
+    clch.send(None)
 
 def testEndToEnd(clearqueue, channel_id):
   assert False
