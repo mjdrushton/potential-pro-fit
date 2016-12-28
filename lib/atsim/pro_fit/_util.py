@@ -210,7 +210,7 @@ class CallbackRegister(list):
     super(CallbackRegister, self).__init__()
 
   def __call__(self, *args, **kwargs):
-    for cb in self:
+    for cb in list(self):
       if not cb.active:
         continue
       processed = cb(*args, **kwargs)

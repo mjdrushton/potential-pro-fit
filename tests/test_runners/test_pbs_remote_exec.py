@@ -84,7 +84,7 @@ def testStartChannel(vagrant_torque, channel_id):
   msg = ch.receive(1.0)
   assert msg == {
                   'msg' : 'READY', 'channel_id' : channel_id,
-                  'pbs_identify' : {'arrayFlag': '-t', 'flavour': 'TORQUE', 'arrayIDVariable': 'PBS_ARRAYID'}
+                  'pbs_identify' : {'arrayFlag': '-t', 'flavour': 'TORQUE', 'arrayIDVariable': 'PBS_ARRAYID', 'qdelForceFlags' : ['-W', '0']}
                 }
 
 def testHostHasNoPbs(vagrant_basic, channel_id):
@@ -102,11 +102,15 @@ def testPBSIdentify():
   actual = pbsIdentify(versionString)
   assert actual.arrayFlag == "-t"
   assert actual.arrayIDVariable == "PBS_ARRAYID"
+  assert actual.qdelForceFlags == ["-W", "0"]
+  assert actual.flavour == "TORQUE"
 
   versionString = "pbs_version = PBSPro_11.1.0.111761"
   actual = pbsIdentify(versionString)
   assert actual.arrayFlag == "-J"
   assert actual.arrayIDVariable == "PBS_ARRAY_INDEX"
+  assert actual.qdelForceFlags == ["-Wforce"]
+  assert actual.flavour == "PBSPro"
 
 def testQSub(clearqueue, channel_id):
   gw = _mkexecnetgw(clearqueue)
@@ -146,8 +150,8 @@ def testQSubSingleJob(clearqueue, channel_id):
   clch, runjobs = _mkrunjobs(gw, 1)
 
   try:
-    ch.send({'msg' : 'QSUB', 'jobs' : runjobs})
-    expect = {'msg' : 'QSUB', 'pbs_id' : None, 'channel_id' : channel_id}
+    ch.send({'msg' : 'QSUB', 'jobs' : runjobs, 'transaction_id' : '1234'})
+    expect = {'msg' : 'QSUB', 'pbs_id' : None, 'channel_id' : channel_id, 'transaction_id' : '1234'}
     actual = ch.receive(2)
     assert sorted(expect.keys()) == sorted(actual.keys()), actual
     del expect['pbs_id']
@@ -250,7 +254,7 @@ def testQDel(clearqueue, channel_id):
     send_and_compare(ch, {'msg' : 'QSELECT'}, expect)
 
     expect = {'msg' : 'QDEL', 'channel_id' : channel_id, 'pbs_ids' : [pbs_id_2]}
-    ch.send({'msg' : 'QDEL', 'pbs_ids' : [pbs_id_2]})
+    ch.send({'msg' : 'QDEL', 'pbs_ids' : [pbs_id_2], 'force' : True})
     msg = ch.receive(2)
     assert expect == msg, msg
 
@@ -260,5 +264,3 @@ def testQDel(clearqueue, channel_id):
   finally:
     clch.send(None)
 
-def testEndToEnd(clearqueue, channel_id):
-  assert False

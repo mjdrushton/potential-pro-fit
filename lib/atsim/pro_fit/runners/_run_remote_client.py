@@ -153,7 +153,6 @@ class JobRecord(object):
   def pid(self):
     return self._runjobcallback.pid
 
-
   def kill(self):
     """Kill the job.
 

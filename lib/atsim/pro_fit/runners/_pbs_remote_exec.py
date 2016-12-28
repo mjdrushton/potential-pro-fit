@@ -55,10 +55,18 @@ def submission_script(pbsConfig, jobs, header_lines):
     lines.append('JOB_PATH="%s"' % jobs[0])
 
   bodylines = [
-    'cp -r "$JOB_PATH"/* "$TMPDIR"'
+    'if [ -z "$TMPDIR" ];then',
+    ' export TMPDIR="$(mktemp -d)"',
+    ' CLEANTMP=YES',
+    'fi',
+    'JOB_DIR="$(dirname "$JOB_PATH")"',
+    'cp -r "$JOB_DIR"/* "$TMPDIR"',
     'function finish {',
-    '        mkdir "$JOB_PATH/output"',
-    '        cp -r *  "$JOB_PATH/output/"',
+    '        mkdir "$JOB_DIR/output"',
+    '        cp -r *  "$JOB_DIR/output/"',
+    '        if [ -n "$CLEANTMP" ];then',
+    '          rm -rf "$TMPDIR"',
+    '        fi',
     '}',
     'trap finish EXIT',
     'cd "$TMPDIR"',
@@ -134,8 +142,12 @@ def qrls(pbs_ids):
 class QDelException(Exception):
   pass
 
-def qdel(pbs_ids):
+def qdel(pbs_ids, force, pbsConfig):
   args = ["qdel"]
+
+  if force:
+    args.extend(pbsConfig.qdelForceFlags)
+
   args.extend(pbs_ids)
 
   p = subprocess.Popen(args,
@@ -155,6 +167,8 @@ def qdel_handler(channel, pbsConfig, channel_id, msg):
     error(channel, "required field 'pbs_ids' missing from QDEL request", channel_id = channel_id)
     return
 
+  force = msg.get('force', False)
+
   try:
     expanded = []
     if pbsConfig.flavour == 'TORQUE':
@@ -163,12 +177,12 @@ def qdel_handler(channel, pbsConfig, channel_id, msg):
         expanded.extend(ids)
     else:
       expanded.extend(pbs_ids)
-    qdel(pbs_ids)
+    qdel(pbs_ids, force, pbsConfig)
   except QDelException,e:
     error(channel,e.message, channel_id = channel_id)
     return
 
-  send(channel, 'QDEL',
+  transid_send(channel, msg, 'QDEL',
     channel_id = channel_id,
     pbs_ids = pbs_ids)
 
@@ -189,7 +203,7 @@ def qrls_handler(channel, pbsConfig, channel_id, msg):
     error(channel,e.message, channel_id = channel_id)
     return
 
-  send(channel, 'QRLS',
+  transid_send(channel, msg, 'QRLS',
     channel_id = channel_id,
     pbs_id = pbs_id)
 
@@ -211,6 +225,11 @@ def qsub_handler(channel, pbsConfig, channel_id, msg):
   header_lines = msg.get('header_lines', [])
   script = submission_script(pbsConfig, jobs, header_lines)
 
+  # sfile = open('/home/vagrant/submit', 'w')
+  # sfile.write(script)
+  # sfile.flush()
+  # sfile.close()
+
   p = subprocess.Popen(["qsub", "-h"],
     stdin = subprocess.PIPE,
     stdout = subprocess.PIPE,
@@ -222,7 +241,7 @@ def qsub_handler(channel, pbsConfig, channel_id, msg):
     error(channel, err.strip(), channel_id = channel_id)
     return
 
-  send(channel, 'QSUB',
+  transid_send(channel, msg, 'QSUB',
     channel_id = channel_id,
     pbs_id = output.strip())
 
@@ -235,9 +254,9 @@ def qselect_handler(channel, pbsConfig, channel_id, msg):
   if pbsConfig.flavour == 'TORQUE':
     pbs_ids = compressTORQUEArrayJobs(pbs_ids)
 
-  send(channel, 'QSELECT', channel_id = channel_id, pbs_ids = pbs_ids)
+  transid_send(channel, msg, 'QSELECT', channel_id = channel_id, pbs_ids = pbs_ids)
 
-PBSIdentifyRecord = collections.namedtuple("PBSIdentifyRecord", ["arrayFlag", "arrayIDVariable", "flavour"])
+PBSIdentifyRecord = collections.namedtuple("PBSIdentifyRecord", ["arrayFlag", "arrayIDVariable", "qdelForceFlags", "flavour"])
 
 def pbsIdentify(versionString):
   """Given output of qstat --version, return a record containing fields used to configure
@@ -257,6 +276,7 @@ def pbsIdentify(versionString):
     record =  PBSIdentifyRecord(
       arrayFlag = "-J",
       arrayIDVariable = "PBS_ARRAY_INDEX",
+      qdelForceFlags = ["-Wforce"],
       flavour = "PBSPro")
   else:
     #TORQUE
@@ -264,6 +284,7 @@ def pbsIdentify(versionString):
     record = PBSIdentifyRecord(
       arrayFlag = "-t",
       arrayIDVariable = "PBS_ARRAYID",
+      qdelForceFlags = ["-W", "0"],
       flavour = "TORQUE")
 
   logger.debug("pbsIdentify record: %s" % str(record))
@@ -301,6 +322,16 @@ def send(channel, mtype, **kwargs):
   msgdict = dict(msg = mtype)
   msgdict.update(kwargs)
   channel.send(msgdict)
+
+def transid_send(channel, origmsg, mtype, **kwargs):
+  kwargs = dict(kwargs)
+  transid = origmsg.get('transaction_id', None)
+
+  if transid:
+    kwargs['transaction_id'] = transid
+
+  send(channel, mtype, **kwargs)
+
 
 def error(channel, reason, **kwargs):
   send(channel, 'ERROR', reason = reason, **kwargs)

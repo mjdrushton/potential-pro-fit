@@ -23,7 +23,7 @@ class ChannelException(Exception):
 class AbstractChannel(object):
   """Abstract base class for making execnet channels nicer to work with.
 
-  At a minimum vlient code should override the make_start_message() method.
+  At a minimum client code should override the make_start_message() method.
 
   The start_response() method can also be used to customise channel start behaviour.
 
