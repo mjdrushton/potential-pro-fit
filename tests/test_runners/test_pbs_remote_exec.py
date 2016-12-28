@@ -11,9 +11,9 @@ from pytest import fixture
 
 import time
 
-def _mkrunjobs(gw, num):
+def _mkrunjobs(gw, num, numSuffix = False, sleep = None):
 
-  def mkrunjob(channel, num):
+  def mkrunjob(channel, num, numSuffix, sleep):
 
     import tempfile
     import os
@@ -25,14 +25,23 @@ def _mkrunjobs(gw, num):
         os.mkdir(nd)
         filename = os.path.join(nd, 'runjob')
         with open(filename, 'wb') as outfile:
-          print >>outfile, "echo Hello > outfile"
+          if not sleep is None:
+            print >>outfile, "sleep %d" % sleep
+
+
+          if numSuffix:
+            print >>outfile, "echo Hello%d > outfile" % i
+          else:
+            print >>outfile, "echo Hello > outfile"
+
+
         outpaths.append(filename)
       channel.send(outpaths)
       rcv = channel.receive()
     finally:
       import shutil
       shutil.rmtree(tmpdir, ignore_errors = True)
-  ch = gw.remote_exec(mkrunjob, num = num)
+  ch = gw.remote_exec(mkrunjob, num = num, numSuffix = numSuffix, sleep = sleep)
   runjobs = ch.receive()
   return ch, runjobs
 

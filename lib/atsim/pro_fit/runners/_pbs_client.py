@@ -1,6 +1,8 @@
 from atsim.pro_fit._channel import AbstractChannel
 from atsim.pro_fit._util import MultiCallback, CallbackRegister
 
+from _exceptions import JobKilledException
+
 import _pbs_remote_exec
 
 import logging
@@ -12,6 +14,8 @@ from gevent.event import Event
 import itertools
 import uuid
 
+class PBSJobKilledException(JobKilledException):
+  pass
 
 class PBSStateListenerAdapter(object):
 
@@ -43,10 +47,12 @@ class PBSChannel(AbstractChannel):
 class PBSJobRecord(object):
 
   def __init__(self, joblist, callback):
+    self._qscallback = None
     self._joblist = joblist
     self._callback = callback
     self._qsubEvent = Event()
     self._finishEvent = Event()
+    self._killed = False
     self.pbsId = None
 
   @property
@@ -54,12 +60,16 @@ class PBSJobRecord(object):
     return self._qsubEvent
 
   @property
-  def finishEvent(self):
+  def completion_event(self):
     return self._finishEvent
 
   @property
   def callback(self):
     return self._callback
+
+  def kill(self):
+    self._qscallback.kill()
+    return self.completion_event
 
 
 class _QSubCallback(PBSStateListenerAdapter):
@@ -102,8 +112,6 @@ class _QSubCallback(PBSStateListenerAdapter):
     if not self.jobRecord.pbsId in pbsIds:
       return
     self._jobRemoved()
-    # Remove this object as a listener from the _pbsState
-    del self.pbsClient._pbsState.listeners[self.pbsClient._pbsState.listeners.index(self)]
 
   def _jobSeen(self):
     if self.jobReleased:
@@ -118,9 +126,36 @@ class _QSubCallback(PBSStateListenerAdapter):
     self.pbsClient._qrls(transId, self.jobRecord.pbsId)
 
   def _jobRemoved(self):
+    if self.jobRecord._killed:
+      return
+    self._finishJob()
+
+  def _finishJob(self):
+    self._unregisterListeners()
     # Indicate that the job is finished
-    self.jobRecord.callback(None)
-    self.jobRecord.finishEvent.set()
+    exc = None
+
+    if self.jobRecord._killed:
+      exc = PBSJobKilledException()
+
+    self.jobRecord.callback(exc)
+    self.jobRecord.completion_event.set()
+
+  def _unregisterListeners(self):
+    # Remove this object as a listener from the _pbsState
+    del self.pbsClient._pbsState.listeners[self.pbsClient._pbsState.listeners.index(self)]
+
+  def kill(self):
+    self.jobRecord._killed = True
+    if self.jobRecord.pbsId is None:
+      self.jobRecord.qsubEvent.wait(60)
+
+    if self.jobRecord.pbsId:
+      transId = str(uuid.uuid4())
+      self.pbsClient._qdel(transId, self.jobRecord.pbsId)
+
+    self._finishJob()
+
 
 class PBSClient(object):
 
@@ -134,6 +169,7 @@ class PBSClient(object):
     jr = PBSJobRecord(jobList, callback)
     transid = str(uuid.uuid4())
     qsubcallback = _QSubCallback(self, transid, jr)
+    jr._qscallback = qsubcallback
     self._cbregister.append(qsubcallback)
     self._qsub(transid, jobList)
     return jr
@@ -144,6 +180,10 @@ class PBSClient(object):
 
   def _qrls(self, transId, pbsId):
     msg = {'msg' : 'QRLS', 'transaction_id' : transId, 'channel_id' : self.channel.channel_id, 'pbs_id' : pbsId}
+    self.channel.send(msg)
+
+  def _qdel(self, transId, pbsId):
+    msg = {'msg' : 'QDEL', 'transaction_id' : transId, 'channel_id' : self.channel.channel_id, 'pbs_ids' : [pbsId], 'force' : True}
     self.channel.send(msg)
 
   @property

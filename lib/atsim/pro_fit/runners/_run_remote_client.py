@@ -2,6 +2,8 @@
 
 from atsim.pro_fit._channel import AbstractChannel, MultiChannel
 from atsim.pro_fit._util import CallbackRegister, NamedEvent
+from _exceptions import JobKilledException
+
 
 import itertools
 import logging
@@ -168,7 +170,8 @@ class JobAlreadyFinishedException(Exception):
 class JobStartException(Exception):
   pass
 
-class RunJobKilledException(Exception):
+
+class RunJobKilledException(JobKilledException):
   pass
 
 class _RunJobState(gevent.Greenlet):

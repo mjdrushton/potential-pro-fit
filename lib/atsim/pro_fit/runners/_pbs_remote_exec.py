@@ -50,7 +50,7 @@ def submission_script(pbsConfig, jobs, header_lines):
       jobnum = i+1
       line = 'JOB_ARRAY[%d]="%s"' % (jobnum, j)
       lines.append(line)
-    lines.append('JOB_PATH="$JOB_ARRAY[$%s]"' % pbsConfig.arrayIDVariable)
+    lines.append('JOB_PATH="${JOB_ARRAY[$%s]}"' % pbsConfig.arrayIDVariable)
   else:
     lines.append('JOB_PATH="%s"' % jobs[0])
 
