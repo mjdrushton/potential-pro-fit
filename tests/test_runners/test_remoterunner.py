@@ -80,6 +80,7 @@ def testUrlParse():
 def testSingle(runfixture, vagrant_basic):
   import logging
   import sys
+
   runner = _createRunner(runfixture,vagrant_basic, 1)
 
   batch = _runBatch(runner, [runfixture.jobs[0]])

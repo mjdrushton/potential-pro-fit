@@ -25,7 +25,7 @@ class RunChannelException(Exception):
 
 class RunChannel(AbstractChannel):
 
-  _logger = _logger.getChild("RunChannel")
+  _logger = logging.getLogger(__name__).getChild("RunChannel")
 
   def __init__(self, execnet_gw, channel_id = None, shell = "/bin/bash", hardkill_timeout = 60,  connection_timeout = 60):
     """Summary
@@ -61,7 +61,7 @@ class RunChannelFactory(object):
       self.connection_timeout)
 
 class RunChannels(MultiChannel):
-  _logger = _logger.getChild("RunChannels")
+  _logger = logging.getLogger(__name__).getChild("RunChannels")
 
   def __init__(self, execnet_gw, channel_id = None,  shell = "/bin/bash", hardkill_timeout = 60,  connection_timeout = 60, num_channels = _ncpu):
     factory = RunChannelFactory(shell, hardkill_timeout, connection_timeout)
