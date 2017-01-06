@@ -8,22 +8,30 @@ from test_pbs_remote_exec import _mkexecnetgw, clearqueue, _mkrunjobs
 import atsim.pro_fit.runners._pbs_client
 
 from gevent.event import Event
+import gevent
+
+from contextlib import closing
 
 pbs_client = atsim.pro_fit.runners._pbs_client
 
-def _mkclient(channel_id, vagrant_box):
+def _mkchannel(channel_id, vagrant_box):
   gw = _mkexecnetgw(vagrant_box)
   ch = pbs_client.PBSChannel(gw, channel_id)
+  return ch
+
+def _mkclient(channel_id, vagrant_box):
+  ch = _mkchannel(channel_id, vagrant_box)
   client = pbs_client.PBSClient(ch, pollEvery = 0.5)
   return client
 
-def testStartChannel(vagrant_torque, channel_id):
-  client = _mkclient(channel_id, vagrant_torque)
+def testStartChannel(vagrant_torque,):
+  client = _mkclient('testStartChannel', vagrant_torque)
+  client.close()
 
-def testHostHasNoPbs(vagrant_basic, channel_id):
+def testHostHasNoPbs(vagrant_basic):
   try:
-    client = _mkclient(channel_id, vagrant_basic)
-    assert False, "PBSChannelException was not raised"
+    with closing(_mkclient('testHostHasNoPbs', vagrant_basic)) as client:
+      assert False, "PBSChannelException was not raised"
   except ChannelException as e:
     assert e.message.endswith("PBS not found: Could not run 'qselect'")
 
@@ -63,13 +71,13 @@ class QSUBCallback(object):
     self.lastPbsID = None
 
 def testPBSState(clearqueue, channel_id):
-  client = _mkclient(channel_id, clearqueue)
+  channel = _mkchannel(channel_id, clearqueue)
 
   qsubcallback = QSUBCallback()
-  client.channel.callback.append(qsubcallback)
+  channel.callback.append(qsubcallback)
 
   # Instantiate PBSState
-  state = pbs_client.PBSState(client.channel, pollEvery = 1.0)
+  state = pbs_client.PBSState(channel, pollEvery = 1.0)
   listener = JobsChangedListener()
   state.listeners.append(listener)
 
@@ -79,7 +87,7 @@ def testPBSState(clearqueue, channel_id):
   clch, runjobs = _mkrunjobs(gw, 5)
   try:
     assert not state._jobIds
-    client.channel.send({'msg' : 'QSUB', 'jobs' : runjobs[:3]})
+    channel.send({'msg' : 'QSUB', 'jobs' : runjobs[:3]})
     assert qsubcallback.event.wait(10)
     pbs_id_1 = qsubcallback.lastPbsID
     qsubcallback.reset()
@@ -90,7 +98,7 @@ def testPBSState(clearqueue, channel_id):
     assert sorted(listener.newJobs) == sorted([pbs_id_1])
     listener.reset()
 
-    client.channel.send({'msg' : 'QSUB', 'jobs' : runjobs[3:]})
+    channel.send({'msg' : 'QSUB', 'jobs' : runjobs[3:]})
     assert qsubcallback.event.wait(10)
     pbs_id_2 = qsubcallback.lastPbsID
     qsubcallback.reset()
@@ -101,13 +109,13 @@ def testPBSState(clearqueue, channel_id):
     assert sorted(listener.newJobs) == sorted([pbs_id_1, pbs_id_2])
     listener.reset()
 
-    client.channel.send({'msg' : 'QRLS', 'pbs_id' : pbs_id_2 })
+    channel.send({'msg' : 'QRLS', 'pbs_id' : pbs_id_2 })
     assert listener.event.wait(30)
     assert sorted(listener.oldJobs) == sorted([pbs_id_1, pbs_id_2])
     assert sorted(listener.newJobs) == sorted([pbs_id_1])
     listener.reset()
 
-    client.channel.send({'msg' : 'QDEL', 'pbs_ids' : [pbs_id_1] })
+    channel.send({'msg' : 'QDEL', 'pbs_ids' : [pbs_id_1] })
     assert listener.event.wait(30)
     assert sorted(listener.oldJobs) == sorted([pbs_id_1])
     assert sorted(listener.newJobs) == sorted([])
@@ -115,6 +123,7 @@ def testPBSState(clearqueue, channel_id):
 
   finally:
     clch.send(None)
+
 
 def testPBSQStateAddRemovePrivateListener():
   class Listener(pbs_client.PBSStateListenerAdapter):
@@ -188,207 +197,203 @@ class TstCallback(object):
     self.exception = exception
 
 def testPBSClientSingleJob(clearqueue, channel_id):
-  client = _mkclient(channel_id, clearqueue)
-  gw = _mkexecnetgw(clearqueue)
-  clch, runjobs = _mkrunjobs(gw, 1, numSuffix = True)
-  try:
-    j1cb = TstCallback()
-    jr1 = client.runJobs([runjobs[0]], j1cb)
+    gw = _mkexecnetgw(clearqueue)
+    clch, runjobs = _mkrunjobs(gw, 1, numSuffix = True)
+    try:
+      with closing(_mkclient('testPBSClientSingleJob', clearqueue)) as client:
+        j1cb = TstCallback()
+        jr1 = client.runJobs([runjobs[0]], j1cb)
 
-    # Wait for job submission
-    assert jr1.qsubEvent.wait(120)
-    assert len(client._pbsState._jobIds) == 1
-    assert list(client._pbsState._jobIds)[0] == jr1.pbsId
-    # Now wait for the job to complete
-    assert jr1.completion_event.wait(120)
-    assert j1cb.called
-    assert j1cb.exception is None
-    client.close()
+        # Wait for job submission
+        assert jr1.qsubEvent.wait(120)
+        assert len(client._pbsState._jobIds) == 1
+        assert list(client._pbsState._jobIds)[0] == jr1.pbsId
+        # Now wait for the job to complete
+        assert jr1.completion_event.wait(120)
+        assert j1cb.called
+        assert j1cb.exception is None
 
-    # Now check the contents of the output directory
-    ch = gw.remote_exec(chIsDir)
+      # Now check the contents of the output directory
+      ch = gw.remote_exec(chIsDir)
 
-    import posixpath
-    outputdir = posixpath.join(posixpath.dirname(runjobs[0]), "output")
-    ch.send(outputdir)
-    actual = ch.receive()
-    assert actual
+      import posixpath
+      outputdir = posixpath.join(posixpath.dirname(runjobs[0]), "output")
+      ch.send(outputdir)
+      actual = ch.receive()
+      assert actual
 
-    outputpath = posixpath.join(outputdir, "outfile")
-    ch = gw.remote_exec(chIsFile)
-    ch.send(outputpath)
-    actual = ch.receive()
-    assert actual
+      outputpath = posixpath.join(outputdir, "outfile")
+      ch = gw.remote_exec(chIsFile)
+      ch.send(outputpath)
+      actual = ch.receive()
+      assert actual
 
-    ch = gw.remote_exec(chFileContents)
-    ch.send(outputpath)
-    actual = ch.receive()
-    assert actual == "Hello0\n"
-  finally:
-    clch.send(None)
+      ch = gw.remote_exec(chFileContents)
+      ch.send(outputpath)
+      actual = ch.receive()
+      assert actual == "Hello0\n"
+    finally:
+      clch.send(None)
 
 def testPBSClientMultipleJobsInSingleBatch(clearqueue, channel_id):
-  client = _mkclient(channel_id, clearqueue)
-  gw = _mkexecnetgw(clearqueue)
-  clch, runjobs = _mkrunjobs(gw, 3, numSuffix = True)
-  try:
-    j1cb = TstCallback()
-    jr1 = client.runJobs(runjobs, j1cb)
+    gw = _mkexecnetgw(clearqueue)
+    clch, runjobs = _mkrunjobs(gw, 3, numSuffix = True)
+    try:
+      with closing(_mkclient('testPBSClientMultipleJobsInSingleBatch', clearqueue)) as client:
+        j1cb = TstCallback()
+        jr1 = client.runJobs(runjobs, j1cb)
 
-    import pdb;pdb.set_trace()
+        # Wait for job submission
+        assert jr1.qsubEvent.wait(120)
+        assert len(client._pbsState._jobIds) == 1
+        assert list(client._pbsState._jobIds)[0] == jr1.pbsId
+        # Now wait for the job to complete
+        assert jr1.completion_event.wait(120)
+        assert j1cb.called
+        assert j1cb.exception is None
 
-    # Wait for job submission
-    assert jr1.qsubEvent.wait(120)
-    assert len(client._pbsState._jobIds) == 1
-    assert list(client._pbsState._jobIds)[0] == jr1.pbsId
-    # Now wait for the job to complete
-    assert jr1.completion_event.wait(120)
-    assert j1cb.called
-    assert j1cb.exception is None
-    client.close()
+      for i, job in enumerate(runjobs):
+        # Now check the contents of the output directory
+        ch = gw.remote_exec(chIsDir)
 
-    for i, job in enumerate(runjobs):
-      # Now check the contents of the output directory
-      ch = gw.remote_exec(chIsDir)
+        import posixpath
+        outputdir = posixpath.join(posixpath.dirname(job), "output")
+        ch.send(outputdir)
+        actual = ch.receive()
+        assert actual
 
-      import posixpath
-      outputdir = posixpath.join(posixpath.dirname(job), "output")
-      ch.send(outputdir)
-      actual = ch.receive()
-      assert actual
+        outputpath = posixpath.join(outputdir, "outfile")
+        ch = gw.remote_exec(chIsFile)
+        ch.send(outputpath)
+        actual = ch.receive()
+        assert actual
 
-      outputpath = posixpath.join(outputdir, "outfile")
-      ch = gw.remote_exec(chIsFile)
-      ch.send(outputpath)
-      actual = ch.receive()
-      assert actual
-
-      ch = gw.remote_exec(chFileContents)
-      ch.send(outputpath)
-      actual = ch.receive()
-      assert actual == "Hello%d\n" % i
-  finally:
-    clch.send(None)
+        ch = gw.remote_exec(chFileContents)
+        ch.send(outputpath)
+        actual = ch.receive()
+        assert actual == "Hello%d\n" % i
+    finally:
+      clch.send(None)
 
 def testPBSClientMultipleJobsInMultipleBatches(clearqueue, channel_id):
-  client = _mkclient(channel_id, clearqueue)
-  gw = _mkexecnetgw(clearqueue)
-  clch, runjobs = _mkrunjobs(gw, 3, numSuffix = True)
-  try:
-    rj1 = [runjobs[0]]
-    rj2 = runjobs[1:]
+    gw = _mkexecnetgw(clearqueue)
+    clch, runjobs = _mkrunjobs(gw, 3, numSuffix = True)
+    try:
+      with closing(_mkclient('testPBSClientMultipleJobsInMultipleBatches', clearqueue)) as client:
+        rj1 = [runjobs[0]]
+        rj2 = runjobs[1:]
 
-    j1cb = TstCallback()
-    jr1 = client.runJobs(rj1, j1cb)
+        j1cb = TstCallback()
+        jr1 = client.runJobs(rj1, j1cb)
 
-    j2cb = TstCallback()
-    jr2 = client.runJobs(rj2, j2cb)
+        j2cb = TstCallback()
+        jr2 = client.runJobs(rj2, j2cb)
 
-    # Now wait for the job to complete
-    assert jr1.completion_event.wait(120)
-    assert jr2.completion_event.wait(120)
-    assert j1cb.called
-    assert j1cb.exception is None
-    assert j2cb.called
-    assert j2cb.exception is None
-    client.close()
+        # Now wait for the job to complete
+        # assert jr1.completion_event.wait(120)
+        # assert jr2.completion_event.wait(120)
+        gevent.wait([jr1.completion_event, jr2.completion_event], 120)
+        assert j1cb.called
+        assert j1cb.exception is None
+        assert j2cb.called
+        assert j2cb.exception is None
 
-    for i, job in enumerate(runjobs):
-      # Now check the contents of the output directory
-      ch = gw.remote_exec(chIsDir)
+      for i, job in enumerate(runjobs):
+        # Now check the contents of the output directory
+        ch = gw.remote_exec(chIsDir)
 
-      import posixpath
-      outputdir = posixpath.join(posixpath.dirname(job), "output")
-      ch.send(outputdir)
-      actual = ch.receive()
-      assert actual
+        import posixpath
+        outputdir = posixpath.join(posixpath.dirname(job), "output")
+        ch.send(outputdir)
+        actual = ch.receive()
+        assert actual
 
-      outputpath = posixpath.join(outputdir, "outfile")
-      ch = gw.remote_exec(chIsFile)
-      ch.send(outputpath)
-      actual = ch.receive()
-      assert actual
+        outputpath = posixpath.join(outputdir, "outfile")
+        ch = gw.remote_exec(chIsFile)
+        ch.send(outputpath)
+        actual = ch.receive()
+        assert actual
 
-      ch = gw.remote_exec(chFileContents)
-      ch.send(outputpath)
-      actual = ch.receive()
-      assert actual == "Hello%d\n" % i
-  finally:
-    clch.send(None)
+        ch = gw.remote_exec(chFileContents)
+        ch.send(outputpath)
+        actual = ch.receive()
+        assert actual == "Hello%d\n" % i
+    finally:
+      clch.send(None)
 
 def testPBSClientKillJob(clearqueue, channel_id):
-  client = _mkclient(channel_id, clearqueue)
-  gw = _mkexecnetgw(clearqueue)
-  clch1, rj1 = _mkrunjobs(gw, 1, numSuffix = True, sleep = None)
-  clch2, rj2 = _mkrunjobs(gw, 3, numSuffix = True, sleep = 4)
-
-  try:
-
-    #TODO: Test after qsub but before pbsId received.
-    #TODO: Test after qsub but before qrls
-    #TODO: Test after qrls
-    #TODO: Test after job finished.
-
-
-    j1cb = TstCallback()
-    jr1 = client.runJobs(rj1, j1cb)
-
-    j2cb = TstCallback()
-    jr2 = client.runJobs(rj2, j2cb)
-
-    killEvent = jr2.kill()
-
-    assert killEvent.wait(60)
-    assert jr1.completion_event.wait(60)
-    assert j1cb.called
-    assert j1cb.exception is None
-    assert j2cb.called
+    gw = _mkexecnetgw(clearqueue)
+    clch1, rj1 = _mkrunjobs(gw, 1, numSuffix = True, sleep = None)
+    clch2, rj2 = _mkrunjobs(gw, 3, numSuffix = True, sleep = 4)
 
     try:
-      raise j2cb.exception
-    except pbs_client.PBSJobKilledException:
-      pass
 
-    client.close()
+      with closing(_mkclient('testPBSClientKillJob', clearqueue)) as client:
+        #TODO: Test after qsub but before pbsId received.
+        #TODO: Test after qsub but before qrls
+        #TODO: Test after qrls
+        #TODO: Test after job finished.
 
-    for i, job in enumerate(rj1):
-      # Now check the contents of the output directory
-      ch = gw.remote_exec(chIsDir)
 
-      import posixpath
-      outputdir = posixpath.join(posixpath.dirname(job), "output")
-      ch.send(outputdir)
-      actual = ch.receive()
-      assert actual
+        j1cb = TstCallback()
+        jr1 = client.runJobs(rj1, j1cb)
 
-      outputpath = posixpath.join(outputdir, "outfile")
-      ch = gw.remote_exec(chIsFile)
-      ch.send(outputpath)
-      actual = ch.receive()
-      assert actual
+        j2cb = TstCallback()
+        jr2 = client.runJobs(rj2, j2cb)
 
-      ch = gw.remote_exec(chFileContents)
-      ch.send(outputpath)
-      actual = ch.receive()
-      assert actual == "Hello%d\n" % i
+        killEvent = jr2.kill()
 
-    for i, job in enumerate(rj2):
-      # Now check the contents of the output directory
-      ch = gw.remote_exec(chIsDir)
+        assert killEvent.wait(60)
+        assert jr1.completion_event.wait(60)
+        assert j1cb.called
+        assert j1cb.exception is None
+        assert j2cb.called
 
-      import posixpath
-      outputdir = posixpath.join(posixpath.dirname(job), "output")
-      ch.send(outputdir)
-      actual = ch.receive()
-      assert actual
+        try:
+          raise j2cb.exception
+        except pbs_client.PBSJobKilledException:
+          pass
 
-      outputpath = posixpath.join(outputdir, "outfile")
-      ch = gw.remote_exec(chIsFile)
-      ch.send(outputpath)
-      actual = ch.receive()
-      assert not actual
+      # client.close()
 
-  finally:
-    clch1.send(None)
-    clch2.send(None)
+      for i, job in enumerate(rj1):
+        # Now check the contents of the output directory
+        ch = gw.remote_exec(chIsDir)
+
+        import posixpath
+        outputdir = posixpath.join(posixpath.dirname(job), "output")
+        ch.send(outputdir)
+        actual = ch.receive()
+        assert actual
+
+        outputpath = posixpath.join(outputdir, "outfile")
+        ch = gw.remote_exec(chIsFile)
+        ch.send(outputpath)
+        actual = ch.receive()
+        assert actual
+
+        ch = gw.remote_exec(chFileContents)
+        ch.send(outputpath)
+        actual = ch.receive()
+        assert actual == "Hello%d\n" % i
+
+      for i, job in enumerate(rj2):
+        # Now check the contents of the output directory
+        ch = gw.remote_exec(chIsDir)
+
+        import posixpath
+        outputdir = posixpath.join(posixpath.dirname(job), "output")
+        ch.send(outputdir)
+        actual = ch.receive()
+        assert actual
+
+        outputpath = posixpath.join(outputdir, "outfile")
+        ch = gw.remote_exec(chIsFile)
+        ch.send(outputpath)
+        actual = ch.receive()
+        assert not actual
+
+    finally:
+      clch1.send(None)
+      clch2.send(None)
 

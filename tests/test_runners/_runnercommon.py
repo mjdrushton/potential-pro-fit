@@ -13,8 +13,6 @@ from pytest import fixture
 
 import execnet
 
-from assertpy import assert_that
-
 DIR = 0
 FILE = 1
 
@@ -32,7 +30,7 @@ def _compareDir(path):
     actual.append((f, m))
   return actual
 
-def runnertestjob(runfixture, jobid):
+def runnertestjob(runfixture, jobid, expectstderr_stdout = False):
   """Test running a single job"""
 
   job_path = runfixture.jobs[jobid].path
@@ -54,6 +52,8 @@ def runnertestjob(runfixture, jobid):
            ('STATUS', FILE),
            ('runner_files_contents', FILE),
            ('output.res', FILE)]
+  if expectstderr_stdout:
+    expect.extend([('STDOUT', FILE), ('STDERR', FILE)])
 
   output_dir = os.path.join(jfdir, 'output')
   actual = _compareDir(output_dir)

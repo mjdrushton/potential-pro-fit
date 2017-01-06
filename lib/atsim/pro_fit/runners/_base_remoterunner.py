@@ -180,6 +180,7 @@ class BaseRemoteRunner(object):
     self._cleanupClient = filetransfer.CleanupClient(self._cleanupChannel)
 
   def initialiseRun(self):
+    """Set up classes associated with any client required to process run files."""
     pass
 
   def runBatch(self, jobs):

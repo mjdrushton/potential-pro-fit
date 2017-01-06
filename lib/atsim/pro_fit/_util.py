@@ -192,7 +192,6 @@ class MultiCallback(list):
     if kwargs.has_key('retLast'):
       self.retLast = kwargs['retLast']
 
-
   def __call__(self, *args, **kwargs):
     retvals = []
     for cb in self:

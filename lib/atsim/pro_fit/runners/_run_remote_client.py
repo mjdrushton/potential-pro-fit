@@ -192,7 +192,6 @@ class _RunJobState(gevent.Greenlet):
 
   def _run(self):
     gevent.wait(objects = [self.readyEvent, self.killEvent], count = 1)
-    # import pdb;pdb.set_trace()
     try:
       if self.killEvent.is_set():
         self.cancelJobBeforeRun()

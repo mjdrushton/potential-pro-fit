@@ -68,7 +68,9 @@ class PBSJobRecord(object):
     return self._callback
 
   def kill(self):
-    self._qscallback.kill()
+    if not self._killed:
+      self._qscallback.kill()
+    self._killed = True
     return self.completion_event
 
 
@@ -190,40 +192,38 @@ class PBSClient(object):
   def channel(self):
     return self._channel
 
-  def close(self):
+  def close(self, closeChannel = True):
     self._pbsState.close()
 
-
-class _QSelectLoop(Greenlet):
-
-  def __init__(self, pbsState):
-    Greenlet.__init__(self)
-    self.pbsState = pbsState
-
-  def _run(self):
-    while True:
-      self.pbsState._qselect()
-      gevent.sleep(self.pbsState._pollEvery)
+    if closeChannel:
+      self.channel.close()
 
 
 class _PBSStateQSelectCallback(object):
 
   def __init__(self, pbsState):
     self._pbsState = pbsState
-
+    self._transId = str(uuid.uuid4())
 
   def __call__(self, msg):
-    print msg
     try:
       mtype = msg.get('msg', None)
     except:
       return
 
-    if mtype != 'QSELECT':
+    if mtype != 'QSELECT' or msg.get('transaction_id', None) != self._transId:
       return
 
     pbs_ids = msg.get('pbs_ids', [])
     self._pbsState._updateJobIds(pbs_ids)
+
+    def qselect_later():
+      try:
+        self._pbsState._qselect(self._transId)
+      except IOError:
+        pass
+
+    gevent.spawn_later(self._pbsState._pollEvery, qselect_later)
 
 class PBSState(object):
 
@@ -234,25 +234,22 @@ class PBSState(object):
     self._privatelisteners.append(_AddRemoveListener(self._listeners))
     self._jobIds = set()
     self._pollEvery = pollEvery
-    self._pollingGreenlet = None
     self._cb = None
 
     # Register msg callback with the pbsChannel
     self._registerChannelCallback()
-
-    # Start the timer loop
-    self._startTimerLoop()
+    self._qselect(self._cb._transId)
 
   def _registerChannelCallback(self):
     self._cb = _PBSStateQSelectCallback(self)
     self._channel.callback.append(self._cb)
 
-  def _startTimerLoop(self):
-    self._pollingGreenlet = _QSelectLoop(self)
-    self._pollingGreenlet.start()
-
-  def _qselect(self):
+  def _qselect(self, transId = None):
     msg = {'msg' : 'QSELECT', 'channel_id' : self._channel.channel_id}
+
+    if transId:
+      msg['transaction_id'] = transId
+
     self._channel.send(msg)
 
   def _updateJobIds(self, newJobIds):
@@ -262,7 +259,7 @@ class PBSState(object):
     self._jobIds = newJobIds
 
     if oldJobIds != newJobIds:
-      for l in self._allListeners:
+      for l in list(self._allListeners):
         l.jobsChanged(oldJobIds, newJobIds)
 
   @property
@@ -277,9 +274,6 @@ class PBSState(object):
     return jobId in self._jobIds
 
   def close(self):
-    if not self._pollingGreenlet is None:
-      self._pollingGreenlet.kill()
-
     if not self._cb is None:
       del self._channel.callback[self._channel.callback.index(self._cb)]
 
@@ -300,11 +294,11 @@ class _AddRemoveListener(PBSStateListenerAdapter):
       self.jobsAdded(jobsAdded)
 
   def jobsAdded(self, pbsIds):
-    for l in self._listeners:
+    for l in list(self._listeners):
       l.jobsAdded(pbsIds)
 
   def jobsRemoved(self, pbsIds):
-    for l in self._listeners:
+    for l in list(self._listeners):
       l.jobsRemoved(pbsIds)
 
 

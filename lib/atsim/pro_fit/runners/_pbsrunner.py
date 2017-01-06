@@ -1,175 +1,101 @@
+from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit import filetransfer
+
+from atsim.pro_fit._util import NamedEvent
+from _util import BatchNameIterator
+from _exceptions import RunnerClosedException
+from _pbs_client import PBSChannel, PBSClient
+
+from atsim.pro_fit.filetransfer import UploadHandler, DownloadHandler
+
+from atsim.pro_fit import _execnet
 import execnet
-import os
-import collections
-import threading
-import posixpath
+
+import gevent
+import gevent.event
+
+import itertools
 import logging
+import posixpath
 import uuid
+import traceback
+import sys
+import os
 
-import jinja2
+from _base_remoterunner import BaseRemoteRunner
+from _pbsrunner_batch import PBSRunnerBatch
 
-from _remote_common import RemoteRunnerBase, _copyFilesFromRemote
-import atsim.pro_fit._execnet as _execnet
-from atsim.pro_fit._execnet import EXECNET_TERM_TIMEOUT
-
-class PBSRunnerFuture(threading.Thread):
-  """Joinable future object as returned by PBSRunner.runBatch()"""
-
-  def __init__(self, name, execnetURL, remotePath, batchDir, localToRemotePathTuples, pbsJobId, pbsIdentify):
-    """@param name Name future
-    @param execnetURL URL used to create execnet gateway.
-    @param remotePath Base directory for batches on remote server
-    @param batchDir Name of batch directory for batch belonging to this future
-    @param localToRemotePathTuples Pairs of localPath, remotePath tuples for each job
-    @param pbsIdentify PBSIdentifyRecord giving the flavour of PBS we're working with"""
-    threading.Thread.__init__(self)
-    self._remotePath = remotePath
-    self._batchDir = batchDir
-    self._gwurl = execnetURL
-    self._localToRemotePathTuples = localToRemotePathTuples
-    self._pollWait = 5.0
-    self._pbsJobId = pbsJobId
-    self._pbsIdentify = pbsIdentify
-
-  def run(self):
-    # Monitor file completion
-    import time
-    group = _execnet.Group()
-    group.defaultspec = self._gwurl
-    gw = group.makegateway()
-
-    everSeen = False
-    try:
-      channel = gw.remote_exec(_execnet._monitorRun)
-      while True:
-        channel.send(self._pbsJobId)
-        jobStatus = channel.receive()
-        if not jobStatus and everSeen:
-          # Job not running anymore return.
-          break
-
-        if jobStatus and not everSeen:
-          # Release the hold on the job
-          everSeen = True
+EXECNET_TERM_TIMEOUT=10
 
 
-          qrls_channel = gw.remote_exec(self._qrls)
-          qrls_channel.send(self._pbsJobId)
-          retcode = qrls_channel.receive()
-          qrls_channel.waitclose()
+class InnerPBSRunner(BaseRemoteRunner):
+  """Runner class held by PBSRunner that does all the work."""
 
-        time.sleep(self._pollWait)
-      # Close the channel
-      channel.send(None)
-      channel.waitclose()
+  def __init__(self, name, url, pbsinclude,  pbsbatch_size, qselect_poll_interval,  identityfile = None, extra_ssh_options = []):
+    self.pbsinclude = pbsinclude
+    self.pbsqselect_poll_interval = qselect_poll_interval
+    self.pbsbatch_size = pbsbatch_size
+    self._logger = logging.getLogger(__name__).getChild("InnerPBSRunner")
+    super(InnerPBSRunner, self).__init__(name, url, identityfile, extra_ssh_options)
 
-      # Copy files back
-      _copyFilesFromRemote(gw, self._remotePath, self._batchDir, self._localToRemotePathTuples)
-    finally:
-      group.terminate(EXECNET_TERM_TIMEOUT)
+  def initialiseRun(self):
+    channel_id = self._uuid + "_pbs"
+    self._pbschannel = PBSChannel(self._gw, channel_id)
+    self._pbsclient = PBSClient(self._pbschannel, pollEvery = self.pbsqselect_poll_interval)
 
-  @property
-  def _qrls(self):
-    if self._pbsIdentify.flavour == "TORQUE":
-      return _execnet._qrls_torque
-    else:
-      return _execnet._qrls_pbs
+  def createBatch(self, batchDir, jobs, batchId):
+    return PBSRunnerBatch(self, batchDir, jobs, batchId, self._pbsclient)
 
-class PBSRunnerException(Exception):
-  pass
+
 
 class PBSRunner(object):
   """Runner that allows a remote PBS queuing system to be used to run jobs.
 
   SSH is used to communicate with server to submit jobs and copy files."""
 
-  logger = logging.getLogger("atsim.pro_fit.runners.PBSRunner")
+  def __init__(self, name, url, pbsinclude, qselect_poll_interval = 10.0, pbsbatch_size = None, identityfile = None, extra_ssh_options = []):
+    """Create PBSRunner instance
 
-  def __init__(self, name, url, pbsinclude, identifyRecord, identityfile=None, extra_ssh_options = []):
-    """Create PBSRunnner instance.
-
-    @param name Name of runner
-    @param url Host and remote directory of remote host where jobs should be run in the form ssh://[username@]host/remote_path
-    @param pbsinclude String that will be inserted at top of PBS submission script, this can be used to customise job requirements.
-    @param identifyRecord PBSIdentifyRecord customising runner to different flavours of PBS.
-    @param identityfile Path of a private key to be used with this runner's SSH transport. If None, the default's used by
-                      the platform's ssh command are used.
-    @param extra_ssh_options List of (key,value) tuples that are added to the ssh_config file used when making ssh connections."""
-    super(PBSRunner, self).__init__(name, url, identityfile, extra_ssh_options)
-    self.name = name
-    self._i = 0
-    self.pbsinclude = pbsinclude
-    self._identifyRecord = identifyRecord
-
-  def _createExtraFiles(self, tempdir, batchdir, localToRemotePathTuples):
-    """Add submit.sh file to the temporary directory that will be used to create a
-    PBS array job."""
-    loader = jinja2.PackageLoader("atsim.pro_fit.runners", "templates")
-    env = jinja2.Environment(loader = loader)
-    submit_template = env.get_template("submit.sh")
-    uuid_template = env.get_template("uuid")
-    uuid_val = uuid.uuid4()
-
-    templatevars = dict(
-      submissionpath = posixpath.join(self.remotePath, batchdir),
-      arrayFlag = self._identifyRecord.arrayFlag,
-      arrayStart = 1,
-      arrayEnd = len(localToRemotePathTuples),
-      localToRemotePathTuples = localToRemotePathTuples,
-      arrayIDVariable = self._identifyRecord.arrayIDVariable,
-      uuid = uuid_val)
-
-    wd = os.path.join(tempdir, batchdir)
-
-    with open(os.path.join(wd, "submit.sh"), "wb") as submission:
-      submission.write(submit_template.render(templatevars))
-
-    with open(os.path.join(wd, "uuid"), "wb") as uuidfile:
-      uuidfile.write(uuid_template.render(templatevars))
+    Args:
+        name (str): Name of runner
+        url (str): Host and remote directory of remote host where jobs should be run in the form ssh://[username@]host/remote_path
+        pbsinclude (str): String that will be inserted at top of PBS submission script, this can be used to customise job requirements.
+        qselect_poll_interval (float, optional): qselect will be polled using this interval (seconds).
+        pbsbatch_size (None, optional): Maximum number of jobs (i.e. PBS array size). Qsub is invoked when files have been uploaded for this number of jobs.
+                                        If this argument is `None` then all the jobs for a particular pprofit batch will be included in the same array job.
+        identityfile (str, optional): Path of a private key to be used with this runner's SSH transport. If None, the default's used by
+                                       the platform's ssh command are used.
+        extra_ssh_options (list, optional): List of (key,value) tuples that are added to the ssh_config file used when making ssh connections.
+    """
+    self._inner = InnerPBSRunner(name,
+      url,
+      pbsinclude,
+      pbsbatch_size,
+      qselect_poll_interval,
+      identityfile,
+      extra_ssh_options)
 
   def runBatch(self, jobs):
     """Run job batch and return a job future that can be joined.
 
-    @param jobs List of job instances as created by a JobFactory
-    @return RemoteRunnerFuture a job future that supports .join() to block until completion"""
-    # Copy job files and minimal jobs
-    self.logger.debug("runBatch() called.")
-    self._gwgroup = _execnet.Group()
-    self._gwgroup.defaultspec = self.gwurl
-    try:
-      gw = self._gwgroup.makegateway()
-      batchdir, localToRemotePathTuples,minimalJobs = self._prepareJobs(gw, jobs)
-      # ... finally create the batch job future.
-      self._i += 1
-      channel = gw.remote_exec(_execnet._submitRun)
-      channel.send(('submit', {'batchdir': posixpath.join(self.remotePath, batchdir)}))
-      msg, msgdata = channel.receive()
-      channel.waitclose()
-      if msg != "submit_okay":
-        raise PBSRunnerException("Job submission failed: %s" % msgdata)
+    Args:
+        jobs (): List of `atsim.pro_fit.jobfactories.Job` as created by a JobFactory.
 
-      self.logger.debug("runBatch() submission okay. Received: (%s,%s)" % (msg,msgdata))
+    Returns:
+        object: An object that supports .join() which when joined will block until batch completion """
+    return self._inner.runBatch(jobs)
 
-      pbsJobId = msgdata['pbsJobId']
+  def close(self):
+    """Shuts down the runner
 
-      #Take leading number from job
-      import re
-      pbsJobId = re.match(r'^([0-9]+).*$', pbsJobId).groups()[0]
-      self.logger.debug("runBatch() pbsJobId: %s" % pbsJobId)
+    Returns:
+      gevent.event.Event: Event that will be set() once shutdown has been completed.
+    """
+    return self._inner.close()
 
-      #Create future
-      future = PBSRunnerFuture(self.name+str(self._i),
-          self.gwurl,
-          self.remotePath,
-          batchdir,
-          localToRemotePathTuples,
-          pbsJobId,
-          self._identifyRecord)
-      future.start()
-      return future
-    finally:
-      self._gwgroup.terminate(EXECNET_TERM_TIMEOUT)
-
+  @property
+  def name(self):
+    return self._inner.name
 
   @staticmethod
   def createFromConfig(runnerName, fitRootPath, cfgitems):
@@ -234,4 +160,5 @@ class PBSRunner(object):
       except IOError:
         raise ConfigException("Could not open file specified by 'pbsinclude' directive: %s" % pbsinclude)
 
-    return PBSRunner(runnerName, remotehost, pbsinclude, identifyRecord)
+    return PBSRunner(runnerName, remotehost, pbsinclude)
+
