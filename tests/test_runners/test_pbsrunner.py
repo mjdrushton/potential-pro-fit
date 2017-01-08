@@ -1,6 +1,7 @@
 
 import logging
 import sys
+import os
 
 from ..testutil import vagrant_torque
 from _runnercommon import runfixture, DIR, FILE, runnertestjob
@@ -8,6 +9,12 @@ from _runnercommon import runfixture, DIR, FILE, runnertestjob
 from atsim import pro_fit
 
 from atsim.pro_fit.runners._pbsrunner_batch import PBSRunnerJobRecord
+from atsim.pro_fit.runners._pbs_client import PBSChannel
+
+from test_pbs_remote_exec import _mkexecnetgw, clearqueue
+from test_pbs_client import chIsDir
+
+import gevent
 
 def _createRunner(runfixture, vagrantbox, sub_batch_size):
   username = vagrantbox.user()
@@ -43,15 +50,303 @@ def _createRunner(runfixture, vagrantbox, sub_batch_size):
 def _runBatch(runner, jobs):
   return runner.runBatch(jobs)
 
-def testTerminate():
-  """Test runner's .terminate() method."""
-  assert(False)
+def _remoteIsDir(gw, path):
+  ch = gw.remote_exec(chIsDir)
+  ch.send(path)
+  return ch.receive()
 
-def testClose():
-  """Test runner's .close() method."""
-  assert(False)
+def waitcb(f):
+    while not f._submittedPBSRecords:
+      gevent.sleep(1)
 
-def tstSingleBatch(runfixture, vagrant_torque, sub_batch_size):
+
+def testBatchTerminate(clearqueue, runfixture):
+  """Test batch .terminate() method."""
+
+  # Make some sleepy jobs
+  for j in runfixture.jobs:
+    with open(os.path.join(j.path, 'job_files', 'runjob'), 'a') as runjob:
+      runjob.write("sleep 1200\n")
+
+  runner = _createRunner(runfixture, clearqueue, None)
+  indyrunner = _createRunner(runfixture, clearqueue, None)
+
+  f1 = runner.runBatch(runfixture.jobs[:6])
+  f2 = runner.runBatch(runfixture.jobs[6:8])
+
+  # Create a second runner to make sure that closing one runner doesn't affect the other.
+  if3 = indyrunner.runBatch(runfixture.jobs[8:])
+
+  assert gevent.wait([
+    gevent.spawn(waitcb, f1),
+    gevent.spawn(waitcb, f2),
+    gevent.spawn(waitcb, if3)],60)
+
+  jr1 = f1._submittedPBSRecords[0]
+  jr2 = f2._submittedPBSRecords[0]
+  ij3 = if3._submittedPBSRecords[0]
+
+  assert jr1.pbs_submit_event.wait(60)
+  assert jr1.pbsId
+
+  assert jr2.pbs_submit_event.wait(60)
+  assert jr2.pbsId
+
+  assert ij3.pbs_submit_event.wait(60)
+  assert ij3.pbsId
+
+  gevent.sleep(0)
+
+  jr1_id = jr1.pbsId
+  jr2_id = jr2.pbsId
+
+  # Spin up a pbs_channel and check we can see the two jobs
+  gw = _mkexecnetgw(clearqueue)
+  ch = PBSChannel(gw, 'check_channel', nocb = True)
+  try:
+    def qsel():
+      ch.send({'msg': 'QSELECT'})
+      msg = ch.next()
+      assert 'QSELECT' == msg.get('msg', None)
+      running_pbsids = set(msg['pbs_ids'])
+      return running_pbsids
+
+    pbsids = set([jr1.pbsId, jr2.pbsId])
+    running_pbsids = qsel()
+    assert pbsids.issubset(running_pbsids)
+    assert pbsids != running_pbsids
+
+    # Check the job directories exist
+    for j in f1.jobs:
+      assert _remoteIsDir(gw, j.remotePath)
+
+    for j in f2.jobs:
+      assert _remoteIsDir(gw, j.remotePath)
+
+    for j in if3.jobs:
+      assert _remoteIsDir(gw, j.remotePath)
+
+
+    # Now close the second batch
+    closevent = f2.terminate()
+    assert closevent.wait(60)
+    attempts = 5
+    delay = 1
+    for i in xrange(5):
+      try:
+        assert qsel() == set([jr1.pbsId, ij3.pbsId])
+      except AssertionError:
+        if i == attempts - 1:
+          raise
+        else:
+          gevent.sleep(delay)
+          delay *= 2.0
+
+    # Check the job directories exist
+    for j in f1.jobs:
+      assert _remoteIsDir(gw, j.remotePath)
+
+    for j in f2.jobs:
+      assert not _remoteIsDir(gw, j.remotePath)
+
+    for j in if3.jobs:
+      assert _remoteIsDir(gw, j.remotePath)
+
+    # Now close the first batch
+    closevent = f1.terminate()
+    assert closevent.wait(60)
+    attempts = 5
+    delay = 1
+    for i in xrange(5):
+      try:
+        assert qsel() == set([ij3.pbsId])
+      except AssertionError:
+        if i == attempts - 1:
+          raise
+        else:
+          gevent.sleep(delay)
+          delay *= 2.0
+
+    # Check the job directories exist
+    for j in f1.jobs:
+      assert not _remoteIsDir(gw, j.remotePath)
+
+    for j in f2.jobs:
+      assert not _remoteIsDir(gw, j.remotePath)
+
+    for j in if3.jobs:
+      assert _remoteIsDir(gw, j.remotePath)
+
+    # Now close the second runner's batch
+    closevent = if3.terminate()
+    assert closevent.wait(60)
+
+    closevent = f1.terminate()
+    assert closevent.wait(60)
+    attempts = 5
+    delay = 1
+    for i in xrange(5):
+      try:
+        assert qsel() == set()
+      except AssertionError:
+        if i == attempts - 1:
+          raise
+        else:
+          gevent.sleep(delay)
+          delay *= 2.0
+
+    # Check the job directories exist
+    for j in f1.jobs:
+      assert not _remoteIsDir(gw, j.remotePath)
+
+    for j in f2.jobs:
+      assert not _remoteIsDir(gw, j.remotePath)
+
+    for j in if3.jobs:
+      assert not _remoteIsDir(gw, j.remotePath)
+
+  finally:
+    ch.send(None)
+
+def testRunnerClose(clearqueue, runfixture):
+  """Test batch .terminate() method."""
+
+  # Make some sleepy jobs
+
+  # root = logging.getLogger()
+  # root.setLevel(logging.DEBUG)
+
+  # ch = logging.StreamHandler(sys.stdout)
+  # ch.setLevel(logging.DEBUG)
+  # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+  # ch.setFormatter(formatter)
+  # root.addHandler(ch)
+
+  for j in runfixture.jobs:
+    with open(os.path.join(j.path, 'job_files', 'runjob'), 'a') as runjob:
+      runjob.write("sleep 1200\n")
+
+  runner = _createRunner(runfixture, clearqueue, None)
+  indyrunner = _createRunner(runfixture, clearqueue, None)
+
+  f1 = runner.runBatch(runfixture.jobs[:6])
+  f2 = runner.runBatch(runfixture.jobs[6:8])
+
+  # Create a second runner to make sure that closing one runner doesn't affect the other.
+  if3 = indyrunner.runBatch(runfixture.jobs[8:])
+
+  assert gevent.wait([
+    gevent.spawn(waitcb, f1),
+    gevent.spawn(waitcb, f2),
+    gevent.spawn(waitcb, if3)],60)
+
+  jr1 = f1._submittedPBSRecords[0]
+  jr2 = f2._submittedPBSRecords[0]
+  ij3 = if3._submittedPBSRecords[0]
+
+  assert jr1.pbs_submit_event.wait(60)
+  assert jr1.pbsId
+
+  assert jr2.pbs_submit_event.wait(60)
+  assert jr2.pbsId
+
+  assert ij3.pbs_submit_event.wait(60)
+  assert ij3.pbsId
+
+  gevent.sleep(0)
+
+  jr1_id = jr1.pbsId
+  jr2_id = jr2.pbsId
+
+  # Spin up a pbs_channel and check we can see the two jobs
+  gw = _mkexecnetgw(clearqueue)
+  ch = PBSChannel(gw, 'check_channel', nocb = True)
+  try:
+    def qsel():
+      ch.send({'msg': 'QSELECT'})
+      msg = ch.next()
+      assert 'QSELECT' == msg.get('msg', None)
+      running_pbsids = set(msg['pbs_ids'])
+      return running_pbsids
+
+    pbsids = set([jr1.pbsId, jr2.pbsId])
+    running_pbsids = qsel()
+    assert pbsids.issubset(running_pbsids)
+    assert pbsids != running_pbsids
+
+    # Check the job directories exist
+    for j in f1.jobs:
+      assert _remoteIsDir(gw, j.remotePath)
+
+    for j in f2.jobs:
+      assert _remoteIsDir(gw, j.remotePath)
+
+    for j in if3.jobs:
+      assert _remoteIsDir(gw, j.remotePath)
+
+
+    # Now close the runner
+    closevent = runner.close()
+    assert closevent.wait(60)
+    attempts = 5
+    delay = 5
+    for i in xrange(5):
+      try:
+        assert qsel() == set([ij3.pbsId])
+      except AssertionError:
+        if i == attempts - 1:
+          import pdb;pdb.set_trace()
+          raise
+        else:
+          gevent.sleep(delay)
+          delay *= 2.0
+
+    # Check the job directories exist
+    for j in f1.jobs:
+      assert not _remoteIsDir(gw, j.remotePath)
+
+    for j in f2.jobs:
+      assert not _remoteIsDir(gw, j.remotePath)
+
+    for j in if3.jobs:
+      assert _remoteIsDir(gw, j.remotePath)
+
+    # Now close the first batch
+    closevent = f1.terminate()
+    assert closevent.wait(60)
+    attempts = 5
+    delay = 1
+    for i in xrange(5):
+      try:
+        assert qsel() == set([ij3.pbsId])
+      except AssertionError:
+        if i == attempts - 1:
+          raise
+        else:
+          gevent.sleep(delay)
+          delay *= 2.0
+
+    # Check the job directories exist
+    for j in f1.jobs:
+      assert not _remoteIsDir(gw, j.remotePath)
+
+    for j in f2.jobs:
+      assert not _remoteIsDir(gw, j.remotePath)
+
+    for j in if3.jobs:
+      assert _remoteIsDir(gw, j.remotePath)
+
+
+    try:
+      runner._inner._pbschannel.send({'msg' : 'QSELECT'})
+      assert False, "IOError not raised"
+    except IOError:
+      pass
+
+  finally:
+    ch.send(None)
+
+def _tstSingleBatch(runfixture, vagrant_torque, sub_batch_size):
   # root = logging.getLogger()
   # root.setLevel(logging.DEBUG)
 
@@ -65,18 +360,17 @@ def tstSingleBatch(runfixture, vagrant_torque, sub_batch_size):
   for job in runfixture.jobs:
     runnertestjob(runfixture, job.variables.id, True)
 
-def testAllInSingleBatch(runfixture, vagrant_torque):
-  tstSingleBatch(runfixture, vagrant_torque, None)
+def testAllInSingleBatch(runfixture, clearqueue):
+  _tstSingleBatch(runfixture, clearqueue, None)
 
-def testAllInSingleBatch_sub_batch_size_1(runfixture, vagrant_torque):
-  tstSingleBatch(runfixture, vagrant_torque, 1)
+def testAllInSingleBatch_sub_batch_size_1(runfixture, clearqueue):
+  _tstSingleBatch(runfixture, clearqueue, 1)
 
-def testAllInSingleBatch_sub_batch_size_5(runfixture, vagrant_torque):
-  tstSingleBatch(runfixture, vagrant_torque, 3)
+def testAllInSingleBatch_sub_batch_size_5(runfixture, clearqueue):
+  _tstSingleBatch(runfixture, clearqueue, 5)
 
-
-def testAllInMultipleBatch(runfixture, vagrant_torque):
-  runner = _createRunner(runfixture, vagrant_torque, None)
+def testAllInMultipleBatch(runfixture, clearqueue):
+  runner = _createRunner(runfixture, clearqueue, None)
   f1 = _runBatch(runner, runfixture.jobs[:6])
   f2 = _runBatch(runner, runfixture.jobs[6:])
   f2.join()
@@ -84,8 +378,8 @@ def testAllInMultipleBatch(runfixture, vagrant_torque):
   for job in runfixture.jobs:
     runnertestjob(runfixture, job.variables.id, True)
 
-def testAllInMultipleBatch_sub_batch_size_5(runfixture, vagrant_torque):
-  runner = _createRunner(runfixture, vagrant_torque, 5)
+def testAllInMultipleBatch_sub_batch_size_5(runfixture, clearqueue):
+  runner = _createRunner(runfixture, clearqueue, 5)
   f1 = _runBatch(runner, runfixture.jobs[:6])
   f2 = _runBatch(runner, runfixture.jobs[6:])
   f2.join()
@@ -93,15 +387,14 @@ def testAllInMultipleBatch_sub_batch_size_5(runfixture, vagrant_torque):
   for job in runfixture.jobs:
     runnertestjob(runfixture, job.variables.id, True)
 
-def testAllInMultipleBatch_sub_batch_size_1(runfixture, vagrant_torque):
-  runner = _createRunner(runfixture, vagrant_torque, 1)
+def testAllInMultipleBatch_sub_batch_size_1(runfixture, clearqueue):
+  runner = _createRunner(runfixture, clearqueue, 1)
   f1 = _runBatch(runner, runfixture.jobs[:6])
   f2 = _runBatch(runner, runfixture.jobs[6:])
   f2.join()
   f1.join()
   for job in runfixture.jobs:
     runnertestjob(runfixture, job.variables.id, True)
-
 
 def testPBSRunnerJobRecordIsFull():
   class Client:
@@ -121,3 +414,7 @@ def testPBSRunnerJobRecordIsFull():
     assert False, "IndexError not raised"
   except IndexError:
     pass
+
+
+def testPBSInclude():
+  assert False

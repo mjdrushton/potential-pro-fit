@@ -28,7 +28,6 @@ def _mkrunjobs(gw, num, numSuffix = False, sleep = None):
           if not sleep is None:
             print >>outfile, "sleep %d" % sleep
 
-
           if numSuffix:
             print >>outfile, "echo Hello%d > outfile" % i
           else:

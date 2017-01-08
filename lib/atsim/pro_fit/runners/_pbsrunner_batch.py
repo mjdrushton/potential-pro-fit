@@ -10,6 +10,7 @@ import os
 import pkgutil
 
 from gevent.event import Event
+import gevent
 
 class PBSRunnerJobRecordException(Exception):
   pass
@@ -22,6 +23,17 @@ class PBSRunnerJobRecord(object):
     self._pbsbatchsize = pbsbatchsize
     self._handlers = []
     self._pbsclient_record = None
+    self._pbs_submit_event = Event()
+
+  @property
+  def pbs_submit_event(self):
+    return self._pbs_submit_event
+
+  @property
+  def pbsId(self):
+    if self._pbsclient_record:
+      return self._pbsclient_record.pbsId
+    return None
 
   @property
   def isFull(self):
@@ -46,6 +58,13 @@ class PBSRunnerJobRecord(object):
 
     pbsclient_record = self._pbsclient.runJobs(joblist, callback)
     self._pbsclient_record = pbsclient_record
+
+    def linkevent(evt, depend):
+      evt.wait()
+      depend.set()
+
+    gevent.spawn(linkevent, self._pbsclient_record.qsubEvent, self._pbs_submit_event)
+
 
   def _handler_wrap(self, handler):
     # The handlers passed into append expect two arguments, PBSClient expects a single argument
@@ -92,6 +111,7 @@ class PBSRunnerBatch(RunnerBatch):
     self._subBatchCount = 0
     self.resetPBSJobRecord()
     self._startJobRunCount = 0
+    self._submittedPBSRecords = []
 
   def startJobRun(self, job, handler):
     self._logger.debug("startJobRun called for batch (%s) and job: %s", self.name, job)
@@ -133,7 +153,6 @@ class PBSRunnerBatch(RunnerBatch):
     with open(runjobpath, 'w') as runjob:
       runjob.write(dat)
 
-
   @property
   def shouldSubmit(self):
     return self.pbsjobrecord.isFull or self._startJobRunCount >= len(self.jobs)
@@ -143,6 +162,7 @@ class PBSRunnerBatch(RunnerBatch):
     self._logger.debug("Submitting sub-batch to PBS: '%s' which contains %d jobs", jr.name, len(jr._handlers))
     self.resetPBSJobRecord()
     jr.submit()
+    self._submittedPBSRecords.append(jr)
     return jr
 
 

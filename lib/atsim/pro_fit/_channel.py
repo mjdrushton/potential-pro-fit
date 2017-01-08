@@ -114,10 +114,10 @@ class AbstractChannel(object):
   callback = property(fget = getcallback, fset = setcallback)
 
   def __iter__(self):
-    return self
+    return self._channel
 
   def next(self):
-    return self
+    return self._channel.next()
 
   def send(self, msg):
     self._channel.send(msg)

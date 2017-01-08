@@ -22,10 +22,21 @@ import traceback
 import sys
 import os
 
-from _base_remoterunner import BaseRemoteRunner
+from _base_remoterunner import BaseRemoteRunner, RemoteRunnerCloseThreadBase
 from _pbsrunner_batch import PBSRunnerBatch
 
+from gevent.event import Event
+
+
 EXECNET_TERM_TIMEOUT=10
+
+class _PBSRunnerCloseThread(RemoteRunnerCloseThreadBase):
+
+  def closeRunClient(self):
+    self.runner._pbsclient.close()
+    evt = Event()
+    evt.set()
+    return [evt]
 
 
 class InnerPBSRunner(BaseRemoteRunner):
@@ -46,6 +57,8 @@ class InnerPBSRunner(BaseRemoteRunner):
   def createBatch(self, batchDir, jobs, batchId):
     return PBSRunnerBatch(self, batchDir, jobs, batchId, self._pbsclient)
 
+  def makeCloseThread(self):
+    return _PBSRunnerCloseThread(self)
 
 
 class PBSRunner(object):

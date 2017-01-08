@@ -14,47 +14,88 @@ import sys
 import traceback
 
 import gevent
+from gevent.event import Event
 
 
-class _RemoteRunnerCloseThread(gevent.Greenlet):
+class RemoteRunnerCloseThreadBase(gevent.Greenlet):
 
-  _logger = logging.getLogger(__name__).getChild("_RemoteRunnerCloseThread")
+  _logger = logging.getLogger(__name__).getChild("RemoteRunnerCloseThreadBase")
 
   def __init__(self, runner):
-    gevent.Greenlet.__init__(self)
+    super(RemoteRunnerCloseThreadBase, self).__init__()
+    # gevent.Greenlet.__init__(self)
     self.runner = runner
     self.afterEvent = gevent.event.Event()
-    self.killevents = [ b.terminate() for b in runner._extantBatches]
+    self.batchKillEvents = None
+    self.closeRunClientEvents = None
+    self.closeUploadEvents = None
+    self.closeDownloadEvents = None
+
+  def terminateBatches(self):
+    return [ b.terminate() for b in self.runner._extantBatches]
+
+  def closeRunClient(self):
+    event = Event()
+    event.set()
+    return [event]
+
+  def _closeChannel(self, channel, logname):
+    def closechannel(channel, evt):
+      if hasattr(channel, 'broadcast'):
+        channel.broadcast(None)
+      else:
+        channel.send(None)
+      gevent.sleep(0)
+      try:
+        channel.waitclose(60)
+      except EOFError:
+        #Channel already closed
+        pass
+      self._logger.info("Runner (%s) %s channels closed.", self.runner.name, logname)
+      evt.set()
+    evt = Event()
+    gevent.spawn(closechannel, channel, evt)
+    return [evt]
+
+  def closeUpload(self):
+    return self._closeChannel(self.runner._uploadChannel, 'upload')
+
+  def closeDownload(self):
+    return self._closeChannel(self.runner._downloadChannel, 'download')
+
+  def closeCleanup(self):
+    return self._closeChannel(self.runner._cleanupChannel, 'cleanup')
 
   def _run(self):
-    gevent.wait(objects = self.killevents)
-    self.after()
-
-  def after(self):
     try:
-      # Close channels associated with the runner.
-      self.runner._runChannel.broadcast(None)
-      self.runner._runChannel.waitclose(60)
-      self._logger.info("Remote runner's run channels closed.")
+      self.batchKillEvents = self.terminateBatches()
+      if self.batchKillEvents:
+        gevent.wait(objects = self.batchKillEvents, timeout = 120)
 
-      self.runner._uploadChannel.broadcast(None)
-      self.runner._uploadChannel.waitclose(60)
-      self._logger.info("Remote runner's upload channels closed.")
+      allEvents = []
+      self.closeRunClientEvents = self.closeRunClient()
+      if self.closeRunClientEvents:
+        allEvents.extend(self.closeRunClientEvents)
 
-      self.runner._downloadChannel.broadcast(None)
-      self.runner._downloadChannel.waitclose(60)
-      self._logger.info("Remote runner's download channels closed.")
+      self.closeUploadEvents = self.closeUpload()
+      if self.closeUploadEvents:
+        allEvents.extend(self.closeUploadEvents)
 
-      self.runner._cleanupChannel.send(None)
-      self.runner._cleanupChannel.waitclose(60)
-      self._logger.info("Remote runner's cleanup channel closed.")
+      self.closeDownloadEvents = self.closeDownload()
+      if self.closeDownloadEvents:
+        allEvents.extend(self.closeDownloadEvents)
+
+      self.closeCleanupEvents = self.closeCleanup()
+      if self.closeCleanupEvents:
+        allEvents.extend(self.closeCleanupEvents)
+
+      gevent.wait(objects = allEvents, timeout = 120)
     except:
       exception = sys.exc_info()
       tbstring = traceback.format_exception(*exception)
       self._logger.warning("Exception raised during close(): %s", tbstring)
     finally:
       self.afterEvent.set()
-
 
 class _RunnerJobUploadHandler(UploadHandler):
   """Handler that acts as finish() callback for RunnerJob.
@@ -374,8 +415,9 @@ class BaseRemoteRunner(object):
     Returns:
         Thread like object: See above
     """
-    closeThread = _RemoteRunnerCloseThread(self)
-    return closeThread
+    raise Exception("Not Implemented")
+    # closeThread = _RemoteRunnerCloseThread(self)
+    # return closeThread
 
   def close(self):
     """Shuts down the runner

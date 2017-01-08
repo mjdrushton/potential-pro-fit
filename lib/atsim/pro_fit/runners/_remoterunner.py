@@ -3,12 +3,22 @@ from atsim.pro_fit.fittool import ConfigException
 import execnet
 import logging
 
-from _base_remoterunner import BaseRemoteRunner
+from _base_remoterunner import BaseRemoteRunner, RemoteRunnerCloseThreadBase
 
 EXECNET_TERM_TIMEOUT=10
 
 from _runner_batch import RunnerBatch
 from _run_remote_client import RunChannels, RunClient
+
+import gevent
+from gevent.event import Event
+
+class _RemoteRunnerCloseThread(RemoteRunnerCloseThreadBase):
+
+  _logger = logging.getLogger(__name__).getChild("_RemoteRunnerCloseThread")
+
+  def closeRunClient(self):
+    return self._closeChannel(self.runner._runChannel, "run")
 
 class InnerRemoteRunner(BaseRemoteRunner):
   """The actual implementation of RemoteRunner.
@@ -49,6 +59,9 @@ class InnerRemoteRunner(BaseRemoteRunner):
     """
     channel = RunChannels(self._gw, '%s-Run' % self.name, num_channels = nprocesses)
     return channel
+
+  def makeCloseThread(self):
+    return _RemoteRunnerCloseThread(self)
 
   def startJobRun(self, handler):
     """Run the given job defined by handler.

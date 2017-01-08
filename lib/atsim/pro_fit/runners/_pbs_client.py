@@ -33,13 +33,14 @@ class PBSChannel(AbstractChannel):
 
   _logger = logging.getLogger(__name__).getChild("PBSChannel")
 
-  def __init__(self, execnet_gw, channel_id = None):
+  def __init__(self, execnet_gw, channel_id = None, nocb = False):
     super(PBSChannel, self).__init__(
       execnet_gw,
       _pbs_remote_exec,
       channel_id)
 
-    self.callback = MultiCallback()
+    if not nocb:
+      self.callback = MultiCallback()
 
   def make_start_message(self):
     return {'msg' : 'START_CHANNEL', 'channel_id' : self.channel_id}
@@ -73,6 +74,30 @@ class PBSJobRecord(object):
     self._killed = True
     return self.completion_event
 
+
+class _WaitForMessageCB(object):
+
+  def __init__(self, mtype, transId):
+    self.event = Event()
+    self.active = True
+    self.transaction_id = transId
+    self.mtype = mtype
+
+  def __call__(self, msg):
+    try:
+      mtype = msg["msg"]
+    except:
+      return
+
+    transaction_id = msg['transaction_id']
+
+    if not (transaction_id == self.transaction_id and mtype == self.mtype):
+      return
+
+    self.event.set()
+    self.active = False
+
+    return True
 
 class _QSubCallback(PBSStateListenerAdapter):
 
@@ -154,8 +179,10 @@ class _QSubCallback(PBSStateListenerAdapter):
 
     if self.jobRecord.pbsId:
       transId = str(uuid.uuid4())
-      self.pbsClient._qdel(transId, self.jobRecord.pbsId)
-
+      cb = _WaitForMessageCB('QDEL', transId)
+      self.pbsClient._cbregister.append(cb)
+      self.pbsClient._qdel(transId, self.jobRecord.pbsId, force = True)
+      cb.event.wait(60)
     self._finishJob()
 
 
@@ -184,8 +211,8 @@ class PBSClient(object):
     msg = {'msg' : 'QRLS', 'transaction_id' : transId, 'channel_id' : self.channel.channel_id, 'pbs_id' : pbsId}
     self.channel.send(msg)
 
-  def _qdel(self, transId, pbsId):
-    msg = {'msg' : 'QDEL', 'transaction_id' : transId, 'channel_id' : self.channel.channel_id, 'pbs_ids' : [pbsId], 'force' : True}
+  def _qdel(self, transId, pbsId, force = False):
+    msg = {'msg' : 'QDEL', 'transaction_id' : transId, 'channel_id' : self.channel.channel_id, 'pbs_ids' : [pbsId], 'force' : force}
     self.channel.send(msg)
 
   @property
@@ -196,6 +223,7 @@ class PBSClient(object):
     self._pbsState.close()
 
     if closeChannel:
+      self.channel.send(None)
       self.channel.close()
 
 
