@@ -194,17 +194,21 @@ class PBSClient(object):
     self._cbregister = CallbackRegister()
     self._channel.callback.append(self._cbregister)
 
-  def runJobs(self, jobList, callback):
+  def runJobs(self, jobList, callback, header_lines = None):
     jr = PBSJobRecord(jobList, callback)
     transid = str(uuid.uuid4())
     qsubcallback = _QSubCallback(self, transid, jr)
     jr._qscallback = qsubcallback
     self._cbregister.append(qsubcallback)
-    self._qsub(transid, jobList)
+    self._qsub(transid, jobList, header_lines = header_lines)
     return jr
 
-  def _qsub(self, transId, jobList):
+  def _qsub(self, transId, jobList, header_lines = None):
     msg = {'msg' : 'QSUB', 'transaction_id' : transId, 'channel_id' : self.channel.channel_id, 'jobs' : jobList}
+
+    if header_lines:
+      msg['header_lines'] = header_lines
+
     self.channel.send(msg)
 
   def _qrls(self, transId, pbsId):

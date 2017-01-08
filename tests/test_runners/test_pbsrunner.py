@@ -16,7 +16,7 @@ from test_pbs_client import chIsDir
 
 import gevent
 
-def _createRunner(runfixture, vagrantbox, sub_batch_size):
+def _createRunner(runfixture, vagrantbox, sub_batch_size, pbsinclude = ""):
   username = vagrantbox.user()
   hostname = vagrantbox.hostname()
   port = vagrantbox.port()
@@ -24,7 +24,7 @@ def _createRunner(runfixture, vagrantbox, sub_batch_size):
 
   extraoptions = [("StrictHostKeyChecking","no")]
   runner = pro_fit.runners.PBSRunner('PBSRunner', "ssh://%s@%s:%s" % (username, hostname, port),
-    "", #pbsinclude
+    pbsinclude,
     qselect_poll_interval = 1.0,
     pbsbatch_size = sub_batch_size,
     identityfile = keyfilename,
@@ -59,14 +59,17 @@ def waitcb(f):
     while not f._submittedPBSRecords:
       gevent.sleep(1)
 
+def makesleepy(jobs):
+  for j in jobs:
+    with open(os.path.join(j.path, 'job_files', 'runjob'), 'a') as runjob:
+      runjob.write("sleep 1200\n")
+
 
 def testBatchTerminate(clearqueue, runfixture):
   """Test batch .terminate() method."""
 
   # Make some sleepy jobs
-  for j in runfixture.jobs:
-    with open(os.path.join(j.path, 'job_files', 'runjob'), 'a') as runjob:
-      runjob.write("sleep 1200\n")
+  makesleepy(runfixture.jobs)
 
   runner = _createRunner(runfixture, clearqueue, None)
   indyrunner = _createRunner(runfixture, clearqueue, None)
@@ -400,7 +403,7 @@ def testPBSRunnerJobRecordIsFull():
   class Client:
     pass
 
-  jr = PBSRunnerJobRecord("name", 2, Client())
+  jr = PBSRunnerJobRecord("name", 2, Client(), None)
   assert not jr.isFull
 
   jr.append(None)
@@ -415,6 +418,46 @@ def testPBSRunnerJobRecordIsFull():
   except IndexError:
     pass
 
+def qstatRemoteExec(channel):
+  pbsId = channel.receive()
+  import subprocess
+  output = subprocess.check_output(['qstat', '-f', pbsId])
+  channel.send(output)
 
-def testPBSInclude():
-  assert False
+def testPBSInclude(runfixture, clearqueue):
+  makesleepy(runfixture.jobs)
+  runner = _createRunner(runfixture, clearqueue, 1, "#PBS -l mem=10Mb\n#PBS -l walltime=5:00")
+  batch = _runBatch(runner, [runfixture.jobs[0]])
+  gevent.wait([gevent.spawn(waitcb, batch)], 60)
+
+  j = batch._submittedPBSRecords[0]
+  assert j.pbs_submit_event.wait(60)
+  assert j.pbsId
+
+  pbsid = j.pbsId
+
+  # import pdb;pdb.set_trace()
+
+  gw = _mkexecnetgw(clearqueue)
+  ch = gw.remote_exec(qstatRemoteExec)
+  ch.send(pbsid)
+  qstat = ch.receive()
+  qstat = qstat.split("\n")
+
+  # for i in xrange(5):
+  #   ch = gw.remote_exec(qstatRemoteExec)
+  #   ch.send(pbsid)
+  #   qstat = ch.receive()
+  #   qstat = qstat.split("\n")
+  #   if
+
+  memline = [ line for line in qstat if line.strip().startswith("Resource_List.mem")]
+  walltimeline = [ line for line in qstat if line.strip().startswith("Resource_List.walltime")]
+
+  assert len(walltimeline) == 1
+  walltimeline= walltimeline[0]
+  assert walltimeline.endswith("00:05:00")
+
+  assert len(memline) == 1
+  memline = memline[0]
+  assert memline.endswith("10mb")

@@ -43,7 +43,10 @@ class InnerPBSRunner(BaseRemoteRunner):
   """Runner class held by PBSRunner that does all the work."""
 
   def __init__(self, name, url, pbsinclude,  pbsbatch_size, qselect_poll_interval,  identityfile = None, extra_ssh_options = []):
-    self.pbsinclude = pbsinclude
+    self.pbsinclude = []
+    if not pbsinclude is None:
+      self.pbsinclude = pbsinclude.split(os.linesep)
+
     self.pbsqselect_poll_interval = qselect_poll_interval
     self.pbsbatch_size = pbsbatch_size
     self._logger = logging.getLogger(__name__).getChild("InnerPBSRunner")
@@ -55,7 +58,7 @@ class InnerPBSRunner(BaseRemoteRunner):
     self._pbsclient = PBSClient(self._pbschannel, pollEvery = self.pbsqselect_poll_interval)
 
   def createBatch(self, batchDir, jobs, batchId):
-    return PBSRunnerBatch(self, batchDir, jobs, batchId, self._pbsclient)
+    return PBSRunnerBatch(self, batchDir, jobs, batchId, self._pbsclient, self.pbsinclude)
 
   def makeCloseThread(self):
     return _PBSRunnerCloseThread(self)

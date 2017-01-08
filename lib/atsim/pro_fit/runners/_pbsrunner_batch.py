@@ -17,13 +17,14 @@ class PBSRunnerJobRecordException(Exception):
 
 class PBSRunnerJobRecord(object):
 
-  def __init__(self, name, pbsbatchsize, pbsclient):
+  def __init__(self, name, pbsbatchsize, pbsclient, pbsinclude):
     self.name = name
     self._pbsclient = weakref.proxy(pbsclient)
     self._pbsbatchsize = pbsbatchsize
     self._handlers = []
     self._pbsclient_record = None
     self._pbs_submit_event = Event()
+    self._pbsinclude = pbsinclude
 
   @property
   def pbs_submit_event(self):
@@ -56,7 +57,7 @@ class PBSRunnerJobRecord(object):
     callback = MultiCallback()
     callback.extend(handlers)
 
-    pbsclient_record = self._pbsclient.runJobs(joblist, callback)
+    pbsclient_record = self._pbsclient.runJobs(joblist, callback, header_lines = self._pbsinclude)
     self._pbsclient_record = pbsclient_record
 
     def linkevent(evt, depend):
@@ -104,9 +105,10 @@ class _ModifiedPathJob(object):
 
 class PBSRunnerBatch(RunnerBatch):
 
-  def __init__(self, parentRunner, remoteBatchDir, jobs, name, pbsclient):
+  def __init__(self, parentRunner, remoteBatchDir, jobs, name, pbsclient, pbsinclude):
     self._logger = logging.getLogger(__name__).getChild("PBSRunnerBatch")
     super(PBSRunnerBatch, self).__init__(parentRunner, remoteBatchDir, jobs, name)
+    self._pbsinclude = pbsinclude
     self.pbsclient = pbsclient
     self._subBatchCount = 0
     self.resetPBSJobRecord()
@@ -122,7 +124,7 @@ class PBSRunnerBatch(RunnerBatch):
   def resetPBSJobRecord(self):
     name = self.name + "_sub: %d" % self._subBatchCount
     self._logger.debug("Resetting PBSJobRecord for batch: '%s'. PBSJobRecord name  = '%s'", self.name, name)
-    self.pbsjobrecord = PBSRunnerJobRecord(name, self.parentRunner.pbsbatch_size, self.pbsclient)
+    self.pbsjobrecord = PBSRunnerJobRecord(name, self.parentRunner.pbsbatch_size, self.pbsclient, self._pbsinclude)
     self._subBatchCount += 1
 
   def addJobToPBSJobRecord(self, handler):
