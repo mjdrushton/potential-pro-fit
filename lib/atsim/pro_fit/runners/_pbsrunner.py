@@ -9,6 +9,7 @@ from _pbs_client import PBSChannel, PBSClient
 from atsim.pro_fit.filetransfer import UploadHandler, DownloadHandler
 
 from atsim.pro_fit import _execnet
+from atsim.pro_fit._execnet import urlParse
 import execnet
 
 import gevent
@@ -115,7 +116,7 @@ class PBSRunner(object):
 
   @staticmethod
   def createFromConfig(runnerName, fitRootPath, cfgitems):
-    allowedkeywords = set(['type', 'remotehost', 'pbsinclude'])
+    allowedkeywords = set(['type', 'remotehost', 'pbsinclude', 'pbsarraysize', 'pbspollinterval'])
     cfgdict = dict(cfgitems)
 
     for k in cfgdict.iterkeys():
@@ -130,7 +131,7 @@ class PBSRunner(object):
     if not remotehost.startswith("ssh://"):
       raise ConfigException("remotehost configuration item must start with ssh://")
 
-    username, host, port, path = PBSRunner._urlParse(remotehost)
+    username, host, port, path = urlParse(remotehost)
     if not host:
       raise ConfigException("remotehost configuration item should be of form ssh://[username@]hostname/remote_path")
 
@@ -142,27 +143,20 @@ class PBSRunner(object):
       else:
         gwurl = "ssh=%s" % host
       gw = group.makegateway(gwurl)
-      channel = gw.remote_exec(_execnet._remoteCheckPBS)
+      channel = gw.remote_exec(_execnet._remoteCheck)
       channel.send(path)
       status = channel.receive()
+      channel.waitclose()
 
       if not status:
         raise ConfigException("Remote directory does not exist or is not read/writable:'%s'" % path)
 
-      # Check that qselect can be run
-      status = channel.receive()
-      if not status.startswith('qselect okay'):
-        raise ConfigException("Cannot run 'qselect' on remote host.")
-
-      # Check that qsub can be run
-      status = channel.receive()
-      if not status.startswith('qsub okay'):
-        raise ConfigException("Cannot run 'qsub' on remote host.")
-
-      # Configure runner from the version string
-      identifyRecord = pbsIdentify(status[9:])
-
-      channel.waitclose()
+      try:
+        pbschannel = PBSChannel(gw, 'test_channel')
+      except ChannelException as e:
+        raise ConfigException("Error starting PBS: '%s'" % e.message)
+      finally:
+        pbschannel.close()
 
     except execnet.gateway_bootstrap.HostNotFound:
       raise ConfigException("Couldn't connect to host: %s" % gwurl)
@@ -176,5 +170,28 @@ class PBSRunner(object):
       except IOError:
         raise ConfigException("Could not open file specified by 'pbsinclude' directive: %s" % pbsinclude)
 
-    return PBSRunner(runnerName, remotehost, pbsinclude)
+    pbsarraysize = cfgdict.get('pbsarraysize', None)
+    if pbsarraysize != None and pbsarraysize.strip() == 'None':
+      pbsarraysize = None
+
+    if not pbsarraysize is None:
+
+      try:
+        pbsarraysize = int(pbsarraysize)
+      except ValueError:
+        raise ConfigException("Invalid numerical value for 'pbsarraysize' configuration option: %s" % pbsarraysize)
+
+      if not pbsarraysize >= 1:
+        raise ConfigException("Value of 'pbsarraysize' must >= 1. Value was %s" % pbsarraysize)
+
+    pbspollinterval = cfgdict.get('pbspollinterval', 30.0)
+    try:
+      pbspollinterval = float(pbspollinterval)
+    except ValueError:
+      raise ConfigException("Invalid numerical value for 'pbspollinterval': %s" % pbspollinterval)
+
+    if not pbspollinterval > 0.0:
+      raise ConfigException("Value of 'pbspollinterval' must > 0.0. Value was %s" % pbspollinterval)
+
+    return PBSRunner(runnerName, remotehost, pbsinclude, qselect_poll_interval = pbspollinterval, pbsbatch_size = pbsarraysize)
 

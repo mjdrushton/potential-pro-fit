@@ -193,6 +193,7 @@ class PBSClient(object):
     self._pbsState = PBSState(pbsChannel, pollEvery)
     self._cbregister = CallbackRegister()
     self._channel.callback.append(self._cbregister)
+    self._closed = False
 
   def runJobs(self, jobList, callback, header_lines = None):
     jr = PBSJobRecord(jobList, callback)
@@ -224,11 +225,12 @@ class PBSClient(object):
     return self._channel
 
   def close(self, closeChannel = True):
-    self._pbsState.close()
+    if not self._closed:
+      self._closed = True
+      self._pbsState.close()
 
-    if closeChannel:
-      self.channel.send(None)
-      self.channel.close()
+      if closeChannel:
+        self.channel.send(None)
 
 
 class _PBSStateQSelectCallback(object):
