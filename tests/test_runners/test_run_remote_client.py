@@ -1,9 +1,11 @@
-from atsim.pro_fit.runners._run_remote_client import RunChannels, RunClient, RunJobKilledException, JobAlreadyFinishedException
+from atsim.pro_fit.runners._run_remote_client import RunChannel, RunClient, RunJobKilledException, JobAlreadyFinishedException
 
 from _runnercommon import execnet_gw, channel_id, CheckPIDS
 
 import gevent
 import gevent.event
+
+import logging
 
 class TstCallback(object):
 
@@ -24,7 +26,7 @@ class TstCallback(object):
 
 
 def test_run_remote_client_single(tmpdir, execnet_gw, channel_id):
-  channel = RunChannels(execnet_gw, channel_id, num_channels = 1)
+  channel = RunChannel(execnet_gw, channel_id, nprocesses = 1)
 
   with tmpdir.join("runjob").open("w") as outfile:
     print >>outfile, "echo Hello World > job.out"
@@ -35,11 +37,11 @@ def test_run_remote_client_single(tmpdir, execnet_gw, channel_id):
   assert tmpdir.join("job.out").isfile()
   assert tmpdir.join("job.out").read()[:-1] == "Hello World"
 
-  channel.broadcast(None)
+  channel.send(None)
+  channel.waitclose()
 
 def test_run_remote_client_multiple(tmpdir, execnet_gw, channel_id):
-  channel = RunChannels(execnet_gw, channel_id, num_channels = 3)
-  assert len(channel) == 3
+  channel = RunChannel(execnet_gw, channel_id, nprocesses = 3)
   callbacks = []
 
   for jobid in xrange(5):
@@ -69,10 +71,12 @@ def test_run_remote_client_multiple(tmpdir, execnet_gw, channel_id):
     assert jobdir.join("job.out").isfile()
     assert jobdir.join("job.out").read()[:-1] == str(callback.jobid)
 
-  channel.broadcast(None)
+  channel.send(None)
+  channel.waitclose()
+
 
 def test_run_remote_client_kill_job(tmpdir, execnet_gw, channel_id):
-  channel = RunChannels(execnet_gw, channel_id, num_channels = 3)
+  channel = RunChannel(execnet_gw, channel_id, nprocesses = 3)
   runclient = RunClient(channel)
 
   with tmpdir.join('runjob').open('w') as outfile:
@@ -99,20 +103,22 @@ def test_run_remote_client_kill_job(tmpdir, execnet_gw, channel_id):
   except RunJobKilledException:
     pass
 
-  channel.broadcast(None)
+  # channel.send(None)
 
   # Now attempt to kill the job again.
   # An exception should be thrown.
   try:
     runjob.kill()
+    assert False, 'JobAlreadyFinishedException not raised'
   except JobAlreadyFinishedException:
     pass
 
-  channel.broadcast(None)
+  channel.send(None)
+  channel.waitclose()
 
 
 def test_run_remote_client_kill_not_started_job(tmpdir, execnet_gw, channel_id):
-  channel = RunChannels(execnet_gw, channel_id, num_channels = 1)
+  channel = RunChannel(execnet_gw, channel_id, nprocesses = 1)
   runclient = RunClient(channel)
 
   runjob_path1 = tmpdir.join("0")
@@ -161,4 +167,5 @@ def test_run_remote_client_kill_not_started_job(tmpdir, execnet_gw, channel_id):
   except RunJobKilledException:
     pass
 
-  channel.broadcast(None)
+  channel.send(None)
+  channel.waitclose()

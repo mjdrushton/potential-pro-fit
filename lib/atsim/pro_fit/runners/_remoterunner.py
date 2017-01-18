@@ -8,7 +8,7 @@ from _base_remoterunner import BaseRemoteRunner, RemoteRunnerCloseThreadBase
 EXECNET_TERM_TIMEOUT=10
 
 from _runner_batch import RunnerBatch
-from _run_remote_client import RunChannels, RunClient
+from _run_remote_client import RunChannel, RunClient
 
 import gevent
 from gevent.event import Event
@@ -44,20 +44,20 @@ class InnerRemoteRunner(BaseRemoteRunner):
 
   def initialiseRun(self):
     # Initialise the remote runners their client.
-    self._runChannel = self._makeRunChannel(self._nprocesses)
+    self._runChannel = self._makeRunChannel()
     self._runClient = RunClient(self._runChannel)
 
   def createBatch(self, batchDir, jobs, batchId):
     batch = RunnerBatch(self, batchDir, jobs, batchId)
     return batch
 
-  def _makeRunChannel(self, nprocesses):
+  def _makeRunChannel(self):
     """Creates the RunChannels instance associated with this runner.
 
     Args:
         nprocesses (int): Number of runner channels that will be instantiated within RunChannels object.
     """
-    channel = RunChannels(self._gw, '%s-Run' % self.name, num_channels = nprocesses)
+    channel = RunChannel(self._gw, '%s-Run' % self.name, nprocesses = self._nprocesses)
     return channel
 
   def makeCloseThread(self):

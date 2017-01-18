@@ -174,28 +174,16 @@ class BaseRemoteRunner(object):
     self.name = name
     self._uuid = str(uuid.uuid4())
     self._closed = False
+    self._remotePath = None
+    self._cleanupClient = None
 
-    self._username, self._hostname, self._port, self._remotePath = _execnet.urlParse(url)
-
-    # Create a common url used to create execnet gateways
-    self._gwurl, sshcfgfile = _execnet.makeExecnetConnectionSpec(self._username, self._hostname, self._port, identityfile, extra_ssh_options)
-
-    if sshcfgfile:
-      self._sshcfgfile = sshcfgfile
-
-    group = _execnet.Group()
-    self._gw = group.makegateway(self._gwurl)
+    self._gw = self.makeExecnetGateway(url, identityfile, extra_ssh_options)
 
     # Initialise the remote runners their client.
     # self._runChannel = self._makeRunChannel(nprocesses)
     # self._runClient = RunClient(self._runChannel)
 
-    # Upload and download channel initialisation
-    if not self._remotePath:
-      # Create an appropriate remote path.
-      self._createTemporaryRemoteDirectory()
-    else:
-      self._remotePath = posixpath.join(self._remotePath, self._uuid)
+    self.initialiseTemporaryRemoteDirectory()
 
     self._numUpload = self._numDownload = 1
     self.initialiseUpload()
@@ -207,7 +195,30 @@ class BaseRemoteRunner(object):
     self._extantBatches = []
 
     # Register the remote directory with cleanup agent, such that it will be deleted at shutdown.
-    self._cleanupClient.lock(self._remotePath)
+    if self._cleanupClient:
+      self._cleanupClient.lock(self._remotePath)
+
+  def makeExecnetGateway(self, url, identityfile, extra_ssh_options):
+    self._gwurl = url
+    self._username, self._hostname, self._port, self._remotePath = _execnet.urlParse(url)
+
+    # Create a common url used to create execnet gateways
+    self._gwurl, sshcfgfile = _execnet.makeExecnetConnectionSpec(self._username, self._hostname, self._port, identityfile, extra_ssh_options)
+
+    if sshcfgfile:
+      self._sshcfgfile = sshcfgfile
+
+    group = _execnet.Group()
+    gw = group.makegateway(self._gwurl)
+    return gw
+
+  def initialiseTemporaryRemoteDirectory(self):
+    # Upload and download channel initialisation
+    if not self._remotePath:
+      # Create an appropriate remote path.
+      self._createTemporaryRemoteDirectory()
+    else:
+      self._remotePath = posixpath.join(self._remotePath, self._uuid)
 
   def initialiseUpload(self):
     self._uploadChannel = self.makeUploadChannel()
@@ -237,7 +248,7 @@ class BaseRemoteRunner(object):
       raise RunnerClosedException()
 
     batchId = self._batchNameIterator.next()
-    batchDir = posixpath.join(self._remotePath, batchId)
+    batchDir = self.batchDir(batchId)
 
     self._logger.debug("Starting batch %s, containing %d jobs.", batchId, len(jobs))
     self._logger.debug("%s directory is: '%s'", batchId, batchDir)
@@ -246,6 +257,11 @@ class BaseRemoteRunner(object):
     self._extantBatches.append(batch)
     batch.startBatch()
     return batch
+
+  def batchDir(self, batchId):
+    batchDir = posixpath.join(self._remotePath, batchId)
+    return batchDir
+
 
   def createBatch(self, batchDir, jobs, batchId):
     """Create a RunnerBatch instance.

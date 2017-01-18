@@ -1,6 +1,12 @@
 import logging
 import uuid
 import itertools
+import sys
+
+from gevent.queue import Queue
+from gevent import Greenlet
+import gevent.lock
+import gevent
 
 class ChannelCallback(object):
   """Execnet channels can only have a single callback associated with them. This object is a forwarding callback.
@@ -19,6 +25,7 @@ class ChannelException(Exception):
   def __init__(self, message, wiremsg = None):
     super(ChannelException, self).__init__(message)
     self.wiremsg = wiremsg
+
 
 class AbstractChannel(object):
   """Abstract base class for making execnet channels nicer to work with.
@@ -53,9 +60,14 @@ class AbstractChannel(object):
 
   def _startChannel(self, execnet_gw, channel_remote_exec, connection_timeout):
     channel = execnet_gw.remote_exec(channel_remote_exec)
+
+    # Was getting reentrant io error when sending, add a lock to the channel that can be used to synchronize message sending.
+    if not hasattr(channel.gateway, '_sendlock'):
+      channel.gateway._sendlock = gevent.lock.Semaphore()
+
     startmsg = self.make_start_message()
     self._logger.debug("Channel start message: %s", startmsg)
-    channel.send(startmsg)
+    self._send(channel, startmsg)
     msg = channel.receive(connection_timeout)
     self.start_response(msg)
     return channel
@@ -119,8 +131,12 @@ class AbstractChannel(object):
   def next(self):
     return self._channel.next()
 
+  def _send(self, ch, msg):
+    with ch.gateway._sendlock:
+      ch.send(msg)
+
   def send(self, msg):
-    self._channel.send(msg)
+    return self._send(self._channel, msg)
 
   def __len__(self):
     return 1

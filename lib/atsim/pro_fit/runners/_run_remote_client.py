@@ -4,21 +4,13 @@ from atsim.pro_fit._channel import AbstractChannel, MultiChannel
 from atsim.pro_fit._util import CallbackRegister, NamedEvent
 from _exceptions import JobKilledException
 
-
 import itertools
 import logging
-import multiprocessing
-import uuid
 import sys
-import traceback
-from collections import deque
+import uuid
 
 import gevent
 import gevent.event
-
-_ncpu = multiprocessing.cpu_count()
-
-_logger = logging.getLogger("atsim.pro_fit.runners")
 
 class RunChannelException(Exception):
   pass
@@ -27,7 +19,7 @@ class RunChannel(AbstractChannel):
 
   _logger = logging.getLogger(__name__).getChild("RunChannel")
 
-  def __init__(self, execnet_gw, channel_id = None, shell = "/bin/bash", hardkill_timeout = 60,  connection_timeout = 60):
+  def __init__(self, execnet_gw, channel_id = None, nprocesses = None, shell = "/bin/bash", hardkill_timeout = 60,  connection_timeout = 60):
     """Summary
 
     Args:
@@ -41,53 +33,30 @@ class RunChannel(AbstractChannel):
     import _run_remote_exec
     self.shell = shell
     self.hardkill_timeout = hardkill_timeout
+    self.nprocesses = nprocesses
     super(RunChannel, self).__init__(execnet_gw, _run_remote_exec, channel_id, connection_timeout)
 
   def make_start_message(self):
-    return {'msg' : 'START_CHANNEL', 'channel_id' : self.channel_id, 'shell' : self.shell, 'hardkill_timeout' : self.hardkill_timeout }
-
-class RunChannelFactory(object):
-
-  def __init__(self, shell, hardkill_timeout, connection_timeout):
-    self.shell = shell
-    self.hardkill_timeout = hardkill_timeout
-    self.connection_timeout = connection_timeout
-
-  def createChannel(self, execnet_gw, channel_id):
-    return RunChannel(execnet_gw,
-      channel_id,
-      self.shell,
-      self.hardkill_timeout,
-      self.connection_timeout)
-
-class RunChannels(MultiChannel):
-  _logger = logging.getLogger(__name__).getChild("RunChannels")
-
-  def __init__(self, execnet_gw, channel_id = None,  shell = "/bin/bash", hardkill_timeout = 60,  connection_timeout = 60, num_channels = _ncpu):
-    factory = RunChannelFactory(shell, hardkill_timeout, connection_timeout)
-    super(RunChannels, self).__init__(execnet_gw, factory, num_channels, channel_id)
-    self._channel_map = dict(zip([c.channel_id for c in self._channels], self._channels))
-
-  def getChannel(self, channel_id):
-    """Return underlying channel that has the given channel_id"""
-    return self._channel_map[channel_id]
+    return {'msg' : 'START_CHANNEL',
+      'channel_id' : self.channel_id,
+      'shell' : self.shell,
+      'hardkill_timeout' : self.hardkill_timeout,
+      'nprocesses' : self.nprocesses
+      }
 
 def _NullCallback(*args, **kwargs):
   pass
 
 class RunClient(object):
 
-  _logger = _logger.getChild("RunClient")
+  _logger = logging.getLogger(__name__).getChild("RunClient")
 
   def __init__(self, channel):
     self.channel = channel
     self._base_transid = uuid.uuid4()
     self._id_count = itertools.count()
     self._cbregister = CallbackRegister()
-    self._submissionCallback = SubmissionCallback(self.channel, self._transid, self._cbregister)
-    self._cbregister.append(self._submissionCallback)
     self.channel.setcallback(self._cbregister)
-    self.channel.broadcast({'msg' : 'READY'})
 
   def runCommand(self, workingDirectory, callback = None):
     """Executes `runjob` command in the given working directory.
@@ -120,16 +89,24 @@ class RunClient(object):
       cbobj.should_raise = True
     else:
       cbobj = RunJobCallback(workingDirectory, callback, self._transid, self)
-    self._submissionCallback.registerJob(cbobj)
+    self._submitJob(cbobj)
     return cbobj
 
   @property
   def _transid(self):
     return "%s-%d" % (self._base_transid, self._id_count.next())
 
+  def _submitJob(self, cbobj):
+    cbobj.channel_id = self.channel.channel_id
+    self._cbregister.append(cbobj)
+    self.channel.send({'msg' : 'JOB_START',
+      'job_path' : cbobj.workingDirectory,
+      'job_id' : cbobj.trans_id })
+    gevent.sleep(0)
+
 class JobRecord(object):
 
-  logger = _logger.getChild("JobRecord")
+  logger = logging.getLogger(__name__).getChild("JobRecord")
 
   def __init__(self, rjc, runClient):
     self._runjobcallback = rjc
@@ -161,7 +138,10 @@ class JobRecord(object):
     Returns:
         gevent.event.Event: Event that is set once job completes.
     """
-    self._runjobcallback.killEvent.set()
+    if self.completion_event.is_set():
+      raise JobAlreadyFinishedException()
+
+    self._runjobcallback.kill()
     return self.completion_event
 
 class JobAlreadyFinishedException(Exception):
@@ -170,126 +150,15 @@ class JobAlreadyFinishedException(Exception):
 class JobStartException(Exception):
   pass
 
-
 class RunJobKilledException(JobKilledException):
   pass
-
-class _RunJobState(gevent.Greenlet):
-  """Class that keeps track of a job's run state"""
-
-  _logger = logging.getLogger("atsim.pro_fit.runners._run_remote_client._RunJobState")
-
-  def __init__(self, runJobCallback):
-    gevent.Greenlet.__init__(self)
-
-    self.runJobCallback = runJobCallback
-    self.readyEvent = gevent.event.Event()
-    self.jobStartEvent = gevent.event.Event()
-    self.jobEndEvent = gevent.event.Event()
-    self.killEvent = gevent.event.Event()
-    self.finishEvent = gevent.event.Event()
-    self.errorEvent = gevent.event.Event()
-
-  def _run(self):
-    gevent.wait(objects = [self.readyEvent, self.killEvent], count = 1)
-    try:
-      if self.killEvent.is_set():
-        self.cancelJobBeforeRun()
-        return
-
-      if self.readyEvent.is_set():
-        self.startJob()
-
-      self.monitorJob()
-      self.finishJob(None)
-    except:
-      exc = sys.exc_info()
-      #I don't want to log RunJobKilledException hence this...
-      try:
-        raise exc
-      except RunJobKilledException:
-        pass
-      except:
-        tbstring = traceback.format_exception(*exc)
-        self._logger.debug("Exception in run: %s", tbstring)
-      self.finishJob(exc)
-
-  def cancelJobBeforeRun(self):
-    # Cancel and remove job
-    self.runJobCallback.unregisterCallback()
-    raise RunJobKilledException()
-
-  def getChannel(self):
-    channel_id = self.runJobCallback.channel_id
-    channel = self.runJobCallback._runClient.channel.getChannel(channel_id)
-    return channel
-
-  def startJob(self):
-    # Submit the job
-    jobid = self.runJobCallback.trans_id
-    workingDirectory = self.runJobCallback.workingDirectory
-    sendmsg = {'msg' : 'JOB_START', 'job_id' : jobid, 'job_path' : workingDirectory }
-
-    channel = self.getChannel()
-    self._logger.debug("Submitting job to channel_id = %s: %s", channel.channel_id, sendmsg)
-    channel.send(sendmsg)
-
-  def finishJob(self, exception):
-    if exception:
-      self.runJobCallback.exception = exception
-
-    self._logger.debug("finishJob called")
-    self.finishEvent.set()
-    self.runJobCallback.callback(exception, self.runJobCallback)
-
-  def monitorJob(self):
-    gevent.wait(objects = [self.jobStartEvent, self.errorEvent], count = 1)
-
-    if self.errorEvent.is_set():
-      raise self.runJobCallback.exception
-
-    if self.jobStartEvent.is_set():
-      if self.runJobCallback.exception:
-        raise self.runJobCallback.exception
-
-      gevent.wait(objects = [self.jobEndEvent, self.errorEvent, self.killEvent], count = 1)
-
-      if self.killEvent.is_set():
-        if self.jobEndEvent.is_set():
-          raise RunJobKilledException()
-        else:
-          self.killJob()
-          return
-
-      if self.errorEvent.is_set():
-        raise self.runJobCallback.exception
-
-      if self.jobEndEvent.is_set():
-        return
-    else:
-      # Shouldn't get here
-      raise Exception("Shouldn't get here")
-
-  def killJob(self):
-    # Get the channel_id
-    killchannel = self.getChannel()
-    jobid = self.runJobCallback.trans_id
-    killchannel.send({'msg' : 'JOB_KILL', 'job_id' : jobid })
-
-    # Now wait for the job to finish
-    waitEvent = gevent.wait(objects = [self.jobEndEvent, self.errorEvent], count = 1)
-
-    if self.errorEvent.is_set():
-      raise self.job.exception
-
-    raise RunJobKilledException()
 
 class RunJobCallback(object):
   """Callback for use with CallbackRegister.
 
   Responds to messages with matching channel and transaction ID."""
 
-  _logger = _logger.getChild("atsim.pro_fit.runners.RunJobCallback")
+  _logger = logging.getLogger(__name__).getChild("RunJobCallback")
 
   def __init__(self, workingDirectory, callback, trans_id, runClient):
     self.workingDirectory = workingDirectory
@@ -300,14 +169,11 @@ class RunJobCallback(object):
     self.active = True
     self.should_raise = False
     self.channel_id = None
-    # self.event = gevent.event.Event()
 
     self.pidSetEvent = gevent.event.Event()
     self._pid = None
-    self._runjobState = _RunJobState(self)
-    self.finishEvent = self._runjobState.finishEvent
-    self.killEvent = self._runjobState.killEvent
-    self._runjobState.start()
+    self.finishEvent = gevent.event.Event()
+    self.killEvent = gevent.event.Event()
 
   def __call__(self, msg):
     if not self.active:
@@ -330,12 +196,12 @@ class RunJobCallback(object):
 
       if mtype == 'ERROR':
         self.exception =  self.error(msg)
-        self._runjobState.errorEvent.set()
+        # self._runjobState.errorEvent.set()
         self.finish()
         return True
       elif mtype == "JOB_START_ERROR":
         self.exception = JobStartException()
-        self._runjobState.jobStartEvent.set()
+        # self._runjobState.jobStartEvent.set()
         self.finish()
         return True
 
@@ -344,35 +210,34 @@ class RunJobCallback(object):
         self.pid = pid
         self.channel_id = channel_id
         self._logger.debug("Job id=%s started in directory='%s' with pid=%s", transid, self.workingDirectory, pid)
-        self._runjobState.jobStartEvent.set()
+        # self._runjobState.jobStartEvent.set()
         return True
 
       if mtype == "JOB_END":
         if msg.get('killed', False):
           self._logger.warning("Job id=%s (working directory='%s') was killed", transid, self.workingDirectory)
           self.exception = RunJobKilledException()
-          self._runjobState.jobEndEvent.set()
+          # self._runjobState.jobEndEvent.set()
           self.finish()
           return True
         else:
           self._logger.debug("Job id=%s (working directory='%s') finished with return code %d", transid, self.workingDirectory, msg.get("returncode", "Unknown"))
-          self._runjobState.jobEndEvent.set()
+          # self._runjobState.jobEndEvent.set()
           self.finish()
           return True
       return False
     except Exception:
       self.exception = sys.exc_info()
-      self._runjobState.errorEvent.set()
+      # self._runjobState.errorEvent.set()
       self.finish()
       return True
 
-  @property
-  def isKilled(self):
-    return self.killEvent.is_set()
+  # @property
+  # def isKilled(self):
+  #   return self.killEvent.is_set()
 
-  def unregisterCallback(self):
-    self.active = False
-    self._runClient._submissionCallback.removeCallback(self)
+  def kill(self):
+    self._runClient.channel.send({'msg' : 'JOB_KILL', 'job_id' : self.trans_id})
 
   def error(self, msg):
     self._logger.warning("Callback job_id=%s, received ERROR message. msg = %s", self.trans_id, msg)
@@ -383,15 +248,17 @@ class RunJobCallback(object):
   def finish(self):
     self._logger.debug("finish called, %s", self.workingDirectory)
     self.active = False
+    self.finishEvent.set()
+    self.callback(self.exception, self)
     return True
 
-  def ready(self):
-    self._runjobState.readyEvent.set()
+  # def ready(self):
+  #   self._runjobState.readyEvent.set()
 
   def raise_exception(self):
     if self.should_raise:
       if self.exception:
-        self._runJobState.errorEvent.set()
+        self._runjobState.errorEvent.set()
         raise self.exception
 
   def _setPid(self, pid):
@@ -404,66 +271,4 @@ class RunJobCallback(object):
     return self._pid
 
   pid = property(_getPid, _setPid)
-
-class SubmissionCallback(object):
-  """Callback placed first in RunClient callback register.
-
-  Is responsible for listening to 'READY' messages and submitting jobs as necessary."""
-
-  _logger = _logger.getChild("SubmissionCallback")
-  submitted = True
-  active = True
-
-  def __init__(self, channel, trans_id, callbacklist):
-    self.channel = channel
-    self.trans_id = trans_id
-    self.callbacklist = callbacklist
-    self.pendingJobs = deque()
-
-  def __call__(self, msg):
-    mtype = msg.get("msg")
-    self._logger.getChild("__call__").debug("Received message: %s", msg)
-    if mtype in ["BUSY", "READY"]:
-      channel_id = msg.get("channel_id")
-      self._statusPing(msg, channel_id)
-      if mtype == "BUSY":
-        return True
-      elif mtype == "READY":
-        cb = self._findNextJob()
-        if not cb is None:
-          self._submitJob(channel_id, cb)
-        return True
-    return False
-
-  def registerJob(self, cb):
-      self.pendingJobs.appendleft(cb)
-
-  def removeCallback(self, cb):
-    cb.active = False
-    if cb in self.callbacklist:
-      self.callbacklist.remove(cb)
-    elif cb in self.pendingJobs:
-      self.pendingJobs.remove(cb)
-
-  def _findNextJob(self):
-    try:
-      job = None
-      while job is None:
-        job = self.pendingJobs.pop()
-        if job.isKilled:
-          job = None
-      return job
-    except IndexError:
-      return None
-
-  def _statusPing(self, msg, channel_id):
-    channel = self.channel.getChannel(channel_id)
-    channel.send(msg)
-
-  def _submitJob(self, channel_id, job):
-    job.channel_id = channel_id
-    self.callbacklist.append(job)
-    job.ready()
-
-
 

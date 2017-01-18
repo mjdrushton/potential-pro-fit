@@ -168,8 +168,11 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
 
   # Run the jobs
   runner = _createRunner(runfixture, vagrant_basic, 4)
-
   b1_future = _runBatch(runner, batch1)
+
+  # while sum([1 for j in b1_future.jobs if j.pidSetEvent != None]) != len(b1_future.jobs):
+  #   gevent.sleep(1.0)
+  # gevent.wait([j.pidSetEvent for j in b1_future.jobs], 10)
 
   # Check that the remote job has created the directories it needs.
   gw = _mkexecnetgw(vagrant_basic)
@@ -191,7 +194,7 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
         count += found
 
       logger.debug("checkpaths count on %d attempt: %d (expecting %d)", i, count, len(f.jobs))
-      time.sleep(1)
+      gevent.sleep(1)
       if count == len(f.jobs):
         return
     assert count == len(f.jobs), "Remote paths not found"
@@ -286,7 +289,7 @@ def testClose(runfixture, vagrant_basic, tmpdir):
   gw = _mkexecnetgw(vagrant_basic)
 
   rstatus = runner._inner._gw.remote_status()
-  assert  1 + ncpu +  runner._inner._numDownload + runner._inner._numUpload == rstatus.numchannels
+  assert  1 + 1 +  runner._inner._numDownload + runner._inner._numUpload == rstatus.numchannels
 
   jobiter = _mklongjob(tmpdir)
 
@@ -301,11 +304,13 @@ def testClose(runfixture, vagrant_basic, tmpdir):
   b1 = runner.runBatch(b1_jobs)
   b2 = runner.runBatch(b2_jobs)
 
-
   def waitForRun():
     running = []
     while len(running) < ncpu:
-      running =  [ j for j in itertools.chain(b1.jobs,b2.jobs) if not j.pidSetEvent is None and j.pidSetEvent.is_set() ]
+      # running =  [ j for j in itertools.chain(b1.jobs,b2.jobs) if  j.pidSetEvent != None ]
+      running =  [ j for j in b1.jobs if  j.pidSetEvent != None ]
+      running = [ j for j in running if j.pidSetEvent.is_set()]
+      print len(running)
       gevent.sleep(0.1)
     return running
 
@@ -358,7 +363,7 @@ def testBatchTerminate2(runfixture, vagrant_basic, tmpdir):
     gw = _mkexecnetgw(vagrant_basic)
 
     rstatus = runner._inner._gw.remote_status()
-    assert  1 + ncpu +  runner._inner._numDownload + runner._inner._numUpload == rstatus.numchannels
+    assert  1 + 1 +  runner._inner._numDownload + runner._inner._numUpload == rstatus.numchannels
 
     jobiter = _mklongjob(tmpdir)
 

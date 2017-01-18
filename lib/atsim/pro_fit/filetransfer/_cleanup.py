@@ -8,6 +8,8 @@ import uuid
 import itertools
 import sys
 
+import gevent
+
 class CleanupChannel(AbstractChannel):
   """Channel type for use with CleanupClient"""
 
@@ -135,6 +137,7 @@ class CleanupClient(object):
     cbobj = self._registerCallback(callback, "LOCKED")
     msg = {'msg' : 'LOCK', 'remote_path' : paths, 'id' : cbobj.trans_id}
     self.channel.send(msg)
+    gevent.sleep(0)
     cbobj.event.wait(self.block_timeout)
     cbobj.raise_exception()
 
@@ -156,6 +159,7 @@ class CleanupClient(object):
     cbobj = self._registerCallback(callback, "UNLOCKED")
     msg = {'msg' : 'UNLOCK', 'remote_path' : paths, 'id' : cbobj.trans_id}
     self.channel.send(msg)
+    gevent.sleep(0)
     cbobj.event.wait(self.block_timeout)
     cbobj.raise_exception()
 

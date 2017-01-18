@@ -63,7 +63,6 @@ class UploadHandler(object):
     self.source_path = source_path
     self.dest_path = dest_path
 
-
   def mkdir(self, msg):
     """Called by UploadDirectory with MKDIR request dictionary before it is sent via an UploadChannel. When `msg` is passed into this method,
     its `remote_path` is actually the local path that needs to be created on the remote. This method is typically used to rewrite `remote_path`
