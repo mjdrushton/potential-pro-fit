@@ -22,7 +22,6 @@ class FitConfig(object):
   """Object parses fit.cfg at root of a fitTool.py run
   and acts as factory for objects required by the fitting tool"""
 
-  _logger = logging.getLogger('atsim.pro_fit.fittool.FitConfig')
 
   # The set of section names that can be repeated in a fit.cfg file.
   _repeatedSections = set(['Runner', 'Evaluator'])
@@ -38,6 +37,7 @@ class FitConfig(object):
     @param minimizermodules List of python module objects contiaining Minimizers
     @param jobdir If specified use as directory for temporary files, if not use rootpath/jobs
     @param minimizer If not None overrides the minimizer specified in fit.cfg"""
+    self._logger = logging.getLogger(__name__).getChild('FitConfig')
     self._fitRootPath = os.path.abspath(os.path.dirname(fitCfgFilename))
     if jobdir:
       self.jobdir = jobdir
@@ -67,6 +67,42 @@ class FitConfig(object):
     self._merit = self._createMerit()
     self._minimizer = self._createMinimizer(minimizermodules)
     self._title = self._parseTitle()
+
+    self._endEvent = gevent.event.Event()
+
+    self._closeGreenlet = gevent.spawn(self._close)
+    self._closedEvent = gevent.event.Event()
+
+    def closedevtset(grn):
+      self._closedEvent.set()
+    self._closeGreenlet.link(closedevtset)
+
+  def _close(self):
+    """Shuts-down the fitting system"""
+    self._endEvent.wait()
+    logging.info("Shutting down 'pprofit'")
+    logging.info("Shutting down minimizer.")
+    self._minimizer.stopMinimizer()
+    evts = self._closeRunners()
+    gevent.wait(evts)
+
+  def _closeRunners(self):
+    evts = []
+    for name, r in self._runners.iteritems():
+      self._logger.info("Closing runner: '%s'", name)
+      e = r.close()
+      def repclose(evt, name):
+        evt.wait()
+        self._logger.info("Runner '%s' now closed.", name)
+      gevent.spawn(repclose, e, name)
+      evts.append(e)
+    return evts
+
+  def close(self):
+    """Used to terminate pprofit. This is equivalent to self.killEvent.set()"""
+    self.endEvent.set()
+    self._closedEvent.wait()
+
 
   def title(self):
     return self._title
@@ -108,6 +144,12 @@ class FitConfig(object):
   metaEvaluators = property(
     fget = metaEvaluators,
     doc = "Return list of meta-evaluator objects parsed from fit.cfg")
+
+  def endEvent(self):
+    return self._endEvent
+  endEvent = property(
+    fget = endEvent,
+    doc = "Return event set when SIGINT is called indicating that system should be terminated.")
 
   def _parseConfig(self, fitCfgFilename):
     """@param fitCfgFilename Filename for fit.cfg.
@@ -777,9 +819,3 @@ class Merit(object):
           evaluatorRecords.append(metaEvaluator(batch))
         metaEvaluatorJob = jobfactories.MetaEvaluatorJob("meta_evaluator", evaluatorRecords,batch[0].variables)
         batch.append(metaEvaluatorJob)
-
-  def close(self):
-    for runner in self._runners:
-      runner.close()
-
-

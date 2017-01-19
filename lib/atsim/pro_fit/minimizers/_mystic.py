@@ -3,6 +3,8 @@ import logging
 from _common import * # noqa
 from atsim.pro_fit.fittool import ConfigException
 
+import gevent
+
 
 class _NelderMeadMeritCallback(object):
   """Callback used by _NelderMeadStepMonitor to capture MinimizerResults for each iteration"""
@@ -61,26 +63,7 @@ class _NelderMeadStepMonitor(object):
     self.merit.afterMerit = None
 
 
-class NelderMeadMinimizer(object):
-  """Minimizer for the Nelder-Mead simplex method.
-
-  This class is simply as wrapper around the mystic.scipy_optimize.NelderMeadSimplexSolver function.
-
-  If you make use of this class you should cite in any resulting work:
-
-    M.M. McKerns, L. Strand, T. Sullivan, A. Fang, M.A.G. Aivazis,
-    "Building a framework for predictive science", Proceedings of
-    the 10th Python in Science Conference, 2011;
-    http://arxiv.org/pdf/1202.1056
-
-    Michael McKerns, Patrick Hung, and Michael Aivazis,
-    "mystic: a simple model-independent inversion framework", 2009- ;
-    http://dev.danse.us/trac/mystic
-
-  """
-
-  _logger = logging.getLogger('atsim.pro_fit.minimizers.NelderMeadMinimizer')
-
+class _NelderMeadInner(object):
   def __init__(self, variables, maxiter, xtol, ftol):
     """Create simplex minimizer
 
@@ -88,11 +71,11 @@ class NelderMeadMinimizer(object):
     @param maxiter Maximum number of minimization max_iterations
     @param xtol Variable value convergence criterion
     @param ftol Merit function convergence criterion"""
+    self._logger = logging.getLogger(__name__).getChild('NelderMeadMinimizer')
     self._initialVariables = variables
     self._maxIter = maxiter
     self._xtol = xtol
     self._ftol = ftol
-    self.stepCallback = None
     self._logger.debug("Created NelderMeadMinimizer. initial Variables = %s, maximum iterations = %s, xtol = %s, ftol = %s" % (self._initialVariables, self._maxIter, self._xtol, self._ftol))
 
   def _initialArgs(self):
@@ -122,35 +105,74 @@ class NelderMeadMinimizer(object):
       return None
     return bounds
 
+  def minimize(self, merit, stepevaluator):
+    """Perform minimization.
+
+    @param merit atsim.pro_fit.fittool.Merit instance used to calculate merit value.
+    @param stepevaluator _NelderMeadStepMonitor called every step, used to monitor minimizer progress.
+    @return MinimizerResults for candidate solution population containing best merit value."""
+    import mystic
+    self._logger.info("Starting minimisation.")
+    optifunc = self._meritWrapper(merit)
+    initargs = self._initialArgs()
+    minimizer = mystic.scipy_optimize.NelderMeadSimplexSolver(len(initargs))
+    minimizer.SetInitialPoints(initargs)
+    minimizer.SetEvaluationLimits(maxiter = self._maxIter)
+    bounds = self._getBounds()
+    if bounds != None:
+      lowbounds = [l for (l,h) in bounds]
+      upperbounds = [h for (l,h) in bounds]
+      minimizer.SetStrictRanges(lowbounds, upperbounds)
+
+    minimizer.Solve(optifunc,
+      termination=mystic.termination.CandidateRelativeTolerance(self._xtol, self._ftol),
+      StepMonitor = stepevaluator)
+
+    #Extract final optimization merit value and variables from the step monitor.
+    return stepevaluator.bestSolution
+
+class NelderMeadMinimizer(object):
+  """Minimizer for the Nelder-Mead simplex method.
+
+  This class is simply as wrapper around the mystic.scipy_optimize.NelderMeadSimplexSolver function.
+
+  If you make use of this class you should cite in any resulting work:
+
+    M.M. McKerns, L. Strand, T. Sullivan, A. Fang, M.A.G. Aivazis,
+    "Building a framework for predictive science", Proceedings of
+    the 10th Python in Science Conference, 2011;
+    http://arxiv.org/pdf/1202.1056
+
+    Michael McKerns, Patrick Hung, and Michael Aivazis,
+    "mystic: a simple model-independent inversion framework", 2009- ;
+    http://dev.danse.us/trac/mystic
+
+  """
+
+  def __init__(self, variables, maxiter, xtol, ftol):
+    """Create simplex minimizer
+
+    @param variables Initial parameter set (atomsscript.fitting.fittool.Variables)
+    @param maxiter Maximum number of minimization max_iterations
+    @param xtol Variable value convergence criterion
+    @param ftol Merit function convergence criterion"""
+    self._inner = _NelderMeadInner(variables, maxiter, xtol, ftol)
+    self._greenlet = gevent.Greenlet()
+
   def minimize(self, merit):
     """Perform minimization.
 
     @param merit atsim.pro_fit.fittool.Merit instance used to calculate merit value.
     @return MinimizerResults for candidate solution population containing best merit value."""
-    import mystic
-    self._logger.info("Starting minimisation.")
-    optifunc = self._meritWrapper(merit)
     stepevaluator = _NelderMeadStepMonitor(self.stepCallback, merit)
-    try:
-      initargs = self._initialArgs()
-      minimizer = mystic.scipy_optimize.NelderMeadSimplexSolver(len(initargs))
-      minimizer.SetInitialPoints(initargs)
-      minimizer.SetEvaluationLimits(maxiter = self._maxIter)
-      bounds = self._getBounds()
-      if bounds != None:
-        lowbounds = [l for (l,h) in bounds]
-        upperbounds = [h for (l,h) in bounds]
-        minimizer.SetStrictRanges(lowbounds, upperbounds)
+    self._greenlet = gevent.Greenlet(self._inner.minimize, merit, stepevaluator)
 
-      minimizer.Solve(optifunc,
-        termination=mystic.termination.CandidateRelativeTolerance(self._xtol, self._ftol),
-        StepMonitor = stepevaluator)
-
-      #Extract final optimization merit value and variables from the step monitor.
-      return stepevaluator.bestSolution
-    finally:
+    def clean(grn):
       stepevaluator.cleanUp()
 
+    self._greenlet.link(clean)
+    self._greenlet.start()
+    return self._greenlet.get()
 
   @staticmethod
   def createFromConfig(variables, configitems):
@@ -196,4 +218,6 @@ class NelderMeadMinimizer(object):
 
     return NelderMeadMinimizer(variables, max_iterations, value_tolerance, function_tolerance)
 
+  def stopMinimizer(self):
+    self._greenlet.kill()
 

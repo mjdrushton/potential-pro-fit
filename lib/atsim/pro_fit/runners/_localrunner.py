@@ -50,12 +50,6 @@ class _CopyDirectory(object):
       self._greenlet.join()
 
   def cancel(self):
-    if self._greenlet is None:
-      event = gevent.event.Event()
-      event.set()
-      return event
-
-    self._greenlet.kill(block = False)
     return self.finishEvent
 
 class _CopyDirectoryUp(_CopyDirectory):

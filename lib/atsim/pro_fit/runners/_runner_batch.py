@@ -48,6 +48,8 @@ class _BatchMonitorThread(object):
 
   def doLock(self):
     self._logger.debug("doLock")
+    if self.killedEvent.is_set():
+      raise BatchKilledException()
     lockEvent = gevent.event.Event()
     def callback(exception):
       if not exception is None:

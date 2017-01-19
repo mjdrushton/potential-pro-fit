@@ -248,8 +248,8 @@ class RunJobCallback(object):
   def finish(self):
     self._logger.debug("finish called, %s", self.workingDirectory)
     self.active = False
-    self.finishEvent.set()
     self.callback(self.exception, self)
+    self.finishEvent.set()
     return True
 
   # def ready(self):

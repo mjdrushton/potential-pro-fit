@@ -12,6 +12,7 @@ import posixpath
 import os
 import sys
 import traceback
+import traceback
 
 import gevent
 from gevent.event import Event
@@ -19,17 +20,21 @@ from gevent.event import Event
 
 class RemoteRunnerCloseThreadBase(gevent.Greenlet):
 
-  _logger = logging.getLogger(__name__).getChild("RemoteRunnerCloseThreadBase")
 
   def __init__(self, runner):
     super(RemoteRunnerCloseThreadBase, self).__init__()
-    # gevent.Greenlet.__init__(self)
+    self._logger = logging.getLogger(__name__).getChild("RemoteRunnerCloseThreadBase")
     self.runner = runner
     self.afterEvent = gevent.event.Event()
     self.batchKillEvents = None
     self.closeRunClientEvents = None
     self.closeUploadEvents = None
     self.closeDownloadEvents = None
+
+    def afterevtset(grn):
+      self.afterEvent.set()
+
+    self.link(afterevtset)
 
   def terminateBatches(self):
     return [ b.terminate() for b in self.runner._extantBatches]
@@ -66,36 +71,65 @@ class RemoteRunnerCloseThreadBase(gevent.Greenlet):
   def closeCleanup(self):
     return self._closeChannel(self.runner._cleanupChannel, 'cleanup')
 
+  def _len_or_None(self, val):
+    if val is None:
+      return 'None'
+    else:
+      return str(len(val))
+
+
   def _run(self):
     try:
-      self.batchKillEvents = self.terminateBatches()
-      if self.batchKillEvents:
-        gevent.wait(objects = self.batchKillEvents, timeout = 120)
+
+      try:
+        self.batchKillEvents = self.terminateBatches()
+        self._logger.debug("Terminating batches, waiting for %s events", self._len_or_None(self.batchKillEvents))
+        if self.batchKillEvents:
+          gevent.wait(objects = self.batchKillEvents, timeout = 120)
+          self._logger.debug("Terminating batches (Done)")
+      except:
+        self._logger.warning("Error terminating batches: %s", traceback.format_exc())
 
       allEvents = []
-      self.closeRunClientEvents = self.closeRunClient()
-      if self.closeRunClientEvents:
-        allEvents.extend(self.closeRunClientEvents)
+      try:
+        self.closeRunClientEvents = self.closeRunClient()
+        self._logger.debug("Closing run client will wait for %s events", self._len_or_None(self.closeRunClientEvents))
+        if self.closeRunClientEvents:
+          gevent.wait(self.closeRunClientEvents)
+      except:
+        self._logger.warning("Error closing run client: %s", traceback.format_exc())
 
-      self.closeUploadEvents = self.closeUpload()
-      if self.closeUploadEvents:
-        allEvents.extend(self.closeUploadEvents)
 
-      self.closeDownloadEvents = self.closeDownload()
-      if self.closeDownloadEvents:
-        allEvents.extend(self.closeDownloadEvents)
+      try:
+        self.closeUploadEvents = self.closeUpload()
+        self._logger.debug("Closing upload channels will wait for %s events", self._len_or_None(self.closeUploadEvents))
+        if self.closeUploadEvents:
+          allEvents.extend(self.closeUploadEvents)
+      except:
+        self._logger.warning("Error closing upload channels: %s", traceback.format_exc())
 
-      self.closeCleanupEvents = self.closeCleanup()
-      if self.closeCleanupEvents:
-        allEvents.extend(self.closeCleanupEvents)
+      try:
+        self.closeDownloadEvents = self.closeDownload()
+        self._logger.debug("Closing download channels will wait for %s events", self._len_or_None(self.closeDownloadEvents))
+        if self.closeDownloadEvents:
+          allEvents.extend(self.closeDownloadEvents)
+      except:
+        self._logger.warning("Error closing download channels: %s", traceback.format_exc())
+
+      try:
+        self.closeCleanupEvents = self.closeCleanup()
+        self._logger.debug("Closing cleanup channels will wait for %s events", self._len_or_None(self.closeCleanupEvents))
+        if self.closeCleanupEvents:
+          allEvents.extend(self.closeCleanupEvents)
+      except:
+        self._logger.warning("Error closing cleanup channels: %s", traceback.format_exc())
 
       gevent.wait(objects = allEvents, timeout = 120)
+      self._logger.debug("Cleanup finished.")
     except:
       exception = sys.exc_info()
       tbstring = traceback.format_exception(*exception)
       self._logger.warning("Exception raised during close(): %s", tbstring)
-    finally:
-      self.afterEvent.set()
 
 class _RunnerJobUploadHandler(UploadHandler):
   """Handler that acts as finish() callback for RunnerJob.
@@ -261,7 +295,6 @@ class BaseRemoteRunner(object):
   def batchDir(self, batchId):
     batchDir = posixpath.join(self._remotePath, batchId)
     return batchDir
-
 
   def createBatch(self, batchDir, jobs, batchId):
     """Create a RunnerBatch instance.

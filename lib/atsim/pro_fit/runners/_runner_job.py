@@ -46,6 +46,10 @@ class _RunnerJobThread(object):
       raise exception
 
   def doLock(self):
+    if self.killedEvent.is_set():
+      self.finishJob(JobKilledException())
+      return False
+
     lockEvent = self.job._lockDirectory()
     lockEvent.wait()
     exc = self.job.exception
@@ -58,6 +62,10 @@ class _RunnerJobThread(object):
     self.startUpload()
 
   def doUpload(self):
+    if self.killedEvent.is_set():
+      self.finishJob(JobKilledException())
+      return False
+
     self.job.status.append("start upload")
     uploadedEvent, uploadDirectory = self.job._startUpload()
     mergedEvent = self._makeEventOrKillEvent(uploadedEvent)
@@ -88,6 +96,10 @@ class _RunnerJobThread(object):
     self.finishJob(UploadCancelledException())
 
   def doRun(self):
+    if self.killedEvent.is_set():
+      self.finishJob(JobKilledException())
+      return False
+
     self.job.status.append("start job run")
     jobRunEvent, jobRun = self.job._startJobRun()
     mergedEvent = self._makeEventOrKillEvent(jobRunEvent)
@@ -122,6 +134,10 @@ class _RunnerJobThread(object):
     return False
 
   def doDownload(self):
+    if self.killedEvent.is_set():
+      self.finishJob(JobKilledException())
+      return False
+
     self.job.status.append("start download")
     downloadedEvent, downloadDirectory = self.job._startDownload()
     mergedEvent = self._makeEventOrKillEvent(downloadedEvent)
@@ -334,7 +350,6 @@ class RunnerJob(object):
 
   def __repr__(self):
     return "job %s from batch %s" % (self.jobid, self.parentBatch.name)
-
 
 class RunnerJobRunClientJob(object):
 

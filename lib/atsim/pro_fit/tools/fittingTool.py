@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 from gevent import monkey
 monkey.patch_all()
+monkey.patch_thread()
 
 from atsim import pro_fit
 
@@ -43,6 +44,14 @@ def _monkeyPatchExecnetSIGINT():
   execnet.gateway_base.get_execmodel = get_execmodel
 
 _monkeyPatchExecnetSIGINT()
+
+def _registerSignalHandlers(intEvent):
+  import signal
+
+  def setevt(signum, stackframe):
+    intEvent.set()
+  signal.signal(signal.SIGINT, setevt)
+  signal.signal(signal.SIGTERM, setevt)
 
 
 class _FittingToolException(Exception):
@@ -385,14 +394,17 @@ def _invokeMinimizer(cfg, logger, logsql):
   minimizer = cfg.minimizer
   minimizer.stepCallback = stepCallback
   try:
-    with contextlib.closing(cfg.merit):
-      minimizer.minimize(cfg.merit)
+    # with contextlib.closing(cfg.merit):
+    _registerSignalHandlers(cfg.endEvent)
+    minimizer.minimize(cfg.merit)
     if logsql:
       sqlreporter.finished()
   except:
     if logsql:
       sqlreporter.finished(True)
     raise
+  finally:
+    cfg.close()
 
 class _PluginException(Exception):
   def __init__(self, filename, childexception):

@@ -36,7 +36,6 @@ class AbstractChannel(object):
 
   """
 
-  _logger = logging.getLogger("atsim.pro_fit._channel.BaseChannel")
 
   def __init__(self, execnet_gw, channel_remote_exec, channel_id = None, connection_timeout = 60):
     """Create an execnet channel (which is wrapped in this object) using the `_file_transfer_remote_exec` as its
@@ -48,6 +47,7 @@ class AbstractChannel(object):
         channel_id (None, optional): Channel id - if not specified a uuid will be generated.
         connection_timeout (int, optional): Timeout in seconds after which connection will fail if 'READY' message not received.
     """
+    self._logger = logging.getLogger("__name__").getChild("BaseChannel")
     if channel_id is None:
       self._channel_id = str(uuid.uuid4())
     else:
@@ -129,10 +129,13 @@ class AbstractChannel(object):
     return self._channel
 
   def next(self):
-    return self._channel.next()
+    msg = self._channel.next()
+    self._logger.debug("_next, %s: %s", self.channel_id, msg)
+    return msg
 
   def _send(self, ch, msg):
     with ch.gateway._sendlock:
+      self._logger.debug("_send, %s: %s", self.channel_id, msg)
       ch.send(msg)
 
   def send(self, msg):

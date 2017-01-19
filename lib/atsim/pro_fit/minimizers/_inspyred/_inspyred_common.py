@@ -1,6 +1,7 @@
 import math
 
 import inspyred
+import gevent
 
 from .._common import MinimizerResults
 
@@ -176,9 +177,20 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
     self._args = args
     self._populationSize = populationSize
     self.stepCallback = None
+    self._greenlet = gevent.Greenlet()
 
 
   def minimize(self, merit):
+    """Perform minimization.
+
+    @param merit atsim.pro_fit.fittool.Merit instance used to calculate merit value.
+    @return MinimizerResults for candidate solution population containing best merit value."""
+    self._greenlet = gevent.spawn(self._minimize, merit)
+    self._greenlet.start()
+    return self._greenlet.get()
+
+
+  def _minimize(self, merit):
     """Perform minimization.
 
     @param merit atsim.pro_fit.fittool.Merit instance used to calculate merit value.
@@ -189,7 +201,6 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
     evaluator = Evaluator(self._initialVariables, merit)
     observer = Observer(self.stepCallback)
     origobserver = observer
-
 
     # Respect any callbacks already registered on the inspyred minimizer
     if self._ec.bounder:
@@ -215,6 +226,8 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
       **self._args)
     return origobserver.bestMinimizerResults
 
+  def stopMinimizer(self):
+    self._greenlet.kill()
 
 def _convertFactory(clsname, key, convfunc, bounds):
   def f(v):

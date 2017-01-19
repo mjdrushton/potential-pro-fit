@@ -142,7 +142,6 @@ class PBSRunnerBatch(RunnerBatch):
   def createDownloadDirectory(self, job):
     # The output directory is created in the root of the job directory
     # not in job_files/output. Need to rewrite the remotePath to account for this.
-    # import pdb;pdb.set_trace()
     modified_job = _ModifiedPathJob(job)
     modified_job.remotePath = posixpath.join(modified_job.remotePath, 'output')
     # modified_job.sourcePath = os.path.join(modified_job.sourcePath, 'job_files')
