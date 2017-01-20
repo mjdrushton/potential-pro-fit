@@ -89,7 +89,7 @@ class _WaitForMessageCB(object):
     except:
       return
 
-    transaction_id = msg['transaction_id']
+    transaction_id = msg.get('transaction_id', None)
 
     if not (transaction_id == self.transaction_id and mtype == self.mtype):
       return

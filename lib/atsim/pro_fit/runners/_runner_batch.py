@@ -5,6 +5,7 @@ import os
 import posixpath
 import sys
 import traceback
+import itertools
 
 from _runner_job import RunnerJob
 
@@ -90,8 +91,11 @@ class _BatchMonitorThread(object):
         self.killJobs()
 
   def killJobs(self):
-    self._logger.debug("killJobs")
-    killEvents = [ job.kill() for job in self.extantJobs]
+    self.killedEvent.set()
+    runningJobs = [ j for j in self.extantJobs if j.jobRunEvent.is_set()]
+    waitingJobs = [ j for j in self.extantJobs if not j.jobRunEvent.is_set()]
+    killJobs = itertools.chain(waitingJobs, runningJobs)
+    killEvents = [ job.kill() for job in killJobs]
     gevent.wait(objects = killEvents)
     self._logger.debug("killJobs finished")
 

@@ -129,6 +129,10 @@ class JobRecord(object):
     return self._runjobcallback.pidSetEvent
 
   @property
+  def jobRunEvent(self):
+    return self.pidSetEvent
+
+  @property
   def pid(self):
     return self._runjobcallback.pid
 

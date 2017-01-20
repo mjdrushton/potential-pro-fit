@@ -16,7 +16,7 @@ class RunCmd(threading.Thread):
   def __init__(self, parent, shell, hardkill_timeout, semval):
     self.lock = threading.RLock()
     self.parent = parent
-    self.kill_called = False
+    self.kill_called = threading.Event()
     self.path = None
     self.job_id = None
     self.semval = semval
@@ -34,9 +34,8 @@ class RunCmd(threading.Thread):
 
   def run(self):
     try:
-      with self.lock:
-        if self.kill_called:
-          return self.jobdone(True)
+      if self.kill_called.is_set():
+        return self.jobdone(True)
 
       rjpath = os.path.join(self.path, 'runjob')
 
@@ -44,33 +43,39 @@ class RunCmd(threading.Thread):
         self.parent.jobstarterror(self.job_id, "PATH_ERROR, '%s' does not exist or is not a file." % rjpath)
         return
 
-      with self.lock:
-        self.popen = subprocess.Popen([self.shell, 'runjob'], cwd = self.path, close_fds=True)
-        self.parent.jobstarted(self.job_id, self.popen.pid, self.semval)
+      if not self.kill_called.is_set():
+        with self.lock:
+          self.popen = subprocess.Popen([self.shell, 'runjob'], cwd = self.path, close_fds=True)
+          self.parent.jobstarted(self.job_id, self.popen.pid, self.semval)
+        self.popen.wait()
 
-      self.popen.wait()
-
-      with self.lock:
-        if self.kill_called:
-          self.jobdone(True)
-        else:
-          self.jobdone(False)
+      if self.kill_called.is_set():
+        self.jobdone(True)
+      else:
+        self.jobdone(False)
     finally:
       self.parent.runcmdfinished(self)
       self.finishedEvent.set()
 
-  def killjob(self, wait = False):
-    olkk = self.kill_called
-    self.kill_called = True
-    if not olkk and not self.popen is None:
+  def killjob(self, immediate_kill = False, wait = False):
+    with self.lock:
+      olkk = self.kill_called.is_set()
+      popenstatus = self.popen is None
+      self.kill_called.set()
+
+    if not olkk and not popenstatus is None:
       self.popen.terminate()
 
-      def hardkill(self, popen):
-        if self.isAlive() and popen.poll() is None:
+      def hardkill(slf, popen):
+        if slf.isAlive() and popen.poll() is None:
           popen.kill()
 
-      t =  threading.Timer(self.hardkill_timeout, hardkill, [self, self.popen])
-      t.start()
+      if immediate_kill:
+        hardkill(self, self.popen)
+        self.popen.wait()
+      else:
+        t =  threading.Timer(self.hardkill_timeout, hardkill, [self, self.popen])
+        t.start()
 
       if wait:
         self.finishedEvent.wait()
@@ -106,8 +111,6 @@ class Runners(threading.Thread):
           return
         time.sleep(self._timeout)
 
-      runcmd = self._makeruncmd()
-
       job = None
       while not job:
         if self._killevent.is_set():
@@ -119,23 +122,22 @@ class Runners(threading.Thread):
 
       if self._killevent.is_set():
         return
-      runcmd.job_id = job.job_id
-      runcmd.path = job.path
-      with runcmd.lock:
-        killcalled = runcmd.kill_called
-      if not  killcalled:
+      runcmd = self._makeruncmd(job)
+
+      if not runcmd.kill_called.is_set():
         runcmd.start()
-      else:
+      elif not runcmd.isAlive():
         self.jobdone(runcmd.job_id)
 
 
   def runjob(self, job_id, job_path):
       if self._killevent.is_set():
+        self.jobdone(job_id)
         return
       jobtuple = JobTuple(job_id, job_path)
       self._queued_jobs.put(jobtuple)
 
-  def killjob(self, job_id):
+  def killjob(self, job_id, immediate_kill = True, wait = False):
     # Has job been run? If not remove from the queued jobs
     with self._queued_jobs.mutex:
       jobtuples = [ j for j in self._queued_jobs.queue if j.job_id == job_id]
@@ -152,10 +154,9 @@ class Runners(threading.Thread):
         break
     if found:
       if found.isAlive():
-        found.killjob()
+        found.killjob(immediate_kill = immediate_kill, wait = wait)
       else:
-        with found.lock:
-          found.kill_called = True
+        found.kill_called.set()
         # self._runcmd.remove(found)
       return True
     return False
@@ -178,34 +179,30 @@ class Runners(threading.Thread):
   def jobstarted(self, job_id, pid, semaphore):
     return self._parent.jobstarted(job_id, pid, semaphore)
 
-  def _makeruncmd(self):
+  def _makeruncmd(self, job):
     semval = self._semaphore._initial_value -  self._semaphore._Semaphore__value
     cmd = RunCmd(self, self._parent.shell, self._parent.hardkill_timeout, semval)
+    cmd.job_id = job.job_id
+    cmd.path = job.path
     with self._lock:
       self._runcmd.add(cmd)
     return cmd
 
   def terminate(self):
-    # self._killevent.set()
-    # with self._lock:
-    #   for runcmd in list(self._runcmd):
-    #     with runcmd.lock:
-    #       runcmd.hardkill_timeout = 0
-    #     runcmd.killjob(wait=True)
-
     self._killevent.set()
     with self._queued_jobs.mutex:
       job_ids = [ j.job_id for j in self._queued_jobs.queue]
     for job_id in job_ids:
-      self.killjob(job_id)
+      self.killjob(job_id, immediate_kill = True, wait = True)
     joins = []
     job_ids = []
     for runcmd in list(self._runcmd):
       if runcmd.job_id != None:
-        self.killjob(runcmd.job_id)
+        self.killjob(runcmd.job_id, immediate_kill = True, wait = True)
+      else:
+        runcmd.kill_called.set()
       if runcmd.isAlive():
         joins.append(runcmd)
-
     for j in joins:
       j.join(60.0)
 
@@ -251,7 +248,7 @@ class EventLoop(threading.Thread):
       uuid_msg['msg'] == 'START_CHANNEL'
       self.channel_id = uuid_msg['channel_id']
       self.shell = uuid_msg.get('shell', '/bin/bash')
-      self.hardkill_timeout = uuid_msg.get('hardkill_timeout', 60)
+      self.hardkill_timeout = uuid_msg.get('hardkill_timeout', 5)
       try:
         self.nprocesses = uuid_msg.get('nprocesses', cpu_count())
       except NotImplementedError:
@@ -293,7 +290,7 @@ class EventLoop(threading.Thread):
         except KeyError:
           self.sendargs(msg = "ERROR", channel_id = self.channel_id, reason = "missing job_id for JOB_KILL")
 
-        self.runners.killjob(job_id)
+        self.runners.killjob(job_id, wait = True)
 
       else:
         self.sendargs(msg = "ERROR", reason = "UNKNOWN_MSG_TYPE", msg_type = mtype)

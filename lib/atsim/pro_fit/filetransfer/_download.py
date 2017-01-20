@@ -307,13 +307,12 @@ class _DownloadCallback(object):
     while not self.event.isSet():
         try:
           msg = self.msg_q.get(timeout = 1)
-          try:
-            self._process_queue_item(msg)
-          except Exception,e:
-            exc = e
-            break
+          self._process_queue_item(msg)
         except gevent.queue.Empty:
           pass
+        except Exception,e:
+          exc = e
+          break
         gevent.sleep(0)
     self.enabled = False
     self._call_download_handler_finish(exc)

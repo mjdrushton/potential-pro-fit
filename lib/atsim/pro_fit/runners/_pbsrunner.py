@@ -34,10 +34,9 @@ EXECNET_TERM_TIMEOUT=10
 class _PBSRunnerCloseThread(RemoteRunnerCloseThreadBase):
 
   def closeRunClient(self):
-    self.runner._pbsclient.close()
-    evt = Event()
-    evt.set()
-    return [evt]
+    self.runner._pbsclient.close(closeChannel = False)
+    evts = self._closeChannel(self.runner._pbsclient.channel, 'closeRunClient')
+    return evts
 
 
 class InnerPBSRunner(BaseRemoteRunner):

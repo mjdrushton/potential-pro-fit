@@ -1,5 +1,5 @@
 
-from atsim.pro_fit._util import MultiCallback
+from atsim.pro_fit._util import MultiCallback, linkevent_spawn
 from _runner_batch import RunnerBatch
 from _exceptions import JobKilledException
 
@@ -25,6 +25,10 @@ class PBSRunnerJobRecord(object):
     self._pbsclient_record = None
     self._pbs_submit_event = Event()
     self._pbsinclude = pbsinclude
+
+  @property
+  def jobRunEvent(self):
+    return self._pbs_submit_event
 
   @property
   def pbs_submit_event(self):
@@ -60,11 +64,7 @@ class PBSRunnerJobRecord(object):
     pbsclient_record = self._pbsclient.runJobs(joblist, callback, header_lines = self._pbsinclude)
     self._pbsclient_record = pbsclient_record
 
-    def linkevent(evt, depend):
-      evt.wait()
-      depend.set()
-
-    gevent.spawn(linkevent, self._pbsclient_record.qsubEvent, self._pbs_submit_event)
+    linkevent_spawn(self._pbsclient_record.qsubEvent, self._pbs_submit_event)
 
 
   def _handler_wrap(self, handler):

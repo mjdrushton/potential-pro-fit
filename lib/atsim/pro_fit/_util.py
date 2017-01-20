@@ -224,3 +224,10 @@ def NamedEvent(name):
   event.name = name
   return event
 
+def linkevent(evt, depend):
+  evt.wait()
+  depend.set()
+
+def linkevent_spawn(evt, depend):
+  return gevent.spawn(linkevent, evt, depend)
+

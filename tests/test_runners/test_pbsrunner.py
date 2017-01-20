@@ -298,7 +298,6 @@ def testRunnerClose(clearqueue, runfixture):
         assert qsel() == set([ij3.pbsId])
       except AssertionError:
         if i == attempts - 1:
-          import pdb;pdb.set_trace()
           raise
         else:
           gevent.sleep(delay)
@@ -435,8 +434,6 @@ def testPBSInclude(runfixture, clearqueue):
   assert j.pbsId
 
   pbsid = j.pbsId
-
-  # import pdb;pdb.set_trace()
 
   gw = _mkexecnetgw(clearqueue)
   ch = gw.remote_exec(qstatRemoteExec)

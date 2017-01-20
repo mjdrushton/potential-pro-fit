@@ -9,6 +9,7 @@ import gevent
 import gevent.event
 
 from atsim.pro_fit.filetransfer import  DownloadHandler, DownloadCancelledException, UploadCancelledException
+from atsim.pro_fit._util import linkevent_spawn
 
 from _run_remote_client import RunJobKilledException
 
@@ -261,6 +262,8 @@ class RunnerJob(object):
 
     self._directoryLocked = False
     self._killedEvent = gevent.event.Event()
+    self._jobRunEvent = gevent.event.Event()
+    # self._pidSetEvent = gevent.event.Event()
     self._jobThread = _RunnerJobThread(self)
 
   @property
@@ -294,9 +297,11 @@ class RunnerJob(object):
 
   @property
   def pidSetEvent(self):
-    if not self._jobRun:
-      return None
-    return self._jobRun.pidSetEvent
+    return self._jobRunEvent
+
+  @property
+  def jobRunEvent(self):
+    return self._jobRunEvent
 
 
   def start(self):
@@ -331,6 +336,7 @@ class RunnerJob(object):
     handler = RunnerJobRunClientJob(self)
     jobRun = self.parentBatch.startJobRun(self, handler)
     self._jobRun = jobRun
+    linkevent_spawn(jobRun.jobRunEvent, self.jobRunEvent)
     return handler.finishEvent, jobRun
 
   def _startDownload(self):

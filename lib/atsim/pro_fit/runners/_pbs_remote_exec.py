@@ -27,10 +27,19 @@ def submission_script(pbsConfig, jobs, header_lines):
     import pipes
     quote = pipes.quote
 
+  if jobs:
+    batchdir = os.path.abspath(jobs[0])
+    batchdir = os.path.dirname(batchdir)
+    batchdir = os.path.dirname(batchdir)
+  else:
+    # This shouldn't happen
+    batchdir = ""
+
   std_headerlines = [
   "#PBS -N pprofit",
-  "#PBS -o /dev/null",
-  "#PBS -e /dev/null"
+  "#PBS -j oe",
+  "#PBS -o \"%s\"" % batchdir,
+  ""
   ]
 
   jobs = [quote(j) for j in jobs]
@@ -157,7 +166,7 @@ def qdel(pbs_ids, force, pbsConfig):
   output, err = p.communicate()
 
   if p.returncode != 0:
-    raise QKillException(err.strip())
+    raise QDelException(err.strip())
 
 
 def qdel_handler(channel, pbsConfig, channel_id, msg):
