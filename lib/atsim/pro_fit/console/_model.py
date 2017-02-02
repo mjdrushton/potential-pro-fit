@@ -94,7 +94,6 @@ class _VariableUpdateHandler(object):
         prefix = '* '
       return prefix + str(n)
 
-
     if self._consoleModel.current_iteration.variables:
       for k, v, isfit in self._consoleModel.current_iteration.variables.flaggedVariablePairs:
         table[k] = {'name' : mkname(k, isfit), 'current' : v, 'best' : None}

@@ -2,7 +2,7 @@ import urwid
 
 from _header import Header
 from _variables import Variables, CurrentBestTuple
-from _jobs import JobProgressBars
+from _jobs import Runners
 
 class MainFrame(urwid.WidgetWrap):
 
@@ -21,7 +21,7 @@ class MainFrame(urwid.WidgetWrap):
     return variables
 
   def _makeJobs(self):
-    jobs = JobProgressBars()
+    jobs = Runners()
     return jobs
 
   def _makeHeader(self):
@@ -36,7 +36,7 @@ class MainFrame(urwid.WidgetWrap):
 
     container = urwid.Pile([
       ('weight', 1.0, boxed_variables),
-      ('weight', 1.0, boxed_jobs)
+      ('pack', boxed_jobs)
     ])
 
     return container
