@@ -6,8 +6,7 @@ CurrentBestTuple = collections.namedtuple("CurrentBestTuple", ["name", "current"
 class CurrentBestListWalker(urwid.ListWalker):
 
   def __init__(self, variableValues):
-    self._list = [ (t, self.makewidget(t)) for t in variableValues ]
-    self.focus = self._list[0][1]
+    self._updatelist(variableValues)
 
   def __getitem__(self, position):
     return self._list[self._posToIdx(position)][1]
@@ -43,15 +42,30 @@ class CurrentBestListWalker(urwid.ListWalker):
     ])
     return widget
 
+  def _updatelist(self, newvalues):
+    self._list = [ (t, self.makewidget(t)) for t in newvalues ]
+    self.focus = self._list[0][1]
+
+
+  def update(self, newvalues):
+    self._updatelist(newvalues)
+    self._modified()
 
 class Variables(urwid.WidgetWrap):
 
-  def __init__(self, variablelist):
-    self._variablelist = list(variablelist)
+  def __init__(self):
+    self._listboxModel = CurrentBestListWalker([CurrentBestTuple("NA", "NA", "NA")])
     super(Variables, self).__init__(self._makeWidgets())
 
   def _makeWidgets(self):
-    variable_listbox = urwid.ListBox(CurrentBestListWalker(self._variablelist))
+    variable_listbox = urwid.ListBox(self._listboxModel)
     variable_listbox_header = CurrentBestListWalker.makewidget(CurrentBestTuple("Name", "Current", "Best"))
     headed_variable_listbox = urwid.Pile([('pack',variable_listbox_header), variable_listbox])
     return headed_variable_listbox
+
+  def update(self, variableList):
+    self._listboxModel.update(variableList)
+
+
+
+

@@ -1,3 +1,8 @@
+from collections import OrderedDict
+
+from _variables import CurrentBestTuple
+
+import weakref
 
 class ObserverRegister(object):
 
@@ -32,12 +37,13 @@ class ObservableObject(object):
 
   def __init__(self, model):
     """:param model: Plain object which defines the variables settable in the `ObservableObject`"""
-    super(ObservableObject, self).__setattr__('_model', model)
-    super(ObservableObject, self).__setattr__('_model', model)
-    super(ObservableObject, self).__setattr__('observers', ObserverRegister(model))
+    super(ObservableObject, self).__setattr__('_normal_setattr', True)
+    self._model = model
+    self.observers = ObserverRegister(model)
+    self._normal_setattr = False
 
   def __setattr__(self, name, value):
-    if name in self.__dict__:
+    if name in self.__dict__ or self._normal_setattr:
       return super(ObservableObject, self).__setattr__(name, value)
 
     model = self._model
@@ -49,10 +55,10 @@ class ObservableObject(object):
     except KeyError:
       pass
 
+    setattr(model, name, value)
     if handlers:
       for handler in handlers:
         handler(name, oldvalue, value)
-    return setattr(model, name, value)
 
   def __getattr__(self, name):
     return getattr(self._model, name)
@@ -62,6 +68,7 @@ class _IterationModel(object):
   def __init__(self):
     self.iteration_number = 0
     self.merit_value = None
+    self.variables = None
 
 class IterationModel(ObservableObject):
 
@@ -69,10 +76,56 @@ class IterationModel(ObservableObject):
     super(IterationModel, self).__init__(_IterationModel())
 
 
-class ConsoleModel(object):
+class _VariableUpdateHandler(object):
+
+  def __init__(self, consoleModel):
+    self._consoleModel = weakref.proxy(consoleModel)
+
+    # Register this handler with the _consoleModel
+    self._consoleModel.current_iteration.observers.variables = self
+    self._consoleModel.best_iteration.observers.variables = self
+
+  def _updateVariablesTable(self):
+    table = OrderedDict()
+
+    def mkname(n, isfit):
+      prefix = '  '
+      if isfit:
+        prefix = '* '
+      return prefix + str(n)
+
+
+    if self._consoleModel.current_iteration.variables:
+      for k, v, isfit in self._consoleModel.current_iteration.variables.flaggedVariablePairs:
+        table[k] = {'name' : mkname(k, isfit), 'current' : v, 'best' : None}
+
+    if self._consoleModel.best_iteration.variables:
+      for k, v, isfit in self._consoleModel.best_iteration.variables.flaggedVariablePairs:
+        table.setdefault(k, {'name' : mkname(k,isfit), 'current' : None, 'best' : None})['best'] = v
+
+    # Convert to tuples
+    tuple_table = []
+    for d in table.itervalues():
+      tuple_table.append(CurrentBestTuple(d['name'], d['current'], d['best']))
+
+    self._consoleModel.variables_table = tuple_table
+
+  def __call__(self, name, oldvalue, newvalue):
+    self._updateVariablesTable()
+
+
+class _ConsoleModel(object):
+  def __init__(self):
+    self.run_name = "NA"
+    self.variables_table = []
+
+class ConsoleModel(ObservableObject):
 
     def __init__(self):
+      super(ConsoleModel, self).__init__(_ConsoleModel())
+      self._normal_setattr = True
       self.current_iteration = IterationModel()
       self.best_iteration = IterationModel()
-
+      _VariableUpdateHandler(self)
+      self._normal_setattr = False
 

@@ -17,10 +17,7 @@ class MainFrame(urwid.WidgetWrap):
     return mainframe
 
   def _makeVariables(self):
-    variables = Variables([
-      CurrentBestTuple('A_O-O', '900.0', '1000.0'),
-      CurrentBestTuple('rho_O-O', '0.2', '0.3')
-    ])
+    variables = Variables()
     return variables
 
   def _makeJobs(self):

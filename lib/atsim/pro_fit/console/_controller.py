@@ -11,6 +11,8 @@ class PropertySetHandler(object):
     setattr(self.setobj, self.attrname, self.formatter(newvalue))
 
 
+
+
 class ConsoleController(object):
   """The glue between ConsoleModel and MainFrame, this class is responsible for
   registering event handlers on the Model and linking them to the correct
@@ -30,6 +32,9 @@ class ConsoleController(object):
   def _registerHeaderHandlers(self):
     mf = self.mainframe
 
+    # Run Name
+    self.model.observers.run_name =PropertySetHandler(mf.header, 'run_name')
+
     # Iteration numbers
     self.model.current_iteration.observers.iteration_number = PropertySetHandler(mf.header, 'current_iteration_number')
     self.model.best_iteration.observers.iteration_number = PropertySetHandler(mf.header, 'best_iteration_number')
@@ -38,6 +43,9 @@ class ConsoleController(object):
     self.model.current_iteration.observers.merit_value = PropertySetHandler(mf.header, 'current_merit_value')
     self.model.best_iteration.observers.merit_value = PropertySetHandler(mf.header, 'best_merit_value')
 
+    # Variables
+    self.model.observers.variables_table = self._updateVariables
 
 
-
+  def _updateVariables(self, name, oldvalue, newvalue):
+    self.mainframe.variables.update(self.model.variables_table)
