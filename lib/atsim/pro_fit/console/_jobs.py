@@ -10,7 +10,7 @@ palette = [
 
 class RunnerProgressBars(urwid.WidgetWrap):
 
-  ROWS = 6
+  ROWS = 5
 
   def __init__(self):
     self._container = self._buildContents()
@@ -18,16 +18,16 @@ class RunnerProgressBars(urwid.WidgetWrap):
 
   def _buildContents(self):
 
-    self._pb_finished = self._makeProgressBar()
-    self._pb_upload = self._makeProgressBar()
-    self._pb_running = self._makeProgressBar()
-    self._pb_download = self._makeProgressBar()
+    # self.pb_finished = self._makeProgressBar()
+    self.pb_upload = self._makeProgressBar()
+    self.pb_running = self._makeProgressBar()
+    self.pb_finished = self._makeProgressBar()
 
     self._list_box = urwid.ListBox([
-      urwid.Columns([(11, urwid.Text('Finished:')), self._pb_finished]),
-      urwid.Columns([(11,urwid.Text('Upload:')), self._pb_upload]),
-      urwid.Columns([(11,urwid.Text('Running:')), self._pb_running]),
-      urwid.Columns([(11,urwid.Text('Download:')), self._pb_download])
+      urwid.Columns([(11, urwid.Text('Finished:')), self.pb_finished]),
+      urwid.Columns([(11,urwid.Text('Upload:')), self.pb_upload]),
+      urwid.Columns([(11,urwid.Text('Run:')), self.pb_running]),
+      # urwid.Columns([(11,urwid.Text('Download:')), self.pb_download])
     ])
 
     self._line_box = urwid.LineBox(self._list_box)
@@ -40,6 +40,10 @@ class RunnerProgressBars(urwid.WidgetWrap):
 
   def set_title(self, title):
     self._line_box.set_title(title)
+
+  title =  property(fset = set_title)
+
+
 
 class _RunnerGrid(urwid.WidgetWrap):
 
@@ -87,8 +91,12 @@ class _RunnerGrid(urwid.WidgetWrap):
     return urwid.BoxAdapter(urwid.Columns(row),RunnerProgressBars.ROWS)
 
   def addRunner(self):
-    rpb = RunnerProgressBars()
+    rpb = self.createRunner()
     self.runnerWidgets.append(rpb)
+    return rpb
+
+  def createRunner(self):
+    rpb = RunnerProgressBars()
     return rpb
 
   # def rows(self, size, focus = False):
@@ -116,3 +124,10 @@ class Runners(urwid.WidgetWrap):
       (RunnerProgressBars.ROWS*2 + 2, self.runners)
     ])
     return container
+
+  def createRunner(self):
+    return self.runners.createRunner()
+
+  @property
+  def runnerWidgets(self):
+    return self.runners.runnerWidgets

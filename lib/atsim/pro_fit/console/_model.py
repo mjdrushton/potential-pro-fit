@@ -4,6 +4,22 @@ from _variables import CurrentBestTuple
 
 import weakref
 
+from urwid import MonitoredList
+
+class ObservedList(MonitoredList):
+
+  def __init__(self):
+    super(ObservedList, self).__init__()
+    self.callbacks = []
+    super(ObservedList, self).set_modified_callback(self._callback)
+
+  def set_modified_callback(self, callback):
+    self.callbacks.append(callback)
+
+  def _callback(self):
+    for cb in self.callbacks:
+      cb()
+
 class ObserverRegister(object):
 
   def __init__(self, model):
@@ -14,6 +30,8 @@ class ObserverRegister(object):
     getattr(self._model, name)
     self._observerdict.setdefault(name, []).append(observer)
 
+  def __getattr__(self, name):
+    return self._observerdict[name]
 
 class ObservableObject(object):
   """Object that intercepts when attributes are set. If an attribute has an associated handler, then the handler is called.
@@ -63,6 +81,18 @@ class ObservableObject(object):
   def __getattr__(self, name):
     return getattr(self._model, name)
 
+class _RunnerModel(object):
+  def __init__(self):
+    self.title = None
+    self.total_jobs = 0
+    self.uploaded = 0
+    self.running = 0
+    self.downloaded = 0
+
+class RunnerModel(ObservableObject):
+
+  def __init__(self):
+    super(RunnerModel, self).__init__(_RunnerModel())
 
 class _IterationModel(object):
   def __init__(self):
@@ -75,8 +105,9 @@ class IterationModel(ObservableObject):
   def __init__(self):
     super(IterationModel, self).__init__(_IterationModel())
 
-
 class _VariableUpdateHandler(object):
+  """Responsible for updating the ConsoleModel.variables_table when a change is observed in
+  ConsoleModel.current_iteration.variables or ConsoleModel.best_iteration.variables"""
 
   def __init__(self, consoleModel):
     self._consoleModel = weakref.proxy(consoleModel)
@@ -112,6 +143,57 @@ class _VariableUpdateHandler(object):
   def __call__(self, name, oldvalue, newvalue):
     self._updateVariablesTable()
 
+class _SumRunnerValues(object):
+
+  def __init__(self, attrname, runmodels, setrunmodel):
+    self.models = runmodels
+    self.attrname = attrname
+    self.setrunmodel = setrunmodel
+    self._registerHandlers()
+
+  def __call__(self, name, oldvalue, newvalue):
+    total = 0.0
+    for rm in self.models:
+      total += getattr(rm, self.attrname)
+    setattr(self.setrunmodel, self.attrname, total)
+
+  def _registerHandlers(self):
+    for rm in self.models:
+      setattr(rm.observers, self.attrname, self)
+
+  def unregisterHandlers(self):
+    for rm in self.models:
+      getattr(rm.observers, self.attrname).remove(self)
+
+class _RunnerOverviewUpdateHandler(object):
+
+  def __init__(self, consoleModel):
+    self.model = consoleModel
+    self._registerHandlers()
+    self._registeredHandlers = []
+
+  def _registerHandlers(self):
+    self._register_runnerlist_callback()
+    self._register_runner_handlers()
+
+  def _register_runnerlist_callback(self):
+    self.model.runners.set_modified_callback(self._synchroniseWithRunners)
+
+  def _synchroniseWithRunners(self):
+    self._removeExistingHandlers()
+    self._register_runner_handlers()
+
+  def _removeExistingHandlers(self):
+    for handler in self._registerHandlers:
+      handler.unregisterHandlers()
+
+  def _register_runner_handlers(self):
+    runners = list(self.model.runners)
+    self._registerHandlers = [
+      _SumRunnerValues('total_jobs', runners, self.model.runner_overview) ,
+      _SumRunnerValues('uploaded', runners, self.model.runner_overview) ,
+      _SumRunnerValues('running', runners, self.model.runner_overview) ,
+      _SumRunnerValues('downloaded', runners, self.model.runner_overview)]
 
 class _ConsoleModel(object):
   def __init__(self):
@@ -125,6 +207,15 @@ class ConsoleModel(ObservableObject):
       self._normal_setattr = True
       self.current_iteration = IterationModel()
       self.best_iteration = IterationModel()
+
+      # Create VariableUpdateHandler that will keep the variable_table in sync with the variables information in the iteration models.
       _VariableUpdateHandler(self)
+
+      self.runners = ObservedList()
+      self.runner_overview = RunnerModel()
+      self.runner_overview.title = "Total"
+      # self.runner_overview rolls-up the data for the runner models in self.runners, _RunnerOverviewUpdateHandler performs this summary calculation when it detects changes to any runner model.
+      _RunnerOverviewUpdateHandler(self)
+
       self._normal_setattr = False
 
