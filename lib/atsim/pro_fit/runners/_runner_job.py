@@ -42,7 +42,7 @@ class _RunnerJobThread(object):
     except:
       exception = sys.exc_info()
       tbstring = traceback.format_exception(*exception)
-      self._logger.warning("%s run exception: %s", self.job, tbstring)
+      self._logger.getChild("run_exception").warning("%s run exception: %s", self.job, tbstring)
       self.finishJob(exception)
       raise exception
 
@@ -206,7 +206,7 @@ class _RunnerJobThread(object):
         self.finishedEvent.set()
 
       if not self.exception is None:
-        self._logger.warning("%s finished with exception: %s", self, traceback.format_exception(*self.exception))
+        self._logger.getChild("run_exception").warning("%s finished with exception: %s", self.job, traceback.format_exception(*self.exception))
 
   def _makeEventOrKillEvent(self, e):
     events = [e, self.killedEvent]

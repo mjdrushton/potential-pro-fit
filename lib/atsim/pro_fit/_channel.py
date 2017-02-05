@@ -47,7 +47,7 @@ class AbstractChannel(object):
         channel_id (None, optional): Channel id - if not specified a uuid will be generated.
         connection_timeout (int, optional): Timeout in seconds after which connection will fail if 'READY' message not received.
     """
-    self._logger = logging.getLogger("__name__").getChild("BaseChannel")
+    self._logger = logging.getLogger(__name__).getChild("BaseChannel")
     if channel_id is None:
       self._channel_id = str(uuid.uuid4())
     else:

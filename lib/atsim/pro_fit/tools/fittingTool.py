@@ -9,9 +9,11 @@ import optparse
 import sys
 import os
 import logging
+import logging.config
 import shutil
 import tempfile
 import contextlib
+import pkgutil
 
 import jinja2
 import gevent
@@ -223,17 +225,21 @@ def _initializeJob(jobDescription, logger):
 
 def _setupLogging(verbose):
   """Set-up python logging to display to stderr"""
+  # Read logging information from logging.cfg in the resources package
+  cfg = pkgutil.get_data('atsim.pro_fit', 'resources/logging.cfg')
+  import StringIO
+  cfg = StringIO.StringIO(cfg)
+
+  logging.config.fileConfig(cfg)
+
   if verbose:
     logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
   else:
     logger = logging.getLogger('atsim.pro_fit.fittingTool')
-
-  logger.setLevel(logging.DEBUG)
-  stderrHandler = logging.StreamHandler(sys.stderr)
-  formatter = logging.Formatter('pprofit - %(message)s')
-  stderrHandler.setFormatter(formatter)
-  logger.addHandler(stderrHandler)
   return logger
+
+
 
 def _parseCommandLine():
   usage = """%prog [OPTIONS]

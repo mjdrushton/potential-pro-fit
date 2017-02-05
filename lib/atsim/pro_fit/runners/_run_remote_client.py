@@ -2,7 +2,7 @@
 
 from atsim.pro_fit._channel import AbstractChannel, MultiChannel
 from atsim.pro_fit._util import CallbackRegister, NamedEvent
-from _exceptions import JobKilledException
+from _exceptions import JobKilledException, NonZeroExitStatus
 
 import itertools
 import logging
@@ -226,7 +226,10 @@ class RunJobCallback(object):
           return True
         else:
           self._logger.debug("Job id=%s (working directory='%s') finished with return code %d", transid, self.workingDirectory, msg.get("returncode", "Unknown"))
-          # self._runjobState.jobEndEvent.set()
+
+
+          if msg.get("returncode", 0) != 0:
+            self.exception = NonZeroExitStatus("Job finished with return code %d" % msg.get("returncode", 0))
           self.finish()
           return True
       return False

@@ -3,3 +3,6 @@ class RunnerClosedException(Exception):
 
 class JobKilledException(Exception):
   pass
+
+class NonZeroExitStatus(Exception):
+  pass

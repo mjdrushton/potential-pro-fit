@@ -365,7 +365,9 @@ class BaseRemoteRunner(object):
     if exception is None:
       self._logger.info("Batch finished successfully: %s", batch.name)
     else:
-      self._logger.warning("Batch %s finished with errors: %s", batch.name, exception)
+      import traceback
+      tbstring = traceback.format_exc(*exception)
+      self._logger.warning("Batch %s finished with errors: %s", batch.name, tbstring)
     self._extantBatches.remove(batch)
 
   def _createUploadDirectory(self, sourcePath, remotePath, uploadHandler):

@@ -94,7 +94,7 @@ setup(name="potential-pro-fit",
   package_data = {
     'atsim.pro_fit.webmonitor' : package_files('lib/atsim/pro_fit/webmonitor/webresources'),
     'atsim.pro_fit' : package_files('lib/atsim/pro_fit/resources'),
-    'atsim.pro_fit' : package_files('lib/atsim/pro_fit/resources'),
+    # 'atsim.pro_fit' : package_files('lib/atsim/pro_fit/resources'),
     'atsim.pro_fit.runners' : package_files('lib/atsim/pro_fit/runners/templates')
   },
 

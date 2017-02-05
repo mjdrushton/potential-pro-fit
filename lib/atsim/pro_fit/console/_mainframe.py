@@ -93,7 +93,6 @@ class MainFrame(urwid.WidgetPlaceholder):
     urwid.connect_signal(button, 'click', cb)
     self._processOverlays()
 
-
   def _removeOverlay(self, overlay):
     self._overlays.remove(overlay)
     self._processOverlays()
