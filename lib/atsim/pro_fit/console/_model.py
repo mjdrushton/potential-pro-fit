@@ -81,6 +81,23 @@ class ObservableObject(object):
   def __getattr__(self, name):
     return getattr(self._model, name)
 
+class _MessageBoxModel(object):
+  def __init__(self):
+    self.visible = False
+
+class MessageBoxModel(ObservableObject):
+
+  def __init__(self):
+    super(MessageBoxModel, self).__init__(_MessageBoxModel())
+    self._normal_setattr = True
+    self._lines = ObservedList()
+
+    self._normal_setattr = False
+
+  def _get_lines(self):
+    return self._lines
+  lines = property(_get_lines)
+
 class _RunnerModel(object):
   def __init__(self):
     self.title = None
@@ -216,6 +233,10 @@ class ConsoleModel(ObservableObject):
       self.runner_overview.title = "Total"
       # self.runner_overview rolls-up the data for the runner models in self.runners, _RunnerOverviewUpdateHandler performs this summary calculation when it detects changes to any runner model.
       _RunnerOverviewUpdateHandler(self)
+
+      # Create a model for the MessageBox
+      self.messages = MessageBoxModel()
+
 
       self._normal_setattr = False
 

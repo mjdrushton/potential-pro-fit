@@ -17,9 +17,7 @@ import traceback
 import gevent
 from gevent.event import Event
 
-
 class RemoteRunnerCloseThreadBase(gevent.Greenlet):
-
 
   def __init__(self, runner):
     super(RemoteRunnerCloseThreadBase, self).__init__()

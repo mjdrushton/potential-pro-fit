@@ -10,6 +10,26 @@ class PropertySetHandler(object):
     setattr(self.setobj, self.attrname, self.formatter(newvalue))
 
 
+class MessagesController(object):
+
+  def __init__(self, widgetModel, mainframe):
+    self.mainframe = mainframe
+    self.widgetModel = widgetModel
+    self._registerHandlers()
+
+  def _registerHandlers(self):
+    self.widgetModel.observers.visible = self._visibleHandler
+    self.widgetModel.lines.set_modified_callback(self._messageHandler)
+
+  def _visibleHandler(self, name, oldvalue, newvalue):
+    if newvalue:
+      self.mainframe.showMessageBox()
+    else:
+      self.mainframe.hideMessageBox()
+
+  def _messageHandler(self):
+    self.mainframe.messageBox.messages[:] = self.widgetModel.lines
+
 class RunnerController(object):
 
   def __init__(self, widgetModel, widget):
@@ -74,9 +94,8 @@ class ConsoleController(object):
     self.model = model
     self.mainframe = mainframe
     self._registerHeaderHandlers()
-
     self._runnersController = RunnersController(self.model, self.mainframe)
-
+    self._messagesController = MessagesController(self.model.messages, self.mainframe)
 
   def _registerHeaderHandlers(self):
     mf = self.mainframe
