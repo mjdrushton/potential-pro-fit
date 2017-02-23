@@ -113,6 +113,10 @@ class PBSRunner(object):
   def name(self):
     return self._inner.name
 
+  @property
+  def observers(self):
+    return self._inner.observers
+
   @staticmethod
   def createFromConfig(runnerName, fitRootPath, cfgitems):
     allowedkeywords = set(['type', 'remotehost', 'pbsinclude', 'pbsarraysize', 'pbspollinterval'])

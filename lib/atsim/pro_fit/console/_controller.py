@@ -32,6 +32,18 @@ class MessagesController(object):
 
 class RunnerController(object):
 
+  class _DoneHandler(object):
+    def __init__(self, pb):
+      self._pb = pb
+
+    def __call__(self, name, oldvalue, newvalue):
+      if newvalue == 0:
+        self._pb.done = 1
+        self._pb.current = 0
+      else:
+        self._pb.done = newvalue
+
+
   def __init__(self, widgetModel, widget):
     self.widgetModel = widgetModel
     self.widget = widget
@@ -39,6 +51,8 @@ class RunnerController(object):
 
   def _registerHandlers(self):
     m = self.widgetModel
+    if m.title:
+      self.widget.title  = m.title
     m.observers.title = PropertySetHandler(self.widget, 'title')
 
     progressbars = [self.widget.pb_finished,
@@ -46,7 +60,8 @@ class RunnerController(object):
                     self.widget.pb_running]
 
     for pb in progressbars:
-      m.observers.total_jobs = PropertySetHandler(pb, 'done', int)
+
+      m.observers.total_jobs = RunnerController._DoneHandler(pb)
 
     m.observers.uploaded = PropertySetHandler(self.widget.pb_upload, 'current', int)
     m.observers.downloaded = PropertySetHandler(self.widget.pb_finished, 'current', int)
@@ -116,10 +131,4 @@ class ConsoleController(object):
 
   def _updateVariables(self, name, oldvalue, newvalue):
     self.mainframe.variables.update(self.model.variables_table)
-
-
-
-
-
-
 

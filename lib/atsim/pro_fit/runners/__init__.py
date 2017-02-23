@@ -29,6 +29,8 @@ in the fit.cfg file.
 
 from _localrunner import LocalRunner # noqa
 from _remoterunner import RemoteRunner # noqa
+from _base_remoterunner import BaseRemoteRunnerObserverAdapter
+from _runner_job import RunnerJobObserverAdapter
 from _exceptions import RunnerClosedException #noqa
 from _pbsrunner import PBSRunner
 

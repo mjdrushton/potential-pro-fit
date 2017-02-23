@@ -103,7 +103,12 @@ class _BatchMonitorThread(object):
     self.exception = exception
 
     if exception:
-      self._logger.warning("Batch finished with exception: %s", traceback.format_exception(*exception))
+      try:
+        raise exception
+      except BatchKilledException:
+        self._logger.warning("Batch was killed %s" % self.batch.name)
+      except:
+        self._logger.exception("Batch finished with exception: %s" % self.batch.name)
 
     if self.dirLocked:
       unlockEvent = self.batch.parentRunner.unlockPath(self.batch.remoteBatchDir)

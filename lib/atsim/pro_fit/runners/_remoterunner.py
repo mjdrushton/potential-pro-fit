@@ -78,7 +78,6 @@ class InnerRemoteRunner(BaseRemoteRunner):
     """
     return self._runClient.runCommand(handler.workingDirectory, handler.callback)
 
-
 class RemoteRunner(object):
   """Runner that uses SSH to run jobs in parallel on a remote machine"""
 
@@ -116,6 +115,10 @@ class RemoteRunner(object):
   @property
   def name(self):
     return self._inner.name
+
+  @property
+  def observers(self):
+    return self._inner.observers
 
   @staticmethod
   def createFromConfig(runnerName, fitRootPath, cfgitems):

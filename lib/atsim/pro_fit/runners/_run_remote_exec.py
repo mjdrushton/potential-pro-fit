@@ -45,7 +45,9 @@ class RunCmd(threading.Thread):
 
       if not self.kill_called.is_set():
         with self.lock:
-          self.popen = subprocess.Popen([self.shell, 'runjob'], cwd = self.path, close_fds=True)
+          stdout = open(os.path.join(self.path, 'STDOUT'), 'w')
+          stderr = open(os.path.join(self.path, 'STDERR'), 'w')
+          self.popen = subprocess.Popen([self.shell, 'runjob'], cwd = self.path, stdout = stdout, stderr = stderr)
           self.parent.jobstarted(self.job_id, self.popen.pid, self.semval)
         self.popen.wait()
 

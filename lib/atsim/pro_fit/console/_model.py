@@ -237,6 +237,5 @@ class ConsoleModel(ObservableObject):
       # Create a model for the MessageBox
       self.messages = MessageBoxModel()
 
-
       self._normal_setattr = False
 

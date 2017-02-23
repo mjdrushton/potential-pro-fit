@@ -13,7 +13,15 @@ import cexprtk
 import gevent
 
 class ConfigException(Exception):
-  pass
+
+  def __init__(self, msg):
+    self._msg = msg
+    super(ConfigException,self).__init__(msg)
+
+  @property
+  def message(self):
+    return "Configuration error - %s" % self._msg
+
 
 class MultipleSectionConfigException(ConfigException):
   pass
@@ -102,7 +110,6 @@ class FitConfig(object):
     """Used to terminate pprofit. This is equivalent to self.killEvent.set()"""
     self.endEvent.set()
     self._closedEvent.wait()
-
 
   def title(self):
     return self._title

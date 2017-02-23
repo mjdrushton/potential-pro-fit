@@ -197,6 +197,10 @@ class LocalRunner(object):
   def name(self):
     return self._inner.name
 
+  @property
+  def observers(self):
+    return self._inner.observers
+
   @staticmethod
   def createFromConfig(runnerName, fitRootPath, cfgitems):
     allowedkeywords = set(['nprocesses', 'type'])

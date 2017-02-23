@@ -13,6 +13,88 @@ from atsim.pro_fit._util import linkevent_spawn
 
 from _run_remote_client import RunJobKilledException
 
+
+class _RunnerJobObservers(list):
+  """Class that manages RunnerJob `observers` collection"""
+
+  def notifyJobDirectoryLocked(self, job):
+    for obs in self:
+      obs.jobDirectoryLocked(job)
+
+  def notifyJobDirectoryUnlocked(self, job):
+    for obs in self:
+      obs.jobDirectoryUnlocked(job)
+
+  def notifyJobUploadStarted(self, job):
+    for obs in self:
+      obs.jobUploadStarted(job)
+
+  def notifyJobUploadFinished(self, job):
+    for obs in self:
+      obs.jobUploadFinished(job)
+
+  def notifyJobRunStarted(self, job):
+    for obs in self:
+      obs.jobRunStarted(job)
+
+  def notifyJobPidSet(self, job):
+    for obs in self:
+      obs.jobPidSet(job)
+
+  def notifyJobRunFinished(self, job):
+    for obs in self:
+      obs.jobRunFinished(job)
+
+  def notifyJobDownloadStarted(self, job):
+    for obs in self:
+      obs.jobDownloadStarted(job)
+
+  def notifyJobDownloadFinished(self, job):
+    for obs in self:
+      obs.jobDownloadFinished(job)
+
+  def notifyJobFinished(self, job, exception):
+    for obs in self:
+      obs.jobFinished(job, exception)
+
+
+class RunnerJobObserverAdapter(object):
+  """Class that observers registerd with `Runner.observers` should inherit from"""
+
+  def jobDirectoryLocked(self, job):
+    pass
+
+  def jobDirectoryUnlocked(self, job):
+    pass
+
+  def jobUploadStarted(self, job):
+    pass
+
+  def jobUploadFinished(self, job):
+    pass
+
+  def jobRunStarted(self, job):
+    pass
+
+  def jobPidSet(self, job):
+    pass
+
+  def jobRunFinished(self, job):
+    pass
+
+  def jobRunFinished(self, job):
+    pass
+
+  def jobDownloadStarted(self, job):
+    pass
+
+  def jobDownloadFinished(self, job):
+    pass
+
+  def jobFinished(self, job, exception):
+    pass
+
+
 class _RunnerJobThread(object):
 
   def __init__(self, job):
@@ -59,8 +141,11 @@ class _RunnerJobThread(object):
       self.finishJob(exc)
       return False
       self._logger.info("Directory locked for %s.", self.job)
+      self.job.observers.notifyJobDirectoryLocked(self.job)
     return True
     self.startUpload()
+
+
 
   def doUpload(self):
     if self.killedEvent.is_set():
@@ -69,6 +154,8 @@ class _RunnerJobThread(object):
 
     self.job.status.append("start upload")
     uploadedEvent, uploadDirectory = self.job._startUpload()
+    self.job.observers.notifyJobUploadStarted(self.job)
+
     mergedEvent = self._makeEventOrKillEvent(uploadedEvent)
     mergedEvent.wait()
     # Which event occurred?
@@ -88,6 +175,7 @@ class _RunnerJobThread(object):
         return False
       else:
         self._logger.debug("Upload finished successfully for %s", self.job)
+        self.job.observers.notifyJobUploadFinished(self.job)
         return True
 
   def cancelUpload(self, uploadDirectory):
@@ -96,6 +184,11 @@ class _RunnerJobThread(object):
     cancelEvent.wait()
     self.finishJob(UploadCancelledException())
 
+  def _notifyPidSet(self, pidSetEvent, jobRunEvent, killEvent):
+    gevent.wait([pidSetEvent, jobRunEvent, killEvent], count = 1)
+    if pidSetEvent.is_set() and not killEvent.is_set():
+      self.job.observers.notifyJobPidSet(self.job)
+
   def doRun(self):
     if self.killedEvent.is_set():
       self.finishJob(JobKilledException())
@@ -103,6 +196,9 @@ class _RunnerJobThread(object):
 
     self.job.status.append("start job run")
     jobRunEvent, jobRun = self.job._startJobRun()
+    self.job.observers.notifyJobRunStarted(self.job)
+    gevent.spawn(self._notifyPidSet, jobRun.pidSetEvent, jobRunEvent, self.killedEvent)
+
     mergedEvent = self._makeEventOrKillEvent(jobRunEvent)
     mergedEvent.wait()
 
@@ -125,6 +221,7 @@ class _RunnerJobThread(object):
         return False
       else:
         self._logger.info("Job execution finished successfully (finishJobRun) for %s" , self.job)
+        self.job.observers.notifyJobRunFinished(self.job)
         return True
 
   def killJob(self, jobRun):
@@ -141,6 +238,7 @@ class _RunnerJobThread(object):
 
     self.job.status.append("start download")
     downloadedEvent, downloadDirectory = self.job._startDownload()
+    self.job.observers.notifyJobDownloadStarted(self.job)
     mergedEvent = self._makeEventOrKillEvent(downloadedEvent)
     mergedEvent.wait()
 
@@ -161,6 +259,7 @@ class _RunnerJobThread(object):
         return False
       else:
         self._logger.debug("Download finished successfully for %s", self.job)
+        self.job.observers.notifyJobDownloadFinished(self.job)
         return True
 
   def cancelDownload(self, downloadDirectory):
@@ -177,6 +276,7 @@ class _RunnerJobThread(object):
 
     try:
       self._logger.info("%s, finished.", self.job)
+      self.job.observers.notifyJobFinished(self.job, exception)
       if exception is None:
         self.job.status.append("finish job")
       else:
@@ -194,6 +294,7 @@ class _RunnerJobThread(object):
         unlockEvent = self.job.parentBatch.unlockJobDirectory(self.job)
         def after():
           unlockEvent.wait()
+          self.job.observers.notifyJobDirectoryUnlocked(self.job)
           self.job._directoryLocked = False
           self.finishedEvent.set()
         gevent.Greenlet.spawn(after)
@@ -263,8 +364,10 @@ class RunnerJob(object):
     self._directoryLocked = False
     self._killedEvent = gevent.event.Event()
     self._jobRunEvent = gevent.event.Event()
-    # self._pidSetEvent = gevent.event.Event()
+    self._pidSetEvent = gevent.event.Event()
     self._jobThread = _RunnerJobThread(self)
+
+    self._observers = _RunnerJobObservers()
 
   @property
   def isFinished(self):
@@ -297,12 +400,15 @@ class RunnerJob(object):
 
   @property
   def pidSetEvent(self):
-    return self._jobRunEvent
+    return self._pidSetEvent
 
   @property
   def jobRunEvent(self):
     return self._jobRunEvent
 
+  @property
+  def observers(self):
+    return self._observers
 
   def start(self):
     self._logger.info("Starting job %s from batch %s" % (self.jobid, self.parentBatch.name))
@@ -337,6 +443,7 @@ class RunnerJob(object):
     jobRun = self.parentBatch.startJobRun(self, handler)
     self._jobRun = jobRun
     linkevent_spawn(jobRun.jobRunEvent, self.jobRunEvent)
+    linkevent_spawn(jobRun.pidSetEvent, self.pidSetEvent)
     return handler.finishEvent, jobRun
 
   def _startDownload(self):

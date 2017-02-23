@@ -169,6 +169,40 @@ class _RunnerJobDownloadHandler(DownloadHandler):
     return None
 
 
+class _BaseRemoteRunnerObservers(list):
+  """Class supporting `BaseRemoteRunner.observers` property"""
+
+  def notifyBatchCreated(self, runner, batch):
+    for observer in self:
+      observer.batchCreated(runner, batch)
+
+  def notifyBatchFinished(self, runner, batch, exception):
+    for observer in self:
+      observer.batchFinished(runner, batch, exception)
+
+class BaseRemoteRunnerObserverAdapter(object):
+  """Adapter class from which observers registered with `BaseRemoteRunner.observers` should inherit"""
+
+  def batchCreated(self, runner, batch):
+    """Called by remote runner when a batch is created (but before it is started).
+
+    Args:
+        runner : Runner instance in which the batch was created
+        batch : Batch instance registered with the runner
+    """
+    pass
+
+  def batchFinished(self, runner, batch, exception):
+    """Called by runner when a batch finishes.
+
+    Args:
+        runner : Runner instance with which batch was registered
+        batch : Batch instance that has just completed
+        exception (Exception): If the batch finished with an error, the associated exception is passed in as this argument.
+    """
+    pass
+
+
 class BaseRemoteRunner(object):
   """
     Base class for runners that run jobs on remote machines. This runner class
@@ -225,6 +259,9 @@ class BaseRemoteRunner(object):
 
     self._batchNameIterator = BatchNameIterator()
     self._extantBatches = []
+
+    # Support notification of event handlers linked to this runner.
+    self._observers = _BaseRemoteRunnerObservers()
 
     # Register the remote directory with cleanup agent, such that it will be deleted at shutdown.
     if self._cleanupClient:
@@ -287,6 +324,7 @@ class BaseRemoteRunner(object):
 
     batch = self.createBatch(batchDir, jobs, batchId)
     self._extantBatches.append(batch)
+    self.observers.notifyBatchCreated(self,batch)
     batch.startBatch()
     return batch
 
@@ -363,10 +401,13 @@ class BaseRemoteRunner(object):
     if exception is None:
       self._logger.info("Batch finished successfully: %s", batch.name)
     else:
-      import traceback
-      tbstring = traceback.format_exc(*exception)
-      self._logger.warning("Batch %s finished with errors: %s", batch.name, tbstring)
+      try:
+        raise exception
+      except:
+        self._logger.exception("Batch %s finished with errors:" % batch.name)
     self._extantBatches.remove(batch)
+    self.observers.notifyBatchFinished(self, batch, exception)
+
 
   def _createUploadDirectory(self, sourcePath, remotePath, uploadHandler):
     """Create an `filetransfer.UploadDirectory` instance configured to this runner's remote
@@ -480,3 +521,7 @@ class BaseRemoteRunner(object):
     closeThread = self.makeCloseThread()
     closeThread.start()
     return closeThread.afterEvent
+
+  @property
+  def observers(self):
+    return self._observers

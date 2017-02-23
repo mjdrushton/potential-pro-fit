@@ -33,7 +33,7 @@ class ErrorDialog(urwid.WidgetWrap):
   text = property(fset=set_text)
 
   def set_title(self, title):
-    self._linebox.title = title
+    self._linebox.set_title(title)
   title = property(fset = set_title)
 
   def set_button_text(self, label):
@@ -70,7 +70,6 @@ class MessageBox(urwid.WidgetWrap):
 
   def _makeWidget(self, txt):
     return urwid.Text(txt)
-
 
 
 class MainFrame(urwid.WidgetPlaceholder):
@@ -170,6 +169,7 @@ class MainFrame(urwid.WidgetPlaceholder):
   def hideMessageBox(self):
     if self.messageBox in self._overlays:
       self._overlays.remove(self.messageBox)
+    self._processOverlays()
 
   def showMainPage(self):
     if self._selectedPage:
