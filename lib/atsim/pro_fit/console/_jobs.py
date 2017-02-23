@@ -1,12 +1,7 @@
 import urwid
 import math
 
-palette = [
-
-  ('progress_bar_completion', 'black', 'dark cyan'),
-  ('progress_bar_rest', 'black', 'light gray'),
-
-]
+from _palette import palette
 
 class RunnerProgressBars(urwid.WidgetWrap):
 

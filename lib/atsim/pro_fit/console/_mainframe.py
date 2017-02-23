@@ -40,7 +40,6 @@ class ErrorDialog(urwid.WidgetWrap):
     self.button.text = label
   button_text = property(fset=set_button_text)
 
-
 class MessageBox(urwid.WidgetWrap):
 
   def __init__(self):
@@ -71,7 +70,6 @@ class MessageBox(urwid.WidgetWrap):
   def _makeWidget(self, txt):
     return urwid.Text(txt)
 
-
 class MainFrame(urwid.WidgetPlaceholder):
   """The class which handles the display of the pprofit console GUI"""
 
@@ -90,8 +88,9 @@ class MainFrame(urwid.WidgetPlaceholder):
     self.background = self._makeBackground()
     self.header = self._makeHeader()
     self.body = self._makeBody()
+    self.footer = self._makeFooter()
 
-    self.mainframe = urwid.Frame(self.body, header = self.header)
+    self.mainframe = urwid.Frame(self.body, header = self.header, footer = self.footer)
     self.mainframe.overlayOptions = ('center', ('relative', 100), 'middle', ('relative', 100))
 
     self.messageBox = MessageBox()
@@ -123,7 +122,13 @@ class MainFrame(urwid.WidgetPlaceholder):
       ('weight', 1.0, boxed_variables),
       ('pack', boxed_jobs)
     ])
+    return container
 
+  def _makeFooter(self):
+
+    quit = urwid.Text([('txthighlight', 'Q'), 'uit'])
+
+    container = urwid.Columns([quit])
     return container
 
   def _processOverlays(self):
@@ -180,18 +185,3 @@ class MainFrame(urwid.WidgetPlaceholder):
   def _removeOverlay(self, overlay):
     self._overlays.remove(overlay)
     self._processOverlays()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

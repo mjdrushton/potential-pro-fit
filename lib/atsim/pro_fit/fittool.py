@@ -22,7 +22,6 @@ class ConfigException(Exception):
   def message(self):
     return "Configuration error - %s" % self._msg
 
-
 class MultipleSectionConfigException(ConfigException):
   pass
 
@@ -157,6 +156,11 @@ class FitConfig(object):
   endEvent = property(
     fget = endEvent,
     doc = "Return event set when SIGINT is called indicating that system should be terminated.")
+
+  def closedEvent(self):
+    return self._closedEvent
+  closedEvent = property(closedEvent,
+    doc = "Return event that is set when the system clean-up has taken place.")
 
   def _parseConfig(self, fitCfgFilename):
     """@param fitCfgFilename Filename for fit.cfg.
@@ -452,7 +456,6 @@ class FitConfig(object):
     if not evaluatorsFound:
       raise ConfigException("No Evaluators have been defined for any Job.")
 
-
 class Variables(object):
   """Class for handling fitting variables"""
 
@@ -594,7 +597,6 @@ class Variables(object):
   def __str__(self):
     return repr(self)
 
-
 class CalculatedVariables(object):
   """Class used to support calculated variables ([CalculatedVariables] within fit.cfg).
 
@@ -657,7 +659,6 @@ def _sumValuesReductionFunction(evaluatedJobs):
         v += sum([ er.meritValue for er in e])
     ret.append(v)
   return ret
-
 
 class Merit(object):
   """Class defining merit function within fitTool.py.

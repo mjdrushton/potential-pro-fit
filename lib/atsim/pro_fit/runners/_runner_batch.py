@@ -8,6 +8,8 @@ import traceback
 import itertools
 
 from _runner_job import RunnerJob
+from _exceptions import BatchAlreadyFinishedException, BatchKilledException, BatchDirectoryLockException
+
 
 import gevent
 import gevent.event
@@ -15,14 +17,7 @@ import gevent.queue
 
 _logger = logging.getLogger("atsim.pro_fit.runners")
 
-class BatchAlreadyFinishedException(Exception):
-  pass
 
-class BatchKilledException(Exception):
-  pass
-
-class BatchDirectoryLockException(Exception):
-  pass
 
 class _BatchMonitorThread(object):
 
@@ -106,7 +101,7 @@ class _BatchMonitorThread(object):
       try:
         raise exception
       except BatchKilledException:
-        self._logger.warning("Batch was killed %s" % self.batch.name)
+        self._logger.getChild("batchKilled").warning("Batch was killed %s" % self.batch.name)
       except:
         self._logger.exception("Batch finished with exception: %s" % self.batch.name)
 

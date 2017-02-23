@@ -6,3 +6,12 @@ class JobKilledException(Exception):
 
 class NonZeroExitStatus(Exception):
   pass
+
+class BatchAlreadyFinishedException(Exception):
+  pass
+
+class BatchKilledException(Exception):
+  pass
+
+class BatchDirectoryLockException(Exception):
+  pass

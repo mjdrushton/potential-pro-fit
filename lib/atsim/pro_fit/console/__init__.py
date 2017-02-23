@@ -1,7 +1,7 @@
 from _mainframe import MainFrame
 from _model import ConsoleModel, RunnerModel, _RunnerModel
 from _controller import ConsoleController
-from _jobs import palette
+from _palette import palette
 
 import urwid
 from _urwid_geventloop import GeventLoop
@@ -94,6 +94,10 @@ class Console(object):
         cfg (atsim.pro_fit.fittool.FitConfig): Config used to initialise the console
 
     """
+    self.model.endEvent = cfg.endEvent
+    self.model.closedEvent = cfg.closedEvent
+    gevent.spawn(self._killMainLoopOnEvent, self.model.closedEvent)
+
     self.model.run_name = cfg.title
     self._initialiseRunnerModel(cfg)
 
@@ -154,7 +158,7 @@ class Console(object):
     self.model.messages.visible = False
     evt = gevent.event.Event()
 
-    def exitcallback():
+    def exitcallback(loop = None, data = None):
       evt.set()
       raise urwid.ExitMainLoop()
 
@@ -162,14 +166,23 @@ class Console(object):
     return evt
 
   def _run_main_loop(self):
-    try:
-      self._main_loop.run()
-    finally:
-      self._main_loop.stop()
+    self._main_loop.run()
+
+  def _exit_on_q(self, key):
+      if key in ('q', 'Q'):
+        self.model.endEvent.set()
+
+  def _killMainLoopOnEvent(self, evt):
+    evt.wait()
+    def term(loop = None, data = None):
+      # from remote_pdb import RemotePdb
+      # RemotePdb('127.0.0.1', 4444).set_trace()
+      raise urwid.ExitMainLoop()
+    self._main_loop.set_alarm_in(0, term)
 
 
   def start(self):
-    self._main_loop = urwid.MainLoop(self.mainframe, palette, event_loop=GeventLoop())
+    self._main_loop = urwid.MainLoop(self.mainframe, palette, event_loop=GeventLoop(), unhandled_input = self._exit_on_q)
     self._greenlet = gevent.spawn(self._run_main_loop)
     self.started = True
 

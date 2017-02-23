@@ -65,7 +65,7 @@ class RunCmd(threading.Thread):
       popenstatus = self.popen is None
       self.kill_called.set()
 
-    if not olkk and not popenstatus is None:
+    if not olkk and not popenstatus:
       self.popen.terminate()
 
       def hardkill(slf, popen):
@@ -84,13 +84,17 @@ class RunCmd(threading.Thread):
 
   def jobdone(self, killed):
     with self.lock:
+      if self.popen != None:
+        returncode = self.popen.returncode
+      else:
+        returncode = None
+
       try:
         with open(os.path.join(self.path, 'STATUS'), 'w') as statusfile:
-          statusfile.write("%s\n" % self.popen.returncode)
+          statusfile.write("%s\n" % returncode)
       except IOError:
         pass
-      self.parent.jobdone(self.job_id, self.popen.returncode, killed = killed)
-
+      self.parent.jobdone(self.job_id, returncode, killed = killed)
 
 
 class Runners(threading.Thread):

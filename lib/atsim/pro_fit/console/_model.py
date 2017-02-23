@@ -224,6 +224,8 @@ class ConsoleModel(ObservableObject):
       self._normal_setattr = True
       self.current_iteration = IterationModel()
       self.best_iteration = IterationModel()
+      self.endEvent = None
+      self.closedEvent = None
 
       # Create VariableUpdateHandler that will keep the variable_table in sync with the variables information in the iteration models.
       _VariableUpdateHandler(self)

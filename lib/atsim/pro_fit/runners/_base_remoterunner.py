@@ -4,6 +4,7 @@ import uuid
 from _exceptions import RunnerClosedException
 from atsim.pro_fit._util import NamedEvent
 from _util import BatchNameIterator
+from _exceptions import BatchKilledException
 from atsim.pro_fit import filetransfer
 from atsim.pro_fit import _execnet
 from atsim.pro_fit.filetransfer import UploadHandler, DownloadHandler
@@ -403,6 +404,8 @@ class BaseRemoteRunner(object):
     else:
       try:
         raise exception
+      except BatchKilledException:
+        self._logger.getChild("batchKilled").warning("Batch %s was killed" % batch.name)
       except:
         self._logger.exception("Batch %s finished with errors:" % batch.name)
     self._extantBatches.remove(batch)

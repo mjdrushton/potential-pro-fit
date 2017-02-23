@@ -145,8 +145,6 @@ class _RunnerJobThread(object):
     return True
     self.startUpload()
 
-
-
   def doUpload(self):
     if self.killedEvent.is_set():
       self.finishJob(JobKilledException())
