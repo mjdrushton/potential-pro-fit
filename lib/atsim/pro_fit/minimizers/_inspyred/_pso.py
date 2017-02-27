@@ -56,6 +56,8 @@ class Particle_SwarmMinimizer(object):
 
   stepCallback = property(fget = _getStepCallBack, fset = _setStepCallBack)
 
+  def stopMinimizer(self):
+    self._minimizer.stopMinimizer()
 
   @staticmethod
   def createFromConfig(variables, configitems):

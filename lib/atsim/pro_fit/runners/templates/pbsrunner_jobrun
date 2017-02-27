@@ -1,0 +1,15 @@
+function reorganise_files()
+{
+	for F in STATUS STDERR STDOUT;do
+	 	if [ -f "$F" ];then
+		 	mv -f "$F" job_files/
+		fi
+	done
+}
+
+trap reorganise_files SIGTERM SIGKILL EXIT 
+
+(cd job_files
+$SHELL runjob
+echo $? > STATUS)
+

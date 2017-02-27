@@ -354,6 +354,11 @@ Other Fields
 
 \ 
 
+:Name: ``lattice_energy_at_start``
+:Description: System energy before optimisation.
+
+\ 
+
 :Name: ``negative_phonon_penalty``
 :Description: Evaluates to 1.0 if negative phonon frequencies are detected. Otherwise returns 0.0. This field is useful for imposing a penalty to systems that yield unphysical negative phonon frequencies.
 :Notes: Ensure that the GULP ``phon`` keyword is specified in GULP input.

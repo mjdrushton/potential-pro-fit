@@ -8,3 +8,5 @@ import reporters
 import metaevaluators
 import tools
 import db
+
+__version__ = "0.7.0"

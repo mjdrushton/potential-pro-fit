@@ -10,8 +10,17 @@ import jobfactories
 
 import cexprtk
 
+import gevent
+
 class ConfigException(Exception):
-  pass
+
+  def __init__(self, msg):
+    self._msg = msg
+    super(ConfigException,self).__init__(msg)
+
+  @property
+  def message(self):
+    return "Configuration error - %s" % self._msg
 
 class MultipleSectionConfigException(ConfigException):
   pass
@@ -20,7 +29,6 @@ class FitConfig(object):
   """Object parses fit.cfg at root of a fitTool.py run
   and acts as factory for objects required by the fitting tool"""
 
-  _logger = logging.getLogger('atsim.pro_fit.fittool.FitConfig')
 
   # The set of section names that can be repeated in a fit.cfg file.
   _repeatedSections = set(['Runner', 'Evaluator'])
@@ -36,6 +44,7 @@ class FitConfig(object):
     @param minimizermodules List of python module objects contiaining Minimizers
     @param jobdir If specified use as directory for temporary files, if not use rootpath/jobs
     @param minimizer If not None overrides the minimizer specified in fit.cfg"""
+    self._logger = logging.getLogger(__name__).getChild('FitConfig')
     self._fitRootPath = os.path.abspath(os.path.dirname(fitCfgFilename))
     if jobdir:
       self.jobdir = jobdir
@@ -65,6 +74,41 @@ class FitConfig(object):
     self._merit = self._createMerit()
     self._minimizer = self._createMinimizer(minimizermodules)
     self._title = self._parseTitle()
+
+    self._endEvent = gevent.event.Event()
+
+    self._closeGreenlet = gevent.spawn(self._close)
+    self._closedEvent = gevent.event.Event()
+
+    def closedevtset(grn):
+      self._closedEvent.set()
+    self._closeGreenlet.link(closedevtset)
+
+  def _close(self):
+    """Shuts-down the fitting system"""
+    self._endEvent.wait()
+    logging.info("Shutting down 'pprofit'")
+    logging.info("Shutting down minimizer.")
+    self._minimizer.stopMinimizer()
+    evts = self._closeRunners()
+    gevent.wait(evts)
+
+  def _closeRunners(self):
+    evts = []
+    for name, r in self._runners.iteritems():
+      self._logger.info("Closing runner: '%s'", name)
+      e = r.close()
+      def repclose(evt, name):
+        evt.wait()
+        self._logger.info("Runner '%s' now closed.", name)
+      gevent.spawn(repclose, e, name)
+      evts.append(e)
+    return evts
+
+  def close(self):
+    """Used to terminate pprofit. This is equivalent to self.killEvent.set()"""
+    self.endEvent.set()
+    self._closedEvent.wait()
 
   def title(self):
     return self._title
@@ -106,6 +150,17 @@ class FitConfig(object):
   metaEvaluators = property(
     fget = metaEvaluators,
     doc = "Return list of meta-evaluator objects parsed from fit.cfg")
+
+  def endEvent(self):
+    return self._endEvent
+  endEvent = property(
+    fget = endEvent,
+    doc = "Return event set when SIGINT is called indicating that system should be terminated.")
+
+  def closedEvent(self):
+    return self._closedEvent
+  closedEvent = property(closedEvent,
+    doc = "Return event that is set when the system clean-up has taken place.")
 
   def _parseConfig(self, fitCfgFilename):
     """@param fitCfgFilename Filename for fit.cfg.
@@ -401,7 +456,6 @@ class FitConfig(object):
     if not evaluatorsFound:
       raise ConfigException("No Evaluators have been defined for any Job.")
 
-
 class Variables(object):
   """Class for handling fitting variables"""
 
@@ -543,7 +597,6 @@ class Variables(object):
   def __str__(self):
     return repr(self)
 
-
 class CalculatedVariables(object):
   """Class used to support calculated variables ([CalculatedVariables] within fit.cfg).
 
@@ -606,7 +659,6 @@ def _sumValuesReductionFunction(evaluatedJobs):
         v += sum([ er.meritValue for er in e])
     ret.append(v)
   return ret
-
 
 class Merit(object):
   """Class defining merit function within fitTool.py.
@@ -675,9 +727,8 @@ class Merit(object):
 
     batchpaths, batchedJobs, candidate_job_lists = self._prepareJobs(candidates)
     try:
-      futures = self._runBatches(batchedJobs)
-      for f in futures:
-        f.join()
+      finishedEvents = self._runBatches(batchedJobs)
+      gevent.wait(objects= finishedEvents)
 
       #Call the afterRun callback
       if self.afterRun:
@@ -740,16 +791,16 @@ class Merit(object):
     return (batchpaths,  [ runnerBatches[r.name] for r in self._runners ], candidate_job_lists)
 
   def _runBatches(self, jobBatches):
-    """Execute the runBatch command on the job batches and return the thread like
-    objects returned from each batch submission.
+    """Execute the runBatch command on the job batches and return threading.Event objects
+    indicating when each batch completes
 
     @param jobBatches List of batched jobs as returned by _prepareJobs.
-    @return List of Thread like objects representing each submitted batch"""
-    futures = []
+    @return List of threading.Event objects representing each submitted batch"""
+    events = []
     for runner, batch in zip(self._runners, jobBatches):
       f = runner.runBatch(batch)
-      futures.append(f)
-    return futures
+      events.append(f.finishedEvent)
+    return events
 
   def _cleanBatches(self, batchpaths):
     for p in batchpaths:
@@ -776,4 +827,3 @@ class Merit(object):
           evaluatorRecords.append(metaEvaluator(batch))
         metaEvaluatorJob = jobfactories.MetaEvaluatorJob("meta_evaluator", evaluatorRecords,batch[0].variables)
         batch.append(metaEvaluatorJob)
-

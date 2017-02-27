@@ -1,4 +1,7 @@
 #! /usr/bin/env python
+from gevent import monkey
+monkey.patch_all()
+monkey.patch_thread()
 
 from atsim import pro_fit
 
@@ -6,20 +9,61 @@ import optparse
 import sys
 import os
 import logging
+import logging.config
 import shutil
 import tempfile
+import contextlib
+import pkgutil
 
 import jinja2
+import gevent
 
 from atsim.pro_fit._util import MultiCallback
+from atsim.pro_fit.console import Console
+
+def _monkeyPatchExecnetSIGINT():
+  """The ssh instances launched by execnet were receiving SIGINT before cleanup had completed.
+  Monkeypath execnet.gateway_base.Execmodel.get_execmodel.ExecModel.PopenPiped method to ignore SIGINT in the
+  ssh subprocess"""
+
+  def PopenPiped(self, args):
+    def prefn():
+      import signal
+      signal.signal(signal.SIGINT, signal.SIG_IGN)
+    PIPE = self.subprocess.PIPE
+    return self.subprocess.Popen(args, stdout=PIPE, stdin=PIPE, preexec_fn = prefn)
+
+  from execnet.gateway_base import get_execmodel as get_execmodel_orig
+
+  def get_execmodel(backend):
+    retobj = get_execmodel_orig(backend)
+    import types
+    retobj.PopenPiped = types.MethodType(PopenPiped, retobj)
+    return retobj
+
+  # ... do the monkeypatch
+  import execnet.gateway_base
+  execnet.gateway_base.get_execmodel = get_execmodel
+
+_monkeyPatchExecnetSIGINT()
+
+def _registerSignalHandlers(intEvent):
+  import signal
+
+  def setevt(signum, stackframe):
+    intEvent.set()
+  signal.signal(signal.SIGINT, setevt)
+  signal.signal(signal.SIGTERM, setevt)
+
 
 class _FittingToolException(Exception):
   pass
 
 
-def _isValidDirectory(logger):
+def _isValidDirectory():
   #Check that current working directory has required files and directories.
   # return True if directory is valid, False otherwise.
+  logger = logging.getLogger('console')
 
   if not os.path.isfile('fit.cfg'):
     logger.error("Not a valid pprofit directory. Required file 'fit.cfg' not found.")
@@ -50,20 +94,23 @@ def _removeLockFile():
 class _DirectoryInitializationException(Exception):
   pass
 
-def _initializeRun(directoryName, logger):
+def _initializeRun(directoryName):
   """Initialize fitting run directory. Create directoryName and populate with
   skeleton version of files required for a run.
 
   Args:
-   directoryName (string): Path where run should be initialized.
-   logger (logging.Logger): Object used for logging."""
+      directoryName (string): Path where run should be initialized.
+
+  Raises:
+      _DirectoryInitializationException: Raised if there is problem initializing run.
+  """
 
   if os.path.exists(directoryName):
     raise _DirectoryInitializationException("Directory already exists: '%s'" % directoryName)
 
   try:
     os.mkdir(directoryName)
-    logger.info("Created directory: %s" % directoryName)
+    logging.getLogger('console').info("Created directory: %s" % directoryName)
   except Exception as e:
     raise _DirectoryInitializationException(e.message)
 
@@ -71,7 +118,7 @@ def _initializeRun(directoryName, logger):
   dirname = os.path.join(directoryName, 'fit_files')
   try:
     os.mkdir(dirname)
-    logger.info("Created directory: %s" % dirname)
+    logging.getLogger('console').info("Created directory: %s" % dirname)
   except Exception as e:
     raise _DirectoryInitializationException("Could not create 'fit_files' directory: %s" % e.message)
 
@@ -92,13 +139,13 @@ def _initializeRun(directoryName, logger):
   # Write the stream into a file
   fitCfgName = os.path.join(directoryName, 'fit.cfg')
   template.stream(**templateVariables).dump(fitCfgName)
-  logger.info("Created: %s" % fitCfgName)
+  logging.getLogger('console').info("Created: %s" % fitCfgName)
 
   # Create runner_files directory
   dirname = os.path.join(directoryName, 'runner_files', runner_name)
   try:
     os.makedirs(dirname)
-    logger.info("Created runner_files directory for the default runner '%s': %s" % (runner_name, dirname))
+    logging.getLogger('console').info("Created runner_files directory for the default runner '%s': %s" % (runner_name, dirname))
   except Exception as e:
     raise _DirectoryInitializationException("Could not create 'runner_files' directory: %s" % e.message)
 
@@ -128,10 +175,10 @@ def _getValidRunners():
 
   return runners
 
-def _initializeJob(jobDescription, logger):
+def _initializeJob(jobDescription):
   """Parses jobDescription into JOB_NAME:RUNNER_NAME pair. Then
   creates skeleton of a template job"""
-  if not _isValidDirectory(logger):
+  if not _isValidDirectory():
     raise _DirectoryInitializationException("jobs should be created from within a valid fitting-run directory")
 
   tokens = jobDescription.split(":")
@@ -143,7 +190,6 @@ def _initializeJob(jobDescription, logger):
     runnerName = tokens[1]
   else:
     raise _DirectoryInitializationException("Unable to parse job name whilst initializing job: '%s'" % jobDescription)
-
 
   # Check or get the name of the runner
   validRunners = _getValidRunners()
@@ -173,27 +219,30 @@ def _initializeJob(jobDescription, logger):
   template = env.get_template('job.cfg.jinja')
   outname = os.path.join(jobDirname, 'job.cfg')
   template.stream(runnerName = runnerName).dump(outname)
-  logger.info("Created: '%s' using runner named: '%s'" % (outname, runnerName))
+  logging.getLogger('console').info("Created: '%s' using runner named: '%s'" % (outname, runnerName))
 
   # Create 'runjob'
   template = env.get_template('runjob.jinja')
   outname = os.path.join(jobDirname, 'runjob')
   template.stream().dump(outname)
-  logger.info("Created: %s" % outname)
+  logging.getLogger('console').info("Created: %s" % outname)
 
 def _setupLogging(verbose):
   """Set-up python logging to display to stderr"""
+  # Read logging information from logging.cfg in the resources package
+  cfg = pkgutil.get_data('atsim.pro_fit', 'resources/logging.cfg')
+  import StringIO
+  cfg = StringIO.StringIO(cfg)
+
+  logging.config.fileConfig(cfg)
+
   if verbose:
     logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
   else:
     logger = logging.getLogger('atsim.pro_fit.fittingTool')
-
-  logger.setLevel(logging.DEBUG)
-  stderrHandler = logging.StreamHandler(sys.stderr)
-  formatter = logging.Formatter('pprofit - %(message)s')
-  stderrHandler.setFormatter(formatter)
-  logger.addHandler(stderrHandler)
   return logger
+
 
 def _parseCommandLine():
   usage = """%prog [OPTIONS]
@@ -329,8 +378,10 @@ def _getCreateFilesCfg(jobdir, keepDirectory, pluginmodules):
 
   return _getfitcfg(jobdir, cls = CustomConfig, pluginmodules = pluginmodules)
 
-def _invokeMinimizer(cfg, logger, logsql):
-  logger.info("Temporary job files will be created in '%s'" % cfg.jobdir)
+def _invokeMinimizer(cfg, logger, logsql, console):
+  logger = logging.getLogger(__name__).getChild('_invokeMinimizer')
+
+  console.log(logger, logging.INFO, "Temporary job files will be created in '%s'" % cfg.jobdir)
 
   # Perform minimization run
   if not os.path.isdir(cfg.jobdir):
@@ -346,21 +397,30 @@ def _invokeMinimizer(cfg, logger, logsql):
   # ... create SQLiteReporter
   if logsql:
     if os.path.exists('fitting_run.db'):
-      logger.info("Removing existing 'fitting_run.db'")
+      console.log(logger, logging.INFO, "Removing existing 'fitting_run.db'")
       os.remove('fitting_run.db')
     sqlreporter = pro_fit.reporters.SQLiteReporter('fitting_run.db',cfg.variables, cfg.merit.calculatedVariables, cfg.title)
     stepCallback.append(sqlreporter)
 
   minimizer = cfg.minimizer
   minimizer.stepCallback = stepCallback
+
+  console.registerConfig(cfg)
+  stepCallback.append(console.stepCallback)
   try:
+    # with contextlib.closing(cfg.merit):
+    _registerSignalHandlers(cfg.endEvent)
+
     minimizer.minimize(cfg.merit)
     if logsql:
       sqlreporter.finished()
   except:
+    logger.exception("Exception raised")
     if logsql:
       sqlreporter.finished(True)
     raise
+  finally:
+    cfg.close()
 
 class _PluginException(Exception):
   def __init__(self, filename, childexception):
@@ -389,7 +449,8 @@ def _processPlugins(pathList):
 def main():
   # Get command line options
   options = _parseCommandLine()
-  logger = _setupLogging(options.verbose)
+  _setupLogging(options.verbose)
+  console = None
 
   pluginmodules = []
 
@@ -401,58 +462,69 @@ def main():
       try:
         raise pe.childexception
       except IOError as e:
-        logger.error("Error processing --plugin option for file '%s': '%s'" % (filename, e.strerror))
+        logging.getLogger('console').error("Error processing --plugin option for file '%s': '%s'" % (filename, e.strerror))
       except Exception:
-        logger.exception("Error processing --plugin option for file '%s'" % (filename,))
+        logging.getLogger('console').exception("Error processing --plugin option for file '%s'" % (filename,))
       finally:
         sys.exit(1)
-
 
   if options.init:
     # Initialize directory
     try:
-       _initializeRun(options.init, logger)
-       logger.info("Now cd into directory and use --init-job to create jobs.")
+       _initializeRun(options.init)
+       logging.getLogger('console').info("Now cd into directory and use --init-job to create jobs.")
        sys.exit(0)
     except _DirectoryInitializationException as e:
-      logger.error("Error initializing directory:")
-      logger.error(e.message)
+      logging.getLogger('console').error("Error initializing directory:")
+      logging.getLogger('console').error(e.message)
       sys.exit(1)
   elif options.initjob:
     # Initialize job
     try:
-      _initializeJob(options.initjob, logger)
+      _initializeJob(options.initjob)
       sys.exit(0)
     except _DirectoryInitializationException as e:
-      logger.error("Error initializing job:")
-      logger.error(e.message)
+      logging.getLogger('console').error("Error initializing job:")
+      logging.getLogger('console').error(e.message)
       sys.exit(1)
 
   # Check that directory is valid
-  if not _isValidDirectory(logger):
+  if not _isValidDirectory():
     sys.exit(1)
   _makeLockFile()
+
+  # import pdb;pdb.set_trace()
+  console = Console()
+  console.start()
 
   tempdir = tempfile.mkdtemp()
   try:
     cfg = None
     logsql = True
+    logger = logging.getLogger(__name__).getChild('main')
     if options.single_step:
       # Do not run a minimization run
-      logger.info('Performing Single-step run')
+      console.log(logger, logging.INFO, 'Performing Single-step run')
       cfg = _getSingleStepCfg(tempdir, options.single_step, pluginmodules)
     elif options.create_files:
-      logger.info('Job files will be created in: %s' % options.create_files)
+      console.log(logger, logging.INFO, 'Job files will be created in: %s' % options.create_files)
       cfg =_getCreateFilesCfg(tempdir, options.create_files, pluginmodules)
       logsql = False
     else:
       # Perform a minimization run
-      logger.info('Performing Minimization run')
+      console.log(logger, logging.INFO, 'Performing Minimization run')
       cfg = _getfitcfg(tempdir, pluginmodules= pluginmodules)
-    _invokeMinimizer(cfg, logger,logsql)
+
+    _invokeMinimizer(cfg, logger,logsql, console)
   except (_FittingToolException, pro_fit.fittool.ConfigException, pro_fit.minimizers.MinimizerException) as e:
     logger.error(e.message)
+
+    if console and console.started:
+      evt = console.terminalError(e.message)
+      evt.wait()
+
     sys.exit(1)
   finally:
     _removeLockFile()
     shutil.rmtree(tempdir, ignore_errors= True)
+

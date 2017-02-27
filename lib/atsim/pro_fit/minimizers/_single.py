@@ -2,6 +2,8 @@ import logging
 import os
 import shutil
 
+import gevent
+
 from _common import * # noqa
 
 from atsim.pro_fit.fittool import ConfigException
@@ -20,6 +22,7 @@ class SingleStepMinimizer(object):
 
     @param variables Variables instance giving run values.
     @param keepFilesDirectory If specified, job files created for variables will be stored in the given directory."""
+    self._greenlet = gevent.Greenlet()
     self._initialArgs = variables
     self._keepFilesDirectory = keepFilesDirectory
     self.stepCallback = None
@@ -94,7 +97,7 @@ class SingleStepMinimizer(object):
 
     return afterMerit, cleanup
 
-  def minimize(self, merit):
+  def _minimize(self, merit):
     """Perform minimization.
 
     @param merit atsim.pro_fit.fittool.Merit instance.
@@ -112,6 +115,19 @@ class SingleStepMinimizer(object):
       return cb.minimizerResults
     finally:
       cleanup()
+
+  def minimize(self, merit):
+    """Perform minimization.
+
+    @param merit atsim.pro_fit.fittool.Merit instance.
+    @return MinimizerResults containing values obtained after merit function evaluation"""
+    self._greenlet = gevent.Greenlet(self._minimize, merit)
+    self._greenlet.start()
+    return self._greenlet.get()
+
+  def stopMinimizer(self):
+    self._greenlet.kill()
+
 
   @staticmethod
   def createFromConfig(variables, configitems):

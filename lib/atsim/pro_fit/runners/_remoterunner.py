@@ -1,94 +1,124 @@
-
 from atsim.pro_fit.fittool import ConfigException
 
 import execnet
-import StringIO
-import tarfile
-import os
-import shutil
-import threading
-import tempfile
-import posixpath
-import Queue
 import logging
 
-from _localrunner import LocalRunnerFuture
-from _inner import _InnerRunner
-
-from _remote_common import RemoteRunnerBase, _copyFilesFromRemote
-import _execnet
+from _base_remoterunner import BaseRemoteRunner, RemoteRunnerCloseThreadBase
 
 EXECNET_TERM_TIMEOUT=10
 
+from _runner_batch import RunnerBatch
+from _run_remote_client import RunChannel, RunClient
 
-class RemoteRunnerFuture(LocalRunnerFuture):
-  """Joinable future object as returned by RemoteRunnerFuture.runBatch()"""
+import gevent
+from gevent.event import Event
 
-  def __init__(self, name, e, jobs, execnetURL, remotePath, batchDir, localToRemotePathTuples):
-    """@param name Name future
-    @param e threading.Event used to communicate when batch finished
-    @param jobs List of Job instances belonging to batch
-    @param execnetURL URL used to create execnet gateway.
-    @param remotePath Base directory for batches on remote server
-    @param batchDir Name of batch directory for batch belonging to this future
-    @param localToRemotePathTuples Pairs of localPath, remotePath tuples for each job"""
-    LocalRunnerFuture.__init__(self, name, e, jobs)
-    self._remotePath = remotePath
-    self._batchDir = batchDir
-    self._gwurl = execnetURL
-    self._localToRemotePathTuples = localToRemotePathTuples
+class _RemoteRunnerCloseThread(RemoteRunnerCloseThreadBase):
 
-  def run(self):
-    self._e.wait()
-    group = execnet.Group()
-    group.defaultspec = self._gwurl
-    gw = group.makegateway()
-    try:
-      _copyFilesFromRemote(gw, self._remotePath, self._batchDir, self._localToRemotePathTuples)
-    finally:
-      group.terminate(EXECNET_TERM_TIMEOUT)
+  _logger = logging.getLogger(__name__).getChild("_RemoteRunnerCloseThread")
 
-class RemoteRunner(RemoteRunnerBase):
-  """Runner that uses SSH to run jobs in parallel on a remote machine"""
+  def closeRunClient(self):
+    return self._closeChannel(self.runner._runChannel, "run")
 
-  logger = logging.getLogger("atsim.pro_fit.runners.RemoteRunner")
+class InnerRemoteRunner(BaseRemoteRunner):
+  """The actual implementation of RemoteRunner.
+
+  InnerRemotRunner is used to allow RemoteRunner to just expose the public Runner interface whilst InnerRemoteRunner
+  has a much more extensive interface (required by the RunnerBatch)"""
+
+  _logger = logging.getLogger(__name__).getChild("InnerRemoteRunner")
 
   def __init__(self, name, url, nprocesses, identityfile=None, extra_ssh_options = []):
-    """@param name Name of this runner.
-       @param url Host and remote directory of remote host where jobs should be run in the form ssh://[username@]host/remote_path
-       @param nprocesses Number of processes that can be run in parallel by this runner
-       @param identityfile Path of a private key to be used with this runner's SSH transport. If None, the default's used by
-                         the platform's ssh command are used.
-       @param extra_ssh_options List of (key,value) tuples that are added to the ssh_config file used when making ssh connections."""
-    super(RemoteRunner, self).__init__(name, url, identityfile, extra_ssh_options)
+    """Instantiate RemoteRunner.
 
-    self._batchinputqueue = Queue.Queue()
-    self._i = 0
-    self._runner = _InnerRunner(self._batchinputqueue, nprocesses, self.gwurl)
-    self._runner.start()
+    Args:
+        name (str): Name of this runner.
+        url (str): Host and remote directory of remote host where jobs should be run in the form ssh://[username@]host/remote_path
+        nprocesses (int): Number of processes that can be run in parallel by this runner
+        identityfile (file, optional): Path of a private key to be used with this runner's SSH transport. If None, the default's used by
+                      the platform's ssh command are used.
+        extra_ssh_options (list, optional): List of (key,value) tuples that are added to the ssh_config file used when making ssh connections.
+    """
+    self._nprocesses = nprocesses
+    super(InnerRemoteRunner, self).__init__(name, url, identityfile, extra_ssh_options)
+
+  def initialiseRun(self):
+    # Initialise the remote runners their client.
+    self._runChannel = self._makeRunChannel()
+    self._runClient = RunClient(self._runChannel)
+
+  def createBatch(self, batchDir, jobs, batchId):
+    batch = RunnerBatch(self, batchDir, jobs, batchId)
+    return batch
+
+  def _makeRunChannel(self):
+    """Creates the RunChannels instance associated with this runner.
+
+    Args:
+        nprocesses (int): Number of runner channels that will be instantiated within RunChannels object.
+    """
+    channel = RunChannel(self._gw, '%s-Run' % self.name, nprocesses = self._nprocesses)
+    return channel
+
+  def makeCloseThread(self):
+    return _RemoteRunnerCloseThread(self)
+
+  def startJobRun(self, handler):
+    """Run the given job defined by handler.
+
+    Handler is an object with the following properties:
+      * `workingDirectory`: gives the path of this job on the remote machine.
+      * `callback`: Unary callback,  accepting throwable as its argument, which is called on completion of the job.
+
+    Args:
+        handler (object): See above
+
+    Returns:
+        (_run_remote_client.JobRecord): Record supporting kill() method.
+    """
+    return self._runClient.runCommand(handler.workingDirectory, handler.callback)
+
+class RemoteRunner(object):
+  """Runner that uses SSH to run jobs in parallel on a remote machine"""
+
+  def __init__(self, name, url, nprocesses, identityfile=None, extra_ssh_options = []):
+    """Instantiate RemoteRunner.
+
+    Args:
+        name (str): Name of this runner.
+        url (str): Host and remote directory of remote host where jobs should be run in the form ssh://[username@]host/remote_path
+        nprocesses (int): Number of processes that can be run in parallel by this runner
+        identityfile (file, optional): Path of a private key to be used with this runner's SSH transport. If None, the default's used by
+                      the platform's ssh command are used.
+        extra_ssh_options (list, optional): List of (key,value) tuples that are added to the ssh_config file used when making ssh connections.
+    """
+    self._inner = InnerRemoteRunner(name, url, nprocesses, identityfile, extra_ssh_options)
 
   def runBatch(self, jobs):
     """Run job batch and return a job future that can be joined.
 
-    @param jobs List of job instances as created by a JobFactory
-    @return RemoteRunnerFuture a job future that supports .join() to block until completion"""
+    Args:
+        jobs (): List of `atsim.pro_fit.jobfactories.Job` as created by a JobFactory.
 
-    self._gwgroup = execnet.Group()
-    self._gwgroup.defaultspec = self.gwurl
-    try:
-      gw = self._gwgroup.makegateway()
-      batchdir, localToRemotePathTuples,minimalJobs = self._prepareJobs(gw, jobs)
-    finally:
-      self._gwgroup.terminate(EXECNET_TERM_TIMEOUT)
+    Returns:
+        object: An object that supports .join() which when joined will block until batch completion """
+    return self._inner.runBatch(jobs)
 
-    # ... finally create the batch job future.
-    event = threading.Event()
-    self._i += 1
-    future = RemoteRunnerFuture('Batch %s' % self._i, event, minimalJobs,
-      self.gwurl, self.remotePath, batchdir, localToRemotePathTuples)
-    future.start()
-    self._batchinputqueue.put(future)
-    return future
+  def close(self):
+    """Shuts down the runner
+
+    Returns:
+      gevent.event.Event: Event that will be set() once shutdown has been completed.
+    """
+    return self._inner.close()
+
+  @property
+  def name(self):
+    return self._inner.name
+
+  @property
+  def observers(self):
+    return self._inner.observers
 
   @staticmethod
   def createFromConfig(runnerName, fitRootPath, cfgitems):
@@ -117,14 +147,14 @@ class RemoteRunner(RemoteRunnerBase):
     if not remotehost.startswith("ssh://"):
       raise ConfigException("remotehost configuration item must start with ssh://")
 
-    username, host, port,  path = RemoteRunner._urlParse(remotehost)
+    username, host, port,  path = _execnet.urlParse(remotehost)
     if not host:
       raise ConfigException("remotehost configuration item should be of form ssh://[username@]hostname/remote_path")
 
     # Attempt connection and check remote directory exists
-    group = execnet.Group()
+    group = _execnet.Group()
     try:
-      gwurl, sshcfg = RemoteRunner.makeExecnetConnectionSpec(username, host, port)
+      gwurl, sshcfg = _execnet.makeExecnetConnectionSpec(username, host, port)
       gw = group.makegateway(gwurl)
 
       # Check existence of remote directory

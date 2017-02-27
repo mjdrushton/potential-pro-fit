@@ -16,7 +16,6 @@
 				"docs",
 				"html"
 			],
-			"follow_symlinks": true,
 			"path": "."
 		}
 	],

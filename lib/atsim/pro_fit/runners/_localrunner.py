@@ -1,52 +1,205 @@
 from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit import _execnet
+from _localrunner_batch import LocalRunnerBatch
+from _run_remote_client import RunChannel, RunClient
+from _base_remoterunner import BaseRemoteRunner, RemoteRunnerCloseThreadBase
 
-import threading
-import Queue
+import execnet
+import gevent
+from gevent.event import Event
 
-from _inner import _InnerRunner
+import logging
+import os
+import shutil
+import tempfile
 
-class LocalRunnerFuture(threading.Thread):
-  """Joinable future object as returned by LocalRunner.runBatch()"""
 
-  def __init__(self, name, e, jobs):
-    """@param name Name future
-    @param e threading.Event used to communicate when batch finished
-    @param jobs List of Job instances belonging to batch"""
-    threading.Thread.__init__(self)
-    self._e = e
-    self._name = name
-    self._jobs = jobs
-    self.errorJobs = None
-    self.errorFlag = None
-    self.daemon = True
+EXECNET_TERM_TIMEOUT=10
 
-  def run(self):
-    self._e.wait()
+class _CopyDirectory(object):
+  _logger = logging.getLogger(__name__).getChild("_CopyDirectory")
 
-class LocalRunner(object):
-  """Runner that coordinates parallel job submission to local machine"""
+  def __init__(self, source_path, dest_path):
+    self.source_path = os.path.abspath(source_path)
+    self.dest_path = os.path.abspath(dest_path)
+    self.exception = None
+    self._greenlet = None
+    self.finishEvent = gevent.event.Event()
+
+  def doCopy(self, non_blocking = False):
+    logger = self._logger.getChild("doCopy")
+    logger.debug("Copying files from '%s' to '%s'.", self.source_path, self.dest_path)
+
+    self.finishEvent.clear()
+
+    def copyfiles():
+      shutil.copytree(self.source_path, self.dest_path)
+
+    def after(grn):
+      self.exception = grn.exception
+      self.finishEvent.set()
+
+    self._greenlet = gevent.Greenlet(copyfiles)
+    self._greenlet.link(after)
+
+    if non_blocking:
+      self._greenlet.start()
+      return self.finishEvent
+    else:
+      self._greenlet.start()
+      self._greenlet.join()
+
+  def cancel(self):
+    return self.finishEvent
+
+class _CopyDirectoryUp(_CopyDirectory):
+  """Class that copies directories whilst fulfilling the filetransfer.UploadDirectory interface"""
+
+  _logger = logging.getLogger(__name__).getChild("_CopyDirectoryUp")
+
+  def upload(self, non_blocking = False):
+    return self.doCopy()
+
+class _CopyDirectoryDown(_CopyDirectory):
+  """Class that copies directories whilst fulfilling the filetransfer.UploadDirectory interface"""
+
+  _logger = logging.getLogger(__name__).getChild("_CopyDirectoryDown")
+
+  def download(self, non_blocking = False):
+    return self.doCopy()
+
+class _LocalRunnerCloseThread(RemoteRunnerCloseThreadBase):
+
+  _logger = logging.getLogger(__name__).getChild("_LocalRunnerCloseThread")
+
+  def closeUpload(self):
+    return None
+
+  def closeDownload(self):
+    return None
+
+  def closeRunClient(self):
+    return self._closeChannel(self.runner._runChannel, 'closeRunClient')
+
+
+class InnerLocalRunner(BaseRemoteRunner):
+  """The actual implementation of LocalRunner.
+
+  InnerLocalRunner is used to allow LocalRunner to just expose the public Runner interface whilst InnerLocalRunner
+  has a much more extensive interface (required by the RunnerBatch)"""
+
+  _logger = logging.getLogger(__name__).getChild("InnerLocalRunner")
 
   def __init__(self, name, nprocesses):
-    """@param name Name of this runner.
-    @param nprocesses Number of processes that can be run in parallel by this runner"""
-    self.name = name
-    self._batchinputqueue = Queue.Queue()
-    self._i = 0
-    self._runner = _InnerRunner(self._batchinputqueue, nprocesses)
-    self._runner.start()
+    """Instantiate LocalRunner.
 
+    Args:
+        name (str): Name of this runner.
+        nprocesses (int): Number of processes that can be run in parallel by this runner"""
+    self._nprocesses = nprocesses
+    super(InnerLocalRunner, self).__init__(name, None)
+
+  def makeExecnetGateway(self, url, identityfile, extra_ssh_options):
+    self._remotePath = None
+    group = _execnet.Group()
+    # group.set_execmodel("gevent", "thread")
+    gw = group.makegateway()
+    return gw
+
+  def initialiseUpload(self):
+    pass
+
+  def initialiseDownload(self):
+    pass
+
+  def initialiseTemporaryRemoteDirectory(self):
+    self._remotePath = tempfile.mkdtemp()
+
+  # def initialiseCleanup(self):
+  #   pass
+
+  def initialiseRun(self):
+    # Initialise the remote runners their client.
+    self._runChannel = self._makeRunChannel(self._nprocesses)
+    self._runClient = RunClient(self._runChannel)
+
+  def createBatch(self, batchDir, jobs, batchId):
+    batch = LocalRunnerBatch(self, batchDir, jobs, batchId)
+    return batch
+
+  def _makeRunChannel(self, nprocesses):
+    """Creates the RunChannels instance associated with this runner.
+
+    Args:
+        nprocesses (int): Number of runner channels that will be instantiated within RunChannels object.
+    """
+    channel = RunChannel(self._gw, '%s-Run' % self.name, nprocesses = nprocesses)
+    return channel
+
+  def makeCloseThread(self):
+    return _LocalRunnerCloseThread(self)
+
+  def startJobRun(self, handler):
+    """Run the given job defined by handler.
+
+    Handler is an object with the following properties:
+      * `workingDirectory`: gives the path of this job on the remote machine.
+      * `callback`: Unary callback,  accepting throwable as its argument, which is called on completion of the job.
+
+    Args:
+        handler (object): See above
+
+    Returns:
+        (_run_remote_client.JobRecord): Record supporting kill() method.
+    """
+    return self._runClient.runCommand(handler.workingDirectory, handler.callback)
+
+  def createUploadDirectory(self, job):
+    # Copy from job.sourcePath to batch directory
+    upload = _CopyDirectoryUp(job.sourcePath, job.remotePath)
+    return upload.finishEvent, upload
+
+  def createDownloadDirectory(self, job):
+    download = _CopyDirectoryDown(os.path.join(job.remotePath,'job_files'), job.outputPath)
+    return download.finishEvent, download
+
+class LocalRunner(object):
+  """Runner that uses SSH to run jobs in parallel on a remote machine"""
+
+  def __init__(self, name, nprocesses):
+    """Instantiate LocalRunner.
+
+    Args:
+        name (str): Name of this runner.
+        nprocesses (int): Number of processes that can be run in parallel by this runner
+    """
+    self._inner = InnerLocalRunner(name, nprocesses)
 
   def runBatch(self, jobs):
     """Run job batch and return a job future that can be joined.
 
-    @param jobs List of job instances as created by a JobFactory
-    @return LocalRunnerFuture a job future that supports .join() to block until completion"""
-    event = threading.Event()
-    self._i += 1
-    future = LocalRunnerFuture('Batch %s' % self._i, event, jobs)
-    future.start()
-    self._batchinputqueue.put(future)
-    return future
+    Args:
+        jobs (): List of `atsim.pro_fit.jobfactories.Job` as created by a JobFactory.
+
+    Returns:
+        object: An object that supports .join() which when joined will block until batch completion """
+    return self._inner.runBatch(jobs)
+
+  def close(self):
+    """Shuts down the runner
+
+    Returns:
+      gevent.event.Event: Event that will be set() once shutdown has been completed.
+    """
+    return self._inner.close()
+
+  @property
+  def name(self):
+    return self._inner.name
+
+  @property
+  def observers(self):
+    return self._inner.observers
 
   @staticmethod
   def createFromConfig(runnerName, fitRootPath, cfgitems):
@@ -68,4 +221,3 @@ class LocalRunner(object):
       raise ConfigException("Could not convert nprocesses configuration item into an integer")
 
     return LocalRunner(runnerName, nprocesses)
-

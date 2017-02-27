@@ -268,6 +268,19 @@ class _GulpEnergySubEvaluator(_GulpSubEvaluatorBase):
   def getAllowedFields():
     return ['lattice_energy']
 
+class _GulpEnergyAtStartSubEvaluator(_GulpSubEvaluatorBase):
+  """Extracts energy from gulp output """
+
+  def extractValue(self, infile):
+    gulpdict = _gulp_parse.parseComponentsOfEnergy(infile)
+    energydict = gulpdict['componentsOfEnergyAtStart']
+    return energydict['totalLatticeEnergy']
+
+  @staticmethod
+  def getAllowedFields():
+    return ['lattice_energy_at_start']
+
+
 
 def _find(infile, linestart):
   for line in infile:

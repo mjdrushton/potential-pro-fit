@@ -1,6 +1,10 @@
 import csv
 import functools
+import operator
 import itertools
+import threading
+import gevent
+import gevent.event
 
 import logging
 
@@ -188,7 +192,6 @@ class MultiCallback(list):
     if kwargs.has_key('retLast'):
       self.retLast = kwargs['retLast']
 
-
   def __call__(self, *args, **kwargs):
     retvals = []
     for cb in self:
@@ -198,3 +201,33 @@ class MultiCallback(list):
     if self.retLast:
       return rv
     return retvals
+
+
+class CallbackRegister(list):
+
+  def __init__(self):
+    super(CallbackRegister, self).__init__()
+
+  def __call__(self, *args, **kwargs):
+    for cb in list(self):
+      if not cb.active:
+        continue
+      processed = cb(*args, **kwargs)
+      if processed:
+        break
+
+    self[:] = [ cb for cb in self if cb.active ]
+
+
+def NamedEvent(name):
+  event = gevent.event.Event()
+  event.name = name
+  return event
+
+def linkevent(evt, depend):
+  evt.wait()
+  depend.set()
+
+def linkevent_spawn(evt, depend):
+  return gevent.spawn(linkevent, evt, depend)
+
