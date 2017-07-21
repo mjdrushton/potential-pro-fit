@@ -79,7 +79,7 @@ setup(name="potential-pro-fit",
                       'inspyred',
                       'cexprtk',
                       'urwid',
-                      'mystic==0.2a1',
+                      'mystic>=0.3.1',
                       'execnet>=1.2',
                       'gevent>=1.2.1'],
   tests_require = ['pytest',
@@ -87,7 +87,7 @@ setup(name="potential-pro-fit",
                    'mechanize',
                    'assertpy'],
 
-  dependency_links = ['https://github.com/uqfoundation/mystic/zipball/master#egg=mystic-0.2a2.dev0'],
+  #dependency_links = ['https://github.com/uqfoundation/mystic/zipball/master#egg=mystic-0.2a2.dev0'],
 
   include_package_data = True,
   package_data = {
