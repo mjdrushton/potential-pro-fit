@@ -4,7 +4,7 @@ from _common import * # noqa
 from atsim.pro_fit.fittool import ConfigException
 
 import gevent
-
+import mystic
 
 class _NelderMeadMeritCallback(object):
   """Callback used by _NelderMeadStepMonitor to capture MinimizerResults for each iteration"""
@@ -20,6 +20,22 @@ class _NelderMeadMeritCallback(object):
 
   def reset(self):
     self.currentIterationResults = []
+
+class _MysticCallbackMonitor(mystic.monitors.Monitor):
+  """New versions of mystic change the StepMonitor interface with monitors
+  now effectively having to be sub-classes of mystic.monitors.Monitor.
+
+  This class allows a callable to be passed to a mystic solver to act as a StepMonitor"""
+
+  def __init__(self, callback):
+    super(_MysticCallbackMonitor, self).__init__()
+    self._callback = callback
+
+  def __call__(self, x, y, id=None, **kwds):
+    self._callback(x,y)
+    return super(_MysticCallbackMonitor, self).__call__(x,y,id, **kwds)
+
+ 
 
 class _NelderMeadStepMonitor(object):
   """Mystic step monitor that stores merit value and variables for each NelderMeadMinimizer step.
@@ -111,7 +127,6 @@ class _NelderMeadInner(object):
     @param merit atsim.pro_fit.fittool.Merit instance used to calculate merit value.
     @param stepevaluator _NelderMeadStepMonitor called every step, used to monitor minimizer progress.
     @return MinimizerResults for candidate solution population containing best merit value."""
-    import mystic
     self._logger.info("Starting minimisation.")
     optifunc = self._meritWrapper(merit)
     initargs = self._initialArgs()
@@ -124,9 +139,9 @@ class _NelderMeadInner(object):
       upperbounds = [h for (l,h) in bounds]
       minimizer.SetStrictRanges(lowbounds, upperbounds)
 
+    minimizer.SetGenerationMonitor(_MysticCallbackMonitor(stepevaluator))
     minimizer.Solve(optifunc,
-      termination=mystic.termination.CandidateRelativeTolerance(self._xtol, self._ftol),
-      StepMonitor = stepevaluator)
+      termination=mystic.termination.CandidateRelativeTolerance(self._xtol, self._ftol))
 
     #Extract final optimization merit value and variables from the step monitor.
     return stepevaluator.bestSolution
