@@ -228,7 +228,7 @@ def _initializeJob(jobDescription):
   logging.getLogger('console').info("Created: %s" % outname)
 
 def _setupLogging(verbose):
-  """Set-up python logging to display to stderr"""
+  """Set-up python logging"""
   # Read logging information from logging.cfg in the resources package
   cfg = pkgutil.get_data('atsim.pro_fit', 'resources/logging.cfg')
   import StringIO
@@ -242,7 +242,6 @@ def _setupLogging(verbose):
   else:
     logger = logging.getLogger('atsim.pro_fit.fittingTool')
   return logger
-
 
 def _parseCommandLine():
   usage = """%prog [OPTIONS]
@@ -493,7 +492,6 @@ def main():
     sys.exit(1)
   _makeLockFile()
 
-  # import pdb;pdb.set_trace()
   console = Console()
   console.start()
 

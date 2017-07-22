@@ -283,7 +283,7 @@ class _UploadCallback(object):
           self._exc = sys.exc_info()
       except Exception, e:
         self._exc = sys.exc_info()
-      traceback.print_exc()
+        self._logger.exception("Exception during file upload")
       self._finish()
 
   def _error(self, msg):

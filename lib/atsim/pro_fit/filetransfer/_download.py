@@ -324,7 +324,7 @@ class _DownloadCallback(object):
         self._exc = sys.exc_info()
     except Exception, e:
       self._exc = sys.exc_info()
-    traceback.print_exc()
+      self._logger.exception("exception in download finish handler")
 
   def _register_directory(self, remote_path):
     """Puts directory and its id into self.dir_q"""
@@ -385,7 +385,7 @@ class _DownloadCallback(object):
       except Exception as e:
         self.enabled = False
         self._exc = sys.exc_info()
-        traceback.print_exc()
+        self._logger.exception("Exception during file download")
       finally:
         self._finish()
     else:
