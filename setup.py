@@ -7,6 +7,20 @@ import os
 import re
 import tempfile
 
+def readversion():
+  basedir = os.path.dirname(__file__)
+  versionPath = os.path.join("lib", "atsim", "pro_fit", "__init__.py")
+
+  with open(versionPath) as vfile:
+    for line in vfile:
+      if line.startswith("__version__"):
+        tokens = line.split("=")
+        version = tokens[1].strip()
+        # Remove quotes
+        version = version[1:-1]
+        return version
+  raise Exception("Version number not found")
+
 
 def preprocess(infilename):
   # execnet requires pure modules to create channels (or inline source). This makes code re-use difficult.
@@ -68,6 +82,7 @@ def package_files(directory):
 pkgs = find_packages('lib', exclude=["tests"])
 
 setup(name="potential-pro-fit",
+  version = readversion(),
   package_dir = {'' : 'lib/'},
   packages = pkgs,
   namespace_packages = ["atsim"],
