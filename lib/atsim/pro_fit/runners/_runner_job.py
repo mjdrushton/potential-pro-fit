@@ -123,8 +123,7 @@ class _RunnerJobThread(object):
       self.finishJob(None)
     except:
       exception = sys.exc_info()
-      tbstring = traceback.format_exception(*exception)
-      self._logger.getChild("run_exception").warning("%s run exception: %s", self.job, tbstring)
+      self._logger.getChild("run_exception").exception("%s run exception", self.job)
       self.finishJob(exception)
       raise exception
 

@@ -31,6 +31,10 @@ class PBSRunnerJobRecord(object):
     return self._pbs_submit_event
 
   @property
+  def pidSetEvent(self):
+    return self.jobRunEvent
+
+  @property
   def pbs_submit_event(self):
     return self._pbs_submit_event
 

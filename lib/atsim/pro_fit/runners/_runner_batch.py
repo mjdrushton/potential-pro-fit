@@ -10,14 +10,11 @@ import itertools
 from _runner_job import RunnerJob
 from _exceptions import BatchAlreadyFinishedException, BatchKilledException, BatchDirectoryLockException
 
-
 import gevent
 import gevent.event
 import gevent.queue
 
 _logger = logging.getLogger("atsim.pro_fit.runners")
-
-
 
 class _BatchMonitorThread(object):
 
