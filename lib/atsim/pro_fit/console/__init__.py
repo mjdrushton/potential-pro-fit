@@ -160,8 +160,7 @@ class Console(object):
 
     def exitcallback(loop = None, data = None):
       evt.set()
-      raise urwid.ExitMainLoop()
-
+      self._killMainLoop()
     self.mainframe.showErrorMessage(message, exitcallback)
     return evt
 
@@ -170,16 +169,19 @@ class Console(object):
 
   def _exit_on_q(self, key):
       if key in ('q', 'Q'):
-        self.model.endEvent.set()
+        if self.model and self.model.endEvent:
+          self.model.endEvent.set()
 
-  def _killMainLoopOnEvent(self, evt):
-    evt.wait()
+  def _killMainLoop(self):
     def term(loop = None, data = None):
       # from remote_pdb import RemotePdb
       # RemotePdb('127.0.0.1', 4444).set_trace()
       raise urwid.ExitMainLoop()
     self._main_loop.set_alarm_in(0, term)
 
+  def _killMainLoopOnEvent(self, evt):
+    evt.wait()
+    self._killMainLoop()
 
   def start(self):
     self._main_loop = urwid.MainLoop(self.mainframe, palette, event_loop=GeventLoop(), unhandled_input = self._exit_on_q)
