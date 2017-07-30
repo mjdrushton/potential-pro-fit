@@ -6,6 +6,7 @@ from _util import retry_backoff
 import db
 
 import logging
+import os
 from cStringIO import StringIO
 
 _retryLogger = logging.getLogger("atsim.pro_fit.reporters.SQLiteReporter.retry")
@@ -174,7 +175,6 @@ class SQLiteReporter(object):
 
     self.iterationNum += 1
 
-
 class LogReporter(object):
   """Minimizer stepCallback that logs the best-ever variables and merit-value to
   a given logging.Logger. Logs at info level."""
@@ -225,13 +225,6 @@ class LogReporter(object):
     return column
 
   def _makeResultsTable(self, minimizerResults):
-    # candidateJobList --> list of (Variable, Job)
-    # variables, jobs candidateJobList
-    # jobs --> job.evaluatorRecords
-    # er.errorFlag
-    # er.evaluatorName
-    # er.name
-    # er.exception
     blankRow = ["", "", "", "", ""]
 
     variableLabelPairs = self._variableKeyLabelPairs()
@@ -272,11 +265,51 @@ class LogReporter(object):
     tabulated = tabulate.tabulate(table, headers = columnHeadings)
     return tabulated
 
+  def _errorsForJob(self, variables, job):
+    errorlist = []
+    for ers in job.evaluatorRecords:
+      for er in ers:
+        if er.errorFlag:
+          errorlist.append("  "+str(er))
+    
+    if errorlist:
+      lines = [ "Evaluator errors found for job: %s" % job.name ]
+      lines.append("with: %s" % variables )
+      lines.extend(errorlist)
+      return os.linesep.join(lines)
+
+    return None
+
+  def _formatEvaluatorErrors(self, minimizerResults):
+    errorsFound = False
+    sbuild = StringIO()
+
+    for v, jobs in minimizerResults.candidateJobList:
+      for job in jobs: 
+        jobErrors = self._errorsForJob(v, job)
+        if jobErrors:
+          errorsFound = True
+          sbuild.write(jobErrors)
+          print >>sbuild, ""
+
+    if errorsFound:
+      return sbuild.getvalue()
+    return None
+
+
   def _log(self, minimizerResults):
     sbuild = StringIO()
     print >>sbuild, ""
     print >>sbuild, "Results at iteration: %d" % self.currentIterationNumber
     print >>sbuild, ""
+
+    evaluatorErrors = self._formatEvaluatorErrors(minimizerResults)
+    if evaluatorErrors:
+      sbuild.write(evaluatorErrors)
+      print >>sbuild, ""
+      print >>sbuild, ""
+
+    print >>sbuild, "Variables and Merit Values:"
     table = self._makeResultsTable(minimizerResults)
     sbuild.write(table)
     print >>sbuild, ""

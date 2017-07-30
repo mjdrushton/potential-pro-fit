@@ -1,4 +1,5 @@
 import math
+import os
 
 class EvaluatorRecord(object):
   """Object returned for each value extracted by an evaluator"""
@@ -85,3 +86,9 @@ class ErrorEvaluatorRecord(EvaluatorRecord):
 
   def __repr__(self):
       return "ErrorEvaluatorRecord(name=%s, exception=%s, evaluatorName=%s)" % (self.name, self.exception, self.evaluatorName)
+
+  def __str__(self):
+      s = "evaluator field '%s' from evaluator '%s' has following error: " % (self.name, self.evaluatorName)
+      s += os.linesep
+      s += "    " + str(self.exception) + os.linesep 
+      return s
