@@ -1,10 +1,13 @@
 import sqlalchemy as sa
+import tabulate
 
 from _util import retry_backoff
 
 import db
 
 import logging
+from cStringIO import StringIO
+
 _retryLogger = logging.getLogger("atsim.pro_fit.reporters.SQLiteReporter.retry")
 
 class SQLiteReporter(object):
@@ -176,32 +179,106 @@ class LogReporter(object):
   """Minimizer stepCallback that logs the best-ever variables and merit-value to
   a given logging.Logger. Logs at info level."""
 
-  def __init__(self, logger):
+  def __init__(self):
     """@param logger logging.Logger instance"""
-    self.iteration = 0
+    self.currentIterationNumber = 0
+    self.bestIterationNumber = 0
+
+    self.firstIteration = None
+    self.lastIteration = None
     self.bestIteration = None
-    self._logger = logger
+    self._logger = logging.getLogger(__name__).getChild("LogReporter")
 
   def __call__(self, minimizerResults):
     self._updateBest(minimizerResults)
-    self._log()
-    self.iteration += 1
-
+    self._log(minimizerResults)
+    self.currentIterationNumber += 1
+    self.lastIteration = minimizerResults
 
   def _updateBest(self, minimizerResults):
     if self.bestIteration is None:
+      self.firstIteration = minimizerResults
       self.bestIteration = minimizerResults
     elif minimizerResults < self.bestIteration:
       self.bestIteration = minimizerResults
+      self.bestIterationNumber = self.currentIterationNumber
 
-  def _log(self):
-    self._logger.info("Iteration: %d" % self.iteration)
-    self._logger.info("Merit-value: %f. Variables:" % self.bestIteration.bestMeritValue)
+  def _variableKeyLabelPairs(self):
     variables = self.bestIteration.bestVariables
+    variableKeys = self.firstIteration
     fitkeys = set(variables.fitKeys)
+    l = []
     for k, v in variables.variablePairs:
       if k in fitkeys:
         fflag = ' *'
       else:
         fflag = ''
-      self._logger.info("  %s = %.10f %s" % (k,v,fflag))
+      l.append( (k, "%s%s" % (k, fflag)) )
+    return l
+
+  def _getVariableColumn(self, variableLabelPairs, minimizerResults):
+    variables = dict(minimizerResults.bestVariables.variablePairs)
+    column = []
+    for k, label in variableLabelPairs:
+      v = variables[k]
+      column.append(float(v))
+    return column
+
+  def _makeResultsTable(self, minimizerResults):
+    # candidateJobList --> list of (Variable, Job)
+    # variables, jobs candidateJobList
+    # jobs --> job.evaluatorRecords
+    # er.errorFlag
+    # er.evaluatorName
+    # er.name
+    # er.exception
+    blankRow = ["", "", "", "", ""]
+
+    variableLabelPairs = self._variableKeyLabelPairs()
+    variableNames = [label for (k,label) in variableLabelPairs]
+
+    firstVariables   = self._getVariableColumn(variableLabelPairs, self.firstIteration)
+    if self.lastIteration is None:
+      lastVariables = [""] * len(variableLabelPairs)
+    else:
+      lastVariables    = self._getVariableColumn(variableLabelPairs, self.lastIteration)
+
+    currentVariables = self._getVariableColumn(variableLabelPairs, minimizerResults)
+    bestVariables    = self._getVariableColumn(variableLabelPairs, self.bestIteration)
+
+    table = [["Variables", "", "", "", "" ]]
+    for row in zip(variableNames, firstVariables, lastVariables, currentVariables, bestVariables):
+      table.append(list(row))
+
+    table.append(blankRow)
+    table.append(["Merit = ", 
+      self.firstIteration.bestMeritValue, 
+      self.lastIteration.bestMeritValue if not self.lastIteration is None else "NA",
+      minimizerResults.bestMeritValue,
+      self.bestIteration.bestMeritValue ])
+
+    if self.currentIterationNumber == 0:
+      previousIt = ""
+    else:
+      previousIt = " (it=%d)" % (self.currentIterationNumber-1,)
+
+    columnHeadings = [
+      "", 
+      "First (it=%d)" % 0, 
+      "Previous%s" % previousIt, 
+      "Current (it=%d)" % self.currentIterationNumber,
+      "Best (i=%d)" % self.bestIterationNumber ]
+
+    tabulated = tabulate.tabulate(table, headers = columnHeadings)
+    return tabulated
+
+  def _log(self, minimizerResults):
+    sbuild = StringIO()
+    print >>sbuild, ""
+    print >>sbuild, "Results at iteration: %d" % self.currentIterationNumber
+    print >>sbuild, ""
+    table = self._makeResultsTable(minimizerResults)
+    sbuild.write(table)
+    print >>sbuild, ""
+    print >>sbuild, ""
+    self._logger.info(sbuild.getvalue())

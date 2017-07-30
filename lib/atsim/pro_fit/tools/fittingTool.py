@@ -392,7 +392,7 @@ def _invokeMinimizer(cfg, logger, logsql, console):
   # Set-up reporters
   stepCallback = MultiCallback()
   # ... create the console log reporter
-  stepCallback.append(pro_fit.reporters.LogReporter(logger))
+  stepCallback.append(pro_fit.reporters.LogReporter())
   # ... create SQLiteReporter
   if logsql:
     if os.path.exists('fitting_run.db'):

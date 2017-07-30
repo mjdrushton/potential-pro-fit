@@ -11,7 +11,7 @@ import gevent.event
 from atsim.pro_fit.filetransfer import  DownloadHandler, DownloadCancelledException, UploadCancelledException
 from atsim.pro_fit._util import linkevent_spawn
 
-from _run_remote_client import RunJobKilledException
+from _run_remote_client import RunJobKilledException, NonZeroExitStatus
 
 
 class _RunnerJobObservers(list):
@@ -213,7 +213,12 @@ class _RunnerJobThread(object):
       exc = self.job.exception
       self._logger.debug("finish job run: %s", exc)
       if not exc is None:
-        self._logger.warning("Job execution finished (finishJobRun) for %s, with exception: %s" , self.job, exc)
+        try:
+          raise exc
+        except NonZeroExitStatus:
+          pass
+        except:
+          self._logger.warning("Job execution finished (finishJobRun) for %s, with exception: %s" , self.job, exc)
         self.finishJob(exc)
         return False
       else:
@@ -282,6 +287,9 @@ class _RunnerJobThread(object):
         except (RunJobKilledException, DownloadCancelledException, UploadCancelledException):
           self._logger.debug("finish job killed")
           self.job.status.append("finish job killed")
+        except NonZeroExitStatus:
+          self._logger.warning("%s finished with non-zero exit status: %s", self.job, exception.message)
+
         except:
           self._logger.debug("finish job error")
           self.job.status.append("finish job error")

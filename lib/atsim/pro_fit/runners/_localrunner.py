@@ -202,22 +202,27 @@ class LocalRunner(object):
     return self._inner.observers
 
   @staticmethod
+  def _makeException(runnerName, msg):
+    errmsg = "%s for Local runner '%s'" % (msg, runnerName)
+    return ConfigException(errmsg)
+
+  @staticmethod
   def createFromConfig(runnerName, fitRootPath, cfgitems):
     allowedkeywords = set(['nprocesses', 'type'])
     cfgdict = dict(cfgitems)
 
     for k in cfgdict.iterkeys():
       if not k in allowedkeywords:
-        raise ConfigException("Unknown keyword for Local runner '%s'" % k)
+        raise LocalRunner._makeException(runnerName, "Unknown keyword '%s'" % k)
 
     try:
       nprocesses = cfgdict['nprocesses']
     except KeyError:
-      raise ConfigException("nprocesses configuration item not found")
+      raise LocalRunner._makeException(runnerName, "'nprocesses' configuration item not found")
 
     try:
       nprocesses = int(nprocesses)
     except ValueError:
-      raise ConfigException("Could not convert nprocesses configuration item into an integer")
+      raise LocalRunner._makeException(runnerName, "Could not convert 'nprocesses' configuration item into an integer. Value was = '%'" % nprocesses)
 
     return LocalRunner(runnerName, nprocesses)
