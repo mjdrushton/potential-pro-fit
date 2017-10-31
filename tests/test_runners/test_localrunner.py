@@ -95,6 +95,8 @@ class LocalRunnerTestCase(unittest.TestCase):
     # Check output directory contents
     expect = [ ('runjob', self.FILE),
              ('STATUS', self.FILE),
+             ('STDOUT', self.FILE),
+             ('STDERR', self.FILE),
              ('output.res', self.FILE),
              ('runner_files_contents', self.FILE)]
 
