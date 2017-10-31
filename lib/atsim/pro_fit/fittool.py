@@ -795,7 +795,7 @@ class Merit(object):
     indicating when each batch completes
 
     @param jobBatches List of batched jobs as returned by _prepareJobs.
-    @return List of threading.Event objects representing each submitted batch"""
+    @return List of gevent.event.Event objects representing each submitted batch"""
     events = []
     for runner, batch in zip(self._runners, jobBatches):
       f = runner.runBatch(batch)

@@ -149,9 +149,8 @@ class MeritTestCase(unittest.TestCase):
   def testMeritRunBatches(self):
     """Test Merit._runBatches()"""
     batchPaths, batchedjobs, candidatejoblists = self.merit._prepareJobs(self.candidates)
-    futures = self.merit._runBatches(batchedjobs)
-    for f in futures:
-      f.join()
+    finishedEvents = self.merit._runBatches(batchedjobs)
+    gevent.wait(finishedEvents)
 
     # Check that directory structure is as expected
     expected = [ dict(A = 1.0, B = 2.5, C = 3.0, D = 4.5),
@@ -177,9 +176,8 @@ class MeritTestCase(unittest.TestCase):
   def testApplyEvaluators(self):
     """Test Merit._applyEvaluators()"""
     batchpaths, batchedjobs, candidatejoblists = self.merit._prepareJobs(self.candidates)
-    futures = self.merit._runBatches(batchedjobs)
-    for f in futures:
-      f.join()
+    finishedEvents = self.merit._runBatches(batchedjobs)
+    gevent.wait(finishedEvents)
     self.merit._applyEvaluators(batchedjobs)
 
     # Convert jobs into a dictionary we can feed to compareCollection
@@ -218,14 +216,13 @@ class MeritTestCase(unittest.TestCase):
 
     #Define a MetaEvaluator that sums the results of Job1 eval 1 and Job3 eval 3
     batchpaths, batchedjobs, candidatejoblists = self.metamerit._prepareJobs(self.candidates)
-    futures = self.metamerit._runBatches(batchedjobs)
+    finishedEvents = self.metamerit._runBatches(batchedjobs)
 
     self.assertEquals(2, len(candidatejoblists))
     batchOneLength = len(candidatejoblists[0][1])
     batchTwoLength = len(candidatejoblists[1][1])
 
-    for f in futures:
-      f.join()
+    gevent.wait(finishedEvents)
     self.metamerit._applyEvaluators(batchedjobs)
     self.metamerit._applyMetaEvaluators([joblist for (c, joblist) in candidatejoblists])
 

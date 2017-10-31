@@ -4,6 +4,7 @@ import os
 import logging
 import stat
 import shutil
+import gevent
 
 logger = logging.getLogger('fitting_test')
 
@@ -12,10 +13,17 @@ class MockRunner(object):
     self.name = name
 
   def runBatch(self, jobs):
-    process = multiprocessing.Process(target = mockfuture, args = (jobs,))
-    process.start()
-    return process
+    batch = MockBatch()
+    finishedEvent= batch.finishedEvent
 
+    def waiter(g):
+      finishedEvent.set()
+
+    g = gevent.Greenlet(mockfuture,jobs)
+    g.start()
+    g.link(waiter)
+    gevent.sleep(0)
+    return batch
 
 def mockfuture(jobs):
   for job in jobs:
@@ -68,6 +76,11 @@ def e3(d):
 
 from atsim.pro_fit.jobfactories import Job
 
+class MockBatch(object):
+  def __init__(self):
+    self.finishedEvent = gevent.event.Event()
+
+
 class MockJobFactory(object):
   def __init__(self, runnerName, jobName, evaluators):
     self.name = jobName
@@ -97,7 +110,6 @@ class MockJobFactory(object):
         print >>outfile, "echo %s:%f >> output.res" % (k,v)
 
       print >>outfile, "ls ../runner_files > runner_files_contents"
-
 
     logger.debug("createJob directory content: %s" % os.listdir(destdir))
     return Job(self, destdir, variables)
