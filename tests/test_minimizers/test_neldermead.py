@@ -35,7 +35,7 @@ max_iterations : 30
 
     minimizer = pro_fit.minimizers.NelderMeadMinimizer.createFromConfig(variables, configitems)
     expect = [(3.0, 4.0), (7.0,8.0)]
-    testutil.compareCollection(self, expect, minimizer._getBounds())
+    testutil.compareCollection(self, expect, minimizer._inner._getBounds())
 
   def testNelderMeadSingleConfig(self):
     """Tests for the atsim.prof_fit.minimizers.NelderMead wrapper"""
@@ -95,12 +95,12 @@ max_iterations : 30
     minimizer = pro_fit.minimizers.NelderMeadMinimizer.createFromConfig(variables, configitems)
     self.assertEquals(pro_fit.minimizers.NelderMeadMinimizer, type(minimizer))
 
-    args = minimizer._initialArgs()
+    args = minimizer._inner._initialArgs()
     testutil.compareCollection(self, [2.0, 4.0], args)
 
-    self.assertEquals(None, minimizer._getBounds())
+    self.assertEquals(None, minimizer._inner._getBounds())
 
-    variables = minimizer._argsToVariables([5.0, 6.0])
+    variables = minimizer._inner._argsToVariables([5.0, 6.0])
     testutil.compareCollection(self,
       [('A', 1.0), ('B', 5.0), ('C', 3.0), ('D', 6.0)],
       variables.variablePairs)

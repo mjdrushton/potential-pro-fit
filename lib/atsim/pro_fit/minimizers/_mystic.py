@@ -35,7 +35,6 @@ class _MysticCallbackMonitor(mystic.monitors.Monitor):
     self._callback(x,y)
     return super(_MysticCallbackMonitor, self).__call__(x,y,id, **kwds)
 
- 
 
 class _NelderMeadStepMonitor(object):
   """Mystic step monitor that stores merit value and variables for each NelderMeadMinimizer step.
