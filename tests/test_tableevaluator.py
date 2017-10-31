@@ -525,8 +525,8 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     try:
       # Create an empty file
       os.chdir(tempdir)
-      os.makedirs('job_files', 'output')
-      f = open(os.path.join('job_files,', 'output', 'output.csv'),'w')
+      os.makedirs(os.path.join('job_files', 'output'))
+      f = open(os.path.join('job_files', 'output', 'output.csv'),'w')
       f.close()
 
       # Perform the test
