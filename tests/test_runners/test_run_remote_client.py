@@ -7,6 +7,10 @@ import gevent.event
 
 import logging
 
+import pytest
+pytestmark = pytest.mark.skip()
+
+
 class TstCallback(object):
 
   logger = logging.getLogger("test_run_remote_client.TstCallback")
