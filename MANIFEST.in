@@ -1,3 +1,5 @@
-graft lib/atsim/pro_fit/resources
-graft lib/atsim/pro_fit/webmonitor/webresources
-graft lib/atsim/pro_fit/runners/templates
+#graft lib/atsim/pro_fit/resources
+#graft lib/atsim/pro_fit/webmonitor/webresources
+#graft lib/atsim/pro_fit/runners/templates
+recursive_include lib
+include ./lib/atsim/pro_fit/filetransfer/remote_exec/_remote_exec_funcs.py.inc
