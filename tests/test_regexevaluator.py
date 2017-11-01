@@ -8,7 +8,7 @@ from atsim import pro_fit
 import testutil
 
 def _getResourceDir():
-  return os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'regex_evaluator', 'job_files')
+  return os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'regex_evaluator')
 
 class RegexEvaluatorTestCase(unittest.TestCase):
 
@@ -16,7 +16,7 @@ class RegexEvaluatorTestCase(unittest.TestCase):
     """Test atsim.pro_fit.evaluators.RegexEvaluator"""
     parser = ConfigParser.SafeConfigParser()
     parser.optionxform = str
-    with open(os.path.join(_getResourceDir(), 'job.cfg')) as infile:
+    with open(os.path.join(_getResourceDir(), 'job_files', 'job.cfg')) as infile:
       parser.readfp(infile)
 
     evaluator = pro_fit.evaluators.RegexEvaluator.createFromConfig(
@@ -32,6 +32,7 @@ class RegexEvaluatorTestCase(unittest.TestCase):
       'third' : 9.1011,
       'fourth' : 5.878
      }
+
     evaluated = evaluator(job)
     actual = dict([ (e.name, e.extractedValue) for e in evaluated])
     testutil.compareCollection(self, extractExpect, actual)
