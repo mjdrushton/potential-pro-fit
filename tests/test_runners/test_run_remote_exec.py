@@ -81,7 +81,7 @@ def testStart(execnet_gw, tmpdir, channel_id):
   msg = ch1.receive(10.0)
   assert msg.has_key('pid')
   del msg['pid']
-  assert msg == {'msg': 'JOB_START', 'channel_id' : channel_id, 'job_id' : (1,2,3)}
+  assert msg == {'msg': 'JOB_START', 'channel_id' : channel_id, 'job_id' : (1,2,3), 'semaphore' : 1}
 
   msg = ch1.receive(20.0)
   assert joboutput.isfile()
@@ -110,7 +110,7 @@ def testEasyKill(execnet_gw, tmpdir, channel_id):
   msg = ch1.receive(10.0)
   assert msg.has_key('pid')
   del msg['pid']
-  assert msg == {'msg': 'JOB_START', 'channel_id' : channel_id, 'job_id' : (1,2,3)}
+  assert msg == {'msg': 'JOB_START', 'channel_id' : channel_id, 'job_id' : (1,2,3), 'semaphore' : 1}
 
   ch1.send({'msg' : 'JOB_KILL', 'job_id' : (1,2,3)})
 
@@ -142,7 +142,7 @@ def testHardKill(execnet_gw, tmpdir, channel_id):
   msg = ch1.receive(10.0)
   assert msg.has_key('pid')
   del msg['pid']
-  assert msg == {'msg': 'JOB_START', 'channel_id' : channel_id, 'job_id' : (1,2,3)}
+  assert msg == {'msg': 'JOB_START', 'channel_id' : channel_id, 'job_id' : (1,2,3), 'semaphore' : 1}
 
   ch1.send({'msg' : 'JOB_KILL', 'job_id' : (1,2,3)})
 
@@ -191,13 +191,13 @@ def testMultipleJobs(execnet_gw, tmpdir, channel_id):
   msg = ch1.receive(10.0)
   assert msg.has_key('pid')
   del msg['pid']
-  assert msg == {'msg': 'JOB_START', 'channel_id' : channel_id, 'job_id' : (1,2,3)}
+  assert msg == {'msg': 'JOB_START', 'channel_id' : channel_id, 'job_id' : (1,2,3), 'semaphore' : 1}
 
   ch1.send({'msg' : 'JOB_START', 'job_path' : jobdir2.strpath, 'job_id' : (2,3,4)})
   msg = ch1.receive(10.0)
   assert msg.has_key('pid')
   del msg['pid']
-  assert msg == {'msg': 'JOB_START', 'channel_id' : channel_id, 'job_id' : (2,3,4)}
+  assert msg == {'msg': 'JOB_START', 'channel_id' : channel_id, 'job_id' : (2,3,4), 'semaphore' : 2}
 
   ch1.send({'msg' : 'JOB_START', 'job_path' : jobdir3.strpath, 'job_id' : (4,5,8)})
 
@@ -207,7 +207,7 @@ def testMultipleJobs(execnet_gw, tmpdir, channel_id):
   msg = ch1.receive(2.0)
   assert msg.has_key('pid')
   del msg['pid']
-  assert msg == {'msg' : 'JOB_START', 'channel_id' : channel_id, 'job_id' : (4,5,8)}
+  assert msg == {'msg' : 'JOB_START', 'channel_id' : channel_id, 'job_id' : (4,5,8), 'semaphore' : 2}
 
   msg = ch1.receive(12.0)
   assert msg == {'msg': 'JOB_END', 'channel_id' : channel_id, 'returncode' : 0, 'job_id' : (4,5,8), 'killed' : False}
