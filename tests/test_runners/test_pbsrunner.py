@@ -16,6 +16,9 @@ from test_pbs_client import chIsDir
 
 import gevent
 
+import pytest
+pytestmark = pytest.mark.skip()
+
 def _createRunner(runfixture, vagrantbox, sub_batch_size, pbsinclude = ""):
   username = vagrantbox.user()
   hostname = vagrantbox.hostname()
