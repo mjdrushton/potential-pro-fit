@@ -253,25 +253,37 @@ def testPBSClientMultipleJobsInSingleBatch(clearqueue, channel_id):
         assert j1cb.exception is None
 
       for i, job in enumerate(runjobs):
-        # Now check the contents of the output directory
-        ch = gw.remote_exec(chIsDir)
+          # Now check the contents of the output directory
+          ch = gw.remote_exec(chIsDir)
+          try:
+            import posixpath
+            outputdir = posixpath.join(posixpath.dirname(job), "output")
+            ch.send(outputdir)
+            actual = ch.receive()
+            assert actual
+          finally:
+            ch.close()
+            ch.waitclose(2)
 
-        import posixpath
-        outputdir = posixpath.join(posixpath.dirname(job), "output")
-        ch.send(outputdir)
-        actual = ch.receive()
-        assert actual
+          outputpath = posixpath.join(outputdir, "outfile")
+          ch = gw.remote_exec(chIsFile)
+          try:
+            ch.send(outputpath)
+            actual = ch.receive()
+            assert actual
+          finally:
+            ch.close()
+            ch.waitclose(2)
 
-        outputpath = posixpath.join(outputdir, "outfile")
-        ch = gw.remote_exec(chIsFile)
-        ch.send(outputpath)
-        actual = ch.receive()
-        assert actual
 
-        ch = gw.remote_exec(chFileContents)
-        ch.send(outputpath)
-        actual = ch.receive()
-        assert actual == "Hello%d\n" % i
+          ch = gw.remote_exec(chFileContents)
+          try:
+            ch.send(outputpath)
+            actual = ch.receive()
+            assert actual == "Hello%d\n" % i
+          finally:
+            ch.close()
+            ch.waitclose(2)
     finally:
       clch.send(None)
 
@@ -303,21 +315,33 @@ def testPBSClientMultipleJobsInMultipleBatches(clearqueue, channel_id):
         ch = gw.remote_exec(chIsDir)
 
         import posixpath
-        outputdir = posixpath.join(posixpath.dirname(job), "output")
-        ch.send(outputdir)
-        actual = ch.receive()
-        assert actual
+        try:
+          outputdir = posixpath.join(posixpath.dirname(job), "output")
+          ch.send(outputdir)
+          actual = ch.receive()
+          assert actual
+        finally:
+          ch.close()
+          ch.waitclose(5)
 
         outputpath = posixpath.join(outputdir, "outfile")
         ch = gw.remote_exec(chIsFile)
-        ch.send(outputpath)
-        actual = ch.receive()
-        assert actual
+        try:
+          ch.send(outputpath)
+          actual = ch.receive()
+          assert actual
+        finally:
+          ch.close()
+          ch.waitclose(5)
 
         ch = gw.remote_exec(chFileContents)
-        ch.send(outputpath)
-        actual = ch.receive()
-        assert actual == "Hello%d\n" % i
+        try:
+          ch.send(outputpath)
+          actual = ch.receive()
+          assert actual == "Hello%d\n" % i
+        finally:
+          ch.close()
+          ch.waitclose(5)
     finally:
       clch.send(None)
 
@@ -361,37 +385,57 @@ def testPBSClientKillJob(clearqueue, channel_id):
         ch = gw.remote_exec(chIsDir)
 
         import posixpath
-        outputdir = posixpath.join(posixpath.dirname(job), "output")
-        ch.send(outputdir)
-        actual = ch.receive()
-        assert actual
+        try:
+          outputdir = posixpath.join(posixpath.dirname(job), "output")
+          ch.send(outputdir)
+          actual = ch.receive()
+          assert actual
+        finally:
+          ch.close()
+          ch.waitclose(5)
 
         outputpath = posixpath.join(outputdir, "outfile")
         ch = gw.remote_exec(chIsFile)
-        ch.send(outputpath)
-        actual = ch.receive()
-        assert actual
+        try:
+          ch.send(outputpath)
+          actual = ch.receive()
+          assert actual
+        finally:
+          ch.close()
+          ch.waitclose(5)
 
         ch = gw.remote_exec(chFileContents)
-        ch.send(outputpath)
-        actual = ch.receive()
-        assert actual == "Hello%d\n" % i
+        try:
+          ch.send(outputpath)
+          actual = ch.receive()
+          assert actual == "Hello%d\n" % i
+        finally:
+          ch.close()
+          ch.waitclose(5)
 
       for i, job in enumerate(rj2):
         # Now check the contents of the output directory
         ch = gw.remote_exec(chIsDir)
 
         import posixpath
-        outputdir = posixpath.join(posixpath.dirname(job), "output")
-        ch.send(outputdir)
-        actual = ch.receive()
-        assert actual
+        try:
+          outputdir = posixpath.join(posixpath.dirname(job), "output")
+          ch.send(outputdir)
+          actual = ch.receive()
+          assert actual
+        finally:
+          ch.close()
+          ch.waitclose(5)
 
         outputpath = posixpath.join(outputdir, "outfile")
         ch = gw.remote_exec(chIsFile)
-        ch.send(outputpath)
-        actual = ch.receive()
-        assert not actual
+        try:
+          ch.send(outputpath)
+          actual = ch.receive()
+          assert not actual
+        finally:
+          ch.close()
+          ch.waitclose(5)
 
     finally:
       clch1.send(None)

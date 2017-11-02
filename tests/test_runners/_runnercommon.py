@@ -50,8 +50,8 @@ def runnertestjob(runfixture, jobid, expectstderr_stdout = False):
   # Check output directory contents
   expect = [ ('runjob', FILE),
            ('STATUS', FILE),
-           ('STDERR', FILE),
-           ('STDOUT', FILE),
+          #  ('STDERR', FILE),
+          #  ('STDOUT', FILE),
            ('runner_files_contents', FILE),
            ('output.res', FILE)]
   if expectstderr_stdout:
@@ -107,6 +107,7 @@ def runfixture(request):
 
 @fixture
 def execnet_gw(request):
+  # execnet.set_execmodel("gevent", "gevent")
   group = _execnet.Group()
   gw = group.makegateway()
 

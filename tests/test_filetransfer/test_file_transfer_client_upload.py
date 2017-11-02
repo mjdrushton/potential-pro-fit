@@ -1,10 +1,13 @@
 from _common import execnet_gw, channel_id,  cmpdirs
 from _common import create_dir_structure as _create_dir_structure
 
-from atsim.pro_fit.filetransfer import UploadChannel, UploadDirectory, UploadHandler
+from atsim.pro_fit.filetransfer import UploadChannels, UploadDirectory, UploadHandler
 from atsim.pro_fit.filetransfer import ChannelException, DirectoryUploadException, UploadCancelledException
 
 import py.path
+
+import pytest
+# pytestmark = pytest.mark.skip()
 
 def create_dir_structure(tmpdir):
   _create_dir_structure(tmpdir)
@@ -31,20 +34,28 @@ def do_ul(tmpdir, channels, dl = None, do_cmp = True):
 def testUploadChannel_BadStart_nonexistent_directory(execnet_gw, channel_id):
   badpath = "/this/is/not/a/path"
   assert not py.path.local(badpath).exists()
-
+  ch = None
   try:
-    ch = UploadChannel(execnet_gw, badpath, channel_id = channel_id)
+    ch = UploadChannels(execnet_gw, badpath, channel_id = channel_id)
     assert False,  "ChannelException should have been raised."
   except ChannelException,e:
     pass
+  finally:
+    if ch:
+      ch.broadcast(None)
+      ch.waitclose(2)
 
   assert e.message.endswith('are existing directories.')
 
 def testDirectoryUpload_single_channel(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
   # Create a upload channel.
-  ch1 = UploadChannel(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
-  do_ul(tmpdir, ch1)
+  ch1 = UploadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
+  try:
+    do_ul(tmpdir, ch1)
+  finally:
+    ch1.broadcast(None)
+    ch1.waitclose(2)
 
 def testDirectoryUpload_local_nonexistent(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
@@ -56,12 +67,15 @@ def testDirectoryUpload_local_nonexistent(tmpdir, execnet_gw, channel_id):
   assert not spath.exists()
 
   # Create a upload channel.
-  ch1 = UploadChannel(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
+  ch1 = UploadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
   try:
     dl = UploadDirectory(ch1, spath.strpath, dpath.strpath)
     assert False, "OSError should have been raised, it wasn't."
   except OSError:
     pass
+  finally:
+    ch1.broadcast(None)
+    ch1.waitclose(2)
 
 def testUploadHandler_rewrite_remote_path():
   ulh = UploadHandler('/var/private/source',
@@ -86,63 +100,45 @@ def testUploadHandler_rewrite_remote_path():
 def testUploadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
   # Create a download channel.
-  ch1 = UploadChannel(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
-
-  class ULH(UploadHandler):
-    def __init__(self, local_path, remote_path):
-      self.complete_called = False
-      self.complete_exception = None
-      super(ULH,self).__init__(local_path, remote_path)
-
-    def finish(self, error = None):
-      self.complete_called = True
-      self.completion_exception = error
-
-  remote_path = tmpdir.join("remote")
-  local_path = tmpdir.join("local")
-
-  ulh = ULH(local_path.strpath, remote_path.strpath)
-  ul = UploadDirectory(
-      ch1,
-      local_path.strpath,
-      remote_path.strpath,
-      ulh)
-
-  do_ul(tmpdir, ch1, ul)
-  assert ulh.complete_called == True
-  assert ulh.completion_exception is None
-
-  # Now test what happens if no exception is passed to DownloadHandler.finish() but finish itself raises.
-  class ThrowMe(Exception):
-    pass
-
-  class ThrowHandler(ULH):
-    def finish(self, exception = None):
-      super(ThrowHandler, self).finish(exception)
-      raise ThrowMe()
-      return False
-
-  remote_path.remove(rec=True)
-  remote_path.ensure_dir()
-  ulh = ThrowHandler(local_path.strpath, remote_path.strpath)
-  ul = UploadDirectory(
-      ch1,
-      local_path.strpath,
-      remote_path.strpath,
-      ulh)
-
+  ch1 = UploadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
   try:
-    do_ul(tmpdir, ch1, ul, False)
-    assert False, "ThrowMe exception should have been raised but wasn't"
-  except ThrowMe:
-    pass
-  assert ulh.complete_called == True
-  assert ulh.completion_exception is None
+    class ULH(UploadHandler):
+      def __init__(self, local_path, remote_path):
+        self.complete_called = False
+        self.complete_exception = None
+        super(ULH,self).__init__(local_path, remote_path)
 
-  # Now try again when an error-occurs - destination isn't writable should throw an error.
-  remote_path.chmod(0o0)
-  try:
-    ulh = ULH(local_path.strpath,remote_path.strpath)
+      def finish(self, error = None):
+        self.complete_called = True
+        self.completion_exception = error
+
+    remote_path = tmpdir.join("remote")
+    local_path = tmpdir.join("local")
+
+    ulh = ULH(local_path.strpath, remote_path.strpath)
+    ul = UploadDirectory(
+        ch1,
+        local_path.strpath,
+        remote_path.strpath,
+        ulh)
+
+    do_ul(tmpdir, ch1, ul)
+    assert ulh.complete_called == True
+    assert ulh.completion_exception is None
+
+    # Now test what happens if no exception is passed to DownloadHandler.finish() but finish itself raises.
+    class ThrowMe(Exception):
+      pass
+
+    class ThrowHandler(ULH):
+      def finish(self, exception = None):
+        super(ThrowHandler, self).finish(exception)
+        raise ThrowMe()
+        return False
+
+    remote_path.remove(rec=True)
+    remote_path.ensure_dir()
+    ulh = ThrowHandler(local_path.strpath, remote_path.strpath)
     ul = UploadDirectory(
         ch1,
         local_path.strpath,
@@ -151,39 +147,60 @@ def testUploadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
 
     try:
       do_ul(tmpdir, ch1, ul, False)
-      assert False, "DirectoryUploadException should have been raised."
-    except DirectoryUploadException:
+      assert False, "ThrowMe exception should have been raised but wasn't"
+    except ThrowMe:
       pass
-
     assert ulh.complete_called == True
-    assert type(ulh.completion_exception) == DirectoryUploadException
+    assert ulh.completion_exception is None
 
-    # Now check supresssion of exception raising.
-    class NoRaise(ULH):
-      def finish(self, error = None):
-        super(NoRaise, self).finish(error)
-        return False
+    # Now try again when an error-occurs - destination isn't writable should throw an error.
+    remote_path.chmod(0o0)
+    try:
+      ulh = ULH(local_path.strpath,remote_path.strpath)
+      ul = UploadDirectory(
+          ch1,
+          local_path.strpath,
+          remote_path.strpath,
+          ulh)
 
-    ulh = NoRaise(local_path.strpath, remote_path.strpath)
-    ul = UploadDirectory(
-        ch1,
-        local_path.strpath,
-        remote_path.strpath,
-        ulh)
+      try:
+        do_ul(tmpdir, ch1, ul, False)
+        assert False, "DirectoryUploadException should have been raised."
+      except DirectoryUploadException:
+        pass
 
-    do_ul(tmpdir, [ch1], ul, False)
-    assert ulh.complete_called == True
-    assert type(ulh.completion_exception) == DirectoryUploadException
+      assert ulh.complete_called == True
+      assert type(ulh.completion_exception) == DirectoryUploadException
 
-    # Test that DownloadHandler.complete can raise exception and this will be correctly propagated.
-    ulh = ThrowHandler(local_path.strpath, remote_path.strpath)
-    ul = UploadDirectory(
-        ch1,
-        local_path.strpath,
-        remote_path.strpath,
-        ulh)
+      # Now check supresssion of exception raising.
+      class NoRaise(ULH):
+        def finish(self, error = None):
+          super(NoRaise, self).finish(error)
+          return False
+
+      ulh = NoRaise(local_path.strpath, remote_path.strpath)
+      ul = UploadDirectory(
+          ch1,
+          local_path.strpath,
+          remote_path.strpath,
+          ulh)
+
+      do_ul(tmpdir, [ch1], ul, False)
+      assert ulh.complete_called == True
+      assert type(ulh.completion_exception) == DirectoryUploadException
+
+      # Test that DownloadHandler.complete can raise exception and this will be correctly propagated.
+      ulh = ThrowHandler(local_path.strpath, remote_path.strpath)
+      ul = UploadDirectory(
+          ch1,
+          local_path.strpath,
+          remote_path.strpath,
+          ulh)
+    finally:
+      local_path.chmod(0o700)
   finally:
-    local_path.chmod(0o700)
+    ch1.broadcast(None)
+    ch1.waitclose(2)
 
 def testDirectoryUpload_create_multiple_uploads(tmpdir, execnet_gw, channel_id):
   source1 = tmpdir.join("source_1")
@@ -204,19 +221,23 @@ def testDirectoryUpload_create_multiple_uploads(tmpdir, execnet_gw, channel_id):
   dest1.ensure_dir()
   dest2.ensure_dir()
 
-  ch1 = UploadChannel(execnet_gw, tmpdir.strpath)
-  dl1 = UploadDirectory(ch1, source1.strpath, dest1.strpath)
-  dl2 = UploadDirectory(ch1, source2.strpath, dest2.strpath)
+  ch1 = UploadChannels(execnet_gw, tmpdir.strpath)
+  try:
+    dl1 = UploadDirectory(ch1, source1.strpath, dest1.strpath)
+    dl2 = UploadDirectory(ch1, source2.strpath, dest2.strpath)
 
-  dl1.upload()
-  assert dest1.join("file.txt").isfile()
-  line = dest1.join("file.txt").open().next()[:-1]
-  assert line == "Hello"
+    dl1.upload()
+    assert dest1.join("file.txt").isfile()
+    line = dest1.join("file.txt").open().next()[:-1]
+    assert line == "Hello"
 
-  dl2.upload()
-  assert dest2.join("file.txt").isfile()
-  line = dest2.join("file.txt").open().next()[:-1]
-  assert line == "Goodbye"
+    dl2.upload()
+    assert dest2.join("file.txt").isfile()
+    line = dest2.join("file.txt").open().next()[:-1]
+    assert line == "Goodbye"
+  finally:
+    ch1.broadcast(None)
+    ch1.waitclose(2)
 
 def testDirectoryUpload_test_nonblocking(tmpdir, execnet_gw, channel_id):
   import threading
@@ -257,18 +278,22 @@ def testDirectoryUpload_test_nonblocking(tmpdir, execnet_gw, channel_id):
   ct = CallEventThread(dest1, pause_event)
   ct.start()
 
-  ch1 = UploadChannel(execnet_gw, tmpdir.strpath)
-  dl1 = UploadDirectory(ch1, source1.strpath, dest1.strpath, PauseUploadHandler(source1.strpath, dest1.strpath))
-  finished_event = dl1.upload(non_blocking = True)
-  import time
-  time.sleep(2)
-  finished_event.wait(10)
-  assert dest1.join("file.txt").isfile()
-  line = dest1.join("file.txt").open().next()[:-1]
-  assert line == "Hello"
+  ch1 = UploadChannels(execnet_gw, tmpdir.strpath)
+  try:
+    dl1 = UploadDirectory(ch1, source1.strpath, dest1.strpath, PauseUploadHandler(source1.strpath, dest1.strpath))
+    finished_event = dl1.upload(non_blocking = True)
+    import time
+    time.sleep(2)
+    finished_event.wait(10)
+    assert dest1.join("file.txt").isfile()
+    line = dest1.join("file.txt").open().next()[:-1]
+    assert line == "Hello"
 
-  assert not ct.dest1_state
-
+    assert not ct.dest1_state
+  finally:
+    ch1.broadcast(None)
+    ch1.waitclose(2)
+    
 def testDirectoryUpload_ensure_root(tmpdir, execnet_gw, channel_id):
   remote = tmpdir.join("remote")
   local = tmpdir.join("local")
@@ -282,13 +307,17 @@ def testDirectoryUpload_ensure_root(tmpdir, execnet_gw, channel_id):
   local.join("blah").mkdir()
   dest = remote.join("Batch-0/0")
 
-  ch1 = UploadChannel(execnet_gw, remote.strpath, channel_id = channel_id)
-  ud = UploadDirectory(ch1, local.strpath, dest.strpath)
-  ud.upload()
+  ch1 = UploadChannels(execnet_gw, remote.strpath, channel_id = channel_id)
+  try:
+    ud = UploadDirectory(ch1, local.strpath, dest.strpath)
+    ud.upload()
 
-  assert dest.isdir()
-  assert dest.join("blah").isdir()
-  assert dest.join("hello.txt").read()[:-1] == "Hello World!"
+    assert dest.isdir()
+    assert dest.join("blah").isdir()
+    assert dest.join("hello.txt").read()[:-1] == "Hello World!"
+  finally:
+    ch1.broadcast(None)
+    ch1.waitclose(2)
 
 
 def testDirectoryUpload_cancel(tmpdir, execnet_gw, channel_id):
@@ -323,17 +352,21 @@ def testDirectoryUpload_cancel(tmpdir, execnet_gw, channel_id):
       return None
 
   ulh = PauseUploadHandler(source1.strpath, dest1.strpath)
-  ch1 = UploadChannel(execnet_gw, tmpdir.strpath)
-  ul1 = UploadDirectory(ch1, source1.strpath, dest1.strpath, ulh)
-  finished_event = ul1.upload(non_blocking = True)
-  cancel_event = ul1.cancel()
-
-  assert cancel_event.wait(4)
-  assert finished_event.wait(4)
-  assert ulh.finishCalled
-
+  ch1 = UploadChannels(execnet_gw, tmpdir.strpath)
   try:
-    raise ulh.exception
-  except UploadCancelledException:
-    pass
+    ul1 = UploadDirectory(ch1, source1.strpath, dest1.strpath, ulh)
+    finished_event = ul1.upload(non_blocking = True)
+    cancel_event = ul1.cancel()
+
+    assert cancel_event.wait(4)
+    assert finished_event.wait(4)
+    assert ulh.finishCalled
+
+    try:
+      raise ulh.exception
+    except UploadCancelledException:
+      pass
+  finally:
+    ch1.broadcast(None)
+    ch1.waitclose(2)
 

@@ -110,6 +110,7 @@ class AbstractChannel(object):
     return self._channel_id
 
   def setcallback(self, callback):
+    # import pdb; pdb.set_trace()
     if self._callback is None:
       self._callback = ChannelCallback(callback)
       self._channel.setcallback(self._callback)

@@ -52,3 +52,4 @@ EOF
 
 qterm
 pbs_server
+momctl -q check_poll_time=1

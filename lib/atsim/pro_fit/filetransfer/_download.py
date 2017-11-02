@@ -136,7 +136,7 @@ class DownloadDirectory(object):
     paths for the directory download.
 
     Args:
-        dlchannels (Dow=nloadChannel): DownloadChannel instance.
+        dlchannels (DownloadChannel): DownloadChannel instance.
         remote_path (str): Path to directory to be copied (must be within the root path used when creating the execnet channels)
         dest_path (str): Path on local drive into which files will be copied.
     """
@@ -202,7 +202,7 @@ class DownloadDirectory(object):
       return rv
     else:
       grl.join()
-      if self.exception:
+      if self.exception and self.exception != (None,None,None):
         raise self.exception
       log.info("Finished download id='%s'", self.transaction_id)
 

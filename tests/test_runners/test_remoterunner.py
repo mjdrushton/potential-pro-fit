@@ -85,13 +85,13 @@ def testSingle(runfixture, vagrant_basic):
 
   batch = _runBatch(runner, [runfixture.jobs[0]])
   assert batch.join(10)
-  runnertestjob(runfixture, 0)
+  runnertestjob(runfixture, 0, expectstderr_stdout = True)
 
 def testAllInSingleBatch(runfixture, vagrant_basic):
   runner = _createRunner(runfixture, vagrant_basic, 3)
   _runBatch(runner, runfixture.jobs).join()
   for job in runfixture.jobs:
-    runnertestjob(runfixture, job.variables.id)
+    runnertestjob(runfixture, job.variables.id, expectstderr_stdout = True)
 
   assert runner.close().wait(10)
 
@@ -103,7 +103,7 @@ def testAllInMultipleBatch(runfixture, vagrant_basic):
   f2.join()
   f1.join()
   for job in runfixture.jobs:
-    runnertestjob(runfixture, job.variables.id)
+    runnertestjob(runfixture, job.variables.id, expectstderr_stdout = True)
 
   assert runner.close().wait(10)
 

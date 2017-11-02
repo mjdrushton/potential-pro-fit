@@ -55,24 +55,32 @@ class LocalRunnerTestCase(unittest.TestCase):
 
   def testSingle(self):
     runner = pro_fit.runners.LocalRunner('LocalRunner', 1)
-    runner.runBatch([self.jobs[0]]).join()
-    self._testjob(runner, 0)
+    try:
+      runner.runBatch([self.jobs[0]]).join()
+      self._testjob(runner, 0)
+    finally:
+      runner.close()
 
   def testAllInSingleBatch(self):
     runner = pro_fit.runners.LocalRunner('LocalRunner', 3)
-    runner.runBatch(self.jobs).join()
-    for job in self.jobs:
-      self._testjob(runner, job.variables.id)
+    try:
+      runner.runBatch(self.jobs).join()
+      for job in self.jobs:
+        self._testjob(runner, job.variables.id)
+    finally:
+      runner.close()
 
   def testAllInMultipleBatch(self):
     runner = pro_fit.runners.LocalRunner('LocalRunner', 3)
-
-    f1 = runner.runBatch(self.jobs[:6])
-    f2 = runner.runBatch(self.jobs[6:])
-    f2.join()
-    f1.join()
-    for job in self.jobs:
-      self._testjob(runner, job.variables.id)
+    try:
+      f1 = runner.runBatch(self.jobs[:6])
+      f2 = runner.runBatch(self.jobs[6:])
+      f2.join()
+      f1.join()
+      for job in self.jobs:
+        self._testjob(runner, job.variables.id)
+    finally:
+      runner.close()
 
   def _testjob(self, runner, jobid):
     """Test running a single job"""
@@ -151,7 +159,7 @@ nprocesses : 5
 
     with self.assertRaises(pro_fit.fittool.ConfigException):
       runner = pro_fit.runners.LocalRunner.createFromConfig('RunnerName', self.tempd, [])
-
+      runner.close()
 
   # def testTerminate(self):
   #   """Test runner's .terminate() method."""
