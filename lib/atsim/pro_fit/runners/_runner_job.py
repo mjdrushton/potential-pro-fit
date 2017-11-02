@@ -392,7 +392,7 @@ class RunnerJob(object):
       junk, job_name  = os.path.split(self.sourcePath)
       # Make the job_name unique (for population minimizer use)
       # by using the jobid as a suffix
-      job_name = "_".join([job_name, self.jobid])
+      job_name = "_".join([str(job_name), str(self.jobid)])
       batchdir = self.parentBatch.remoteBatchDir
       self._remotePath = os.path.join(batchdir, job_name)
     return self._remotePath

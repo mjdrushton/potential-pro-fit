@@ -85,6 +85,7 @@ class RunCmd(threading.Thread):
   def jobdone(self, killed):
     with self.lock:
       if self.popen != None:
+        self.popen.wait()
         returncode = self.popen.returncode
       else:
         returncode = None

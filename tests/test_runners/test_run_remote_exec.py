@@ -143,9 +143,7 @@ def testHardKill(execnet_gw, tmpdir, channel_id):
   assert msg.has_key('pid')
   del msg['pid']
   assert msg == {'msg': 'JOB_START', 'channel_id' : channel_id, 'job_id' : (1,2,3), 'semaphore' : 1}
-
   ch1.send({'msg' : 'JOB_KILL', 'job_id' : (1,2,3)})
-
   msg = ch1.receive(10.0)
   assert msg == {'msg': 'JOB_END', 'channel_id' : channel_id, 'returncode' : -9, 'job_id' : (1,2,3), 'killed' : True}
 
