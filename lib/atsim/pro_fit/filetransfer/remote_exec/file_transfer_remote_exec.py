@@ -51,6 +51,9 @@ def process_path(channel, channel_id, remote_path):
       ("IOERROR", "MKDIR_FAILED"))
     return False, remote_path
 
+def keepalive(channel, channel_id, msg):
+  channel.send(msg)
+
 def chkpath(channel, channel_id, remote_path):
   # Ensure that the destination directory is writeable
   if not os.access(remote_path, os.W_OK):
@@ -175,8 +178,6 @@ def mkdirs(channel, channel_id, remote_root, msg):
       return False
   channel.send(dirmade_msg)
   return True
-
-
 
 def list_dir(channel, channel_id, remote_root, msg):
   # Extract required arguments
@@ -315,6 +316,8 @@ def upload_remote_exec(channel, channel_id, remote_path):
         mkdir(channel, channel_id, remote_path, msg)
       elif mtype == 'MKDIRS':
         mkdirs(channel, channel_id, remote_path, msg)
+      elif mtype == "KEEP_ALIVE":
+        keepalive(channel, channel_id, msg)
       else:
         error(channel, channel_id,
           "Unknown 'msg' type: '%s'" % (mtype,),
@@ -352,6 +355,8 @@ def download_remote_exec(channel, channel_id, remote_path):
         list_dir(channel, channel_id, remote_path, msg)
       elif mtype == 'DOWNLOAD_FILE':
         download_file(channel, channel_id, remote_path, msg)
+      elif mtype == "KEEP_ALIVE":
+        keepalive(channel, channel_id, msg)
       else:
         error(channel, channel_id,
           "Unknown 'msg' type: '%s'" % (mtype,),

@@ -298,7 +298,8 @@ class EventLoop(threading.Thread):
           self.sendargs(msg = "ERROR", channel_id = self.channel_id, reason = "missing job_id for JOB_KILL")
 
         self.runners.killjob(job_id, wait = True)
-
+      elif mtype == 'KEEP_ALIVE':
+        self.send(msg)
       else:
         self.sendargs(msg = "ERROR", reason = "UNKNOWN_MSG_TYPE", msg_type = mtype)
 

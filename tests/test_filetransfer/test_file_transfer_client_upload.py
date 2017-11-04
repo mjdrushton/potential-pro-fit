@@ -9,6 +9,8 @@ import py.path
 import pytest
 # pytestmark = pytest.mark.skip()
 
+KEEP_ALIVE = 0.5
+
 def create_dir_structure(tmpdir):
   _create_dir_structure(tmpdir)
   rpath = tmpdir.join("remote")
@@ -36,7 +38,7 @@ def testUploadChannel_BadStart_nonexistent_directory(execnet_gw, channel_id):
   assert not py.path.local(badpath).exists()
   ch = None
   try:
-    ch = UploadChannels(execnet_gw, badpath, channel_id = channel_id)
+    ch = UploadChannels(execnet_gw, badpath, channel_id = channel_id, keepAlive = KEEP_ALIVE)
     assert False,  "ChannelException should have been raised."
   except ChannelException,e:
     pass
@@ -50,7 +52,7 @@ def testUploadChannel_BadStart_nonexistent_directory(execnet_gw, channel_id):
 def testDirectoryUpload_single_channel(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
   # Create a upload channel.
-  ch1 = UploadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
+  ch1 = UploadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id, keepAlive = KEEP_ALIVE)
   try:
     do_ul(tmpdir, ch1)
   finally:
@@ -67,7 +69,7 @@ def testDirectoryUpload_local_nonexistent(tmpdir, execnet_gw, channel_id):
   assert not spath.exists()
 
   # Create a upload channel.
-  ch1 = UploadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
+  ch1 = UploadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id, keepAlive = KEEP_ALIVE)
   try:
     dl = UploadDirectory(ch1, spath.strpath, dpath.strpath)
     assert False, "OSError should have been raised, it wasn't."
@@ -100,7 +102,7 @@ def testUploadHandler_rewrite_remote_path():
 def testUploadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
   # Create a download channel.
-  ch1 = UploadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
+  ch1 = UploadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id, keepAlive = KEEP_ALIVE)
   try:
     class ULH(UploadHandler):
       def __init__(self, local_path, remote_path):
@@ -221,7 +223,7 @@ def testDirectoryUpload_create_multiple_uploads(tmpdir, execnet_gw, channel_id):
   dest1.ensure_dir()
   dest2.ensure_dir()
 
-  ch1 = UploadChannels(execnet_gw, tmpdir.strpath)
+  ch1 = UploadChannels(execnet_gw, tmpdir.strpath, keepAlive = KEEP_ALIVE)
   try:
     dl1 = UploadDirectory(ch1, source1.strpath, dest1.strpath)
     dl2 = UploadDirectory(ch1, source2.strpath, dest2.strpath)
@@ -278,7 +280,7 @@ def testDirectoryUpload_test_nonblocking(tmpdir, execnet_gw, channel_id):
   ct = CallEventThread(dest1, pause_event)
   ct.start()
 
-  ch1 = UploadChannels(execnet_gw, tmpdir.strpath)
+  ch1 = UploadChannels(execnet_gw, tmpdir.strpath, keepAlive = KEEP_ALIVE)
   try:
     dl1 = UploadDirectory(ch1, source1.strpath, dest1.strpath, PauseUploadHandler(source1.strpath, dest1.strpath))
     finished_event = dl1.upload(non_blocking = True)
@@ -307,7 +309,7 @@ def testDirectoryUpload_ensure_root(tmpdir, execnet_gw, channel_id):
   local.join("blah").mkdir()
   dest = remote.join("Batch-0/0")
 
-  ch1 = UploadChannels(execnet_gw, remote.strpath, channel_id = channel_id)
+  ch1 = UploadChannels(execnet_gw, remote.strpath, channel_id = channel_id, keepAlive = KEEP_ALIVE)
   try:
     ud = UploadDirectory(ch1, local.strpath, dest.strpath)
     ud.upload()
@@ -352,7 +354,7 @@ def testDirectoryUpload_cancel(tmpdir, execnet_gw, channel_id):
       return None
 
   ulh = PauseUploadHandler(source1.strpath, dest1.strpath)
-  ch1 = UploadChannels(execnet_gw, tmpdir.strpath)
+  ch1 = UploadChannels(execnet_gw, tmpdir.strpath, keepAlive = KEEP_ALIVE)
   try:
     ul1 = UploadDirectory(ch1, source1.strpath, dest1.strpath, ulh)
     finished_event = ul1.upload(non_blocking = True)
@@ -369,4 +371,3 @@ def testDirectoryUpload_cancel(tmpdir, execnet_gw, channel_id):
   finally:
     ch1.broadcast(None)
     ch1.waitclose(2)
-

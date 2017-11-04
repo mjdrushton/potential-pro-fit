@@ -14,6 +14,8 @@ import py.path
 import pytest
 # pytestmark = pytest.mark.skip()
 
+KEEP_ALIVE = 0.5
+
 def create_dir_structure(tmpdir):
   # Create directory structure to download
   rpath = tmpdir.join("remote")
@@ -63,7 +65,7 @@ def testDownloadChannel_BadStart_nonexistent_directory(execnet_gw, channel_id):
   ch = None
   try:
     try:
-      ch = DownloadChannel(execnet_gw, badpath, channel_id = channel_id)
+      ch = DownloadChannel(execnet_gw, badpath, channel_id = channel_id, keepAlive = KEEP_ALIVE)
       assert False,  "ChannelException should have been raised."
     except ChannelException,e:
       pass
@@ -78,7 +80,7 @@ def testDirectoryDownload_single_channel(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
   # Create a download channel.
   # ch1 = DownloadChannel(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
-  ch1 = DownloadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
+  ch1 = DownloadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id, keepAlive = KEEP_ALIVE)
   try:
     do_dl(tmpdir, ch1)
   finally:
@@ -88,7 +90,7 @@ def testDirectoryDownload_single_channel(tmpdir, execnet_gw, channel_id):
 def testDirectoryDownload_emptysrc(tmpdir, execnet_gw, channel_id):
   tmpdir.join("remote").mkdir()
   tmpdir.join("dest").mkdir()
-  ch1 = DownloadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
+  ch1 = DownloadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id, keepAlive = KEEP_ALIVE)
   try:
     do_dl(tmpdir, ch1)
   finally:
@@ -99,7 +101,7 @@ def testDirectoryDownload_emptytree(tmpdir, execnet_gw, channel_id):
   tmpdir.join("remote").mkdir()
   os.makedirs(tmpdir.join("one", "two", "three", "four").strpath)
   tmpdir.join("dest").mkdir()
-  ch1 = DownloadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
+  ch1 = DownloadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id, keepAlive = KEEP_ALIVE)
   try:
     do_dl(tmpdir, ch1)
   finally:
@@ -112,7 +114,7 @@ def testDirectoryDownload_missing_dest(tmpdir, execnet_gw, channel_id):
   rpath = tmpdir.join("remote")
   rpath.mkdir()
   dpath = tmpdir.join("dest")
-  ch1 = DownloadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
+  ch1 = DownloadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id, keepAlive = KEEP_ALIVE)
   try:
     dl = DownloadDirectory(ch1, rpath.strpath, dpath.strpath)
     fail("DownloadDirectory.download() should have raised IOError")
@@ -138,7 +140,7 @@ def testDirectoryDownload_access_denied(tmpdir, execnet_gw, channel_id):
     tmpdir.join("source", "0", "1", "2").chmod(0o0)
 
     # Create a download channel.
-    ch1 = DownloadChannels(execnet_gw, tmpdir.join("source").strpath, channel_id = channel_id)
+    ch1 = DownloadChannels(execnet_gw, tmpdir.join("source").strpath, channel_id = channel_id, keepAlive = KEEP_ALIVE)
 
     dl = DownloadDirectory(ch1, tmpdir.join("source").strpath, tmpdir.join("dest").strpath)
     dl.download()
@@ -178,7 +180,7 @@ def testDirectoryDownload_file_access_denied(tmpdir, execnet_gw, channel_id):
     tmpdir.join("source", "0", "One").chmod(0o0)
 
     # Create a download channel.
-    ch1 = DownloadChannels(execnet_gw, tmpdir.join("source").strpath, channel_id = channel_id)
+    ch1 = DownloadChannels(execnet_gw, tmpdir.join("source").strpath, channel_id = channel_id, keepAlive = KEEP_ALIVE)
     dl = DownloadDirectory(ch1, tmpdir.join("source").strpath, tmpdir.join("dest").strpath)
     dl.download()
 
@@ -203,7 +205,7 @@ def testDownloadHandler_rewrite_path():
 def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
   # Create a download channel.
-  ch1 = DownloadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id)
+  ch1 = DownloadChannels(execnet_gw, tmpdir.join("remote").strpath, channel_id = channel_id, keepAlive = KEEP_ALIVE)
   try:
     class DLH(DownloadHandler):
       def __init__(self, remote_path, dest_path):
@@ -317,7 +319,7 @@ def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
 def testDirectoryDownload_multiple_channels(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
   channels = []
-  multichannel = DownloadChannels(execnet_gw, tmpdir.join("remote").strpath, 4, channel_id = channel_id)
+  multichannel = DownloadChannels(execnet_gw, tmpdir.join("remote").strpath, 4, channel_id = channel_id, keepAlive = KEEP_ALIVE)
   try:
     do_dl(tmpdir, multichannel)
   finally:
@@ -326,7 +328,7 @@ def testDirectoryDownload_multiple_channels(tmpdir, execnet_gw, channel_id):
 
 def testDirectoryDownload_channel_reuse(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
-  ch1 = DownloadChannels(execnet_gw, tmpdir.join("remote").strpath)
+  ch1 = DownloadChannels(execnet_gw, tmpdir.join("remote").strpath, keepAlive = KEEP_ALIVE)
   try:
     do_dl(tmpdir, ch1)
     dest_path = tmpdir.join("dest")
@@ -358,7 +360,7 @@ def testDirectoryDownload_create_multiple_downloads(tmpdir, execnet_gw, channel_
   dest1.ensure_dir()
   dest2.ensure_dir()
 
-  ch1 = DownloadChannels(execnet_gw, tmpdir.strpath)
+  ch1 = DownloadChannels(execnet_gw, tmpdir.strpath, keepAlive = KEEP_ALIVE)
   try:
     dl1 = DownloadDirectory(ch1, source1.strpath, dest1.strpath)
     dl2 = DownloadDirectory(ch1, source2.strpath, dest2.strpath)
@@ -417,7 +419,7 @@ def testDirectoryDownload_test_nonblocking(tmpdir, execnet_gw, channel_id):
   ct = CallEventThread(dest1, pause_event)
   ct.start()
 
-  ch1 = DownloadChannels(execnet_gw, tmpdir.strpath)
+  ch1 = DownloadChannels(execnet_gw, tmpdir.strpath, keepAlive = KEEP_ALIVE)
   try:
     dl1 = DownloadDirectory(ch1, source1.strpath, dest1.strpath, PauseDownloadHandler(source1.strpath, dest1.strpath))
     finished_event = dl1.download(non_blocking = True)
@@ -469,7 +471,7 @@ def testDirectoryDownload_cancel(tmpdir, execnet_gw, channel_id):
       self.exception = exception
       return None
 
-  ch1 = DownloadChannels(execnet_gw, tmpdir.strpath)
+  ch1 = DownloadChannels(execnet_gw, tmpdir.strpath, keepAlive = KEEP_ALIVE)
   try:
     dlh = PauseDownloadHandler(source1.strpath, dest1.strpath)
     dl1 = DownloadDirectory(ch1, source1.strpath, dest1.strpath, dlh)

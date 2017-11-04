@@ -8,6 +8,25 @@ import uuid
 import os
 import stat
 
+def testKeepAlive(tmpdir, execnet_gw, channel_id):
+  ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
+  try:
+    path = tmpdir.join("0")
+    assert_that(path.isdir()).is_false()
+
+    ch1.send({'msg' : 'START_UPLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : path.strpath })
+    msg = ch1.receive(10.0)
+    assert_that(msg).is_equal_to(dict(msg =  "READY", channel_id = channel_id, remote_path = path.strpath))
+    assert_that(path.strpath).is_directory()
+
+    ch1.send({'msg' : 'KEEP_ALIVE', 'channel_id' :  channel_id, 'id' : '1234'})
+    msg = ch1.receive(10.0)
+    assert_that(msg).is_equal_to({'msg' : 'KEEP_ALIVE', 'channel_id' :  channel_id, 'id' : '1234'})
+  finally:
+    ch1.send(None)
+    ch1.waitclose(5)
+
+
 def testGoodStart_explicit_dir(tmpdir, execnet_gw, channel_id):
   ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
   try:
@@ -56,8 +75,11 @@ def testBadStart_destination_unwriteable(tmpdir, execnet_gw, channel_id):
     finally:
       tmpdir.chmod(0o700)
   finally:
-    ch1.send(None)
-    ch1.waitclose(5)
+    try:
+      ch1.send(None)
+      ch1.waitclose(5)
+    except IOError:
+      pass
 
 def testSendFile(tmpdir, execnet_gw, channel_id):
   ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)

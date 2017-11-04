@@ -45,10 +45,14 @@ class RemoteRunnerCloseThreadBase(gevent.Greenlet):
 
   def _closeChannel(self, channel, logname):
     def closechannel(channel, evt):
-      if hasattr(channel, 'broadcast'):
-        channel.broadcast(None)
-      else:
-        channel.send(None)
+      try:
+        if hasattr(channel, 'broadcast'):
+          channel.broadcast(None)
+        else:
+          channel.send(None)
+      except IOError:
+        # Channel already closed
+        pass
       gevent.sleep(0)
       try:
         channel.waitclose(60)

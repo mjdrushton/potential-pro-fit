@@ -26,27 +26,29 @@ class DownloadChannel(BaseChannel):
 
   _logger = logging.getLogger("atsim.pro_fit.runners._file_transfer_client.DownloadChannel")
 
-  def __init__(self, execnet_gw, remote_path, channel_id = None):
+  def __init__(self, execnet_gw, remote_path, channel_id = None, keepAlive = 10):
     """Create a channel object for use with `DownloadDirectory`
 
     Args:
         execnet_gw (execnet.Gateway): Gateway used to create channel objects.
         remote_path (str): Path defining root of remote download tree.
         channel_id (None, optional): ID of this channel (auto generated if not specified)
+        keepAlive (int, optional): Send a `KEEP_ALIVE` message to the server every `keepAlive` seconds. If `None` do not send `KEEP_ALIVE` messages.
     """
-    super(DownloadChannel, self,).__init__(
+    super(DownloadChannel, self).__init__(
       execnet_gw,
       'START_DOWNLOAD_CHANNEL',
       remote_path,
-      channel_id)
+      channel_id,
+      keepAlive)
 
 class DownloadChannels(MultiChannel):
   """MultiChannel instance for managing DownloadChannel instances"""
 
   _logger = logging.getLogger("atsim.pro_fit.runners._file_transfer_client.DownloadChannels")
 
-  def __init__(self, execnet_gw, remote_path, num_channels = 1, channel_id = None):
-    factory = ChannelFactory(DownloadChannel, remote_path)
+  def __init__(self, execnet_gw, remote_path, num_channels = 1, channel_id = None, keepAlive = 10):
+    factory = ChannelFactory(DownloadChannel, remote_path, keepAlive)
     super(DownloadChannels,self).__init__(execnet_gw, factory, num_channels, channel_id)
 
 class DownloadHandler(object):

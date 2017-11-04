@@ -30,7 +30,7 @@ class TstCallback(object):
 
 
 def test_run_remote_client_single(tmpdir, execnet_gw, channel_id):
-  channel = RunChannel(execnet_gw, channel_id, nprocesses = 1)
+  channel = RunChannel(execnet_gw, channel_id, nprocesses = 1, keepAlive = 0.5)
   try:
     with tmpdir.join("runjob").open("w") as outfile:
       print >>outfile, "echo Hello World > job.out"
@@ -45,7 +45,7 @@ def test_run_remote_client_single(tmpdir, execnet_gw, channel_id):
     channel.waitclose(1)
 
 def test_run_remote_client_multiple(tmpdir, execnet_gw, channel_id):
-  channel = RunChannel(execnet_gw, channel_id, nprocesses = 3)
+  channel = RunChannel(execnet_gw, channel_id, nprocesses = 3, keepAlive = 0.5)
   try:
     callbacks = []
 
@@ -80,7 +80,7 @@ def test_run_remote_client_multiple(tmpdir, execnet_gw, channel_id):
     channel.waitclose(5)
 
 def test_run_remote_client_kill_job(tmpdir, execnet_gw, channel_id):
-  channel = RunChannel(execnet_gw, channel_id, nprocesses = 3)
+  channel = RunChannel(execnet_gw, channel_id, nprocesses = 3, keepAlive = 0.5)
   try:
     runclient = RunClient(channel)
 

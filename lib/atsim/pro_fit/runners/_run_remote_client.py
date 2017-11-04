@@ -3,6 +3,7 @@
 from atsim.pro_fit._channel import AbstractChannel, MultiChannel
 from atsim.pro_fit._util import CallbackRegister, NamedEvent
 from _exceptions import JobKilledException, NonZeroExitStatus
+from .._keepalive import KeepAlive
 
 import itertools
 import logging
@@ -19,7 +20,7 @@ class RunChannel(AbstractChannel):
 
   _logger = logging.getLogger(__name__).getChild("RunChannel")
 
-  def __init__(self, execnet_gw, channel_id = None, nprocesses = None, shell = "/bin/bash", hardkill_timeout = 60,  connection_timeout = 60):
+  def __init__(self, execnet_gw, channel_id = None, nprocesses = None, shell = "/bin/bash", hardkill_timeout = 60,  connection_timeout = 60, keepAlive = 10):
     """Summary
 
     Args:
@@ -29,12 +30,21 @@ class RunChannel(AbstractChannel):
         hardkill_timeout (int, optional): When jobs are terminated, an initial attempt is made to kill the job by
           sending the termination signal. If this has failed, after this timeout the SIGKILL signal is sent to hard stop the process.
         connection_timeout (int, optional): Time limit for connection attempt.
+        keepAlive (int, optional): Send a `KEEP_ALIVE` message to the server every `keepAlive` seconds. If `None` do not send `KEEP_ALIVE` messages.
+
     """
     import _run_remote_exec
     self.shell = shell
     self.hardkill_timeout = hardkill_timeout
     self.nprocesses = nprocesses
     super(RunChannel, self).__init__(execnet_gw, _run_remote_exec, channel_id, connection_timeout)
+
+    if not keepAlive > 0:
+      self._keepAlive = None
+    else:
+      self._keepAlive = KeepAlive(self, keepAlive)
+      self._keepAlive.start()
+
 
   def make_start_message(self):
     return {'msg' : 'START_CHANNEL',
@@ -43,6 +53,16 @@ class RunChannel(AbstractChannel):
       'hardkill_timeout' : self.hardkill_timeout,
       'nprocesses' : self.nprocesses
       }
+
+  def close(self, error = None):
+    if not self._keepAlive is None:
+      self._keepAlive.kill()
+    super(RunChannel, self).close(error)
+
+  def waitclose(self, timeout =  None):
+    if not self._keepAlive is None:
+      self._keepAlive.kill()
+    super(RunChannel,self).waitclose(timeout)
 
 def _NullCallback(*args, **kwargs):
   pass
