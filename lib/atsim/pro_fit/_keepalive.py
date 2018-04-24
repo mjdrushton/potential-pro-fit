@@ -26,7 +26,8 @@ class KeepAlive(object):
     return self._counter_prefix+str(self._counter.next())
 
   def _createMessage(self):
-    msg = dict(msg =  'KEEP_ALIVE', channel_id = channel.channel_id, id = self._msgid())
+    msg = dict(msg =  'KEEP_ALIVE', channel_id = self.channel.channel_id, id = self._msgid())
+    return msg
 
   def start(self):
 
