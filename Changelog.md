@@ -3,6 +3,7 @@
 ## [0.7.5] - 2018-07-01
 ### Changed
 - Allow python style format strings to be used in template placeholders.
+- Fixed bug that was preventing the `pprofit --create-files` option from working.
 
 ## [0.7.4] - 2018-04-24
 ### Changed
