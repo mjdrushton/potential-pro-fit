@@ -40,6 +40,18 @@ Variable placeholders take the following format::
 
 Where ``VARIABLE_NAME`` is a variable name from the ``[Variables]`` section of the ``fit.cfg`` file. On substitution, ``@VARIABLE_NAME@`` would be replaced with the variable value.
 
+If you need to control the numeric precision, field width, zero padding or other details of how a variable is rendered in the template, an alternative variable specification can be used::
+
+	@VARIABLE_NAME:NUMBER_FORMAT@
+
+As before, ``VARIABLE_NAME`` specifies an entry in ``fit.cfg`` ``[Variables]``. 
+
+The ``NUMBER_FORMAT`` suffix uses the python string format specification (see `python reference documentation <https://docs.python.org/3.7/library/string.html#format-specification-mini-language>`_ ). This allows variable defintions such as:
+
+* ``@RHO:.2f@``: render the variable ``RHO`` as a floating point with two numbers after the decimal point. If the value of ``RHO`` = 1.23456 this would be replaced in the template as 1.23.
+* ``@A:.3e@``: render variable ``A`` using scientific notation. For ``A`` = 123456789.1011 this would produce 1.235e+08.
+* ``@D::06d@``: format ``D`` as a decimal number with a width 6 characters padded with leading zeroes. When ``D`` = 12 this gives 000012.
+
 Example
 -------
 

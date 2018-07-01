@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.7.5] - 2018-07-01
+### Changed
+- Allow python style format strings to be used in template placeholders.
+
 ## [0.7.4] - 2018-04-24
 ### Changed
 - Set some of pro-fit's dependencies to specific versions as downstream updates to 3rd party packages had broken pprofit.
