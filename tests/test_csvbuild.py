@@ -6,6 +6,7 @@ import shutil
 
 from atsim.pro_fit.tools import csvbuild
 
+
 def _getResourceDirectory():
     """Returns path to resources used by this test module (currently assumed to be sub-directory
     of test module called resources)"""
@@ -43,6 +44,84 @@ class CSVBuildTestCase(unittest.TestCase):
     s = 'blah blah'
     actual = csvbuild._templateSubstitution(s,{'blah' : 'Moop'}, None)
     self.assertEquals(s, actual)
+
+  def testTemplateSubstitutionFloatingPointNumbers(self):
+    """Test template substitution when floating point formatting options are specified"""
+    s = "@label@_@fnum:.3f@ is a filename. @fnum:04.3f@."
+
+    d = {'label' : "Label",
+         'fnum' : 1.2345}
+
+    expect = "{label}_{fnum:.3f} is a filename. {fnum:04.3f}.".format(**d)
+    actual = csvbuild._templateSubstitution(s,d, None)
+    self.assertEquals(expect, actual)
+
+    # Now do the same test for when fnum is passed in as a string
+    d = {'label' : "Label",
+         'fnum' : "1.2345"}
+    actual = csvbuild._templateSubstitution(s,d, None)
+    self.assertEquals(expect, actual)
+
+    # Now do the same test for when fnum is passed in as an int
+    d = {'label' : "Label",
+         'fnum' : int(1),
+         'enum' : "1.2e-5"}
+    expect = "{label}_{fnum:.3f} is a filename. {fnum:04.3f}. {enum:.6f}".format(fnum = 1, enum = 1.2e-5, label = "Label")
+    s = s+" @enum:.6f@"
+    actual = csvbuild._templateSubstitution(s,d, None)
+    self.assertEquals(expect, actual)
+    
+    # Now test with a string that can't be converted to a float
+    
+    with self.assertRaises(ValueError):
+      csvbuild._templateSubstitution("@bad_float:.f@", {'bad_float': 'bad'}, None)
+
+  def testTemplateSubstitutionDecimalNumbers(self):
+    """Test template substitution when floating point formatting options are specified"""
+    s = "@label@_@dnum:06d@ is a filename."
+
+    d = {'label' : "Label",
+         'dnum' : int(12)}
+
+    expect = "{label}_{dnum:06d} is a filename.".format(**d)
+    actual = csvbuild._templateSubstitution(s,d, None)
+    self.assertEquals(expect, actual)
+
+    # Now do the same test for when fnum is passed in as a string
+    d = {'label' : "Label",
+         'dnum' : "12"}
+    actual = csvbuild._templateSubstitution(s,d, None)
+    self.assertEquals(expect, actual)
+    
+    with self.assertRaises(ValueError):
+      csvbuild._templateSubstitution("@bad_num:.d@", {'bad_num': 'bad'}, None)
+
+  def testTemplateSubstitutionAllNumberTypes(self):
+
+    s = "@fnum:e@ @fnum:E@ @fnum:f@ @fnum:F@ @fnum:g@ @fnum:G@ @fnum:n@ @fnum:%@"
+    sf = "{fnum:e} {fnum:E} {fnum:f} {fnum:F} {fnum:g} {fnum:G} {fnum:n} {fnum:%}"
+
+    s1 = "@dnum:b@ @dnum:c@ @dnum:d@ @dnum:o@ @dnum:x@ @dnum:X@"
+    s1f = "{dnum:b} {dnum:c} {dnum:d} {dnum:o} {dnum:x} {dnum:X}"
+
+    d = {"fnum" : "1.234",
+         "dnum" : "12"}
+    
+    df = {"fnum": 1.234,
+          "dnum" : 12}
+
+    self.assertEquals(sf.format(**df),
+      csvbuild._templateSubstitution(s, df, None))
+
+    self.assertEquals(sf.format(**df),
+      csvbuild._templateSubstitution(s, d, None))
+
+    self.assertEquals(s1f.format(**df),
+      csvbuild._templateSubstitution(s1, df, None))
+
+    self.assertEquals(s1f.format(**df),
+      csvbuild._templateSubstitution(s1, d, None))
+
 
   def testSimpleFiles(self):
     """Test copy to flat file system"""

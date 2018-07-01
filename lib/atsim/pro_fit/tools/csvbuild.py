@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-import re
 import cStringIO
-import shutil
+import numbers
 import os
+import re
+import shutil
+import string
 import sys
 
 import logging
@@ -10,6 +12,20 @@ import logging
 class CSVBuildKeyError(KeyError):
   """Raised when a bad substitution variable is encountered."""
   templateFilename = ""
+
+class _StringFormatter(string.Formatter):
+  
+  def format_field(self, value, conversion):
+    # Floating point types
+    if conversion and conversion[-1] in 'eEfFgGn%':
+      # Check that value is a number
+      if not isinstance(value, numbers.Number):
+        # Convert string to a number
+        value = float(value)
+    elif conversion and conversion[-1] in 'bcdoxX':
+      if not isinstance(value, numbers.Number):
+        value = int(value)
+    return string.Formatter.format_field(self, value, conversion)
 
 
 def _includeHandler(placeholder, substitutionDict, skelpath):
@@ -29,13 +45,26 @@ def _includeHandler(placeholder, substitutionDict, skelpath):
     return (True, substituted)
 
 
-def _defaultHandler(placeholder, substitutionDict, skelpath):
-  try:
-    retstring = str(substitutionDict[placeholder])
-  except KeyError, e:
-    raise CSVBuildKeyError(*e.args)
-  return (True, retstring)
+class _DefaultHandler(object):
 
+  def __init__(self, stringFormatter):
+    self._stringFormatter = stringFormatter
+
+  def __call__(self, placeholder, substitutionDict, skelpath):
+    try:
+      tokens = placeholder.split(":", 1)
+      if len(tokens) > 1:
+        placeholder, fmt = tokens
+        fmtstring = "{"+placeholder+":"+fmt+"}"
+      else:
+        fmtstring = "{"+placeholder+"}"
+      
+      retstring = self._stringFormatter.format(fmtstring, **substitutionDict)
+    except KeyError, e:
+      raise CSVBuildKeyError(*e.args)
+    return (True, retstring)
+
+_defaultHandler = _DefaultHandler(_StringFormatter())
 
 _handlers = [_includeHandler, _defaultHandler]
 def _placeholderHandler(placeholder, substitutionDict, skelpath):
