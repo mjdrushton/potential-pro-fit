@@ -228,7 +228,7 @@ class FitConfig(object):
         try:
           bound = Variables._parseBounds(groups[1])
         except ConfigException as ce:
-          raise ConfigException("Variable '%s' has invalid bounds: %s" % (k, ce.msg))
+          raise ConfigException("Variable '%s' has invalid bounds: %s" % (k, ce.message))
       else:
         bound = defaultBound
 
@@ -555,7 +555,7 @@ class Variables(object):
       raise ConfigException("Variable upper bound could not be parsed")
 
     if l > h:
-      raise ConfigException("upper bound  > lower bound. Lower bound should be smalle than upper bound")
+      raise ConfigException("upper bound  > lower bound. Lower bound should be smaller than upper bound")
 
     return (l,h)
 
