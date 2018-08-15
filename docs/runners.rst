@@ -130,6 +130,7 @@ Optional Fields
 :Description: Where possible, jobs are submitted to PBS as array jobs. This parameter specifies the maximum number of jobs in one of these arrays. When not specified, all the jobs for a given candidate, destined for the PBS runner will all run in a single array. This means that all the jobs in this batch must be uploaded to the remote server before being submitted to PBS.
 	By specifying a value for ``pbsarraysize``, job submission can take place after a smaller number of jobs have been uploaded. By using a smaller array size, the job's output files can also start to download after the sub-job has completed rather than waiting for the candidate's entire batch to finish. In this way better use may be made of idle time whilst ``pprofit`` waits for jobs to make their way through PBS.
 :Example: ``pbsarraysize : 8``
+
 \
 
 :Name: pbsinclude
@@ -138,14 +139,21 @@ Optional Fields
 :Example: Specifying the following would include ``8cpus.pbs`` (from the root path of the fitting run) in the job submission script:
 
 	``pbsinclude : 8cpus.pbs`` 
+
 \
 
 :Name: pbspollinterval
 :Arg type: float
 :Default: 30.0 seconds
-:Description: The PBS runner monitors job completion by repeatedly running the ``qselect`` command on the remote host. The value of ``pbspollinterval`` specifies the time interval (in seconds) between calls to ``qselect``.
+:Description: The PBS runner monitors job completion by repeatedly running the ``qselect`` command on the remote host. The value of ``pbspollinterval`` specifies the time interval (in seconds) between calls to ``qselect``. Although small values of ``pbspollinterval`` may improve efficiency, they may also place a considerable burden on the PBS system and annoy your local system administrator. As a result you should choose a value that is at least a little bit larger than the queuing system's scheduling interval.
 
-Although small values of ``pbspollinterval`` may improve efficiency, they may also place a considerable burden on the PBS system and annoy your local system administrator. As a result you should choose a value that is at least a little bit larger than the queuing system's scheduling interval.
+\
+
+:Name: debug.disable-cleanup
+:Arg type: bool
+:Default: False
+:Description: If True, files copied to the remote host's job directory are retained. Normally these would be deleted after a job completes or the runner terminates, if this option is True, this behaviour is disabled. This is useful for debugging, but in most cases this option should be False or omitted completely.
+
 
 
 .. _pprofit-runners-remote:
@@ -178,3 +186,10 @@ Required Fields
 :Name: nprocesses
 :Arg type: integer
 :Description: Number of processes to be spawned by runner. In general it makes sense to set this to the same number of cores as the remote machine.
+
+\
+
+:Name: debug.disable-cleanup
+:Arg type: bool
+:Default: False
+:Description: If True, files copied to the remote host's job directory are retained. Normally these would be deleted after a job completes or the runner terminates, if this option is True, this behaviour is disabled. This is useful for debugging, but in most cases this option should be False or omitted completely.
