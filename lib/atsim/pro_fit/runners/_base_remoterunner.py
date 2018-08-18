@@ -2,6 +2,7 @@ import logging
 import uuid
 
 from _exceptions import RunnerClosedException
+from atsim.pro_fit.fittool import ConfigException
 from atsim.pro_fit._util import NamedEvent
 from _util import BatchNameIterator
 from _exceptions import BatchKilledException
@@ -62,7 +63,11 @@ class RemoteRunnerCloseThreadBase(gevent.Greenlet):
       self._logger.info("Runner (%s) %s channels closed.", self.runner.name, logname)
       evt.set()
     evt = Event()
-    gevent.spawn(closechannel, channel, evt)
+
+    if channel is None:
+      evt.set()
+    else:
+      gevent.spawn(closechannel, channel, evt)
     return [evt]
 
   def closeUpload(self):
@@ -79,7 +84,6 @@ class RemoteRunnerCloseThreadBase(gevent.Greenlet):
       return 'None'
     else:
       return str(len(val))
-
 
   def _run(self):
     try:
@@ -231,7 +235,7 @@ class BaseRemoteRunner(object):
 
   _logger = logging.getLogger(__name__).getChild("BaseRemoteRunner")
 
-  def __init__(self, name, url, identityfile=None, extra_ssh_options = []):
+  def __init__(self, name, url, identityfile=None, extra_ssh_options = [], do_cleanup = True):
     """Instantiate RemoteRunner.
 
     Args:
@@ -241,6 +245,8 @@ class BaseRemoteRunner(object):
         identityfile (file, optional): Path of a private key to be used with this runner's SSH transport. If None, the default's used by
                       the platform's ssh command are used.
         extra_ssh_options (list, optional): List of (key,value) tuples that are added to the ssh_config file used when making ssh connections.
+        do_cleanup (bool): If `True` file clean-up will be automatically performed following a run and on termination of the runner. If `False` this
+                        behaviour is disabled. This option is provided for the purposes of debugging.
     """
     self.name = name
     self._uuid = str(uuid.uuid4())
@@ -248,11 +254,9 @@ class BaseRemoteRunner(object):
     self._remotePath = None
     self._cleanupClient = None
 
-    self._gw = self.makeExecnetGateway(url, identityfile, extra_ssh_options)
+    self._do_cleanup = do_cleanup
 
-    # Initialise the remote runners their client.
-    # self._runChannel = self._makeRunChannel(nprocesses)
-    # self._runClient = RunClient(self._runChannel)
+    self._gw = self.makeExecnetGateway(url, identityfile, extra_ssh_options)
 
     self.initialiseTemporaryRemoteDirectory()
 
@@ -301,9 +305,16 @@ class BaseRemoteRunner(object):
     self._downloadChannel = self.makeDownloadChannel()
 
   def initialiseCleanup(self):
-    #Cleanup channel initialisation.
-    self._cleanupChannel = self.makeCleanupChannel()
-    self._cleanupClient = filetransfer.CleanupClient(self._cleanupChannel)
+    if self._do_cleanup:
+      #Cleanup channel initialisation.
+      self._cleanupChannel = self.makeCleanupChannel()
+      self._cleanupClient = filetransfer.CleanupClient(self._cleanupChannel)
+    else:
+      #Cleanup is disabled 
+      self._logger.warning("Disabling file cleanup for the '%s' runner." % self.name)
+      self._cleanupChannel = None
+      # ... create no-op cleanup client
+      self._cleanupClient = filetransfer.NullCleanupClient()
 
   def initialiseRun(self):
     """Set up classes associated with any client required to process run files."""
@@ -532,3 +543,31 @@ class BaseRemoteRunner(object):
   @property
   def observers(self):
     return self._observers
+
+  @staticmethod
+  def _parseConfigItem_debug_disable_cleanup(runnerName, fitRootPath, cfgitems):
+    """Convenience method to provide consistent provision of 'debug.disable_cleanup' option in sub-classes.
+
+    Args:
+      runnerName (str) : Label identifying runner.
+      fitRootPath (str) : Path to directory containing 'fit.cfg'
+      cfgdict (list) : List of (key, value) pairs identifying relecant section of configuration file.
+
+    Returns:
+      dict: Dictionary of form `{ 'do_cleanup' : VALUE}` where `VALUE` is True or False depending on value in configuration file."""
+
+    cfgdict = dict(cfgitems)
+    do_cleanup = True
+    if 'debug.disable-cleanup' in cfgdict:
+      v = cfgdict['debug.disable-cleanup']
+      v = v.strip()
+
+      if v == 'True':
+        do_cleanup = False
+      elif v == 'False':
+        do_cleanup = True
+      else:
+        raise ConfigException("The value specified for 'debug.disable-cleanup' was neither True or False: '%s'" % v)
+    return {'do_cleanup' : do_cleanup }
+      
+

@@ -30,7 +30,7 @@ class InnerRemoteRunner(BaseRemoteRunner):
 
   _logger = logging.getLogger(__name__).getChild("InnerRemoteRunner")
 
-  def __init__(self, name, url, nprocesses, identityfile=None, extra_ssh_options = []):
+  def __init__(self, name, url, nprocesses, identityfile=None, extra_ssh_options = [], do_cleanup = True):
     """Instantiate RemoteRunner.
 
     Args:
@@ -40,9 +40,11 @@ class InnerRemoteRunner(BaseRemoteRunner):
         identityfile (file, optional): Path of a private key to be used with this runner's SSH transport. If None, the default's used by
                       the platform's ssh command are used.
         extra_ssh_options (list, optional): List of (key,value) tuples that are added to the ssh_config file used when making ssh connections.
+        do_cleanup (bool): If `True` file clean-up will be automatically performed following a run and on termination of the runner. If `False` this
+                behaviour is disabled. This option is provided for the purposes of debugging.
     """
     self._nprocesses = nprocesses
-    super(InnerRemoteRunner, self).__init__(name, url, identityfile, extra_ssh_options)
+    super(InnerRemoteRunner, self).__init__(name, url, identityfile, extra_ssh_options, do_cleanup)
 
   def initialiseRun(self):
     # Initialise the remote runners their client.
@@ -83,7 +85,7 @@ class InnerRemoteRunner(BaseRemoteRunner):
 class RemoteRunner(object):
   """Runner that uses SSH to run jobs in parallel on a remote machine"""
 
-  def __init__(self, name, url, nprocesses, identityfile=None, extra_ssh_options = []):
+  def __init__(self, name, url, nprocesses, identityfile=None, extra_ssh_options = [], do_cleanup = True):
     """Instantiate RemoteRunner.
 
     Args:
@@ -93,8 +95,11 @@ class RemoteRunner(object):
         identityfile (file, optional): Path of a private key to be used with this runner's SSH transport. If None, the default's used by
                       the platform's ssh command are used.
         extra_ssh_options (list, optional): List of (key,value) tuples that are added to the ssh_config file used when making ssh connections.
+        do_cleanup (bool): If `True` file clean-up will be automatically performed following a run and on termination of the runner. If `False` this
+                behaviour is disabled. This option is provided for the purposes of debugging.
+
     """
-    self._inner = InnerRemoteRunner(name, url, nprocesses, identityfile, extra_ssh_options)
+    self._inner = InnerRemoteRunner(name, url, nprocesses, identityfile, extra_ssh_options, do_cleanup)
 
   def runBatch(self, jobs):
     """Run job batch and return a job future that can be joined.
@@ -124,7 +129,7 @@ class RemoteRunner(object):
 
   @staticmethod
   def createFromConfig(runnerName, fitRootPath, cfgitems):
-    allowedkeywords = set(['nprocesses', 'type', 'remotehost'])
+    allowedkeywords = set(['nprocesses', 'type', 'remotehost', 'debug.disable-cleanup'])
     cfgdict = dict(cfgitems)
 
     for k in cfgdict.iterkeys():
@@ -174,4 +179,6 @@ class RemoteRunner(object):
     finally:
         group.terminate(EXECNET_TERM_TIMEOUT)
 
-    return RemoteRunner(runnerName, remotehost,nprocesses)
+    kwargs = BaseRemoteRunner._parseConfigItem_debug_disable_cleanup(runnerName, fitRootPath, cfgitems)
+
+    return RemoteRunner(runnerName, remotehost,nprocesses, **kwargs)

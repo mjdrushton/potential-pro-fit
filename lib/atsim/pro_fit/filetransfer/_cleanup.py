@@ -70,7 +70,7 @@ class CleanupAgentCallback(object):
         return True
 
       if mtype != self.expected_msg:
-        raise CleanupChannelException("Was expecting '%s' message but received '%s': %s", self.expectd_msg, mtype, msg)
+        raise CleanupChannelException("Was expecting '%s' message but received '%s': %s", self.expected_msg, mtype, msg)
 
       return self.finish()
 
@@ -203,3 +203,22 @@ class CleanupClient(object):
   @property
   def _transid(self):
     return "%s-%d" % (self._base_transid, self._id_count.next())
+
+class NullCleanupClient(object):
+  """Class that implements the CleanupClient interface but does nothing.
+
+  This is used to disable file cleanup for debugging purposes."""
+
+  def _nullop(self, *paths, **kwargs):
+    cb = kwargs.get("callback", None)
+    if cb:
+      cb(None)
+  
+  def lock(self, *paths, **kwargs):
+    return self._nullop(*paths, **kwargs)
+
+  def unlock(self, *paths, **kwargs):
+    return self._nullop(*paths, **kwargs)
+
+  def flush(self, callback = None):
+    return self._nullop(callback = callback)

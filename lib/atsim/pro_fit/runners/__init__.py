@@ -34,9 +34,15 @@ from _runner_job import RunnerJobObserverAdapter
 from _exceptions import RunnerClosedException #noqa
 from _pbsrunner import PBSRunner
 
+from gevent.event import Event
+
 class NullFuture:
-  def join(self):
-    return
+
+  def __init__(self):
+    evt = Event()
+    evt.set()
+    self.finishedEvent = evt
+
 
 class NullRunner(object):
   """Runner that does not run jobs. Used in conjunction with the SingleStepMinimizer
@@ -44,6 +50,7 @@ class NullRunner(object):
 
   def __init__(self, name):
     self.name = name
+    self.observers = []
 
   def runBatch(self, jobs):
     return NullFuture()
@@ -51,3 +58,8 @@ class NullRunner(object):
   @staticmethod
   def createFromConfig(runnerName, fitRootPath, cfgitems):
     return NullRunner(runnerName)
+
+  def close(self):
+    evt = Event()
+    evt.set()
+    return evt

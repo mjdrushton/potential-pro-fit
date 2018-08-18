@@ -4,6 +4,7 @@ from atsim.pro_fit import filetransfer
 from atsim.pro_fit._util import NamedEvent
 from _util import BatchNameIterator
 from _exceptions import RunnerClosedException
+from atsim.pro_fit._channel import ChannelException
 from _pbs_client import PBSChannel, PBSClient
 
 from atsim.pro_fit.filetransfer import UploadHandler, DownloadHandler
@@ -42,7 +43,7 @@ class _PBSRunnerCloseThread(RemoteRunnerCloseThreadBase):
 class InnerPBSRunner(BaseRemoteRunner):
   """Runner class held by PBSRunner that does all the work."""
 
-  def __init__(self, name, url, pbsinclude,  pbsbatch_size, qselect_poll_interval,  identityfile = None, extra_ssh_options = []):
+  def __init__(self, name, url, pbsinclude,  pbsbatch_size, qselect_poll_interval,  identityfile = None, extra_ssh_options = [], do_cleanup = True):
     self.pbsinclude = []
     if not pbsinclude is None:
       self.pbsinclude = pbsinclude.split(os.linesep)
@@ -50,7 +51,7 @@ class InnerPBSRunner(BaseRemoteRunner):
     self.pbsqselect_poll_interval = qselect_poll_interval
     self.pbsbatch_size = pbsbatch_size
     self._logger = logging.getLogger(__name__).getChild("InnerPBSRunner")
-    super(InnerPBSRunner, self).__init__(name, url, identityfile, extra_ssh_options)
+    super(InnerPBSRunner, self).__init__(name, url, identityfile, extra_ssh_options, do_cleanup)
 
   def initialiseRun(self):
     channel_id = self._uuid + "_pbs"
@@ -69,7 +70,7 @@ class PBSRunner(object):
 
   SSH is used to communicate with server to submit jobs and copy files."""
 
-  def __init__(self, name, url, pbsinclude, qselect_poll_interval = 10.0, pbsbatch_size = None, identityfile = None, extra_ssh_options = []):
+  def __init__(self, name, url, pbsinclude, qselect_poll_interval = 10.0, pbsbatch_size = None, identityfile = None, extra_ssh_options = [], do_cleanup = True):
     """Create PBSRunner instance
 
     Args:
@@ -82,6 +83,9 @@ class PBSRunner(object):
         identityfile (str, optional): Path of a private key to be used with this runner's SSH transport. If None, the default's used by
                                        the platform's ssh command are used.
         extra_ssh_options (list, optional): List of (key,value) tuples that are added to the ssh_config file used when making ssh connections.
+        do_cleanup (bool): If `True` file clean-up will be automatically performed following a run and on termination of the runner. If `False` this
+                                      behaviour is disabled. This option is provided for the purposes of debugging.
+
     """
     self._inner = InnerPBSRunner(name,
       url,
@@ -89,7 +93,8 @@ class PBSRunner(object):
       pbsbatch_size,
       qselect_poll_interval,
       identityfile,
-      extra_ssh_options)
+      extra_ssh_options,
+      do_cleanup)
 
   def runBatch(self, jobs):
     """Run job batch and return a job future that can be joined.
@@ -196,5 +201,7 @@ class PBSRunner(object):
     if not pbspollinterval > 0.0:
       raise ConfigException("Value of 'pbspollinterval' must > 0.0. Value was %s" % pbspollinterval)
 
-    return PBSRunner(runnerName, remotehost, pbsinclude, qselect_poll_interval = pbspollinterval, pbsbatch_size = pbsarraysize)
+    kwargs = dict(qselect_poll_interval = pbspollinterval, pbsbatch_size = pbsarraysize)
+    kwargs.update(BaseRemoteRunner._parseConfigItem_debug_disable_cleanup(runnerName, fitRootPath, cfgitems))
+    return PBSRunner(runnerName, remotehost, pbsinclude, **kwargs)
 

@@ -11,4 +11,5 @@ from _upload import UploadCancelledException
 
 from _cleanup import CleanupChannel
 from _cleanup import CleanupClient
+from _cleanup import NullCleanupClient
 from _cleanup import CleanupChannelException
