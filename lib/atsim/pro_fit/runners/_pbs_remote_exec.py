@@ -171,9 +171,9 @@ def qdel(pbs_ids, force, pbsConfig):
 
 def qdel_handler(channel, pbsConfig, channel_id, msg):
   try:
-    pbs_ids = msg['pbs_ids']
+    pbs_ids = msg['job_ids']
   except KeyError:
-    error(channel, "required field 'pbs_ids' missing from QDEL request", channel_id = channel_id)
+    error(channel, "required field 'job_ids' missing from QDEL request", channel_id = channel_id)
     return
 
   force = msg.get('force', False)
@@ -193,14 +193,14 @@ def qdel_handler(channel, pbsConfig, channel_id, msg):
 
   transid_send(channel, msg, 'QDEL',
     channel_id = channel_id,
-    pbs_ids = pbs_ids)
+    job_ids = pbs_ids)
 
 
 def qrls_handler(channel, pbsConfig, channel_id, msg):
   try:
-    pbs_id = msg['pbs_id']
+    pbs_id = msg['job_id']
   except KeyError:
-    error(channel, "required field 'pbs_id' missing from QRLS request", channel_id = channel_id)
+    error(channel, "required field 'job_id' missing from QRLS request", channel_id = channel_id)
     return
 
   try:
@@ -214,7 +214,7 @@ def qrls_handler(channel, pbsConfig, channel_id, msg):
 
   transid_send(channel, msg, 'QRLS',
     channel_id = channel_id,
-    pbs_id = pbs_id)
+    job_id = pbs_id)
 
 
 def qsub_handler(channel, pbsConfig, channel_id, msg):
@@ -234,11 +234,6 @@ def qsub_handler(channel, pbsConfig, channel_id, msg):
   header_lines = msg.get('header_lines', [])
   script = submission_script(pbsConfig, jobs, header_lines)
 
-  # sfile = open('/home/vagrant/submit', 'w')
-  # sfile.write(script)
-  # sfile.flush()
-  # sfile.close()
-
   p = subprocess.Popen(["qsub", "-h"],
     stdin = subprocess.PIPE,
     stdout = subprocess.PIPE,
@@ -252,7 +247,7 @@ def qsub_handler(channel, pbsConfig, channel_id, msg):
 
   transid_send(channel, msg, 'QSUB',
     channel_id = channel_id,
-    pbs_id = output.strip())
+    job_id = output.strip())
 
 def qselect_handler(channel, pbsConfig, channel_id, msg):
   try:
@@ -263,7 +258,7 @@ def qselect_handler(channel, pbsConfig, channel_id, msg):
   if pbsConfig.flavour == 'TORQUE':
     pbs_ids = compressTORQUEArrayJobs(pbs_ids)
 
-  transid_send(channel, msg, 'QSELECT', channel_id = channel_id, pbs_ids = pbs_ids)
+  transid_send(channel, msg, 'QSELECT', channel_id = channel_id, job_ids = pbs_ids)
 
 PBSIdentifyRecord = collections.namedtuple("PBSIdentifyRecord", ["arrayFlag", "arrayIDVariable", "qdelForceFlags", "flavour"])
 

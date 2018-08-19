@@ -87,31 +87,39 @@ def _make_vagrant_fixture(box_name):
   def vagrant_box(request):
     """py.test fixture that will spin up a vagrant box for the duration of the test runs
     before destroying it at the end"""
-
     import vagrant
-
     vagrantdir = os.path.join(_getVagrantDir(), box_name)
     v = vagrant.Vagrant(vagrantdir)
-    status = v.status()
-
+    status = v.status()[0].state
     if status == 'saved':
       v.resume()
+    elif status == 'poweroff':
+      v.destroy()
+      v.up()
     else:
       v.up()
 
     def finalizer():
-      v.destroy()
+      # v.halt()
+      # v.destroy()
+      v.suspend()
 
     request.addfinalizer(finalizer)
     return v
   return vagrant_box
 
+@pytest.fixture(scope = "session")
+def vagrant_basic(request):
+  make_box = _make_vagrant_fixture("basic")
+  box = make_box(request)
+  return box
 
-vagrant_basic = _make_vagrant_fixture("basic")
-pytest.fixture("session")(vagrant_basic)
+@pytest.fixture(scope = "session", name = "vagrant_torque")
+def vagrant_torque(request):
+  make_box = _make_vagrant_fixture("torque")
+  box = make_box(request)
+  return box
 
-vagrant_torque = _make_vagrant_fixture("torque")
-pytest.fixture("session")(vagrant_torque)
 
 
 

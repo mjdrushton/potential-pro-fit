@@ -35,21 +35,6 @@ def _createRunner(runfixture, vagrantbox, sub_batch_size, pbsinclude = ""):
 
   return runner
 
-# Useful for testing againts HPC
-# def _createRunner(runfixture, vagrantbox):
-#   username = vagrantbox.user()
-#   hostname = vagrantbox.hostname()
-#   port = vagrantbox.port()
-#   keyfilename = vagrantbox.keyfile()
-
-#   pbsIdentify = PBSIdentifyRecord(arrayFlag="-J", arrayIDVariable = "PBS_ARRAY_INDEX", flavour = "PBSPro")
-
-#   runner = pro_fit.runners.PBSRunner('PBSRunner', "ssh://mjdr@login.cx1.hpc.ic.ac.uk:/home/mjdr/pprofit_jobs",
-#     "", #pbsinclude
-#     pbsIdentify)
-
-#   return runner
-
 def _runBatch(runner, jobs):
   return runner.runBatch(jobs)
 
@@ -114,7 +99,7 @@ def testBatchTerminate(clearqueue, runfixture):
         ch.send({'msg': 'QSELECT'})
         msg = ch.next()
         assert 'QSELECT' == msg.get('msg', None)
-        running_pbsids = set(msg['pbs_ids'])
+        running_pbsids = set(msg['job_ids'])
         return running_pbsids
 
       pbsids = set([jr1.pbsId, jr2.pbsId])
@@ -275,7 +260,7 @@ def testRunnerClose(clearqueue, runfixture):
       ch.send({'msg': 'QSELECT'})
       msg = ch.next()
       assert 'QSELECT' == msg.get('msg', None)
-      running_pbsids = set(msg['pbs_ids'])
+      running_pbsids = set(msg['job_ids'])
       return running_pbsids
 
     pbsids = set([jr1.pbsId, jr2.pbsId])

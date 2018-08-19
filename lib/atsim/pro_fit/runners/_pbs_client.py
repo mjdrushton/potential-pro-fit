@@ -119,7 +119,7 @@ class _QSubCallback(PBSStateListenerAdapter):
     if not (transaction_id == self.transaction_id and mtype == 'QSUB'):
       return
 
-    pbsId = msg['pbs_id']
+    pbsId = msg['job_id']
     self.jobRecord.pbsId = pbsId
 
     # Register event handlers with the pbsState object, the first to trigger QRLS, then second to indicate job completion.
@@ -213,11 +213,11 @@ class PBSClient(object):
     self.channel.send(msg)
 
   def _qrls(self, transId, pbsId):
-    msg = {'msg' : 'QRLS', 'transaction_id' : transId, 'channel_id' : self.channel.channel_id, 'pbs_id' : pbsId}
+    msg = {'msg' : 'QRLS', 'transaction_id' : transId, 'channel_id' : self.channel.channel_id, 'job_id' : pbsId}
     self.channel.send(msg)
 
   def _qdel(self, transId, pbsId, force = False):
-    msg = {'msg' : 'QDEL', 'transaction_id' : transId, 'channel_id' : self.channel.channel_id, 'pbs_ids' : [pbsId], 'force' : force}
+    msg = {'msg' : 'QDEL', 'transaction_id' : transId, 'channel_id' : self.channel.channel_id, 'job_ids' : [pbsId], 'force' : force}
     self.channel.send(msg)
 
   @property
@@ -248,7 +248,7 @@ class _PBSStateQSelectCallback(object):
     if mtype != 'QSELECT' or msg.get('transaction_id', None) != self._transId:
       return
 
-    pbs_ids = msg.get('pbs_ids', [])
+    pbs_ids = msg.get('job_ids', [])
     self._pbsState._updateJobIds(pbs_ids)
 
     def qselect_later():

@@ -1,9 +1,9 @@
 from atsim.pro_fit._channel import ChannelException
 
 from ..testutil import vagrant_torque, vagrant_basic
-from _runnercommon import channel_id
+from _runnercommon import channel_id, mkrunjobs
 
-from test_pbs_remote_exec import _mkexecnetgw, clearqueue, _mkrunjobs
+from test_pbs_remote_exec import _mkexecnetgw, clearqueue
 
 import atsim.pro_fit.runners._pbs_client
 
@@ -63,7 +63,7 @@ class QSUBCallback(object):
     mtype = msg.get("msg", None)
 
     if mtype == "QSUB":
-      self.lastPbsID = msg.get("pbs_id", None)
+      self.lastPbsID = msg.get("job_id", None)
       self.event.set()
 
   def reset(self):
@@ -84,7 +84,7 @@ def testPBSState(clearqueue, channel_id):
   gw = _mkexecnetgw(clearqueue)
 
   # Create some jobs
-  clch, runjobs = _mkrunjobs(gw, 5)
+  clch, runjobs = mkrunjobs(gw, 5)
   try:
     assert not state._jobIds
     channel.send({'msg' : 'QSUB', 'jobs' : runjobs[:3]})
@@ -109,13 +109,13 @@ def testPBSState(clearqueue, channel_id):
     assert sorted(listener.newJobs) == sorted([pbs_id_1, pbs_id_2])
     listener.reset()
 
-    channel.send({'msg' : 'QRLS', 'pbs_id' : pbs_id_2 })
+    channel.send({'msg' : 'QRLS', 'job_id' : pbs_id_2 })
     assert listener.event.wait(30)
     assert sorted(listener.oldJobs) == sorted([pbs_id_1, pbs_id_2])
     assert sorted(listener.newJobs) == sorted([pbs_id_1])
     listener.reset()
 
-    channel.send({'msg' : 'QDEL', 'pbs_ids' : [pbs_id_1] })
+    channel.send({'msg' : 'QDEL', 'job_ids' : [pbs_id_1] })
     assert listener.event.wait(30)
     assert sorted(listener.oldJobs) == sorted([pbs_id_1])
     assert sorted(listener.newJobs) == sorted([])
@@ -198,7 +198,7 @@ class TstCallback(object):
 
 def testPBSClientSingleJob(clearqueue, channel_id):
     gw = _mkexecnetgw(clearqueue)
-    clch, runjobs = _mkrunjobs(gw, 1, numSuffix = True)
+    clch, runjobs = mkrunjobs(gw, 1, numSuffix = True)
     try:
       with closing(_mkclient('testPBSClientSingleJob', clearqueue)) as client:
         j1cb = TstCallback()
@@ -237,7 +237,7 @@ def testPBSClientSingleJob(clearqueue, channel_id):
 
 def testPBSClientMultipleJobsInSingleBatch(clearqueue, channel_id):
     gw = _mkexecnetgw(clearqueue)
-    clch, runjobs = _mkrunjobs(gw, 3, numSuffix = True)
+    clch, runjobs = mkrunjobs(gw, 3, numSuffix = True)
     try:
       with closing(_mkclient('testPBSClientMultipleJobsInSingleBatch', clearqueue)) as client:
         j1cb = TstCallback()
@@ -289,7 +289,7 @@ def testPBSClientMultipleJobsInSingleBatch(clearqueue, channel_id):
 
 def testPBSClientMultipleJobsInMultipleBatches(clearqueue, channel_id):
     gw = _mkexecnetgw(clearqueue)
-    clch, runjobs = _mkrunjobs(gw, 3, numSuffix = True)
+    clch, runjobs = mkrunjobs(gw, 3, numSuffix = True)
     try:
       with closing(_mkclient('testPBSClientMultipleJobsInMultipleBatches', clearqueue)) as client:
         rj1 = [runjobs[0]]
@@ -347,8 +347,8 @@ def testPBSClientMultipleJobsInMultipleBatches(clearqueue, channel_id):
 
 def testPBSClientKillJob(clearqueue, channel_id):
     gw = _mkexecnetgw(clearqueue)
-    clch1, rj1 = _mkrunjobs(gw, 1, numSuffix = True, sleep = None)
-    clch2, rj2 = _mkrunjobs(gw, 3, numSuffix = True, sleep = 4)
+    clch1, rj1 = mkrunjobs(gw, 1, numSuffix = True, sleep = None)
+    clch2, rj2 = mkrunjobs(gw, 3, numSuffix = True, sleep = 4)
 
     try:
 

@@ -3,6 +3,7 @@ import shutil
 import stat
 import tempfile
 import uuid
+import time
 
 import atsim.pro_fit._execnet as _execnet
 
@@ -195,3 +196,48 @@ def isdir_remote(channel):
       return
 
     channel.send(os.path.isdir(msg))
+
+
+def mkrunjobs(gw, num, numSuffix = False, sleep = None):
+
+  def mkrunjob(channel, num, numSuffix, sleep):
+    import tempfile
+    import os
+    tmpdir = tempfile.mkdtemp()
+    try:
+      outpaths = []
+      for i in xrange(num):
+        nd = os.path.join(tmpdir, str(i))
+        os.mkdir(nd)
+        filename = os.path.join(nd, 'runjob')
+        with open(filename, 'wb') as outfile:
+          if not sleep is None:
+            print >>outfile, "sleep %d" % sleep
+
+          if numSuffix:
+            print >>outfile, "echo Hello%d > outfile" % i
+          else:
+            print >>outfile, "echo Hello > outfile"
+        outpaths.append(filename)
+      channel.send(outpaths)
+      rcv = channel.receive()
+    finally:
+      import shutil
+      shutil.rmtree(tmpdir, ignore_errors = True)
+  ch = gw.remote_exec(mkrunjob, num = num, numSuffix = numSuffix, sleep = sleep)
+  runjobs = ch.receive()
+  return ch, runjobs
+
+def send_and_compare(ch, sendmsg, expect):
+  pause = 0.5
+  for i in xrange(10):
+    ch.send(sendmsg)
+    msg = ch.receive(2)
+    try:
+      assert msg == expect
+      return
+    except AssertionError:
+      pass
+    time.sleep(pause)
+    pause *= 2.0
+  assert msg == expect
