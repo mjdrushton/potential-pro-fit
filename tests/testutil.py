@@ -114,13 +114,14 @@ def vagrant_basic(request):
   box = make_box(request)
   return box
 
-@pytest.fixture(scope = "session", name = "vagrant_torque")
+@pytest.fixture(scope = "session")
 def vagrant_torque(request):
   make_box = _make_vagrant_fixture("torque")
   box = make_box(request)
   return box
 
-
-
-
-
+@pytest.fixture(scope = "session")
+def vagrant_slurm(request):
+  make_box = _make_vagrant_fixture("slurm")
+  box = make_box(request)
+  return box
