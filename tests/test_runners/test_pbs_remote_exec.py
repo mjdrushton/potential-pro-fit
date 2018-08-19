@@ -19,18 +19,7 @@ def _mkexecnetgw(vagrant_box):
 
 @fixture(scope = "function")
 def clearqueue(vagrant_torque):
-
-  def clearqueue(channel):
-    import subprocess
-    subprocess.call("qdel -W 0 all", shell = True)
-    import time
-    cleared = False
-    while not cleared:
-      time.sleep(0.5)
-      output = subprocess.check_output(["qselect"])
-      output = output.strip()
-      cleared = not output
-
+  from pbs_runner_test_module import clearqueue
   gw = _mkexecnetgw(vagrant_torque)
   ch = gw.remote_exec(clearqueue)
   ch.waitclose(20)

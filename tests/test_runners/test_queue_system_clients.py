@@ -1,11 +1,10 @@
 from atsim.pro_fit._channel import ChannelException
 
-from ..testutil import vagrant_torque, vagrant_basic
+from ..testutil import vagrant_basic
 from _runnercommon import channel_id, mkrunjobs
 
-from test_pbs_remote_exec import _mkexecnetgw, clearqueue
-
-from atsim.pro_fit.runners._pbs_channel import PBSChannel
+from test_pbs_remote_exec import _mkexecnetgw #, clearqueue
+# from atsim.pro_fit.runners._pbs_channel import PBSChannel
 
 import atsim.pro_fit.runners._queueing_system_client as generic_client
 from gevent.event import Event
@@ -13,26 +12,52 @@ import gevent
 
 from contextlib import closing
 
-def _mkchannel(channel_id, vagrant_box):
+import pytest
+
+@pytest.fixture(scope = "session", params = [
+                                              "tests.test_runners.slurm_runner_test_module", 
+                                              "tests.test_runners.pbs_runner_test_module"])
+def runner_test_module(request):
+  return pytest.importorskip(request.param)
+
+@pytest.fixture(scope = "session")
+def vagrant_box(runner_test_module):
+  box = runner_test_module.vagrant_box()
+  yield box
+  box.suspend()
+
+@pytest.fixture(scope="function")
+def gw(vagrant_box):
   gw = _mkexecnetgw(vagrant_box)
-  ch = PBSChannel(gw, channel_id)
+  return gw
+
+@pytest.fixture(scope = "function")
+def channel(channel_id, runner_test_module, gw):
+  ch = runner_test_module.Channel_Class(gw, channel_id)
   return ch
 
-def _mkclient(channel_id, vagrant_box):
-  ch = _mkchannel(channel_id, vagrant_box)
+@pytest.fixture(scope = "function")
+def client(channel):
+  client = generic_client.QueueingSystemClient(channel, pollEvery = 1.0)
+  return client
+
+@pytest.fixture(scope = "function")
+def clearqueue(gw, runner_test_module):
+  ch = gw.remote_exec(runner_test_module.clearqueue)
+  ch.waitclose(20)
+
+def _mkclient(channel_id, channel_class, vagrant_box):
+  gw = _mkexecnetgw(vagrant_box)
+  ch = channel_class(gw, channel_id)
   client = generic_client.QueueingSystemClient(ch, pollEvery = 0.5)
   return client
 
-def testStartChannel(vagrant_torque,):
-  client = _mkclient('testStartChannel', vagrant_torque)
+def testStartChannel(client):
   client.close()
 
-def testHostHasNoPbs(vagrant_basic):
-  try:
-    with closing(_mkclient('testHostHasNoPbs', vagrant_basic)) as client:
-      assert False, "PBSChannelException was not raised"
-  except ChannelException as e:
-    assert e.message.endswith("PBS not found: Could not run 'qselect'")
+def testHostHasNoPbs(vagrant_basic, runner_test_module, channel_id):
+    with pytest.raises(ChannelException):
+      _mkclient('testHostHasNoPbs', runner_test_module.Channel_Class, vagrant_basic)
 
 class JobsChangedListener(generic_client.QueueingSystemStateListenerAdapter):
 
@@ -69,18 +94,15 @@ class QSUBCallback(object):
     self.event.clear()
     self.lastPbsID = None
 
-def testPBSState(clearqueue, channel_id):
-  channel = _mkchannel(channel_id, clearqueue)
-
+@pytest.mark.usefixtures("clearqueue")
+def testQueuingSystemState(gw, channel, channel_id):
   qsubcallback = QSUBCallback()
   channel.callback.append(qsubcallback)
 
-  # Instantiate PBSState
+  # Instantiate QueueingSystemState
   state = generic_client.QueueingSystemState(channel, pollEvery = 1.0)
   listener = JobsChangedListener()
   state.listeners.append(listener)
-
-  gw = _mkexecnetgw(clearqueue)
 
   # Create some jobs
   clch, runjobs = mkrunjobs(gw, 5)
@@ -123,8 +145,7 @@ def testPBSState(clearqueue, channel_id):
   finally:
     clch.send(None)
 
-
-def testPBSQStateAddRemovePrivateListener():
+def testQueueStateAddRemovePrivateListener():
   class Listener(generic_client.QueueingSystemStateListenerAdapter):
 
     def __init__(self):
@@ -195,11 +216,12 @@ class TstCallback(object):
     self.called = True
     self.exception = exception
 
-def testPBSClientSingleJob(clearqueue, channel_id):
-    gw = _mkexecnetgw(clearqueue)
+@pytest.mark.usefixtures("clearqueue")
+def testQueueingSystemClientSingleJob(gw, client):
+    # gw = _mkexecnetgw(clearqueue)
     clch, runjobs = mkrunjobs(gw, 1, numSuffix = True)
     try:
-      client = _mkclient('testPBSClientSingleJob', clearqueue)
+      # client = _mkclient('testPBSClientSingleJob', clearqueue)
       # with closing(_mkclient('testPBSClientSingleJob', clearqueue)) as client:
       j1cb = TstCallback()
       jr1 = client.runJobs([runjobs[0]], j1cb)
@@ -235,11 +257,12 @@ def testPBSClientSingleJob(clearqueue, channel_id):
     finally:
       clch.send(None)
 
-def testPBSClientMultipleJobsInSingleBatch(clearqueue, channel_id):
-    gw = _mkexecnetgw(clearqueue)
+@pytest.mark.usefixtures("clearqueue")
+def testQueueingSystemMultipleJobsInSingleBatch(gw, client):
+    # gw = _mkexecnetgw(clearqueue)
     clch, runjobs = mkrunjobs(gw, 3, numSuffix = True)
     try:
-      client = _mkclient('testPBSClientMultipleJobsInSingleBatch', clearqueue)
+      # client = _mkclient('testPBSClientMultipleJobsInSingleBatch', clearqueue)
       j1cb = TstCallback()
       jr1 = client.runJobs(runjobs, j1cb)
 
@@ -287,11 +310,12 @@ def testPBSClientMultipleJobsInSingleBatch(clearqueue, channel_id):
     finally:
       clch.send(None)
 
-def testPBSClientMultipleJobsInMultipleBatches(clearqueue, channel_id):
-    gw = _mkexecnetgw(clearqueue)
+@pytest.mark.usefixtures("clearqueue")
+def testQueueingSystemClientMultipleJobsInMultipleBatches(gw, client):
+    # gw = _mkexecnetgw(clearqueue)
     clch, runjobs = mkrunjobs(gw, 3, numSuffix = True)
     try:
-      client = _mkclient('testPBSClientMultipleJobsInMultipleBatches', clearqueue)
+      # client = _mkclient('testPBSClientMultipleJobsInMultipleBatches', clearqueue)
       rj1 = [runjobs[0]]
       rj2 = runjobs[1:]
 
@@ -345,18 +369,18 @@ def testPBSClientMultipleJobsInMultipleBatches(clearqueue, channel_id):
     finally:
       clch.send(None)
 
-def testPBSClientKillJob(clearqueue, channel_id):
-    gw = _mkexecnetgw(clearqueue)
+@pytest.mark.usefixtures("clearqueue")
+def testQueueingSystemClientKillJob(gw, client):
+    # gw = _mkexecnetgw(clearqueue)
     clch1, rj1 = mkrunjobs(gw, 1, numSuffix = True, sleep = None)
     clch2, rj2 = mkrunjobs(gw, 3, numSuffix = True, sleep = 4)
 
     try:
-      client = _mkclient('testPBSClientKillJob', clearqueue)
+      # client = _mkclient('testPBSClientKillJob', clearqueue)
       #TODO: Test after qsub but before pbsId received.
       #TODO: Test after qsub but before qrls
       #TODO: Test after qrls
       #TODO: Test after job finished.
-
 
       j1cb = TstCallback()
       jr1 = client.runJobs(rj1, j1cb)

@@ -19,16 +19,7 @@ def _mkexecnetgw(vagrant_box):
 @fixture(scope = "function")
 def clearqueue(vagrant_slurm):
 
-  def clearqueue(channel):
-    import subprocess
-    subprocess.call("scancel --user=vagrant --signal=KILL", shell = True)
-    import time
-    cleared = False
-    while not cleared:
-      time.sleep(0.5)
-      output = subprocess.check_output("squeue -h", shell = True)
-      output = output.strip()
-      cleared = not output
+  from .slurm_runner_test_module import clearqueue
 
   gw = _mkexecnetgw(vagrant_slurm)
   ch = gw.remote_exec(clearqueue)

@@ -83,21 +83,27 @@ def _getVagrantDir():
       os.path.dirname(__file__),
       'vagrant')
 
+def _make_vagrant_box(box_name):
+  import vagrant
+  vagrantdir = os.path.join(_getVagrantDir(), box_name)
+  v = vagrant.Vagrant(vagrantdir)
+  status = v.status()[0].state
+  if status == 'saved':
+    v.resume()
+  elif status == 'poweroff':
+    v.destroy()
+    v.up()
+  else:
+    v.up()
+  
+  return v
+
+
 def _make_vagrant_fixture(box_name):
   def vagrant_box(request):
     """py.test fixture that will spin up a vagrant box for the duration of the test runs
     before destroying it at the end"""
-    import vagrant
-    vagrantdir = os.path.join(_getVagrantDir(), box_name)
-    v = vagrant.Vagrant(vagrantdir)
-    status = v.status()[0].state
-    if status == 'saved':
-      v.resume()
-    elif status == 'poweroff':
-      v.destroy()
-      v.up()
-    else:
-      v.up()
+    v = _make_vagrant_box(box_name)
 
     def finalizer():
       # v.halt()
