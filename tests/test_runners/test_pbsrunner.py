@@ -78,18 +78,18 @@ def testBatchTerminate(clearqueue, runfixture):
     ij3 = if3._submittedPBSRecords[0]
 
     assert jr1.pbs_submit_event.wait(60)
-    assert jr1.pbsId
+    assert jr1.jobId
 
     assert jr2.pbs_submit_event.wait(60)
-    assert jr2.pbsId
+    assert jr2.jobId
 
     assert ij3.pbs_submit_event.wait(60)
-    assert ij3.pbsId
+    assert ij3.jobId
 
     gevent.sleep(0)
 
-    jr1_id = jr1.pbsId
-    jr2_id = jr2.pbsId
+    jr1_id = jr1.jobId
+    jr2_id = jr2.jobId
 
     # Spin up a pbs_channel and check we can see the two jobs
     gw = _mkexecnetgw(clearqueue)
@@ -102,7 +102,7 @@ def testBatchTerminate(clearqueue, runfixture):
         running_pbsids = set(msg['job_ids'])
         return running_pbsids
 
-      pbsids = set([jr1.pbsId, jr2.pbsId])
+      pbsids = set([jr1.jobId, jr2.jobId])
       running_pbsids = qsel()
       assert pbsids.issubset(running_pbsids)
       assert pbsids != running_pbsids
@@ -125,7 +125,7 @@ def testBatchTerminate(clearqueue, runfixture):
       delay = 1
       for i in xrange(5):
         try:
-          assert qsel() == set([jr1.pbsId, ij3.pbsId])
+          assert qsel() == set([jr1.jobId, ij3.jobId])
         except AssertionError:
           if i == attempts - 1:
             raise
@@ -150,7 +150,7 @@ def testBatchTerminate(clearqueue, runfixture):
       delay = 1
       for i in xrange(5):
         try:
-          assert qsel() == set([ij3.pbsId])
+          assert qsel() == set([ij3.jobId])
         except AssertionError:
           if i == attempts - 1:
             raise
@@ -239,18 +239,18 @@ def testRunnerClose(clearqueue, runfixture):
   ij3 = if3._submittedPBSRecords[0]
 
   assert jr1.pbs_submit_event.wait(60)
-  assert jr1.pbsId
+  assert jr1.jobId
 
   assert jr2.pbs_submit_event.wait(60)
-  assert jr2.pbsId
+  assert jr2.jobId
 
   assert ij3.pbs_submit_event.wait(60)
-  assert ij3.pbsId
+  assert ij3.jobId
 
   gevent.sleep(0)
 
-  jr1_id = jr1.pbsId
-  jr2_id = jr2.pbsId
+  jr1_id = jr1.jobId
+  jr2_id = jr2.jobId
 
   # Spin up a pbs_channel and check we can see the two jobs
   gw = _mkexecnetgw(clearqueue)
@@ -263,7 +263,7 @@ def testRunnerClose(clearqueue, runfixture):
       running_pbsids = set(msg['job_ids'])
       return running_pbsids
 
-    pbsids = set([jr1.pbsId, jr2.pbsId])
+    pbsids = set([jr1.jobId, jr2.jobId])
     running_pbsids = qsel()
     assert pbsids.issubset(running_pbsids)
     assert pbsids != running_pbsids
@@ -286,7 +286,7 @@ def testRunnerClose(clearqueue, runfixture):
     delay = 5
     for i in xrange(5):
       try:
-        assert qsel() == set([ij3.pbsId])
+        assert qsel() == set([ij3.jobId])
       except AssertionError:
         if i == attempts - 1:
           raise
@@ -311,7 +311,7 @@ def testRunnerClose(clearqueue, runfixture):
     delay = 1
     for i in xrange(5):
       try:
-        assert qsel() == set([ij3.pbsId])
+        assert qsel() == set([ij3.jobId])
       except AssertionError:
         if i == attempts - 1:
           raise
@@ -435,9 +435,9 @@ def testPBSInclude(runfixture, clearqueue):
 
     j = batch._submittedPBSRecords[0]
     assert j.pbs_submit_event.wait(60)
-    assert j.pbsId
+    assert j.jobId
 
-    pbsid = j.pbsId
+    pbsid = j.jobId
 
     gw = _mkexecnetgw(clearqueue)
     ch = gw.remote_exec(qstatRemoteExec)

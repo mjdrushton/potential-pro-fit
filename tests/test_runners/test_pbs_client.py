@@ -6,7 +6,7 @@ from _runnercommon import channel_id, mkrunjobs
 from test_pbs_remote_exec import _mkexecnetgw, clearqueue
 
 import atsim.pro_fit.runners._pbs_client
-
+import atsim.pro_fit.runners._generic_queueing_system_client as generic_client
 from gevent.event import Event
 import gevent
 
@@ -35,7 +35,7 @@ def testHostHasNoPbs(vagrant_basic):
   except ChannelException as e:
     assert e.message.endswith("PBS not found: Could not run 'qselect'")
 
-class JobsChangedListener(pbs_client.PBSStateListenerAdapter):
+class JobsChangedListener(generic_client.QueueingSystemStateListenerAdapter):
 
   def __init__(self):
     self.event = Event()
@@ -77,7 +77,7 @@ def testPBSState(clearqueue, channel_id):
   channel.callback.append(qsubcallback)
 
   # Instantiate PBSState
-  state = pbs_client.PBSState(channel, pollEvery = 1.0)
+  state = generic_client.QueueingSystemState(channel, pollEvery = 1.0)
   listener = JobsChangedListener()
   state.listeners.append(listener)
 
@@ -126,7 +126,7 @@ def testPBSState(clearqueue, channel_id):
 
 
 def testPBSQStateAddRemovePrivateListener():
-  class Listener(pbs_client.PBSStateListenerAdapter):
+  class Listener(generic_client.QueueingSystemStateListenerAdapter):
 
     def __init__(self):
       self.reset()
@@ -147,7 +147,7 @@ def testPBSQStateAddRemovePrivateListener():
 
   listener = Listener()
   listenerList = [listener]
-  addRemoveListener = pbs_client._AddRemoveListener(listenerList)
+  addRemoveListener = generic_client._AddRemoveListener(listenerList)
 
   addRemoveListener.jobsChanged(set(), set(["a", "b", "c"]))
 
@@ -200,18 +200,19 @@ def testPBSClientSingleJob(clearqueue, channel_id):
     gw = _mkexecnetgw(clearqueue)
     clch, runjobs = mkrunjobs(gw, 1, numSuffix = True)
     try:
-      with closing(_mkclient('testPBSClientSingleJob', clearqueue)) as client:
-        j1cb = TstCallback()
-        jr1 = client.runJobs([runjobs[0]], j1cb)
+      client = _mkclient('testPBSClientSingleJob', clearqueue)
+      # with closing(_mkclient('testPBSClientSingleJob', clearqueue)) as client:
+      j1cb = TstCallback()
+      jr1 = client.runJobs([runjobs[0]], j1cb)
 
-        # Wait for job submission
-        assert jr1.qsubEvent.wait(120)
-        assert len(client._pbsState._jobIds) == 1
-        assert list(client._pbsState._jobIds)[0] == jr1.pbsId
-        # Now wait for the job to complete
-        assert jr1.completion_event.wait(120)
-        assert j1cb.called
-        assert j1cb.exception is None
+      # Wait for job submission
+      assert jr1.qsubEvent.wait(120)
+      assert len(client._qsState._jobIds) == 1
+      assert list(client._qsState._jobIds)[0] == jr1.jobId
+      # Now wait for the job to complete
+      assert jr1.completion_event.wait(120)
+      assert j1cb.called
+      assert j1cb.exception is None
 
       # Now check the contents of the output directory
       ch = gw.remote_exec(chIsDir)
@@ -245,8 +246,8 @@ def testPBSClientMultipleJobsInSingleBatch(clearqueue, channel_id):
 
         # Wait for job submission
         assert jr1.qsubEvent.wait(120)
-        assert len(client._pbsState._jobIds) == 1
-        assert list(client._pbsState._jobIds)[0] == jr1.pbsId
+        assert len(client._qsState._jobIds) == 1
+        assert list(client._qsState._jobIds)[0] == jr1.jobId
         # Now wait for the job to complete
         assert jr1.completion_event.wait(120)
         assert j1cb.called
@@ -375,7 +376,7 @@ def testPBSClientKillJob(clearqueue, channel_id):
 
         try:
           raise j2cb.exception
-        except pbs_client.PBSJobKilledException:
+        except generic_client.QueueingSystemJobKilledException:
           pass
 
       # client.close()

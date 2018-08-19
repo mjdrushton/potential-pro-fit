@@ -41,8 +41,12 @@ class PBSRunnerJobRecord(object):
   @property
   def pbsId(self):
     if self._pbsclient_record:
-      return self._pbsclient_record.pbsId
+      return self._pbsclient_record.jobId
     return None
+
+  @property
+  def jobId(self):
+    return self.pbsId
 
   @property
   def isFull(self):

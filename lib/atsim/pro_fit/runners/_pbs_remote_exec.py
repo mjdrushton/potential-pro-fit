@@ -131,7 +131,6 @@ def qselect():
   pbs_ids = [i for i in output.split(os.linesep) if i]
   return pbs_ids
 
-
 class QRlsException(Exception):
   pass
 
@@ -168,7 +167,6 @@ def qdel(pbs_ids, force, pbsConfig):
   if p.returncode != 0:
     raise QDelException(err.strip())
 
-
 def qdel_handler(channel, pbsConfig, channel_id, msg):
   try:
     pbs_ids = msg['job_ids']
@@ -195,7 +193,6 @@ def qdel_handler(channel, pbsConfig, channel_id, msg):
     channel_id = channel_id,
     job_ids = pbs_ids)
 
-
 def qrls_handler(channel, pbsConfig, channel_id, msg):
   try:
     pbs_id = msg['job_id']
@@ -215,7 +212,6 @@ def qrls_handler(channel, pbsConfig, channel_id, msg):
   transid_send(channel, msg, 'QRLS',
     channel_id = channel_id,
     job_id = pbs_id)
-
 
 def qsub_handler(channel, pbsConfig, channel_id, msg):
   try:
@@ -336,7 +332,6 @@ def transid_send(channel, origmsg, mtype, **kwargs):
 
   send(channel, mtype, **kwargs)
 
-
 def error(channel, reason, **kwargs):
   send(channel, 'ERROR', reason = reason, **kwargs)
 
@@ -374,6 +369,7 @@ def remote_exec(channel):
   send(channel, 'READY', channel_id = channel_id, pbs_identify = dict(pbsConfig._asdict()))
 
   for msg in channel:
+    
     if msg is None:
       return
 
