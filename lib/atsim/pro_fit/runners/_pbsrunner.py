@@ -1,69 +1,23 @@
 from atsim.pro_fit.fittool import ConfigException
-from atsim.pro_fit import filetransfer
-
-from atsim.pro_fit._util import NamedEvent
-from _util import BatchNameIterator
-from _exceptions import RunnerClosedException
 from atsim.pro_fit._channel import ChannelException
-from _pbs_client import PBSChannel, PBSClient
 
-from atsim.pro_fit.filetransfer import UploadHandler, DownloadHandler
+from _pbs_channel import PBSChannel
+
+from _queueing_system_runner import QueueingSystemRunnerBaseClass
 
 from atsim.pro_fit import _execnet
 from atsim.pro_fit._execnet import urlParse
 import execnet
 
-import gevent
-import gevent.event
-
-import itertools
-import logging
-import posixpath
-import uuid
-import traceback
-import sys
-import os
-
-from _base_remoterunner import BaseRemoteRunner, RemoteRunnerCloseThreadBase
-from _pbsrunner_batch import PBSRunnerBatch
-
-from gevent.event import Event
-
-
 EXECNET_TERM_TIMEOUT=10
 
-class _PBSRunnerCloseThread(RemoteRunnerCloseThreadBase):
-
-  def closeRunClient(self):
-    self.runner._pbsclient.close(closeChannel = False)
-    evts = self._closeChannel(self.runner._pbsclient.channel, 'closeRunClient')
-    return evts
-
-
-class InnerPBSRunner(BaseRemoteRunner):
+class InnerPBSRunner(QueueingSystemRunnerBaseClass):
   """Runner class held by PBSRunner that does all the work."""
 
-  def __init__(self, name, url, pbsinclude,  pbsbatch_size, qselect_poll_interval,  identityfile = None, extra_ssh_options = [], do_cleanup = True):
-    self.pbsinclude = []
-    if not pbsinclude is None:
-      self.pbsinclude = pbsinclude.split(os.linesep)
+  id_suffix = "_pbs"
 
-    self.pbsqselect_poll_interval = qselect_poll_interval
-    self.pbsbatch_size = pbsbatch_size
-    self._logger = logging.getLogger(__name__).getChild("InnerPBSRunner")
-    super(InnerPBSRunner, self).__init__(name, url, identityfile, extra_ssh_options, do_cleanup)
-
-  def initialiseRun(self):
-    channel_id = self._uuid + "_pbs"
-    self._pbschannel = PBSChannel(self._gw, channel_id)
-    self._pbsclient = PBSClient(self._pbschannel, pollEvery = self.pbsqselect_poll_interval)
-
-  def createBatch(self, batchDir, jobs, batchId):
-    return PBSRunnerBatch(self, batchDir, jobs, batchId, self._pbsclient, self.pbsinclude)
-
-  def makeCloseThread(self):
-    return _PBSRunnerCloseThread(self)
-
+  def makeRunChannel(self, channel_id):
+    return PBSChannel(self._gw, channel_id)
 
 class PBSRunner(object):
   """Runner that allows a remote PBS queuing system to be used to run jobs.
@@ -202,6 +156,6 @@ class PBSRunner(object):
       raise ConfigException("Value of 'pbspollinterval' must > 0.0. Value was %s" % pbspollinterval)
 
     kwargs = dict(qselect_poll_interval = pbspollinterval, pbsbatch_size = pbsarraysize)
-    kwargs.update(BaseRemoteRunner._parseConfigItem_debug_disable_cleanup(runnerName, fitRootPath, cfgitems))
+    kwargs.update(QueueingSystemRunnerBaseClass._parseConfigItem_debug_disable_cleanup(runnerName, fitRootPath, cfgitems))
     return PBSRunner(runnerName, remotehost, pbsinclude, **kwargs)
 

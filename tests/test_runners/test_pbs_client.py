@@ -5,23 +5,22 @@ from _runnercommon import channel_id, mkrunjobs
 
 from test_pbs_remote_exec import _mkexecnetgw, clearqueue
 
-import atsim.pro_fit.runners._pbs_client
-import atsim.pro_fit.runners._generic_queueing_system_client as generic_client
+from atsim.pro_fit.runners._pbs_channel import PBSChannel
+
+import atsim.pro_fit.runners._queueing_system_client as generic_client
 from gevent.event import Event
 import gevent
 
 from contextlib import closing
 
-pbs_client = atsim.pro_fit.runners._pbs_client
-
 def _mkchannel(channel_id, vagrant_box):
   gw = _mkexecnetgw(vagrant_box)
-  ch = pbs_client.PBSChannel(gw, channel_id)
+  ch = PBSChannel(gw, channel_id)
   return ch
 
 def _mkclient(channel_id, vagrant_box):
   ch = _mkchannel(channel_id, vagrant_box)
-  client = pbs_client.PBSClient(ch, pollEvery = 0.5)
+  client = generic_client.QueueingSystemClient(ch, pollEvery = 0.5)
   return client
 
 def testStartChannel(vagrant_torque,):
@@ -240,18 +239,18 @@ def testPBSClientMultipleJobsInSingleBatch(clearqueue, channel_id):
     gw = _mkexecnetgw(clearqueue)
     clch, runjobs = mkrunjobs(gw, 3, numSuffix = True)
     try:
-      with closing(_mkclient('testPBSClientMultipleJobsInSingleBatch', clearqueue)) as client:
-        j1cb = TstCallback()
-        jr1 = client.runJobs(runjobs, j1cb)
+      client = _mkclient('testPBSClientMultipleJobsInSingleBatch', clearqueue)
+      j1cb = TstCallback()
+      jr1 = client.runJobs(runjobs, j1cb)
 
-        # Wait for job submission
-        assert jr1.qsubEvent.wait(120)
-        assert len(client._qsState._jobIds) == 1
-        assert list(client._qsState._jobIds)[0] == jr1.jobId
-        # Now wait for the job to complete
-        assert jr1.completion_event.wait(120)
-        assert j1cb.called
-        assert j1cb.exception is None
+      # Wait for job submission
+      assert jr1.qsubEvent.wait(120)
+      assert len(client._qsState._jobIds) == 1
+      assert list(client._qsState._jobIds)[0] == jr1.jobId
+      # Now wait for the job to complete
+      assert jr1.completion_event.wait(120)
+      assert j1cb.called
+      assert j1cb.exception is None
 
       for i, job in enumerate(runjobs):
           # Now check the contents of the output directory
@@ -292,24 +291,24 @@ def testPBSClientMultipleJobsInMultipleBatches(clearqueue, channel_id):
     gw = _mkexecnetgw(clearqueue)
     clch, runjobs = mkrunjobs(gw, 3, numSuffix = True)
     try:
-      with closing(_mkclient('testPBSClientMultipleJobsInMultipleBatches', clearqueue)) as client:
-        rj1 = [runjobs[0]]
-        rj2 = runjobs[1:]
+      client = _mkclient('testPBSClientMultipleJobsInMultipleBatches', clearqueue)
+      rj1 = [runjobs[0]]
+      rj2 = runjobs[1:]
 
-        j1cb = TstCallback()
-        jr1 = client.runJobs(rj1, j1cb)
+      j1cb = TstCallback()
+      jr1 = client.runJobs(rj1, j1cb)
 
-        j2cb = TstCallback()
-        jr2 = client.runJobs(rj2, j2cb)
+      j2cb = TstCallback()
+      jr2 = client.runJobs(rj2, j2cb)
 
-        # Now wait for the job to complete
-        # assert jr1.completion_event.wait(120)
-        # assert jr2.completion_event.wait(120)
-        gevent.wait([jr1.completion_event, jr2.completion_event], 120)
-        assert j1cb.called
-        assert j1cb.exception is None
-        assert j2cb.called
-        assert j2cb.exception is None
+      # Now wait for the job to complete
+      # assert jr1.completion_event.wait(120)
+      # assert jr2.completion_event.wait(120)
+      gevent.wait([jr1.completion_event, jr2.completion_event], 120)
+      assert j1cb.called
+      assert j1cb.exception is None
+      assert j2cb.called
+      assert j2cb.exception is None
 
       for i, job in enumerate(runjobs):
         # Now check the contents of the output directory
@@ -352,34 +351,33 @@ def testPBSClientKillJob(clearqueue, channel_id):
     clch2, rj2 = mkrunjobs(gw, 3, numSuffix = True, sleep = 4)
 
     try:
+      client = _mkclient('testPBSClientKillJob', clearqueue)
+      #TODO: Test after qsub but before pbsId received.
+      #TODO: Test after qsub but before qrls
+      #TODO: Test after qrls
+      #TODO: Test after job finished.
 
-      with closing(_mkclient('testPBSClientKillJob', clearqueue)) as client:
-        #TODO: Test after qsub but before pbsId received.
-        #TODO: Test after qsub but before qrls
-        #TODO: Test after qrls
-        #TODO: Test after job finished.
 
+      j1cb = TstCallback()
+      jr1 = client.runJobs(rj1, j1cb)
 
-        j1cb = TstCallback()
-        jr1 = client.runJobs(rj1, j1cb)
+      j2cb = TstCallback()
+      jr2 = client.runJobs(rj2, j2cb)
 
-        j2cb = TstCallback()
-        jr2 = client.runJobs(rj2, j2cb)
+      killEvent = jr2.kill()
 
-        killEvent = jr2.kill()
+      assert killEvent.wait(60)
+      assert jr1.completion_event.wait(60)
+      assert j1cb.called
+      assert j1cb.exception is None
+      assert j2cb.called
 
-        assert killEvent.wait(60)
-        assert jr1.completion_event.wait(60)
-        assert j1cb.called
-        assert j1cb.exception is None
-        assert j2cb.called
+      try:
+        raise j2cb.exception
+      except generic_client.QueueingSystemJobKilledException:
+        pass
 
-        try:
-          raise j2cb.exception
-        except generic_client.QueueingSystemJobKilledException:
-          pass
-
-      # client.close()
+      client.close()
 
       for i, job in enumerate(rj1):
         # Now check the contents of the output directory

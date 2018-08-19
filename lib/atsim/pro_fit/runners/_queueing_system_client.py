@@ -1,4 +1,4 @@
-"""Client object to support batch queueing systems running on remote machines. The `GenericQueueingSystemClient` class provides an object
+"""Client object to support batch queueing systems running on remote machines. The `QueueingSystemClient` class provides an object
 oriented interface to an Execnet channel that supports the protocol originally defined by the `_pbs_remote_exec`.
 
 This is currently defined as follows:
@@ -227,7 +227,7 @@ class _QSubCallback(QueueingSystemStateListenerAdapter):
       cb.event.wait(60)
     self._finishJob()
 
-class GenericQueueingSystemClient(object):
+class QueueingSystemClient(object):
 
   def __init__(self, qsChannel, pollEvery = 10.0):
     """Create queueing system client.

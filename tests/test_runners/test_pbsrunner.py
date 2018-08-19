@@ -8,8 +8,10 @@ from _runnercommon import runfixture, DIR, FILE, runnertestjob
 
 from atsim import pro_fit
 
-from atsim.pro_fit.runners._pbsrunner_batch import PBSRunnerJobRecord
-from atsim.pro_fit.runners._pbs_client import PBSChannel
+# from atsim.pro_fit.runners._pbsrunner_batch import PBSRunnerJobRecord
+from atsim.pro_fit.runners._queueing_system_runner_batch import QueueingSystemRunnerBatch
+from atsim.pro_fit.runners._queueing_system_runner_batch import QueueingSystemRunnerJobRecord
+from atsim.pro_fit.runners._pbs_channel import PBSChannel
 
 from test_pbs_remote_exec import _mkexecnetgw, clearqueue
 from test_pbs_client import chIsDir
@@ -44,7 +46,7 @@ def _remoteIsDir(gw, path):
   return ch.receive()
 
 def waitcb(f):
-    while not f._submittedPBSRecords:
+    while not f._submittedQSRecords:
       gevent.sleep(1)
 
 def makesleepy(jobs):
@@ -55,7 +57,6 @@ def makesleepy(jobs):
 
 def testBatchTerminate(clearqueue, runfixture):
   """Test batch .terminate() method."""
-
   # Make some sleepy jobs
   makesleepy(runfixture.jobs)
   try:
@@ -73,17 +74,17 @@ def testBatchTerminate(clearqueue, runfixture):
       gevent.spawn(waitcb, f2),
       gevent.spawn(waitcb, if3)],60)
 
-    jr1 = f1._submittedPBSRecords[0]
-    jr2 = f2._submittedPBSRecords[0]
-    ij3 = if3._submittedPBSRecords[0]
+    jr1 = f1._submittedQSRecords[0]
+    jr2 = f2._submittedQSRecords[0]
+    ij3 = if3._submittedQSRecords[0]
 
-    assert jr1.pbs_submit_event.wait(60)
+    assert jr1.submit_event.wait(60)
     assert jr1.jobId
 
-    assert jr2.pbs_submit_event.wait(60)
+    assert jr2.submit_event.wait(60)
     assert jr2.jobId
 
-    assert ij3.pbs_submit_event.wait(60)
+    assert ij3.submit_event.wait(60)
     assert ij3.jobId
 
     gevent.sleep(0)
@@ -234,17 +235,17 @@ def testRunnerClose(clearqueue, runfixture):
     gevent.spawn(waitcb, f2),
     gevent.spawn(waitcb, if3)],60)
 
-  jr1 = f1._submittedPBSRecords[0]
-  jr2 = f2._submittedPBSRecords[0]
-  ij3 = if3._submittedPBSRecords[0]
+  jr1 = f1._submittedQSRecords[0]
+  jr2 = f2._submittedQSRecords[0]
+  ij3 = if3._submittedQSRecords[0]
 
-  assert jr1.pbs_submit_event.wait(60)
+  assert jr1.submit_event.wait(60)
   assert jr1.jobId
 
-  assert jr2.pbs_submit_event.wait(60)
+  assert jr2.submit_event.wait(60)
   assert jr2.jobId
 
-  assert ij3.pbs_submit_event.wait(60)
+  assert ij3.submit_event.wait(60)
   assert ij3.jobId
 
   gevent.sleep(0)
@@ -405,7 +406,7 @@ def testPBSRunnerJobRecordIsFull():
   class Client:
     pass
 
-  jr = PBSRunnerJobRecord("name", 2, Client(), None)
+  jr = QueueingSystemRunnerJobRecord("name", 2, Client(), None)
   assert not jr.isFull
 
   jr.append(None)
@@ -433,8 +434,8 @@ def testPBSInclude(runfixture, clearqueue):
     batch = _runBatch(runner, [runfixture.jobs[0]])
     gevent.wait([gevent.spawn(waitcb, batch)], 60)
 
-    j = batch._submittedPBSRecords[0]
-    assert j.pbs_submit_event.wait(60)
+    j = batch._submittedQSRecords[0]
+    assert j.submit_event.wait(60)
     assert j.jobId
 
     pbsid = j.jobId
