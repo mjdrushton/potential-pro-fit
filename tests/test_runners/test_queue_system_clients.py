@@ -1,50 +1,24 @@
 from atsim.pro_fit._channel import ChannelException
+import atsim.pro_fit.runners._queueing_system_client as generic_client
 
 from ..testutil import vagrant_basic
 from _runnercommon import channel_id, mkrunjobs
 
-from test_pbs_remote_exec import _mkexecnetgw #, clearqueue
-# from atsim.pro_fit.runners._pbs_channel import PBSChannel
+from _queueing_system_fixtures import queueing_system_test_module
+from _queueing_system_fixtures import gw
+from _queueing_system_fixtures import clearqueue
+from _queueing_system_fixtures import vagrant_box
+from _queueing_system_fixtures import client
+from _queueing_system_fixtures import channel
 
-import atsim.pro_fit.runners._queueing_system_client as generic_client
+from test_pbs_remote_exec import _mkexecnetgw
+
+import pytest
+
 from gevent.event import Event
 import gevent
 
 from contextlib import closing
-
-import pytest
-
-@pytest.fixture(scope = "session", params = [
-                                              "tests.test_runners.slurm_runner_test_module", 
-                                              "tests.test_runners.pbs_runner_test_module"])
-def runner_test_module(request):
-  return pytest.importorskip(request.param)
-
-@pytest.fixture(scope = "session")
-def vagrant_box(runner_test_module):
-  box = runner_test_module.vagrant_box()
-  yield box
-  box.suspend()
-
-@pytest.fixture(scope="function")
-def gw(vagrant_box):
-  gw = _mkexecnetgw(vagrant_box)
-  return gw
-
-@pytest.fixture(scope = "function")
-def channel(channel_id, runner_test_module, gw):
-  ch = runner_test_module.Channel_Class(gw, channel_id)
-  return ch
-
-@pytest.fixture(scope = "function")
-def client(channel):
-  client = generic_client.QueueingSystemClient(channel, pollEvery = 1.0)
-  return client
-
-@pytest.fixture(scope = "function")
-def clearqueue(gw, runner_test_module):
-  ch = gw.remote_exec(runner_test_module.clearqueue)
-  ch.waitclose(20)
 
 def _mkclient(channel_id, channel_class, vagrant_box):
   gw = _mkexecnetgw(vagrant_box)
@@ -55,9 +29,9 @@ def _mkclient(channel_id, channel_class, vagrant_box):
 def testStartChannel(client):
   client.close()
 
-def testHostHasNoPbs(vagrant_basic, runner_test_module, channel_id):
+def testHostHasNoPbs(vagrant_basic, queueing_system_test_module, channel_id):
     with pytest.raises(ChannelException):
-      _mkclient('testHostHasNoPbs', runner_test_module.Channel_Class, vagrant_basic)
+      _mkclient('testHostHasNoPbs', queueing_system_test_module.Channel_Class, vagrant_basic)
 
 class JobsChangedListener(generic_client.QueueingSystemStateListenerAdapter):
 
@@ -95,7 +69,7 @@ class QSUBCallback(object):
     self.lastPbsID = None
 
 @pytest.mark.usefixtures("clearqueue")
-def testQueuingSystemState(gw, channel, channel_id):
+def testQueueingSystemState(gw, channel, channel_id):
   qsubcallback = QSUBCallback()
   channel.callback.append(qsubcallback)
 
@@ -218,11 +192,8 @@ class TstCallback(object):
 
 @pytest.mark.usefixtures("clearqueue")
 def testQueueingSystemClientSingleJob(gw, client):
-    # gw = _mkexecnetgw(clearqueue)
     clch, runjobs = mkrunjobs(gw, 1, numSuffix = True)
     try:
-      # client = _mkclient('testPBSClientSingleJob', clearqueue)
-      # with closing(_mkclient('testPBSClientSingleJob', clearqueue)) as client:
       j1cb = TstCallback()
       jr1 = client.runJobs([runjobs[0]], j1cb)
 
@@ -259,10 +230,8 @@ def testQueueingSystemClientSingleJob(gw, client):
 
 @pytest.mark.usefixtures("clearqueue")
 def testQueueingSystemMultipleJobsInSingleBatch(gw, client):
-    # gw = _mkexecnetgw(clearqueue)
     clch, runjobs = mkrunjobs(gw, 3, numSuffix = True)
     try:
-      # client = _mkclient('testPBSClientMultipleJobsInSingleBatch', clearqueue)
       j1cb = TstCallback()
       jr1 = client.runJobs(runjobs, j1cb)
 
@@ -312,10 +281,8 @@ def testQueueingSystemMultipleJobsInSingleBatch(gw, client):
 
 @pytest.mark.usefixtures("clearqueue")
 def testQueueingSystemClientMultipleJobsInMultipleBatches(gw, client):
-    # gw = _mkexecnetgw(clearqueue)
     clch, runjobs = mkrunjobs(gw, 3, numSuffix = True)
     try:
-      # client = _mkclient('testPBSClientMultipleJobsInMultipleBatches', clearqueue)
       rj1 = [runjobs[0]]
       rj2 = runjobs[1:]
 
@@ -371,12 +338,10 @@ def testQueueingSystemClientMultipleJobsInMultipleBatches(gw, client):
 
 @pytest.mark.usefixtures("clearqueue")
 def testQueueingSystemClientKillJob(gw, client):
-    # gw = _mkexecnetgw(clearqueue)
     clch1, rj1 = mkrunjobs(gw, 1, numSuffix = True, sleep = None)
     clch2, rj2 = mkrunjobs(gw, 3, numSuffix = True, sleep = 4)
 
     try:
-      # client = _mkclient('testPBSClientKillJob', clearqueue)
       #TODO: Test after qsub but before pbsId received.
       #TODO: Test after qsub but before qrls
       #TODO: Test after qrls
@@ -463,4 +428,3 @@ def testQueueingSystemClientKillJob(gw, client):
     finally:
       clch1.send(None)
       clch2.send(None)
-

@@ -1,6 +1,10 @@
 from atsim.pro_fit.runners._pbs_channel import PBSChannel
+from atsim.pro_fit.runners import PBSRunner
+
+name = "PBS"
 
 Channel_Class = PBSChannel
+Runner_Class = PBSRunner
 
 def clearqueue(channel):
     import subprocess

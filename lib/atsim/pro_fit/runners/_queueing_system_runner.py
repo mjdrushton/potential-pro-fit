@@ -1,12 +1,13 @@
+from atsim.pro_fit.fittool import ConfigException
 from _queueing_system_client import QueueingSystemClient
 from _queueing_system_runner_batch import QueueingSystemRunnerBatch
 
-import logging
-import os
 
 from _base_remoterunner import BaseRemoteRunner
 from _base_remoterunner import RemoteRunnerCloseThreadBase
 
+import logging
+import os
 
 class _QueueingSystemRunnerCloseThread(RemoteRunnerCloseThreadBase):
 
@@ -72,4 +73,119 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
   def makeCloseThread(self):
     return _QueueingSystemRunnerCloseThread(self)
 
+  @classmethod
+  def allowedConfigKeywords(cls):
+    """Returns list of standard keywords accepted by parseConfig_* class methods"""
+    kws = super(QueueingSystemRunnerBaseClass, cls).allowedConfigKeywords()
+    kws.extend(['header_include', 'arraysize', 'pollinterval'])
+    return kws
 
+  @classmethod
+  def parseConfigItem_header_include(cls, runnerName, fitRootPath, cfgitems):
+    """Convenience method to provide consistent provision of `header_include` option in sub-classes.
+
+    Args:
+      runnerName (str) : Label identifying runner.
+      fitRootPath (str) : Path to directory containing 'fit.cfg'
+      cfgdict (list) : List of (key, value) pairs identifying relecant section of configuration file.
+
+    Returns:
+      dict: If option is found returned dictionary is of form `{ 'header_include' : VALUE}` where `VALUE` is contents
+            of file referred to by the `header_include` configuration option. If option is not found, `VALUE` is `None`.
+      
+    Raises:
+      atsim.pro_fit.fittool.ConfigException: thrown if configuration problem found."""
+    cfgdict = dict(cfgitems)
+    header_include = cfgdict.get('header_include', None)
+    if header_include:
+      try:
+        header_include = open(header_include, 'rb').read()
+      except IOError:
+        raise ConfigException("Could not open file specified by 'header_include' directive: %s" % header_include)
+
+    return {'header_include' : header_include}
+
+  @classmethod
+  def parseConfigItem_arraysize(cls, runnerName, fitRootPath, cfgitems):
+    """Convenience method to provide consistent provision of `arraysize` option in sub-classes.
+
+    Args:
+      runnerName (str) : Label identifying runner.
+      fitRootPath (str) : Path to directory containing 'fit.cfg'
+      cfgdict (list) : List of (key, value) pairs identifying relecant section of configuration file.
+
+    Returns:
+      dict: If option is dictionary `{ 'arraysize' : VALUE}` is returned. Where `VALUE` is value of `arraysize` configuration option. 
+            If option is not found, `VALUE` is `None`.
+      
+    Raises:
+      atsim.pro_fit.fittool.ConfigException: thrown if configuration problem found."""
+    cfgdict = dict(cfgitems)
+    arraysize = cfgdict.get('arraysize', None)
+    if arraysize != None and arraysize.strip() == 'None':
+      arraysize = None
+
+    if not arraysize is None:
+
+      try:
+        arraysize = int(arraysize)
+      except ValueError:
+        raise ConfigException("Invalid numerical value for 'arraysize' configuration option: %s" % arraysize)
+
+      if not arraysize >= 1:
+        raise ConfigException("Value of 'arraysize' must >= 1. Value was %s" % arraysize)
+    return { 'arraysize' : arraysize }
+
+  @classmethod
+  def parseConfigItem_pollinterval(cls, runnerName, fitRootPath, cfgitems, default = 30.0):
+    """Convenience method to provide consistent provision of `pollinterval` option in sub-classes.
+
+    Args:
+      runnerName (str)  : Label identifyingrunner.
+      fitRootPath (str) : Path to directory containing'fit.cfg'
+      cfgdict (list)    : List of (key, value) pairs identifying relecant section of configurationfile.
+      default (float)   : Default interval inseconds.
+
+    Returns:
+      dict: If option is dictionary `{ 'pollinterval' : VALUE}` is returned. Where `VALUE` is value of `pollinterval` configuration option. 
+      
+    Raises:
+      atsim.pro_fit.fittool.ConfigException: thrown if configuration problem found."""
+    cfgdict = dict(cfgitems)
+    pollinterval = cfgdict.get('pbspollinterval', 30.0)
+    try:
+      pollinterval = float(pollinterval)
+    except ValueError:
+      raise ConfigException("Invalid numerical value for 'pbspollinterval': %s" % pollinterval)
+
+    if not pollinterval > 0.0:
+      raise ConfigException("Value of 'pbspollinterval' must > 0.0. Value was %s" % pollinterval)
+    return {'pollinterval' : pollinterval}
+
+  @classmethod
+  def parseConfig(cls, runnerName, fitRootPath, cfgitems):
+    """Convenience function to help sub-classes implement their `createFromConfig()` methods.
+
+    This parses the standard options into a dictionary with the keys:
+
+    * `remotehost` (str): `ssh://[username@]hostname/remote_path` url string.
+    * `header_include` (str): contents of file specified by the `header_include` config item.
+    * `arraysize` (int): size of bath arrays
+    * `pollinterval` (float): time interval at which queue stat is polled.
+    * `do_cleanup` (bool): read from the `debug.disable_cleanup` configuration item.
+
+    Args:
+      runnerName (str) : Name of runner.
+      fitRootPath (str): Path to directory containing `fit.cfg`.
+      cfgitems (list): List of key, value items from `fit.cfg` defining runner.
+
+    Returns:
+      dict : Dictionary of the form listed above.
+
+    Raises:
+      atsim.pro_fit.fittool.ConfigException : Thrown if invalide configuration values found"""
+    option_dict = super(QueueingSystemRunnerBaseClass, cls).parseConfig(runnerName, fitRootPath, cfgitems)
+    option_dict.update(cls.parseConfigItem_header_include(runnerName, fitRootPath, cfgitems))
+    option_dict.update(cls.parseConfigItem_arraysize(runnerName, fitRootPath, cfgitems))
+    option_dict.update(cls.parseConfigItem_pollinterval(runnerName, fitRootPath, cfgitems))
+    return option_dict

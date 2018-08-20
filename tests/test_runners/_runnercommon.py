@@ -80,8 +80,7 @@ class FixtureObj(object):
     self.jobs = jobs
 
 @fixture(scope="function")
-def runfixture(request):
-  tempd = tempfile.mkdtemp()
+def runfixture(tmpdir, request):
   remoted = None
   evaluator = common.MockEvaluator(lambda d: d['A'])
 
@@ -92,18 +91,13 @@ def runfixture(request):
   for i in xrange(12):
     variables = pro_fit.fittool.Variables([('A', i, True)])
     variables.id = i
-    jd = os.path.join(tempd, str(i))
-    os.mkdir(jd)
+    jd = tmpdir.join(str(i))
+    jd.mkdir()
     jobs.append(
-        jobfactory.createJob( jd, variables))
+        jobfactory.createJob( jd.strpath, variables))
   jobs = jobs
 
-  fixture = FixtureObj(tempd, remoted, jobfactory, jobs)
-
-  def tearDown():
-    shutil.rmtree(fixture.tempd, ignore_errors = True)
-
-  request.addfinalizer(tearDown)
+  fixture = FixtureObj(tmpdir.strpath, remoted, jobfactory, jobs)
   return fixture
 
 @fixture

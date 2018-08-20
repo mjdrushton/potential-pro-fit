@@ -19,6 +19,11 @@ import traceback
 import gevent
 from gevent.event import Event
 
+import execnet
+
+EXECNET_TERM_TIMEOUT=10
+
+
 class RemoteRunnerCloseThreadBase(gevent.Greenlet):
 
   def __init__(self, runner):
@@ -544,8 +549,37 @@ class BaseRemoteRunner(object):
   def observers(self):
     return self._observers
 
-  @staticmethod
-  def _parseConfigItem_debug_disable_cleanup(runnerName, fitRootPath, cfgitems):
+  
+  @classmethod
+  def allowedConfigKeywords(cls):
+    """Returns list of standard keywords accepted by parseConfig_* class methods"""
+    return ['remotehost', 'debug.disable_cleanup']
+
+  @classmethod
+  def parseConfig(cls, runnerName, fitRootPath, cfgitems):
+    """Convenience function to help sub-classes implement their `createFromConfig()` methods.
+
+      This parses the standard options into a dictionary with the keys:
+
+      * `remotehost` (str): `ssh://[username@]hostname/remote_path` url string parsed from `remotehost` config item.
+      * `do_cleanup` (bool): read from the `debug.disable_cleanup` configuration item.
+
+      Args:
+        runnerName (str) : Name of runner.
+        fitRootPath (str): Path to directory containing `fit.cfg`.
+        cfgitems (list): List of key, value items from `fit.cfg` defining runner.
+
+      Returns:
+        dict : Dictionary of the form listed above.
+
+      Raises:
+        atsim.pro_fit.fittool.ConfigException : Thrown if invalide configuration values found"""
+    option_dict = cls.parseConfigItem_remotehost(runnerName, fitRootPath, cfgitems)
+    option_dict.update(cls.parseConfigItem_debug_disable_cleanup(runnerName, fitRootPath, cfgitems))
+    return option_dict
+  
+  @classmethod
+  def parseConfigItem_debug_disable_cleanup(cls, runnerName, fitRootPath, cfgitems):
     """Convenience method to provide consistent provision of 'debug.disable_cleanup' option in sub-classes.
 
     Args:
@@ -554,7 +588,10 @@ class BaseRemoteRunner(object):
       cfgdict (list) : List of (key, value) pairs identifying relecant section of configuration file.
 
     Returns:
-      dict: Dictionary of form `{ 'do_cleanup' : VALUE}` where `VALUE` is True or False depending on value in configuration file."""
+      dict: Dictionary of form `{ 'do_cleanup' : VALUE}` where `VALUE` is True or False depending on value in configuration file.
+      
+    Raises:
+      atsim.pro_fit.fittool.ConfigException: thrown if configuration problem found."""
 
     cfgdict = dict(cfgitems)
     do_cleanup = True
@@ -569,5 +606,52 @@ class BaseRemoteRunner(object):
       else:
         raise ConfigException("The value specified for 'debug.disable-cleanup' was neither True or False: '%s'" % v)
     return {'do_cleanup' : do_cleanup }
-      
+
+  @classmethod
+  def parseConfigItem_remotehost(cls, runnerName, fitRootPath, cfgitems):
+    """Convenience method to provide consistent provision of 'remotehost' option in sub-classes.
+
+    Args:
+      runnerName (str) : Label identifying runner.
+      fitRootPath (str) : Path to directory containing 'fit.cfg'
+      cfgdict (list) : List of (key, value) pairs identifying relecant section of configuration file.
+
+    Returns:
+      dict: Dictionary of form `{ 'remotehost' : VALUE}` where `VALUE` is remotehost's url."""
+    
+    cfgdict = dict(cfgitems)
+    try:
+      remotehost = cfgdict['remotehost']
+    except KeyError:
+      raise ConfigException("remotehost configuration item not found")
+
+    if not remotehost.startswith("ssh://"):
+      raise ConfigException("remotehost configuration item must start with ssh://")
+
+    username, host, port, path = _execnet.urlParse(remotehost)
+    if not host:
+      raise ConfigException("remotehost configuration item should be of form ssh://[username@]hostname/remote_path")
+
+    # Attempt connection and check remote directory exists
+    group = _execnet.Group()
+    try:
+      if username:
+        gwurl = "ssh=%s@%s" % (username, host)
+      else:
+        gwurl = "ssh=%s" % host
+      gw = group.makegateway(gwurl)
+      channel = gw.remote_exec(_execnet._remoteCheck)
+      channel.send(path)
+      status = channel.receive()
+      channel.waitclose()
+
+      if not status:
+        raise ConfigException("Remote directory does not exist or is not read/writable:'%s'" % path)
+    except execnet.gateway_bootstrap.HostNotFound:
+      raise ConfigException("Couldn't connect to host: %s" % gwurl)
+    finally:
+        group.terminate(EXECNET_TERM_TIMEOUT)
+
+    return {'remotehost' : remotehost}
+
 

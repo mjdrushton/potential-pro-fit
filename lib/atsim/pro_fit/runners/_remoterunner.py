@@ -179,6 +179,6 @@ class RemoteRunner(object):
     finally:
         group.terminate(EXECNET_TERM_TIMEOUT)
 
-    kwargs = BaseRemoteRunner._parseConfigItem_debug_disable_cleanup(runnerName, fitRootPath, cfgitems)
+    kwargs = BaseRemoteRunner.parseConfigItem_debug_disable_cleanup(runnerName, fitRootPath, cfgitems)
 
     return RemoteRunner(runnerName, remotehost,nprocesses, **kwargs)

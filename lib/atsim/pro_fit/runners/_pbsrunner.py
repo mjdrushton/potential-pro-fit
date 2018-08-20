@@ -6,10 +6,8 @@ from _pbs_channel import PBSChannel
 from _queueing_system_runner import QueueingSystemRunnerBaseClass
 
 from atsim.pro_fit import _execnet
-from atsim.pro_fit._execnet import urlParse
 import execnet
 
-EXECNET_TERM_TIMEOUT=10
 
 class InnerPBSRunner(QueueingSystemRunnerBaseClass):
   """Runner class held by PBSRunner that does all the work."""
@@ -78,84 +76,39 @@ class PBSRunner(object):
 
   @staticmethod
   def createFromConfig(runnerName, fitRootPath, cfgitems):
-    allowedkeywords = set(['type', 'remotehost', 'pbsinclude', 'pbsarraysize', 'pbspollinterval'])
-    cfgdict = dict(cfgitems)
 
-    for k in cfgdict.iterkeys():
+    # When PBSRunner was the only runner to support queueing systems,
+    # its options, prefixed with 'pbs' made some sense. Now they're non
+    # standard. To ensure some conformity across the the batch queue style
+    # runners, allow both the old and new key names.
+    # This synonyms dictionary is used to rename the old options later in
+    # this function.
+    synonyms = {'pbsinclude' : 'header_include',
+                'pbsarraysize' : 'arraysize',
+                'pbspollinterval' : 'pollinterval'}
+
+    allowedkeywords = ['type']
+    allowedkeywords.extend(synonyms.keys())
+    allowedkeywords.extend(InnerPBSRunner.allowedConfigKeywords())
+    allowedkeywords = set(allowedkeywords)
+
+    # Now rename pbs prefixed options to their standard forms
+    newcfgitems = []
+    for k,v in cfgitems:
       if not k in allowedkeywords:
         raise ConfigException("Unknown keyword for Remote runner '%s'" % k)
-
-    try:
-      remotehost = cfgdict['remotehost']
-    except KeyError:
-      raise ConfigException("remotehost configuration item not found")
-
-    if not remotehost.startswith("ssh://"):
-      raise ConfigException("remotehost configuration item must start with ssh://")
-
-    username, host, port, path = urlParse(remotehost)
-    if not host:
-      raise ConfigException("remotehost configuration item should be of form ssh://[username@]hostname/remote_path")
-
-    # Attempt connection and check remote directory exists
-    group = _execnet.Group()
-    try:
-      if username:
-        gwurl = "ssh=%s@%s" % (username, host)
+      if k in synonyms:
+        newcfgitems.append((synonyms[k], v))
       else:
-        gwurl = "ssh=%s" % host
-      gw = group.makegateway(gwurl)
-      channel = gw.remote_exec(_execnet._remoteCheck)
-      channel.send(path)
-      status = channel.receive()
-      channel.waitclose()
+        newcfgitems.append((k,v))
+    cfgitems = newcfgitems
 
-      if not status:
-        raise ConfigException("Remote directory does not exist or is not read/writable:'%s'" % path)
+    options = InnerPBSRunner.parseConfig(runnerName, fitRootPath, cfgitems)
 
-      try:
-        pbschannel = PBSChannel(gw, 'test_channel')
-      except ChannelException as e:
-        raise ConfigException("Error starting PBS: '%s'" % e.message)
-      finally:
-        pbschannel.close()
-
-    except execnet.gateway_bootstrap.HostNotFound:
-      raise ConfigException("Couldn't connect to host: %s" % gwurl)
-    finally:
-        group.terminate(EXECNET_TERM_TIMEOUT)
-
-    pbsinclude = cfgdict.get('pbsinclude', None)
-    if pbsinclude:
-      try:
-        pbsinclude = open(pbsinclude, 'rb').read()
-      except IOError:
-        raise ConfigException("Could not open file specified by 'pbsinclude' directive: %s" % pbsinclude)
-
-    pbsarraysize = cfgdict.get('pbsarraysize', None)
-    if pbsarraysize != None and pbsarraysize.strip() == 'None':
-      pbsarraysize = None
-
-    if not pbsarraysize is None:
-
-      try:
-        pbsarraysize = int(pbsarraysize)
-      except ValueError:
-        raise ConfigException("Invalid numerical value for 'pbsarraysize' configuration option: %s" % pbsarraysize)
-
-      if not pbsarraysize >= 1:
-        raise ConfigException("Value of 'pbsarraysize' must >= 1. Value was %s" % pbsarraysize)
-
-    pbspollinterval = cfgdict.get('pbspollinterval', 30.0)
-    try:
-      pbspollinterval = float(pbspollinterval)
-    except ValueError:
-      raise ConfigException("Invalid numerical value for 'pbspollinterval': %s" % pbspollinterval)
-
-    if not pbspollinterval > 0.0:
-      raise ConfigException("Value of 'pbspollinterval' must > 0.0. Value was %s" % pbspollinterval)
-
-    kwargs = dict(qselect_poll_interval = pbspollinterval, pbsbatch_size = pbsarraysize)
-    kwargs.update(QueueingSystemRunnerBaseClass._parseConfigItem_debug_disable_cleanup(runnerName, fitRootPath, cfgitems))
-    return PBSRunner(runnerName, remotehost, pbsinclude, **kwargs)
+    return PBSRunner(runnerName, 
+      options['remotehost'], 
+      options['header_include'],
+      options['arraysize'],
+      options['pollinterval'],
+      do_cleanup = options['do_cleanup'])
 
