@@ -13,7 +13,6 @@ from atsim.pro_fit.runners._queueing_system_runner_batch import QueueingSystemRu
 from atsim.pro_fit.runners._queueing_system_runner_batch import QueueingSystemRunnerJobRecord
 from atsim.pro_fit.runners._pbs_channel import PBSChannel
 
-
 from _queueing_system_fixtures import queueing_system_test_module
 from _queueing_system_fixtures import gw
 from _queueing_system_fixtures import clearqueue
@@ -23,7 +22,6 @@ from _queueing_system_fixtures import channel
 from _queueing_system_fixtures import channel_class
 from _queueing_system_fixtures import runner_class
 
-# from test_pbs_remote_exec import _mkexecnetgw, clearqueue
 from test_queue_system_clients import chIsDir
 
 import gevent
@@ -39,8 +37,8 @@ def _createRunner(runner_class, runfixture, vagrantbox, sub_batch_size, pbsinclu
   extraoptions = [("StrictHostKeyChecking","no")]
   runner = runner_class(str(runner_class), "ssh://%s@%s:%s" % (username, hostname, port),
     pbsinclude,
-    qselect_poll_interval = 1.0,
-    pbsbatch_size = sub_batch_size,
+    poll_interval = 1.0,
+    batch_size = sub_batch_size,
     identityfile = keyfilename,
     extra_ssh_options = extraoptions)
 
@@ -63,11 +61,13 @@ def makesleepy(jobs):
     with open(os.path.join(j.path, 'job_files', 'runjob'), 'a') as runjob:
       runjob.write("sleep 1200\n")
 
-@pytest.mark.usesfixtures("clearqueue")
+@pytest.mark.usefixtures("clearqueue")
 def testBatchTerminate(runfixture, gw, vagrant_box, channel_class, runner_class):
   """Test batch .terminate() method."""
   # Make some sleepy jobs
   makesleepy(runfixture.jobs)
+  runner = None
+  indyrunner = None
   try:
     runner = _createRunner(runner_class, runfixture, vagrant_box, None)
     indyrunner = _createRunner(runner_class, runfixture, vagrant_box, None)
@@ -209,10 +209,12 @@ def testBatchTerminate(runfixture, gw, vagrant_box, channel_class, runner_class)
     finally:
       ch.send(None)
   finally:
-    runner.close()
-    indyrunner.close()
+    if runner:
+      runner.close()
+    if indyrunner:
+      indyrunner.close()
 
-@pytest.mark.usesfixtures("clearqueue")
+@pytest.mark.usefixtures("clearqueue")
 def testRunnerClose(runfixture, vagrant_box, runner_class, channel_class, gw):
   """Test batch .terminate() method."""
 
@@ -356,19 +358,50 @@ def _tstSingleBatch(runner_class, runfixture, vagrant_box, sub_batch_size):
   finally:
     runner.close()
 
-@pytest.mark.usesfixtures("clearqueue")
+@pytest.mark.usefixtures("clearqueue")
 def testAllInSingleBatch(runner_class, runfixture, vagrant_box):
   _tstSingleBatch(runner_class, runfixture, vagrant_box, None)
 
-@pytest.mark.usesfixtures("clearqueue")
+@pytest.mark.usefixtures("clearqueue")
+def testAllInSingleBatch_with_coexisting_jobs(runner_class, runfixture, vagrant_box):
+    # Make some sleepy jobs
+  for j in runfixture.jobs[:6]:
+    with open(os.path.join(j.path, 'job_files', 'runjob'), 'a') as runjob:
+      runjob.write("sleep 1200\n")
+
+  runner = None
+  indyrunner = None
+  try:
+    runner = _createRunner(runner_class, runfixture, vagrant_box, None)
+    indyrunner = _createRunner(runner_class, runfixture, vagrant_box, None)
+
+    f1 = runner.runBatch(runfixture.jobs[:6])
+
+    assert gevent.wait([
+      gevent.spawn(waitcb, f1)],60)
+
+    f2 = indyrunner.runBatch(runfixture.jobs[6:8])
+    f2.join()
+
+    # import pdb; pdb.set_trace()
+    for job in runfixture.jobs[6:8]:
+      runnertestjob(runfixture, job.variables.id, True)
+
+  finally:
+    if runner:
+      runner.close().wait(20)
+    if indyrunner:
+      indyrunner.close().wait(20)
+
+@pytest.mark.usefixtures("clearqueue")
 def testAllInSingleBatch_sub_batch_size_1(runner_class, runfixture, vagrant_box):
   _tstSingleBatch(runner_class, runfixture, vagrant_box, 1)
 
-@pytest.mark.usesfixtures("clearqueue")
+@pytest.mark.usefixtures("clearqueue")
 def testAllInSingleBatch_sub_batch_size_5(runner_class, runfixture, vagrant_box):
   _tstSingleBatch(runner_class, runfixture, vagrant_box, 5)
 
-@pytest.mark.usesfixtures("clearqueue")
+@pytest.mark.usefixtures("clearqueue")
 def testAllInMultipleBatch(runner_class, runfixture, vagrant_box):
   runner = _createRunner(runner_class, runfixture, vagrant_box, None)
   try:
@@ -381,7 +414,7 @@ def testAllInMultipleBatch(runner_class, runfixture, vagrant_box):
   finally:
     runner.close()
 
-@pytest.mark.usesfixtures("clearqueue")
+@pytest.mark.usefixtures("clearqueue")
 def testAllInMultipleBatch_sub_batch_size_5(runner_class,runfixture, vagrant_box):
   runner = _createRunner(runner_class, runfixture, vagrant_box, 5)
   try:
@@ -394,7 +427,7 @@ def testAllInMultipleBatch_sub_batch_size_5(runner_class,runfixture, vagrant_box
   finally:
     runner.close()
 
-@pytest.mark.usesfixtures("clearqueue")
+@pytest.mark.usefixtures("clearqueue")
 def testAllInMultipleBatch_sub_batch_size_1(runner_class, runfixture, vagrant_box):
   runner = _createRunner(runner_class, runfixture, vagrant_box, 1)
   try:
@@ -432,7 +465,7 @@ def qstatRemoteExec(channel):
   output = subprocess.check_output(['qstat', '-f', pbsId])
   channel.send(output)
 
-@pytest.mark.usesfixtures("clearqueue")
+@pytest.mark.usefixtures("clearqueue")
 def testPBSInclude(runfixture, queueing_system_test_module, vagrant_box, runner_class, gw):
   if queueing_system_test_module.name != "PBS":
     pytest.skip("Test is only for PBSRunner")

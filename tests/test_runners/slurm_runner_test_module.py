@@ -1,8 +1,10 @@
 from atsim.pro_fit.runners._slurm_channel import SlurmChannel
+from atsim.pro_fit.runners import SlurmRunner
 
 name = "Slurm"
 
 Channel_Class = SlurmChannel
+Runner_Class = SlurmRunner
 
 def clearqueue(channel):
     import subprocess

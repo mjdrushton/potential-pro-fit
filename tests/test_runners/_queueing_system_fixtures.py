@@ -5,8 +5,8 @@ from test_pbs_remote_exec import _mkexecnetgw
 import atsim.pro_fit.runners._queueing_system_client as generic_client
 
 @pytest.fixture(scope = "session", params = [
-                                              "tests.test_runners.pbs_runner_test_module",
-                                              "tests.test_runners.slurm_runner_test_module"
+                                              "tests.test_runners.slurm_runner_test_module",
+                                              "tests.test_runners.pbs_runner_test_module"
                                               ])
 def queueing_system_test_module(request):
   return pytest.importorskip(request.param)
@@ -28,12 +28,13 @@ def vagrant_box(queueing_system_test_module):
 @pytest.fixture(scope="function")
 def gw(vagrant_box):
   gw = _mkexecnetgw(vagrant_box)
-  return gw
+  yield gw
 
 @pytest.fixture(scope = "function")
 def channel(channel_id, queueing_system_test_module, gw):
   ch = queueing_system_test_module.Channel_Class(gw, channel_id)
-  return ch
+  yield ch
+  ch.waitclose(10)
 
 @pytest.fixture(scope = "function")
 def client(channel):

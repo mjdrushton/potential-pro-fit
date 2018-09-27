@@ -45,10 +45,8 @@ def submission_script(jobs, header_lines):
   lines.append('JOB_PATH="${JOB_ARRAY[$%s]}"' % "SLURM_ARRAY_TASK_ID")
 
   bodylines = [
-    'if [ -z "$TMPDIR" ];then',
-    ' export TMPDIR="$(mktemp -d)"',
-    ' CLEANTMP=YES',
-    'fi',
+    'CLEANTMP=YES',
+    'export TMPDIR="$(mktemp -d)"',
     'JOB_DIR="$(dirname "$JOB_PATH")"',
     'cp -r "$JOB_DIR"/* "$TMPDIR"',
     'function finish {',
