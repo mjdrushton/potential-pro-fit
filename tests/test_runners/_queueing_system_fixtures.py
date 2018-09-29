@@ -5,6 +5,7 @@ from test_pbs_remote_exec import _mkexecnetgw
 import atsim.pro_fit.runners._queueing_system_client as generic_client
 
 @pytest.fixture(scope = "session", params = [
+                                              "tests.test_runners.sge_runner_test_module",
                                               "tests.test_runners.slurm_runner_test_module",
                                               "tests.test_runners.pbs_runner_test_module"
                                               ])

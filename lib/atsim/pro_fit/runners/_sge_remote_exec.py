@@ -25,14 +25,15 @@ def submission_script(jobs, header_lines):
 
   std_headerlines = [
   
-  "#SBATCH -J pprofit",
-  "#SBATCH -o \"%s\"" % stdout_stream,
-  "#SBATCH -e \"%s\"" % stderr_stream,
+  "#$ -N pprofit",
+  "#$ -o \"%s\"" % stdout_stream,
+  "#$ -e \"%s\"" % stderr_stream,
+  "#$ -S /bin/bash",
   ""
   ]
 
   jobs = [quote(j) for j in jobs]
-  arrayjobline = "#SBATCH %s1-%d" % ("--array=", len(jobs))
+  arrayjobline = "#$ %s 1-%d" % ("-t", len(jobs))
   lines = ["#! /bin/bash", arrayjobline]
 
   lines.extend(std_headerlines)
@@ -42,7 +43,7 @@ def submission_script(jobs, header_lines):
     jobnum = i+1
     line = 'JOB_ARRAY[%d]="%s"' % (jobnum, j)
     lines.append(line)
-  lines.append('JOB_PATH="${JOB_ARRAY[$%s]}"' % "SLURM_ARRAY_TASK_ID")
+  lines.append('JOB_PATH="${JOB_ARRAY[$%s]}"' % "SGE_TASK_ID")
 
   bodylines = [
     'CLEANTMP=YES',
@@ -65,13 +66,14 @@ def submission_script(jobs, header_lines):
 
   lines.extend(bodylines)
   lines = os.linesep.join(lines)
+
   return lines
 
 class QSelectException(Exception):
   pass
 
 def qselect():
-  p = subprocess.Popen(["squeue", "-h", "-o", "%F"],
+  p = subprocess.Popen(["qstat"],
     stdout = subprocess.PIPE,
     stderr = subprocess.PIPE,
     close_fds = True)
@@ -81,14 +83,22 @@ def qselect():
     raise QSelectException(err.strip())
 
   output = output.strip()
-  job_ids = [i for i in output.split(os.linesep) if i]
-  return job_ids
+  lines = output.split(os.linesep)
+
+  if not lines:
+    return []
+
+  # Strip the header 
+  lines = lines[2:]
+  job_ids = set([l.split()[0] for l in lines if l])
+
+  return list(job_ids)
 
 class QRlsException(Exception):
   pass
 
 def qrls(job_ids):
-  args = ["scontrol", "release"]
+  args = ["qrls"]
   args.extend(job_ids)
 
   p = subprocess.Popen(args,
@@ -104,10 +114,11 @@ class QDelException(Exception):
   pass
 
 def qdel(job_ids, force):
-  args = ["scancel"]
+  args = ["qdel"]
 
-  if force:
-    args.extend(["--signal=KILL"])
+  # SGE qdel -f is only for admin user
+  # if force:
+  #   args.extend(["-f"])
 
   args.extend(job_ids)
 
@@ -170,7 +181,7 @@ def qsub_handler(channel, channel_id, msg):
   header_lines = msg.get('header_lines', [])
   script = submission_script(jobs, header_lines)
 
-  p = subprocess.Popen(["sbatch", "-H"],
+  p = subprocess.Popen(["qsub", "-h", "-terse"],
     stdin = subprocess.PIPE,
     stdout = subprocess.PIPE,
     stderr = subprocess.PIPE,
@@ -182,7 +193,8 @@ def qsub_handler(channel, channel_id, msg):
     return
 
   job_id = output.strip()
-  job_id = job_id.split()[-1]
+  job_id = job_id.split('.', 1)[0]
+
 
   transid_send(channel, msg, 'QSUB',
     channel_id = channel_id,
@@ -196,33 +208,19 @@ def qselect_handler(channel, channel_id, msg):
 
   transid_send(channel, msg, 'QSELECT', channel_id = channel_id, job_ids = job_ids)
 
-class NoSlurmException(Exception):
+class NoSGEException(Exception):
   pass
 
-def checkSlurm():
-  # Attempt to run qstat
+def checkCommand(cmd):
   try:
-    p = subprocess.Popen(["squeue"], stdout = subprocess.PIPE, close_fds=True)
+    p = subprocess.Popen([cmd, '-help'], stdout = subprocess.PIPE, close_fds=True)
     output, err = p.communicate()
   except OSError:
-    raise NoSlurmException("Could not run 'squeue'")
+    raise NoSGEException("Could not run '%s'" % cmd)
 
-  try:
-    p = subprocess.Popen(["sbatch", "--version"],
-      stdout = subprocess.PIPE,
-      stderr = subprocess.PIPE,
-      close_fds=True)
-    output, err = p.communicate()
-    output = output.strip()
-    err = err.strip()
-    if err:
-      sstring = err
-    else:
-      sstring = output
-  except OSError:
-    raise NoSlurmException("Could not run 'qsub'")
-
-  return sstring
+def checkSGE():
+  for cmd in ['qstat', 'qrls', 'qsub', 'qdel']:
+    checkCommand(cmd)
 
 def send(channel, mtype, **kwargs):
   msgdict = dict(msg = mtype)
@@ -263,11 +261,11 @@ def remote_exec(channel):
 
   channel_id = msg.get("channel_id", str(uuid.uuid4()))
 
-  # Configure Slurm
+  # Configure SGE
   try:
-    versionstring = checkSlurm()
-  except NoSlurmException as e:
-    msg = "Slurm not found: " + e.message
+    checkSGE()
+  except NoSGEException as e:
+    msg = "SGE not found: " + e.message
     error(channel, msg, channel_id = channel_id)
     return
 
