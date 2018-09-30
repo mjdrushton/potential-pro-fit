@@ -37,8 +37,8 @@ def _createRunner(runner_class, runfixture, vagrantbox, sub_batch_size, pbsinclu
   extraoptions = [("StrictHostKeyChecking","no")]
   runner = runner_class(str(runner_class), "ssh://%s@%s:%s" % (username, hostname, port),
     pbsinclude,
-    poll_interval = 1.0,
     batch_size = sub_batch_size,
+    poll_interval = 1.0,
     identityfile = keyfilename,
     extra_ssh_options = extraoptions)
 

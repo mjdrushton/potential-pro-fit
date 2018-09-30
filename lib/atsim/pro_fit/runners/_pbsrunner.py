@@ -22,7 +22,7 @@ class PBSRunner(object):
 
   SSH is used to communicate with server to submit jobs and copy files."""
 
-  def __init__(self, name, url, header_include, poll_interval = 10.0, batch_size = None, identityfile = None, extra_ssh_options = [], do_cleanup = True):
+  def __init__(self, name, url, header_include, batch_size = None, poll_interval = 10.0,  identityfile = None, extra_ssh_options = [], do_cleanup = True):
     """Create PBSRunner instance
 
     Args:
@@ -110,5 +110,6 @@ class PBSRunner(object):
       options['header_include'],
       options['arraysize'],
       options['pollinterval'],
+      extra_ssh_options= options['extra_ssh_options'],
       do_cleanup = options['do_cleanup'])
 

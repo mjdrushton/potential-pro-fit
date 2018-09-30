@@ -92,5 +92,6 @@ class SGERunner(object):
       options['header_include'],
       options['arraysize'],
       options['pollinterval'],
+      extra_ssh_options= options['extra_ssh_options'],
       do_cleanup = options['do_cleanup'])
 
