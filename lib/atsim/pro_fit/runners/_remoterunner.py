@@ -129,12 +129,16 @@ class RemoteRunner(object):
 
   @staticmethod
   def createFromConfig(runnerName, fitRootPath, cfgitems):
-    allowedkeywords = set(['nprocesses', 'type', 'remotehost', 'debug.disable-cleanup'])
+    allowedkeywords = ['nprocesses', 'type']
+    allowedkeywords.extend(InnerRemoteRunner.allowedConfigKeywords())
+
     cfgdict = dict(cfgitems)
 
     for k in cfgdict.iterkeys():
       if not k in allowedkeywords:
         raise ConfigException("Unknown keyword for Remote runner '%s'" % k)
+    
+    options = InnerRemoteRunner.parseConfig(runnerName, fitRootPath, cfgitems)
 
     try:
       nprocesses = cfgdict['nprocesses']
@@ -146,39 +150,9 @@ class RemoteRunner(object):
     except ValueError:
       raise ConfigException("Could not convert nprocesses configuration item into an integer")
 
-    try:
-      remotehost = cfgdict['remotehost']
-    except KeyError:
-      raise ConfigException("remotehost configuration item not found")
-
-    if not remotehost.startswith("ssh://"):
-      raise ConfigException("remotehost configuration item must start with ssh://")
-
-    username, host, port,  path = _execnet.urlParse(remotehost)
-    if not host:
-      raise ConfigException("remotehost configuration item should be of form ssh://[username@]hostname/remote_path")
-
-    # Attempt connection and check remote directory exists
-    group = _execnet.Group()
-    try:
-      gwurl, sshcfg = _execnet.makeExecnetConnectionSpec(username, host, port)
-      gw = group.makegateway(gwurl)
-
-      # Check existence of remote directory
-      channel = gw.remote_exec(_execnet._remoteCheck)
-      channel.send(path)
-      status = channel.receive()
-      if not status:
-        raise ConfigException("Remote directory does not exist or is not read/writable:'%s'" % path)
-
-      channel.waitclose()
-      if sshcfg:
-        sshcfg.close()
-    except execnet.gateway_bootstrap.HostNotFound:
-      raise ConfigException("Couldn't connect to host: %s" % gwurl)
-    finally:
-        group.terminate(EXECNET_TERM_TIMEOUT)
-
-    kwargs = BaseRemoteRunner.parseConfigItem_debug_disable_cleanup(runnerName, fitRootPath, cfgitems)
-
-    return RemoteRunner(runnerName, remotehost,nprocesses, **kwargs)
+    return RemoteRunner(runnerName, 
+      options['remotehost'],
+      nprocesses, 
+      identityfile= None,
+      extra_ssh_options= options['extra_ssh_options'],
+      do_cleanup= options['do_cleanup'])
