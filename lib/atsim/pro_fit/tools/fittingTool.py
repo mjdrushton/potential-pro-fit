@@ -55,10 +55,8 @@ def _registerSignalHandlers(intEvent):
   signal.signal(signal.SIGINT, setevt)
   signal.signal(signal.SIGTERM, setevt)
 
-
 class _FittingToolException(Exception):
   pass
-
 
 def _isValidDirectory():
   #Check that current working directory has required files and directories.
@@ -148,8 +146,6 @@ def _initializeRun(directoryName):
     logging.getLogger('console').info("Created runner_files directory for the default runner '%s': %s" % (runner_name, dirname))
   except Exception as e:
     raise _DirectoryInitializationException("Could not create 'runner_files' directory: %s" % e.message)
-
-
 
 def _getValidRunners():
   """Open 'fit.cfg' and produce list of runner names.
@@ -255,6 +251,13 @@ for description of required directory structure and files."""
     action = "store_true",
     default = False,
     help = "use verbose logging")
+
+  parser.add_option('--disable-console',
+    dest = 'console',
+    action = 'store_false',
+    default = True,
+    help = "disable the curses based console")
+
   optgroup = optparse.OptionGroup(parser, "Run options")
   optgroup.add_option('-s', '--single-step',
     dest = "single_step",
@@ -380,7 +383,7 @@ def _getCreateFilesCfg(jobdir, keepDirectory, pluginmodules):
 def _invokeMinimizer(cfg, logger, logsql, console):
   logger = logging.getLogger(__name__).getChild('_invokeMinimizer')
 
-  console.log(logger, logging.INFO, "Temporary job files will be created in '%s'" % cfg.jobdir)
+  _console_log(console, logger, logging.INFO, "Temporary job files will be created in '%s'" % cfg.jobdir)
 
   # Perform minimization run
   if not os.path.isdir(cfg.jobdir):
@@ -396,7 +399,7 @@ def _invokeMinimizer(cfg, logger, logsql, console):
   # ... create SQLiteReporter
   if logsql:
     if os.path.exists('fitting_run.db'):
-      console.log(logger, logging.INFO, "Removing existing 'fitting_run.db'")
+      _console_log(console, logger, logging.INFO, "Removing existing 'fitting_run.db'")
       os.remove('fitting_run.db')
     sqlreporter = pro_fit.reporters.SQLiteReporter('fitting_run.db',cfg.variables, cfg.merit.calculatedVariables, cfg.title)
     stepCallback.append(sqlreporter)
@@ -404,8 +407,9 @@ def _invokeMinimizer(cfg, logger, logsql, console):
   minimizer = cfg.minimizer
   minimizer.stepCallback = stepCallback
 
-  console.registerConfig(cfg)
-  stepCallback.append(console.stepCallback)
+  if console:
+    console.registerConfig(cfg)
+    stepCallback.append(console.stepCallback)
   try:
     # with contextlib.closing(cfg.merit):
     _registerSignalHandlers(cfg.endEvent)
@@ -445,11 +449,28 @@ def _processPlugins(pathList):
 
   return retlist
 
+def _console_log(console, logger, log_level, msg):
+  if console:
+    console.log(logger, log_level, msg)
+  else:
+    logger.log(log_level, msg)
+
 def main():
   # Get command line options
   options = _parseCommandLine()
   _setupLogging(options.verbose)
   console = None
+  
+  # Support for the --disable-console option.
+  if options.console:
+    console = Console()
+  else:
+    # ... if enabled, the data logged to pprofit.log will also appear in the terminal.
+    root_logger = logging.getLogger()
+    stream_handler = logging.StreamHandler(sys.stderr)
+    stream_handler.setLevel(logging.DEBUG)
+    stream_handler.setFormatter(logging.Formatter("%(asctime)s:%(name)s:%(levelname)s %(module)s:%(lineno)d:  %(message)s"))
+    root_logger.addHandler(stream_handler)
 
   pluginmodules = []
 
@@ -492,8 +513,8 @@ def main():
     sys.exit(1)
   _makeLockFile()
 
-  console = Console()
-  console.start()
+  if console:
+    console.start()
 
   tempdir = tempfile.mkdtemp()
   try:
@@ -502,15 +523,15 @@ def main():
     logger = logging.getLogger(__name__).getChild('main')
     if options.single_step:
       # Do not run a minimization run
-      console.log(logger, logging.INFO, 'Performing Single-step run')
+      _console_log(console, logger, logging.INFO, 'Performing Single-step run')
       cfg = _getSingleStepCfg(tempdir, options.single_step, pluginmodules)
     elif options.create_files:
-      console.log(logger, logging.INFO, 'Job files will be created in: %s' % options.create_files)
+      _console_log(console, logger, logging.INFO, 'Job files will be created in: %s' % options.create_files)
       cfg =_getCreateFilesCfg(tempdir, options.create_files, pluginmodules)
       logsql = False
     else:
       # Perform a minimization run
-      console.log(logger, logging.INFO, 'Performing Minimization run')
+      _console_log(console, logger, logging.INFO, 'Performing Minimization run')
       cfg = _getfitcfg(tempdir, pluginmodules= pluginmodules)
 
     _invokeMinimizer(cfg, logger,logsql, console)

@@ -22,7 +22,7 @@ class SGERunner(object):
 
   SSH is used to communicate with server to submit jobs and copy files."""
 
-  def __init__(self, name, url, header_include, poll_interval = 10.0, batch_size = None, identityfile = None, extra_ssh_options = [], do_cleanup = True):
+  def __init__(self, name, url, header_include, batch_size = None, poll_interval = 10.0, identityfile = None, extra_ssh_options = [], do_cleanup = True):
     """Create SGERunner instance
 
     Args:

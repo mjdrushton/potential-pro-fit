@@ -383,7 +383,6 @@ def testAllInSingleBatch_with_coexisting_jobs(runner_class, runfixture, vagrant_
     f2 = indyrunner.runBatch(runfixture.jobs[6:8])
     f2.join()
 
-    # import pdb; pdb.set_trace()
     for job in runfixture.jobs[6:8]:
       runnertestjob(runfixture, job.variables.id, True)
 

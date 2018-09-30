@@ -15,7 +15,6 @@ class _QueueingSystemRunnerCloseThread(RemoteRunnerCloseThreadBase):
     evts = self._closeChannel(self.runner._pbsclient.channel, 'closeRunClient')
     return evts
 
-
 class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
   """Generic runner class for batch queueing systems. This is an abstract base class designed to be used as the basis for publicly accesible runners.
   
@@ -42,6 +41,17 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
 
     self.qselect_poll_interval = qselect_poll_interval
     self.batch_size = batch_size
+
+    logger = self._get_logger()
+    logger.debug("Instantiating runner with following values:")
+    logger.debug("  * name = {}".format(name))
+    logger.debug("  * url = {}".format(url))
+    logger.debug("  * header_include = {}".format(header_include))
+    logger.debug("  * batch_size = {}".format(batch_size))
+    logger.debug("  * qselect_poll_interval = {}".format(qselect_poll_interval))
+    logger.debug("  * identityfile = {}".format(identityfile))
+    logger.debug("  * extra_ssh_options = {}".format(extra_ssh_options))
+
     super(QueueingSystemRunnerBaseClass, self).__init__(name, url, identityfile, extra_ssh_options, do_cleanup)
 
   @property
@@ -151,7 +161,7 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
     Raises:
       atsim.pro_fit.fittool.ConfigException: thrown if configuration problem found."""
     cfgdict = dict(cfgitems)
-    pollinterval = cfgdict.get('pbspollinterval', 30.0)
+    pollinterval = cfgdict.get('pollinterval', 30.0)
     try:
       pollinterval = float(pollinterval)
     except ValueError:

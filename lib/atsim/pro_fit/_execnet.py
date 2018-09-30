@@ -64,7 +64,7 @@ def makeExecnetConnectionSpec(username, host, port, identityfile = None, extraop
   sshcfg.flush()
   sshcfg.seek(0)
   for line in sshcfg:
-    local_log.debug("ssh_config contents: %s" % line)
+    local_log.debug("ssh_config contents: %s" % line[:-1])
 
   xspec = execnet.XSpec(gwurl)
   xspec.ssh_config = sshcfg.name
