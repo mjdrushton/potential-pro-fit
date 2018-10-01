@@ -35,7 +35,9 @@ def gw(vagrant_box):
 def channel(channel_id, queueing_system_test_module, gw):
   ch = queueing_system_test_module.Channel_Class(gw, channel_id)
   yield ch
-  ch.waitclose(10)
+  if not ch.isclosed():
+    ch.send(None)
+  ch.waitclose(20)
 
 @pytest.fixture(scope = "function")
 def client(channel):

@@ -150,6 +150,8 @@ class AbstractChannel(object):
   def waitclose(self, timeout = None):
     return self._channel.waitclose(timeout)
 
+  def isclosed(self):
+    return self._channel.isclosed()
 
 class MultiChannel(object):
 

@@ -29,6 +29,7 @@ def submission_script(jobs, header_lines):
   "#$ -o \"%s\"" % stdout_stream,
   "#$ -e \"%s\"" % stderr_stream,
   "#$ -S /bin/bash",
+  "#$ -notify",
   ""
   ]
 
@@ -47,18 +48,18 @@ def submission_script(jobs, header_lines):
 
   bodylines = [
     'CLEANTMP=YES',
-    'export TMPDIR="$(mktemp -d)"',
+    'export RUNDIR="$(mktemp -d)"',
     'JOB_DIR="$(dirname "$JOB_PATH")"',
-    'cp -r "$JOB_DIR"/* "$TMPDIR"',
+    'cp -r "$JOB_DIR"/* "$RUNDIR"',
     'function finish {',
     '        mkdir "$JOB_DIR/output"',
     '        cp -r *  "$JOB_DIR/output/"',
     '        if [ -n "$CLEANTMP" ];then',
-    '          rm -rf "$TMPDIR"',
+    '          rm -rf "$RUNDIR"',
     '        fi',
     '}',
-    'trap finish EXIT',
-    'cd "$TMPDIR"',
+    'trap finish EXIT SIGUSR1 SIGUSR2',
+    'cd "$RUNDIR"',
     'RUNSCRIPT="$(basename "$JOB_PATH")"',
     '"$SHELL" "$RUNSCRIPT" > STDOUT 2> STDERR',
     'echo $? > STATUS'

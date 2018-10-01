@@ -339,7 +339,7 @@ def testQueueingSystemClientMultipleJobsInMultipleBatches(gw, client):
 @pytest.mark.usefixtures("clearqueue")
 def testQueueingSystemClientKillJob(gw, client):
     clch1, rj1 = mkrunjobs(gw, 1, numSuffix = True, sleep = None)
-    clch2, rj2 = mkrunjobs(gw, 3, numSuffix = True, sleep = 4)
+    clch2, rj2 = mkrunjobs(gw, 3, numSuffix = True, sleep = 30)
 
     try:
       #TODO: Test after qsub but before pbsId received.
@@ -352,6 +352,8 @@ def testQueueingSystemClientKillJob(gw, client):
 
       j2cb = TstCallback()
       jr2 = client.runJobs(rj2, j2cb)
+
+      assert jr2.qsubEvent.wait(60)
 
       killEvent = jr2.kill()
 

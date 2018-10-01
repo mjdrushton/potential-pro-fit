@@ -138,6 +138,13 @@ Optional Fields
 
 \
 
+:Name: debug.disable-cleanup
+:Arg type: bool
+:Default: False
+:Description: If True, files copied to the remote host's job directory are retained. Normally these would be deleted after a job completes or the runner terminates, if this option is True, this behaviour is disabled. This is useful for debugging, but in most cases this option should be False or omitted completely.
+
+\
+
 :Name: header_include
 :Arg type: string
 :Description: Provide path to a file that will be be included within the PBS job submission script used to run jobs. This can be used to specify job requirements to the queing system through ``#PBS`` option lines.
@@ -154,12 +161,10 @@ Optional Fields
 
 \
 
-:Name: debug.disable-cleanup
-:Arg type: bool
-:Default: False
-:Description: If True, files copied to the remote host's job directory are retained. Normally these would be deleted after a job completes or the runner terminates, if this option is True, this behaviour is disabled. This is useful for debugging, but in most cases this option should be False or omitted completely.
+:Name: ssh-config
+:Arg type: str
+:Description: path to file containing options to tailor SSH connection. See :ref:`ssh_config_option`
 
-\
 
 
 .. _pprofit-runners-remote:
@@ -195,10 +200,23 @@ Required Fields
 
 \
 
+
+Optional Fields
+---------------
+
 :Name: debug.disable-cleanup
 :Arg type: bool
 :Default: False
 :Description: If True, files copied to the remote host's job directory are retained. Normally these would be deleted after a job completes or the runner terminates, if this option is True, this behaviour is disabled. This is useful for debugging, but in most cases this option should be False or omitted completely.
+
+\
+
+:Name: ssh-config
+:Arg type: str
+:Description: path to file containing options to tailor SSH connection. See :ref:`ssh_config_option`
+
+\
+
 
 .. _pprofit-runners-slurm:
 
@@ -234,6 +252,13 @@ Optional Fields
 
 \
 
+:Name: debug.disable-cleanup
+:Arg type: bool
+:Default: False
+:Description: If True, files copied to the remote host's job directory are retained. Normally these would be deleted after a job completes or the runner terminates, if this option is True, this behaviour is disabled. This is useful for debugging, but in most cases this option should be False or omitted completely.
+
+\
+
 :Name: header_include
 :Arg type: string
 :Description: Provide path to a file that will be be included within the Slurm submission script used to run jobs. This can be used to specify job requirements to Slurm through ``#SBATCH`` option lines.
@@ -250,10 +275,11 @@ Optional Fields
 
 \
 
-:Name: debug.disable-cleanup
-:Arg type: bool
-:Default: False
-:Description: If True, files copied to the remote host's job directory are retained. Normally these would be deleted after a job completes or the runner terminates, if this option is True, this behaviour is disabled. This is useful for debugging, but in most cases this option should be False or omitted completely.
+:Name: ssh-config
+:Arg type: str
+:Description: path to file containing options to tailor SSH connection. See :ref:`ssh_config_option`
+
+\
 
 
 .. _pprofit-runners-SGE:
@@ -266,7 +292,7 @@ SGE
 
 
 .. note::
-	The SGE runner uses SSH to communicate with the PBS head-node. In order to run correctly ``pprofit`` must be able to log into the remote-host and invoke the ``qsub`` command without requiring a password. This can be achieved by setting-up key based login as described in :ref:`ssh-keybased-login`. 
+	The SGE runner uses SSH to communicate with the PBS head-node. In order to run correctly ``pprofit`` must be able to log into the remote-host and invoke the ``qsub`` command without requiring a password. This can be achieved by setting-up key based login as described in :ref:`ssh-keybased-login`. Or through the ``ssh-config`` option.
 
 Required Fields
 ---------------
@@ -290,6 +316,13 @@ Optional Fields
 
 \
 
+:Name: debug.disable-cleanup
+:Arg type: bool
+:Default: False
+:Description: If True, files copied to the remote host's job directory are retained. Normally these would be deleted after a job completes or the runner terminates, if this option is True, this behaviour is disabled. This is useful for debugging, but in most cases this option should be False or omitted completely.
+
+\
+
 :Name: header_include
 :Arg type: string
 :Description: Provide path to a file that will be be included within the SGE submission script used to run jobs. This can be used to specify job requirements to SGE through ``#$`` option lines.
@@ -306,8 +339,7 @@ Optional Fields
 
 \
 
-:Name: debug.disable-cleanup
-:Arg type: bool
-:Default: False
-:Description: If True, files copied to the remote host's job directory are retained. Normally these would be deleted after a job completes or the runner terminates, if this option is True, this behaviour is disabled. This is useful for debugging, but in most cases this option should be False or omitted completely.
+:Name: ssh-config
+:Arg type: str
+:Description: path to file containing options to tailor SSH connection. See :ref:`ssh_config_option`
 
