@@ -578,6 +578,7 @@ Optional Fields
 :Description: If specified the value of ``expect_value`` is compared with values evaluated using ``row_compare`` rather than value in the ``expect`` column of the expectation table.
 
 	If specified the expectation table **does not need to contain an** ``expect`` **column**.
+	
 \
 
 :Name: ``label_column``

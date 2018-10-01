@@ -251,27 +251,21 @@ class IterationSeries:
   @cherrypy.expose
   @tools.json_out(on=True)
   def merit_value(self, iterationFilter, candidateFilter, columns=None):
-    """Returns a data table where each row represents an iteration within the fitting run. The primary data column
-    returned by this JSON call is candidate merit value.
-
+    """Returns a data table where each row represents an iteration within the fitting run. The primary data column returned by this JSON call is candidate merit value. 
     **Filtering**
 
     * The candidates chosen for inclusion in the data table are controlled using the ``candidateFilter`` parameter:
 
-      - If ``candidateFilter`` is ``min``, then the candidate with the **lowest** merit value is selected for each
-        iteration.
+      - If ``candidateFilter`` is ``min``, then the candidate with the **lowest** merit value is selected for each iteration.
       - If it is ``max`` then the candidate with the **largest** merit is chosen.
 
     * The ``iterationFilter`` parameter can be used to filter the the rows returned:
 
       - ``all`` : when ``iterationFilter`` has this value, no row filtering takes place and all iterations are returned.
       - ``running_min``: only includes rows where the merit value decreases with respect to the previous row.
-        + If iteration 0,1,2 and 3 had merit values of 10,11,8,4, using ``running_min`` would return values for iterations
-          0,2 and 3.
-        + As the merit value increased between iterations 0 and 1, iteration 1 is removed from the
-          table.
-      - ``running_max``: similar to ``running_min`` with only those rows constituting an increase in overall merit value
-        being included.
+        + If iteration 0,1,2 and 3 had merit values of 10,11,8,4, using ``running_min`` would return values for iterations 0,2 and 3.
+        + As the merit value increased between iterations 0 and 1, iteration 1 is removed from the table.
+      - ``running_max``: similar to ``running_min`` with only those rows constituting an increase in overall merit value being included. 
 
 
     **Column Selection**

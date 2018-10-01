@@ -1,23 +1,8 @@
-import collections
-import logging
-import traceback
 import uuid
 import os
 import subprocess
-import re
 
-
-torque_jobid_regex = re.compile("^([0-9]+?)(-([0-9]+?))?(\.(.*?))?(@.*?)?$")
-
-def torque_split(pbs_id):
-  m = torque_jobid_regex.match(pbs_id)
-  groups = m.groups()
-  jobnum = groups[0]
-  subjob = groups[2]
-  host = groups[4]
-  return jobnum, subjob, host
-
-def submission_script(pbsConfig, jobs, header_lines):
+def submission_script(jobs, header_lines):
   try:
     # For python 3
     import shlex
@@ -35,39 +20,33 @@ def submission_script(pbsConfig, jobs, header_lines):
     # This shouldn't happen
     batchdir = ""
 
+  stdout_stream = os.path.join(batchdir, "batch.o")
+  stderr_stream = os.path.join(batchdir, "batch.e")
+
   std_headerlines = [
-  "#PBS -N pprofit",
-  "#PBS -j oe",
-  "#PBS -o \"%s\"" % batchdir,
+  
+  "#SBATCH -J pprofit",
+  "#SBATCH -o \"%s\"" % stdout_stream,
+  "#SBATCH -e \"%s\"" % stderr_stream,
   ""
   ]
 
   jobs = [quote(j) for j in jobs]
-  singleJob = not len(jobs) > 1
-
-  if singleJob:
-    lines = []
-  else:
-    arrayjobline = "#PBS %s 1-%d" % (pbsConfig.arrayFlag, len(jobs))
-    lines = [arrayjobline]
+  arrayjobline = "#SBATCH %s1-%d" % ("--array=", len(jobs))
+  lines = ["#! /bin/bash", arrayjobline]
 
   lines.extend(std_headerlines)
   lines.extend(header_lines)
 
-  if not singleJob:
-    for i,j in enumerate(jobs):
-      jobnum = i+1
-      line = 'JOB_ARRAY[%d]="%s"' % (jobnum, j)
-      lines.append(line)
-    lines.append('JOB_PATH="${JOB_ARRAY[$%s]}"' % pbsConfig.arrayIDVariable)
-  else:
-    lines.append('JOB_PATH="%s"' % jobs[0])
+  for i,j in enumerate(jobs):
+    jobnum = i+1
+    line = 'JOB_ARRAY[%d]="%s"' % (jobnum, j)
+    lines.append(line)
+  lines.append('JOB_PATH="${JOB_ARRAY[$%s]}"' % "SLURM_ARRAY_TASK_ID")
 
   bodylines = [
-    'if [ -z "$TMPDIR" ];then',
-    ' export TMPDIR="$(mktemp -d)"',
-    ' CLEANTMP=YES',
-    'fi',
+    'CLEANTMP=YES',
+    'export TMPDIR="$(mktemp -d)"',
     'JOB_DIR="$(dirname "$JOB_PATH")"',
     'cp -r "$JOB_DIR"/* "$TMPDIR"',
     'function finish {',
@@ -88,37 +67,11 @@ def submission_script(pbsConfig, jobs, header_lines):
   lines = os.linesep.join(lines)
   return lines
 
-def compressTORQUEArrayJobs(pbs_ids):
-  # qselect on torque lists all the members of an array job
-  # this function compresses the list so that only the parent
-  # array jobs are listed
-  outids = []
-  for i in pbs_ids:
-    jobid, subid, host = torque_split(i)
-    newid = "".join([jobid, ".", host])
-    outids.append(newid)
-
-  outids = list(set(outids))
-  return sorted(outids)
-
-def uncompressTORQUEArrayJobs(pbs_id):
-  allids = qselect()
-  outids = []
-
-  jobnum = torque_split(pbs_id)[0]
-
-  for i in allids:
-    g = torque_split(i)
-    subjobnum = g[0]
-    if subjobnum == jobnum:
-      outids.append(i)
-  return outids
-
 class QSelectException(Exception):
   pass
 
 def qselect():
-  p = subprocess.Popen(["qselect"],
+  p = subprocess.Popen(["squeue", "-h", "-o", "%F"],
     stdout = subprocess.PIPE,
     stderr = subprocess.PIPE,
     close_fds = True)
@@ -128,15 +81,15 @@ def qselect():
     raise QSelectException(err.strip())
 
   output = output.strip()
-  pbs_ids = [i for i in output.split(os.linesep) if i]
-  return pbs_ids
+  job_ids = [i for i in output.split(os.linesep) if i]
+  return job_ids
 
 class QRlsException(Exception):
   pass
 
-def qrls(pbs_ids):
-  args = ["qrls"]
-  args.extend(pbs_ids)
+def qrls(job_ids):
+  args = ["scontrol", "release"]
+  args.extend(job_ids)
 
   p = subprocess.Popen(args,
     stdout = subprocess.PIPE,
@@ -150,13 +103,13 @@ def qrls(pbs_ids):
 class QDelException(Exception):
   pass
 
-def qdel(pbs_ids, force, pbsConfig):
-  args = ["qdel"]
+def qdel(job_ids, force):
+  args = ["scancel"]
 
   if force:
-    args.extend(pbsConfig.qdelForceFlags)
+    args.extend(["--signal=KILL"])
 
-  args.extend(pbs_ids)
+  args.extend(job_ids)
 
   p = subprocess.Popen(args,
     stdout = subprocess.PIPE,
@@ -167,53 +120,40 @@ def qdel(pbs_ids, force, pbsConfig):
   if p.returncode != 0:
     raise QDelException(err.strip())
 
-def qdel_handler(channel, pbsConfig, channel_id, msg):
+def qdel_handler(channel, channel_id, msg):
   try:
-    pbs_ids = msg['job_ids']
+    job_ids = msg['job_ids']
   except KeyError:
     error(channel, "required field 'job_ids' missing from QDEL request", channel_id = channel_id)
     return
 
   force = msg.get('force', False)
 
-  try:
-    expanded = []
-    if pbsConfig.flavour == 'TORQUE':
-      for pbs_id in pbs_ids:
-        ids = uncompressTORQUEArrayJobs(pbs_id)
-        expanded.extend(ids)
-    else:
-      expanded.extend(pbs_ids)
-    qdel(pbs_ids, force, pbsConfig)
-  except QDelException,e:
-    error(channel,e.message, channel_id = channel_id)
-    return
+  qdel(job_ids, force)
 
   transid_send(channel, msg, 'QDEL',
     channel_id = channel_id,
-    job_ids = pbs_ids)
+    job_ids = job_ids)
 
-def qrls_handler(channel, pbsConfig, channel_id, msg):
+def qrls_handler(channel, channel_id, msg):
   try:
-    pbs_id = msg['job_id']
+    job_id = msg['job_id']
   except KeyError:
     error(channel, "required field 'job_id' missing from QRLS request", channel_id = channel_id)
     return
 
   try:
-    pbs_ids = [pbs_id]
-    if pbsConfig.flavour == 'TORQUE':
-      pbs_ids = uncompressTORQUEArrayJobs(pbs_id)
-    qrls(pbs_ids)
+    job_ids = [job_id]
+    qrls(job_ids)
   except QRlsException,e:
     error(channel,e.message, channel_id = channel_id)
     return
 
   transid_send(channel, msg, 'QRLS',
     channel_id = channel_id,
-    job_id = pbs_id)
+    job_id = job_id)
 
-def qsub_handler(channel, pbsConfig, channel_id, msg):
+def qsub_handler(channel, channel_id, msg):
   try:
     jobs = msg['jobs']
   except KeyError:
@@ -228,9 +168,9 @@ def qsub_handler(channel, pbsConfig, channel_id, msg):
       return
 
   header_lines = msg.get('header_lines', [])
-  script = submission_script(pbsConfig, jobs, header_lines)
+  script = submission_script(jobs, header_lines)
 
-  p = subprocess.Popen(["qsub", "-h"],
+  p = subprocess.Popen(["sbatch", "-H"],
     stdin = subprocess.PIPE,
     stdout = subprocess.PIPE,
     stderr = subprocess.PIPE,
@@ -241,68 +181,34 @@ def qsub_handler(channel, pbsConfig, channel_id, msg):
     error(channel, err.strip(), channel_id = channel_id)
     return
 
+  job_id = output.strip()
+  job_id = job_id.split()[-1]
+
   transid_send(channel, msg, 'QSUB',
     channel_id = channel_id,
-    job_id = output.strip())
+    job_id = job_id)
 
-def qselect_handler(channel, pbsConfig, channel_id, msg):
+def qselect_handler(channel, channel_id, msg):
   try:
-    pbs_ids = qselect()
+    job_ids = qselect()
   except QSelectException, e:
     error(channel, e.message, channel_id = channel_id)
 
-  if pbsConfig.flavour == 'TORQUE':
-    pbs_ids = compressTORQUEArrayJobs(pbs_ids)
+  transid_send(channel, msg, 'QSELECT', channel_id = channel_id, job_ids = job_ids)
 
-  transid_send(channel, msg, 'QSELECT', channel_id = channel_id, job_ids = pbs_ids)
-
-PBSIdentifyRecord = collections.namedtuple("PBSIdentifyRecord", ["arrayFlag", "arrayIDVariable", "qdelForceFlags", "flavour"])
-
-def pbsIdentify(versionString):
-  """Given output of qstat --version, return a record containing fields used to configure
-  PBSRunner for the version of PBS being used.
-
-  Record has following fields:
-    arrayFlag - The qsub flag used to specify array job rangs.
-    arrayIDVariable - Environment variable name provided to submission script to identify ID of current array sub-job.
-
-  @param versionString String as returned by qstat --versionString
-  @return Field of the form described above"""
-  logger = logging.getLogger("atsim.pro_fit.runners.PBSRunner.pbsIdentify")
-  import re
-  if re.search("PBSPro", versionString):
-    #PBS Pro
-    logger.info("Identified PBS as: PBSPro")
-    record =  PBSIdentifyRecord(
-      arrayFlag = "-J",
-      arrayIDVariable = "PBS_ARRAY_INDEX",
-      qdelForceFlags = ["-Wforce"],
-      flavour = "PBSPro")
-  else:
-    #TORQUE
-    logger.info("Identified PBS as: TORQUE")
-    record = PBSIdentifyRecord(
-      arrayFlag = "-t",
-      arrayIDVariable = "PBS_ARRAYID",
-      qdelForceFlags = ["-W", "0"],
-      flavour = "TORQUE")
-
-  logger.debug("pbsIdentify record: %s" % str(record))
-  return record
-
-class NoPBSException(Exception):
+class NoSlurmException(Exception):
   pass
 
-def checkPBS():
+def checkSlurm():
   # Attempt to run qstat
   try:
-    p = subprocess.Popen(["qselect"], stdout = subprocess.PIPE, close_fds=True)
+    p = subprocess.Popen(["squeue"], stdout = subprocess.PIPE, close_fds=True)
     output, err = p.communicate()
   except OSError:
-    raise NoPBSException("Could not run 'qselect'")
+    raise NoSlurmException("Could not run 'squeue'")
 
   try:
-    p = subprocess.Popen(["qsub", "--version"],
+    p = subprocess.Popen(["sbatch", "--version"],
       stdout = subprocess.PIPE,
       stderr = subprocess.PIPE,
       close_fds=True)
@@ -314,7 +220,7 @@ def checkPBS():
     else:
       sstring = output
   except OSError:
-    raise NoPBSException("Could not run 'qsub'")
+    raise NoSlurmException("Could not run 'qsub'")
 
   return sstring
 
@@ -357,19 +263,17 @@ def remote_exec(channel):
 
   channel_id = msg.get("channel_id", str(uuid.uuid4()))
 
-  # Configure PBS
+  # Configure Slurm
   try:
-    versionstring = checkPBS()
-  except NoPBSException as e:
-    msg = "PBS not found: " + e.message
+    versionstring = checkSlurm()
+  except NoSlurmException as e:
+    msg = "Slurm not found: " + e.message
     error(channel, msg, channel_id = channel_id)
     return
 
-  pbsConfig = pbsIdentify(versionstring)
-  send(channel, 'READY', channel_id = channel_id, pbs_identify = dict(pbsConfig._asdict()))
+  send(channel, 'READY', channel_id = channel_id)
 
   for msg in channel:
-    
     if msg is None:
       return
 
@@ -384,7 +288,7 @@ def remote_exec(channel):
       error(channel, "unknown message type '%s' for message: %s" % (mtype,msg), channel_id = channel_id)
       continue
 
-    handler(channel, pbsConfig, channel_id, msg)
+    handler(channel, channel_id, msg)
 
 if __name__ == "__channelexec__":
   remote_exec(channel)

@@ -10,7 +10,9 @@ At present the following runners are supported by the fitting tool:
 
   * :ref:`pprofit-runners-Local` - Allows jobs to be run in parallel on the computer running ``pprofit``.
   * :ref:`pprofit-runners-Remote` - Uses SSH to run jobs in parallel on a remote computer.
-  * :ref:`pprofit-runners-PBS` - Submits jobs to queues on a remote machine running the PBS batch queueing system.
+  * :ref:`pprofit-runners-PBS` - Submits jobs to queues on a remote machine running the `PBS <https://www.pbspro.org>`_/`Torque <http://www.adaptivecomputing.com/products/torque/>`_ batch queueing system.
+  * :ref:`pprofit-runners-Slurm` - Runner for the `Slurm <https://slurm.schedmd.com>`_ batch queueing system.
+  * :ref:`pprofit-runners-SGE` - Runner for the `Sun Grid Engine <https://en.wikipedia.org/wiki/Oracle_Grid_Engine>`_ batch queueing system.
 
 
 Configuring Runners and Associating with Jobs
@@ -86,6 +88,9 @@ Required Fields
 :Arg type: integer
 :Description: Number of processes to be spawned by runner. In general it makes sense to set this to the same number of cores as your machine has.
 
+\
+
+
 .. _pprofit-runners-pbs:
 
 PBS
@@ -125,27 +130,11 @@ Required Fields
 
 Optional Fields
 ---------------
-:Name: pbsarraysize
+:Name: arraysize
 :Arg type: int
 :Description: Where possible, jobs are submitted to PBS as array jobs. This parameter specifies the maximum number of jobs in one of these arrays. When not specified, all the jobs for a given candidate, destined for the PBS runner will all run in a single array. This means that all the jobs in this batch must be uploaded to the remote server before being submitted to PBS.
-	By specifying a value for ``pbsarraysize``, job submission can take place after a smaller number of jobs have been uploaded. By using a smaller array size, the job's output files can also start to download after the sub-job has completed rather than waiting for the candidate's entire batch to finish. In this way better use may be made of idle time whilst ``pprofit`` waits for jobs to make their way through PBS.
-:Example: ``pbsarraysize : 8``
-
-\
-
-:Name: pbsinclude
-:Arg type: string
-:Description: Provide path to a file that will be be included within the PBS job submission script used to run jobs. This can be used to specify job requirements to the queing system through ``#PBS`` option lines.
-:Example: Specifying the following would include ``8cpus.pbs`` (from the root path of the fitting run) in the job submission script:
-
-	``pbsinclude : 8cpus.pbs`` 
-
-\
-
-:Name: pbspollinterval
-:Arg type: float
-:Default: 30.0 seconds
-:Description: The PBS runner monitors job completion by repeatedly running the ``qselect`` command on the remote host. The value of ``pbspollinterval`` specifies the time interval (in seconds) between calls to ``qselect``. Although small values of ``pbspollinterval`` may improve efficiency, they may also place a considerable burden on the PBS system and annoy your local system administrator. As a result you should choose a value that is at least a little bit larger than the queuing system's scheduling interval.
+	By specifying a value for ``arraysize``, job submission can take place after a smaller number of jobs have been uploaded. By using a smaller array size, the job's output files can also start to download after the sub-job has completed rather than waiting for the candidate's entire batch to finish. In this way better use may be made of idle time whilst ``pprofit`` waits for jobs to make their way through PBS.
+:Example: ``arraysize : 8``
 
 \
 
@@ -153,6 +142,28 @@ Optional Fields
 :Arg type: bool
 :Default: False
 :Description: If True, files copied to the remote host's job directory are retained. Normally these would be deleted after a job completes or the runner terminates, if this option is True, this behaviour is disabled. This is useful for debugging, but in most cases this option should be False or omitted completely.
+
+\
+
+:Name: header_include
+:Arg type: string
+:Description: Provide path to a file that will be be included within the PBS job submission script used to run jobs. This can be used to specify job requirements to the queing system through ``#PBS`` option lines.
+:Example: Specifying the following would include ``8cpus.pbs`` (from the root path of the fitting run) in the job submission script:
+
+	``header_include : 8cpus.pbs`` 
+
+\
+
+:Name: pollinterval
+:Arg type: float
+:Default: 30.0 seconds
+:Description: The PBS runner monitors job completion by repeatedly running the ``qselect`` command on the remote host. The value of ``pollinterval`` specifies the time interval (in seconds) between calls to ``qselect``. Although small values of ``pollinterval`` may improve efficiency, they may also place a considerable burden on the PBS system and annoy your local system administrator. As a result you should choose a value that is at least a little bit larger than the queuing system's scheduling interval.
+
+\
+
+:Name: ssh-config
+:Arg type: str
+:Description: path to file containing options to tailor SSH connection. See :ref:`ssh_config_option`
 
 
 
@@ -189,7 +200,146 @@ Required Fields
 
 \
 
+
+Optional Fields
+---------------
+
 :Name: debug.disable-cleanup
 :Arg type: bool
 :Default: False
 :Description: If True, files copied to the remote host's job directory are retained. Normally these would be deleted after a job completes or the runner terminates, if this option is True, this behaviour is disabled. This is useful for debugging, but in most cases this option should be False or omitted completely.
+
+\
+
+:Name: ssh-config
+:Arg type: str
+:Description: path to file containing options to tailor SSH connection. See :ref:`ssh_config_option`
+
+\
+
+
+.. _pprofit-runners-slurm:
+
+Slurm
+^^^^^
+
+:Type-Name: Slurm
+:Description: Runner that remotely submits jobs to a computational cluster running the `Slurm <https://slurm.schedmd.com>`_ batch queuing system.
+
+
+.. note::
+	The Slurm runner uses SSH to communicate with the PBS head-node. In order to run correctly ``pprofit`` must be able to log into the remote-host and invoke the ``sbatch`` command without requiring a password. This can be achieved by setting-up key based login as described in :ref:`ssh-keybased-login`. 
+
+Required Fields
+---------------
+
+:Name: remotehost
+:Format: ``ssh://[USERNAME@]SLURM_HOST[:PORT]/REMOTE_PATH``
+:Description: SSH URI giving the optional username (``USERNAME``), host-name (``SLURM_HOST``), optional port number (``PORT``) and remote-path from which jobs should be run (``REMOTE_PATH``) on the Slurm submission host.
+:Example: To run jobs on ``login.cx1.hpc.ic.ac.uk`` from a directory named ``/work/mjdr/jobs`` the following configuration option could be used:
+
+	``remotehost : ssh://login.cx1.hpc.ic.ac.uk//work/mjdr/jobs``
+
+\ 
+
+Optional Fields
+---------------
+:Name: arraysize
+:Arg type: int
+:Description: Jobs are submitted to Slurm as array jobs. This parameter specifies the maximum number of jobs in one of these arrays. When not specified, all the jobs assigned to this runner, for a given candidate are run as one array. This means that all the jobs in this batch must be uploaded to the remote server before being submitted to the queueing system.
+	By specifying a value for ``arraysize``, job submission can take place after a smaller number of jobs have been uploaded. By using a smaller array size, the job's output files can also start to download after the sub-job has completed rather than waiting for the candidate's entire batch to finish. In this way better use may be made of idle time whilst ``pprofit`` waits for jobs to make their way through the queueing system.
+:Example: ``arraysize : 8``
+
+\
+
+:Name: debug.disable-cleanup
+:Arg type: bool
+:Default: False
+:Description: If True, files copied to the remote host's job directory are retained. Normally these would be deleted after a job completes or the runner terminates, if this option is True, this behaviour is disabled. This is useful for debugging, but in most cases this option should be False or omitted completely.
+
+\
+
+:Name: header_include
+:Arg type: string
+:Description: Provide path to a file that will be be included within the Slurm submission script used to run jobs. This can be used to specify job requirements to Slurm through ``#SBATCH`` option lines.
+:Example: Specifying the following would include ``8cpus.slurm`` (from the root path of the fitting run) in the job submission script:
+
+	``header_include : 8cpus.slurm`` 
+
+\
+
+:Name: pollinterval
+:Arg type: float
+:Default: 30.0 seconds
+:Description: This runner monitors job completion by repeatedly running the ``squeue`` command on the Slurm host. The value of ``pollinterval`` specifies the time interval (in seconds) between calls to ``squeue``. Although small values of ``pollinterval`` may improve efficiency, they may also place a considerable burden on the queueing system and annoy your local system administrator. As a result you should choose a value that is at least a little bit larger than the queuing system's scheduling interval.
+
+\
+
+:Name: ssh-config
+:Arg type: str
+:Description: path to file containing options to tailor SSH connection. See :ref:`ssh_config_option`
+
+\
+
+
+.. _pprofit-runners-SGE:
+
+SGE
+^^^
+
+:Type-Name: SGE
+:Description: Runner that remotely submits jobs to a computational cluster running the `Sun Grid Engine <https://en.wikipedia.org/wiki/Oracle_Grid_Engine>`_ batch queuing system.
+
+
+.. note::
+	The SGE runner uses SSH to communicate with the PBS head-node. In order to run correctly ``pprofit`` must be able to log into the remote-host and invoke the ``qsub`` command without requiring a password. This can be achieved by setting-up key based login as described in :ref:`ssh-keybased-login`. Or through the ``ssh-config`` option.
+
+Required Fields
+---------------
+
+:Name: remotehost
+:Format: ``ssh://[USERNAME@]SGE_HOST[:PORT]/REMOTE_PATH``
+:Description: SSH URI giving the optional username (``USERNAME``), host-name (``SGE_HOST``), optional port number (``PORT``) and remote-path from which jobs should be run (``REMOTE_PATH``) on the Slurm submission host.
+:Example: To run jobs on ``login.cx1.hpc.ic.ac.uk`` from a directory named ``/work/mjdr/jobs`` the following configuration option could be used:
+
+	``remotehost : ssh://login.cx1.hpc.ic.ac.uk//work/mjdr/jobs``
+
+\ 
+
+Optional Fields
+---------------
+:Name: arraysize
+:Arg type: int
+:Description: Jobs are submitted to SGE as array jobs. This parameter specifies the maximum number of jobs in one of these arrays. When not specified, all the jobs assigned to this runner, for a given candidate are run as one array. This means that all the jobs in this batch must be uploaded to the remote server before being submitted to the queueing system.
+	By specifying a value for ``arraysize``, job submission can take place after a smaller number of jobs have been uploaded. By using a smaller array size, the job's output files can also start to download after the sub-job has completed rather than waiting for the candidate's entire batch to finish. In this way better use may be made of idle time whilst ``pprofit`` waits for jobs to make their way through the queueing system.
+:Example: ``arraysize : 8``
+
+\
+
+:Name: debug.disable-cleanup
+:Arg type: bool
+:Default: False
+:Description: If True, files copied to the remote host's job directory are retained. Normally these would be deleted after a job completes or the runner terminates, if this option is True, this behaviour is disabled. This is useful for debugging, but in most cases this option should be False or omitted completely.
+
+\
+
+:Name: header_include
+:Arg type: string
+:Description: Provide path to a file that will be be included within the SGE submission script used to run jobs. This can be used to specify job requirements to SGE through ``#$`` option lines.
+:Example: Specifying the following would include ``8cpus.sge`` (from the root path of the fitting run) in the job submission script:
+
+	``header_include : 8cpus.sge`` 
+
+\
+
+:Name: pollinterval
+:Arg type: float
+:Default: 30.0 seconds
+:Description: This runner monitors job completion by repeatedly running the ``qstat`` command on the SGE host. The value of ``pollinterval`` specifies the time interval (in seconds) between calls to ``qstat``. Although small values of ``pollinterval`` may improve efficiency, they may also place a considerable burden on the queueing system and annoy your local system administrator. As a result you should choose a value that is at least a little bit larger than the queuing system's scheduling interval.
+
+\
+
+:Name: ssh-config
+:Arg type: str
+:Description: path to file containing options to tailor SSH connection. See :ref:`ssh_config_option`
+

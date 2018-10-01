@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+### Added
+- Slurm runner. Allows jobs to run against Slurm queuing system.
+- SGE runner. Runner for Sun Grid Engine queueing systems.
+- PBS, Slurm, SGE and Remote runners have added options: 
+  + `sshconfig` option allowing OpenSSH ssh_config style options to be used when establishing connections.
+  + `debug.disable-cleanup` allows job files to preserved on remote machine.
+- `--disable-console` option for the `pprofit` command. Primarily his was added to enable easier debugging.
+
+
 ## [0.7.5] - 2018-07-01
 ### Changed
 - Allow python style format strings to be used in template placeholders.

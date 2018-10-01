@@ -110,7 +110,6 @@ class AbstractChannel(object):
     return self._channel_id
 
   def setcallback(self, callback):
-    # import pdb; pdb.set_trace()
     if self._callback is None:
       self._callback = ChannelCallback(callback)
       self._channel.setcallback(self._callback)
@@ -151,6 +150,8 @@ class AbstractChannel(object):
   def waitclose(self, timeout = None):
     return self._channel.waitclose(timeout)
 
+  def isclosed(self):
+    return self._channel.isclosed()
 
 class MultiChannel(object):
 
