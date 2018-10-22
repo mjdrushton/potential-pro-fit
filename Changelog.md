@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## [0.8.1] - 2018-10-22
+### Fixed
+- Added `ppversion.py` file to `MANIFEST.in` - missing file was preventing installation from source distributions.
+
+
+## [0.8.0] - 2018-10-01
 ### Added
 - Slurm runner. Allows jobs to run against Slurm queuing system.
 - SGE runner. Runner for Sun Grid Engine queueing systems.

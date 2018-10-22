@@ -292,7 +292,7 @@ SGE
 
 
 .. note::
-	The SGE runner uses SSH to communicate with the PBS head-node. In order to run correctly ``pprofit`` must be able to log into the remote-host and invoke the ``qsub`` command without requiring a password. This can be achieved by setting-up key based login as described in :ref:`ssh-keybased-login`. Or through the ``ssh-config`` option.
+	The SGE runner uses SSH to communicate with the PBS head-node. In order to run correctly ``pprofit`` must be able to log into the remote-host and invoke the ``qsub`` command without requiring a password. This can be achieved by setting-up key based login as described in :ref:`ssh-keybased-login`. Or through the ``ssh-config`` option.	
 
 Required Fields
 ---------------
