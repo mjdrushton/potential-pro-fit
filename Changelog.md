@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+### Fixed
+- Bug when formatting error message for bad nprocesses option for Local runner.
+
 ## [0.8.1] - 2018-10-22
 ### Fixed
 - Added `ppversion.py` file to `MANIFEST.in` - missing file was preventing installation from source distributions.

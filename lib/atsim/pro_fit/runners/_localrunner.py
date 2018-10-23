@@ -223,6 +223,6 @@ class LocalRunner(object):
     try:
       nprocesses = int(nprocesses)
     except ValueError:
-      raise LocalRunner._makeException(runnerName, "Could not convert 'nprocesses' configuration item into an integer. Value was = '%'" % nprocesses)
+      raise LocalRunner._makeException(runnerName, "Could not convert 'nprocesses' configuration item into an integer. Value was = '%s'" % nprocesses)
 
     return LocalRunner(runnerName, nprocesses)
