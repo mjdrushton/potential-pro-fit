@@ -77,10 +77,10 @@ def _placeholderHandler(placeholder, substitutionDict, skelpath):
 def _templateSubstitution(template, substitutionDict, skelpath):
   """Substitute @PLACE_HOLDER@ for values in substitutionDict
 
-  @param template Template containing @PLACE_HOLDER@ tags
-  @param substitutionDict Values to be substituted into template
+  :param template: Template containing @PLACE_HOLDER@ tags
+  :param substitutionDict: Values to be substituted into template
 
-  @return Substituted string"""
+  :return: Substituted string"""
   splitRegex = re.compile(r"((?<!\\)@(.*?)(?<!\\)@)")
   sbuild = cStringIO.StringIO()
 
@@ -184,12 +184,12 @@ def buildDirs(rows,
     overwrite = False):
   """Create a directory structure from a CSV file.
 
-  @param rows List of dictionaries containing column value pairs (as returned by csv.DictReader)
-  @param skeletonDirectory Source directory containing files with which to populate the create directory structure.
-  @param destinationDirectory Path giving the root of the created directory structure
-  @param templateSuffix Files within skeletonDirectory with this suffix are subject to filename and file content variable substitution from rows
-  @param extraVariables Dictionary giving extra key value pairs which should be added to spreadsheet row before processing templates
-  @param overwrite If True, overwrite existing files"""
+  :param rows: List of dictionaries containing column value pairs (as returned by csv.DictReader)
+  :param skeletonDirectory: Source directory containing files with which to populate the create directory structure.
+  :param destinationDirectory: Path giving the root of the created directory structure
+  :param templateSuffix: Files within skeletonDirectory with this suffix are subject to filename and file content variable substitution from rows
+  :param extraVariables: Dictionary giving extra key value pairs which should be added to spreadsheet row before processing templates
+  :param overwrite: If True, overwrite existing files"""
   dw = _DirectoryWalker(skeletonDirectory, destinationDirectory, templateSuffix)
   dw.overwrite = overwrite
   logger = logging.getLogger('csvbuild.buildDirs')
