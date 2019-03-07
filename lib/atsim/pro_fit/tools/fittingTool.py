@@ -419,11 +419,10 @@ def _invokeMinimizer(cfg, logger, logsql, console):
       sqlreporter.finished()
   except:
     logger.exception("Exception raised")
-    if logsql:
-      sqlreporter.finished(True)
     raise
   finally:
-    cfg.close()
+    if logsql:
+      sqlreporter.finished(True)
 
 class _PluginException(Exception):
   def __init__(self, filename, childexception):
@@ -518,6 +517,7 @@ def main():
 
   tempdir = tempfile.mkdtemp()
   try:
+    exit_code = 0
     cfg = None
     logsql = True
     logger = logging.getLogger(__name__).getChild('main')
@@ -541,9 +541,11 @@ def main():
     if console and console.started:
       evt = console.terminalError(e.message)
       evt.wait()
-
-    sys.exit(1)
+    exit_code = 1
   finally:
+    if cfg:
+      cfg.close()
     _removeLockFile()
     shutil.rmtree(tempdir, ignore_errors= True)
+    sys.exit(exit_code)
 

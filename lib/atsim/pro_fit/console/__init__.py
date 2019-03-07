@@ -174,17 +174,16 @@ class Console(object):
 
   def _killMainLoop(self):
     def term(loop = None, data = None):
-      # from remote_pdb import RemotePdb
-      # RemotePdb('127.0.0.1', 4444).set_trace()
       raise urwid.ExitMainLoop()
-    self._main_loop.set_alarm_in(0, term)
+    self._gevent_loop.enter_idle(term)
 
   def _killMainLoopOnEvent(self, evt):
     evt.wait()
     self._killMainLoop()
 
   def start(self):
-    self._main_loop = urwid.MainLoop(self.mainframe, palette, event_loop=GeventLoop(), unhandled_input = self._exit_on_q)
+    self._gevent_loop = GeventLoop()
+    self._main_loop = urwid.MainLoop(self.mainframe, palette, event_loop=self._gevent_loop, unhandled_input = self._exit_on_q)
     self._greenlet = gevent.spawn(self._run_main_loop)
     self.started = True
 

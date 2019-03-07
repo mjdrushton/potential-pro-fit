@@ -1,9 +1,16 @@
 # Changelog
 
+## [0.8.3]
+### Fixed
+- csvbuild "File overwriting disabled" messages now no longer appear in the log file.
+- Configuration errors experienced during minimisation are (e.g. bad variable name) are now shown correctly in the console.
+
+
 ## [0.8.2] - 2018-12-18
 ### Fixed
 - Bug when formatting error message for bad nprocesses option for Local runner.
 - `pprofitmon` was not working because Cherrypy versions >=18.0.0 no longer support python 2.7.
+
 
 ## [0.8.1] - 2018-10-22
 ### Fixed
