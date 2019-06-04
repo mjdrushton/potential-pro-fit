@@ -1,9 +1,10 @@
 # Changelog
 
-## [0.8.3]
+## [0.8.3] - 2019-6-4
 ### Fixed
 - csvbuild "File overwriting disabled" messages now no longer appear in the log file.
 - Configuration errors experienced during minimisation are (e.g. bad variable name) are now shown correctly in the console.
+- Dependency `more-itertools` no longer supports python 2.7 - this was causing problems in running `pprofitmon` for some users. Setup.py now specifies an earlier version. 
 
 
 ## [0.8.2] - 2018-12-18
