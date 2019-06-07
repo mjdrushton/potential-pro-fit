@@ -1,6 +1,6 @@
 from atsim.pro_fit.runners._run_remote_client import RunChannel, RunClient, RunJobKilledException, JobAlreadyFinishedException
 
-from _runnercommon import execnet_gw, channel_id, CheckPIDS
+from ._runnercommon import execnet_gw, channel_id, CheckPIDS
 
 import gevent
 import gevent.event
@@ -33,7 +33,7 @@ def test_run_remote_client_single(tmpdir, execnet_gw, channel_id):
   channel = RunChannel(execnet_gw, channel_id, nprocesses = 1, keepAlive = 0.5)
   try:
     with tmpdir.join("runjob").open("w") as outfile:
-      print >>outfile, "echo Hello World > job.out"
+      print("echo Hello World > job.out", file=outfile)
 
     runclient = RunClient(channel)
     runclient.runCommand(tmpdir.strpath)
@@ -49,12 +49,12 @@ def test_run_remote_client_multiple(tmpdir, execnet_gw, channel_id):
   try:
     callbacks = []
 
-    for jobid in xrange(5):
+    for jobid in range(5):
       jobdir = tmpdir.join(str(jobid))
       jobdir.ensure_dir()
       with jobdir.join("runjob").open("w") as outfile:
-        print >>outfile, "echo %d > job.out" % jobid
-        print >>outfile, "sleep 1"
+        print("echo %d > job.out" % jobid, file=outfile)
+        print("sleep 1", file=outfile)
 
       callback = TstCallback(jobid, jobdir)
       callbacks.append(callback)
@@ -85,8 +85,8 @@ def test_run_remote_client_kill_job(tmpdir, execnet_gw, channel_id):
     runclient = RunClient(channel)
 
     with tmpdir.join('runjob').open('w') as outfile:
-      print >>outfile,  "#! /bin/bash"
-      print >>outfile,  "sleep 1200"
+      print("#! /bin/bash", file=outfile)
+      print("sleep 1200", file=outfile)
 
     callback = TstCallback(None, None)
     runjob = runclient.runCommand(tmpdir.strpath, callback)
@@ -134,12 +134,12 @@ def test_run_remote_client_kill_not_started_job(tmpdir, execnet_gw, channel_id):
     runjob_path2.ensure_dir()
 
     with runjob_path1.join('runjob').open('w') as outfile:
-      print >>outfile,  "#! /bin/bash"
-      print >>outfile,  "sleep 1200"
+      print("#! /bin/bash", file=outfile)
+      print("sleep 1200", file=outfile)
 
     with runjob_path2.join('runjob').open('w') as outfile:
-      print >>outfile,  "#! /bin/bash"
-      print >>outfile,  "sleep 1200"
+      print("#! /bin/bash", file=outfile)
+      print("sleep 1200", file=outfile)
 
     callback1 = TstCallback(None, None)
     callback2 = TstCallback(None, None)

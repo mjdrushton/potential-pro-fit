@@ -1,9 +1,9 @@
 import unittest
 
-import testutil
+from . import testutil
 from atsim import pro_fit
 
-import ConfigParser
+import configparser
 
 class VariablesTestCase(unittest.TestCase):
   """Tests pro_fit.fittool._Variables class"""
@@ -36,32 +36,32 @@ class VariablesTestCase(unittest.TestCase):
           ('B', 2.0),
           ('C', 3.0) ],
         initialVariables.variablePairs)
-    self.assertEquals( ['B', 'C'],  initialVariables.fitKeys)
-    self.assertEquals( [2.0, 3.0],  initialVariables.fitValues)
+    self.assertEqual( ['B', 'C'],  initialVariables.fitKeys)
+    self.assertEqual( [2.0, 3.0],  initialVariables.fitValues)
 
     testutil.compareCollection(self,
         [ ('A', 1.0),
           ('B', 2.0),
           ('C', 3.0) ],
         candidate1.variablePairs)
-    self.assertEquals( ['B', 'C'],  candidate1.fitKeys)
-    self.assertEquals( [2.0, 3.0],  candidate1.fitValues)
+    self.assertEqual( ['B', 'C'],  candidate1.fitKeys)
+    self.assertEqual( [2.0, 3.0],  candidate1.fitValues)
 
     testutil.compareCollection(self,
         [ ('A', 1.0),
           ('B', 2.0),
           ('C', 3.0) ],
         candidate1.variablePairs)
-    self.assertEquals( ['B', 'C'],  candidate1.fitKeys)
-    self.assertEquals( [2.0, 3.0],  candidate1.fitValues)
+    self.assertEqual( ['B', 'C'],  candidate1.fitKeys)
+    self.assertEqual( [2.0, 3.0],  candidate1.fitValues)
 
     testutil.compareCollection(self,
         [ ('A', 1.0),
           ('B', 5.0),
           ('C', 6.0) ],
         candidate2.variablePairs)
-    self.assertEquals( ['B', 'C'],  candidate2.fitKeys)
-    self.assertEquals( [5.0, 6.0],  candidate2.fitValues)
+    self.assertEqual( ['B', 'C'],  candidate2.fitKeys)
+    self.assertEqual( [5.0, 6.0],  candidate2.fitValues)
 
 
 class CalculatedVariables(unittest.TestCase):
@@ -133,11 +133,11 @@ Ocharge : -electroneg * 2
 Ucharge : electroneg * 4
 """
 
-    import StringIO
+    import io
 
-    cfg = ConfigParser.SafeConfigParser()
+    cfg = configparser.SafeConfigParser()
     cfg.optionxform = str
-    cfg.readfp(StringIO.StringIO(config))
+    cfg.readfp(io.StringIO(config))
     configitems = cfg.items('CalculatedVariables')
 
     variables = pro_fit.fittool.Variables(
@@ -168,9 +168,9 @@ Ocharge : -electroneg * 2
 Ucharge : electroneg * 4
 """
 
-    cfg = ConfigParser.SafeConfigParser()
+    cfg = configparser.SafeConfigParser()
     cfg.optionxform = str
-    cfg.readfp(StringIO.StringIO(config))
+    cfg.readfp(io.StringIO(config))
     configitems = cfg.items('CalculatedVariables')
 
     with self.assertRaises(pro_fit.fittool.ConfigException):

@@ -10,11 +10,11 @@ class UtilTestCase(unittest.TestCase):
 	  from atsim.pro_fit.db._columnproviders import _EvaluatorColumnProvider
 	  # First one that should pass
 	  pdiff = _util.calculatePercentageDifference
-	  self.assertEquals(-10, pdiff({'extracted_value': 90, 'expected_value' : 100}))
+	  self.assertEqual(-10, pdiff({'extracted_value': 90, 'expected_value' : 100}))
 
 	  # Zero as expected value
-	  self.assertEquals(None, pdiff({'extracted_value': 90, 'expected_value' : 0.0}))
+	  self.assertEqual(None, pdiff({'extracted_value': 90, 'expected_value' : 0.0}))
 
-	  self.assertEquals(None, pdiff({'extracted_value': 90, 'expected_value' : None}))
-	  self.assertEquals(None, pdiff({'extracted_value': None, 'expected_value' : 90}))
-	  self.assertEquals(None, pdiff({'extracted_value': None, 'expected_value' : None}))
+	  self.assertEqual(None, pdiff({'extracted_value': 90, 'expected_value' : None}))
+	  self.assertEqual(None, pdiff({'extracted_value': None, 'expected_value' : 90}))
+	  self.assertEqual(None, pdiff({'extracted_value': None, 'expected_value' : None}))

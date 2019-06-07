@@ -42,7 +42,7 @@ def mockfuture(jobs):
       status = subprocess.check_call('./runjob', shell = True)
       logger.debug('Runjob status: %s' % status)
       with open('STATUS', 'wb') as outfile:
-        print >>outfile, "%d" % status
+        print("%d" % status, file=outfile)
       logger.debug('Directory contents after run: %s' % os.listdir('.'))
     finally:
       os.rename(rundir, outputdir)
@@ -101,15 +101,15 @@ class MockJobFactory(object):
     logger.debug("createJob destdir: %s" % destdir)
     runjobfilename = os.path.join(jfdir, 'runjob')
     with open(runjobfilename, 'wb') as outfile:
-      print >>outfile, "#! /bin/bash"
-      print >>outfile, "#Job: %s" % self.name
-      print >>outfile, "#Runner: %s" % self.runnerName
-      print >>outfile, "#Candidate: %d" % variables.id
+      print("#! /bin/bash", file=outfile)
+      print("#Job: %s" % self.name, file=outfile)
+      print("#Runner: %s" % self.runnerName, file=outfile)
+      print("#Candidate: %d" % variables.id, file=outfile)
       for k,v in variables.variablePairs:
-        print >>outfile, "#Variable:%s:%f" % (k,v)
-        print >>outfile, "echo %s:%f >> output.res" % (k,v)
+        print("#Variable:%s:%f" % (k,v), file=outfile)
+        print("echo %s:%f >> output.res" % (k,v), file=outfile)
 
-      print >>outfile, "ls ../runner_files > runner_files_contents"
+      print("ls ../runner_files > runner_files_contents", file=outfile)
 
     logger.debug("createJob directory content: %s" % os.listdir(destdir))
     return Job(self, destdir, variables)

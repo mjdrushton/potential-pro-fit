@@ -1,5 +1,5 @@
 
-from _metadata import getMetadata
+from ._metadata import getMetadata
 
 from sqlalchemy import inspect
 
@@ -27,6 +27,6 @@ def validate(engine):
 
     for tn in actual_table_names:
       if tn and not tn in tablenames:
-        print tn
+        print(tn)
         return False
     return True

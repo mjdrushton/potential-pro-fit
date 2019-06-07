@@ -2,16 +2,16 @@ from atsim.pro_fit._channel import ChannelException
 import atsim.pro_fit.runners._queueing_system_client as generic_client
 
 from ..testutil import vagrant_basic
-from _runnercommon import channel_id, mkrunjobs
+from ._runnercommon import channel_id, mkrunjobs
 
-from _queueing_system_fixtures import queueing_system_test_module
-from _queueing_system_fixtures import gw
-from _queueing_system_fixtures import clearqueue
-from _queueing_system_fixtures import vagrant_box
-from _queueing_system_fixtures import client
-from _queueing_system_fixtures import channel
+from ._queueing_system_fixtures import queueing_system_test_module
+from ._queueing_system_fixtures import gw
+from ._queueing_system_fixtures import clearqueue
+from ._queueing_system_fixtures import vagrant_box
+from ._queueing_system_fixtures import client
+from ._queueing_system_fixtures import channel
 
-from test_pbs_remote_exec import _mkexecnetgw
+from .test_pbs_remote_exec import _mkexecnetgw
 
 import pytest
 

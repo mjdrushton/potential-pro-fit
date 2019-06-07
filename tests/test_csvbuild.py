@@ -31,19 +31,19 @@ class CSVBuildTestCase(unittest.TestCase):
           "clang" : "blibble" }
     expect = "Moop_Moop Moo bar. Ding dong blibble"
     actual = csvbuild._templateSubstitution(s, d, None)
-    self.assertEquals(expect, actual)
+    self.assertEqual(expect, actual)
 
     # Test escaping of @
     s = r'@blah@ \@blah\@'
     d = { 'blah' : "Moop" }
     expect = "Moop @blah@"
     actual = csvbuild._templateSubstitution(s,d, None)
-    self.assertEquals(expect, actual)
+    self.assertEqual(expect, actual)
 
     # Test for no placeholders
     s = 'blah blah'
     actual = csvbuild._templateSubstitution(s,{'blah' : 'Moop'}, None)
-    self.assertEquals(s, actual)
+    self.assertEqual(s, actual)
 
   def testTemplateSubstitutionFloatingPointNumbers(self):
     """Test template substitution when floating point formatting options are specified"""
@@ -54,13 +54,13 @@ class CSVBuildTestCase(unittest.TestCase):
 
     expect = "{label}_{fnum:.3f} is a filename. {fnum:04.3f}.".format(**d)
     actual = csvbuild._templateSubstitution(s,d, None)
-    self.assertEquals(expect, actual)
+    self.assertEqual(expect, actual)
 
     # Now do the same test for when fnum is passed in as a string
     d = {'label' : "Label",
          'fnum' : "1.2345"}
     actual = csvbuild._templateSubstitution(s,d, None)
-    self.assertEquals(expect, actual)
+    self.assertEqual(expect, actual)
 
     # Now do the same test for when fnum is passed in as an int
     d = {'label' : "Label",
@@ -69,7 +69,7 @@ class CSVBuildTestCase(unittest.TestCase):
     expect = "{label}_{fnum:.3f} is a filename. {fnum:04.3f}. {enum:.6f}".format(fnum = 1, enum = 1.2e-5, label = "Label")
     s = s+" @enum:.6f@"
     actual = csvbuild._templateSubstitution(s,d, None)
-    self.assertEquals(expect, actual)
+    self.assertEqual(expect, actual)
     
     # Now test with a string that can't be converted to a float
     
@@ -85,13 +85,13 @@ class CSVBuildTestCase(unittest.TestCase):
 
     expect = "{label}_{dnum:06d} is a filename.".format(**d)
     actual = csvbuild._templateSubstitution(s,d, None)
-    self.assertEquals(expect, actual)
+    self.assertEqual(expect, actual)
 
     # Now do the same test for when fnum is passed in as a string
     d = {'label' : "Label",
          'dnum' : "12"}
     actual = csvbuild._templateSubstitution(s,d, None)
-    self.assertEquals(expect, actual)
+    self.assertEqual(expect, actual)
     
     with self.assertRaises(ValueError):
       csvbuild._templateSubstitution("@bad_num:.d@", {'bad_num': 'bad'}, None)
@@ -110,16 +110,16 @@ class CSVBuildTestCase(unittest.TestCase):
     df = {"fnum": 1.234,
           "dnum" : 12}
 
-    self.assertEquals(sf.format(**df),
+    self.assertEqual(sf.format(**df),
       csvbuild._templateSubstitution(s, df, None))
 
-    self.assertEquals(sf.format(**df),
+    self.assertEqual(sf.format(**df),
       csvbuild._templateSubstitution(s, d, None))
 
-    self.assertEquals(s1f.format(**df),
+    self.assertEqual(s1f.format(**df),
       csvbuild._templateSubstitution(s1, df, None))
 
-    self.assertEquals(s1f.format(**df),
+    self.assertEqual(s1f.format(**df),
       csvbuild._templateSubstitution(s1, d, None))
 
 
@@ -142,7 +142,7 @@ class CSVBuildTestCase(unittest.TestCase):
     actual = glob.glob(j('dest', '*'))
     actual.sort()
 
-    self.assertEquals(expect, actual)
+    self.assertEqual(expect, actual)
 
 
   def testInclude(self):
@@ -151,12 +151,12 @@ class CSVBuildTestCase(unittest.TestCase):
     os.mkdir('dest')
 
     with open('include_me', 'wb') as outfile:
-      print >>outfile, "Hello"
-      print >>outfile, "Goodbye"
+      print("Hello", file=outfile)
+      print("Goodbye", file=outfile)
 
     with open(os.path.join('skel', 'boom.in'), 'wb') as outfile:
-      print >>outfile, "@INCLUDE:rel_filename@"
-      print >>outfile, "@INCLUDE:abs_filename@"
+      print("@INCLUDE:rel_filename@", file=outfile)
+      print("@INCLUDE:abs_filename@", file=outfile)
 
     d = [{'rel_filename' : os.path.join(os.path.pardir, 'include_me'),
          'abs_filename' : os.path.abspath(os.path.join(self.tempdir, 'include_me'))}]
@@ -172,7 +172,7 @@ Goodbye
 """
 
     actual = open(os.path.join('dest', 'boom'), 'rb').read()
-    self.assertEquals(expect, actual)
+    self.assertEqual(expect, actual)
 
 
   def testFileHierarchy(self):
@@ -229,6 +229,6 @@ Goodbye
 
     os.path.walk('dest', visit, None)
     actual.sort()
-    self.assertEquals(expect, actual)
+    self.assertEqual(expect, actual)
 
-    self.assertEquals('1', open(os.path.join('dest', 'DL_POLY_1', 'support_1', 'file2'), 'rb').readline()[:-1])
+    self.assertEqual('1', open(os.path.join('dest', 'DL_POLY_1', 'support_1', 'file2'), 'rb').readline()[:-1])

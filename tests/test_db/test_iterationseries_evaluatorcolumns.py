@@ -5,7 +5,7 @@ import unittest
 from .. import testutil
 
 from atsim.pro_fit import db
-from _dbtestcase import DBTestCase
+from ._dbtestcase import DBTestCase
 
 class IterationSeriesMetaEvaluatorColumnTestCase(DBTestCase):
   """Tests for IterationSeriesTable"""
@@ -27,7 +27,7 @@ class IterationSeriesMetaEvaluatorColumnTestCase(DBTestCase):
                             [2                , 0                , 2255.55815256615, 0.0319247393189062]
                   ]}
 
-    actual = {'columns' : t.next(),
+    actual = {'columns' : next(t),
               'values'  : list(t)}
     testutil.compareCollection(self, expect, actual)
 
@@ -43,7 +43,7 @@ class IterationSeries_Evaluators_TestCase(DBTestCase):
       evaluatorName = 'CaO:Gulp',
       valueName = 'elastic_c12',
       valueType = 'merit_value')
-    self.assertEquals(expect,actual)
+    self.assertEqual(expect,actual)
 
   def testValueTypeMerit(self):
     """Tests for the evaluator: column types"""
@@ -61,7 +61,7 @@ class IterationSeries_Evaluators_TestCase(DBTestCase):
                     [5 ,3, 964.64312, 55.7632]
                   ]}
 
-    actual = {'columns' : t.next(),
+    actual = {'columns' : next(t),
               'values'  : list(t)}
     testutil.compareCollection(self, expect, actual)
 
@@ -81,7 +81,7 @@ class IterationSeries_Evaluators_TestCase(DBTestCase):
                     [5 ,3, 964.64312,2.0468]
                   ]}
 
-    actual = {'columns' : t.next(),
+    actual = {'columns' : next(t),
               'values'  : list(t)}
     testutil.compareCollection(self, expect, actual)
 
@@ -101,7 +101,7 @@ class IterationSeries_Evaluators_TestCase(DBTestCase):
                     [5 ,3, 964.64312, 55.7632, 5.061349]
                   ]}
 
-    actual = {'columns' : t.next(),
+    actual = {'columns' : next(t),
               'values'  : list(t)}
     testutil.compareCollection(self, expect, actual)
 
@@ -122,7 +122,7 @@ class IterationSeries_Evaluators_TestCase(DBTestCase):
                               [3 , 2 , 1546.33659  , 52.7872791519435 ]   ,
                               [4 , 0 , 2300.90601  , 103.999106214924 ]   ,
                               [5 , 1 , 12634.65516 , -6.61635834545832 ]]}
-    actual = {'columns' : t.next(),
+    actual = {'columns' : next(t),
               'values'  : list(t)}
     testutil.compareCollection(self, expect, actual)
 

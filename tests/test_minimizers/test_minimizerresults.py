@@ -2,7 +2,7 @@ import unittest
 
 from atsim import pro_fit
 
-from _common import *
+from ._common import *
 
 
 class MinimizerResultsTestCase(unittest.TestCase):
@@ -27,12 +27,12 @@ class MinimizerResultsTestCase(unittest.TestCase):
 
     results = pro_fit.minimizers.MinimizerResults(meritVals, candidateJobList)
 
-    self.assertEquals(meritVals, results.meritValues)
-    self.assertEquals(candidateJobList, results.candidateJobList)
+    self.assertEqual(meritVals, results.meritValues)
+    self.assertEqual(candidateJobList, results.candidateJobList)
 
-    self.assertEquals(1.0, results.bestMeritValue)
-    self.assertEquals(2, results.indexOfBest)
-    self.assertEquals(candidateJobList[2][1], results.bestJobList)
+    self.assertEqual(1.0, results.bestMeritValue)
+    self.assertEqual(2, results.indexOfBest)
+    self.assertEqual(candidateJobList[2][1], results.bestJobList)
 
   def testComparison(self):
     meritVals = [2.0, 3.0, 1.0]

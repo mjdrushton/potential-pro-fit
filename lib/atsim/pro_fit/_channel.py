@@ -128,8 +128,8 @@ class AbstractChannel(object):
   def __iter__(self):
     return self._channel
 
-  def next(self):
-    msg = self._channel.next()
+  def __next__(self):
+    msg = next(self._channel)
     self._logger.debug("_next, %s: %s", self.channel_id, msg)
     return msg
 
@@ -183,7 +183,7 @@ class MultiChannel(object):
 
   def _start_channels(self, execnet_gw, channel_factory, num_channels):
     channels = []
-    for i in xrange(num_channels):
+    for i in range(num_channels):
       chan_id = "_".join([str(self._channel_id), str(i)])
       ch = channel_factory.createChannel(execnet_gw, chan_id)
       channels.append(ch)
@@ -192,8 +192,8 @@ class MultiChannel(object):
   def __iter__(self):
     return self._iter
 
-  def next(self):
-    return self._iter.next()
+  def __next__(self):
+    return next(self._iter)
 
   def setcallback(self, callback):
     self._callback = callback

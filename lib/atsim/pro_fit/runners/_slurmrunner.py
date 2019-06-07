@@ -1,9 +1,9 @@
 from atsim.pro_fit.fittool import ConfigException
 from atsim.pro_fit._channel import ChannelException
 
-from _slurm_channel import SlurmChannel
+from ._slurm_channel import SlurmChannel
 
-from _queueing_system_runner import QueueingSystemRunnerBaseClass
+from ._queueing_system_runner import QueueingSystemRunnerBaseClass
 
 from atsim.pro_fit import _execnet
 import execnet

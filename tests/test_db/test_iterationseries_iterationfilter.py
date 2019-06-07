@@ -5,7 +5,7 @@ import unittest
 from .. import testutil
 
 from atsim.pro_fit import db
-from _dbtestcase import DBTestCase
+from ._dbtestcase import DBTestCase
 
 class IterationSeries_IterationFilter_TestCase(DBTestCase):
   dbname = "population_fitting_run.db"
@@ -29,7 +29,7 @@ class IterationSeries_IterationFilter_TestCase(DBTestCase):
          [4, 1, 964.64312]
       ]
     }
-    actual = {'columns' : t.next(),
+    actual = {'columns' : next(t),
               'values'  : list(t)}
     testutil.compareCollection(self, expect, actual)
 
@@ -51,7 +51,7 @@ class IterationSeries_IterationFilter_TestCase(DBTestCase):
         [0, 1, 56979.43601]
       ]
     }
-    actual = {'columns' : t.next(),
+    actual = {'columns' : next(t),
               'values'  : list(t)}
     testutil.compareCollection(self, expect, actual)
 

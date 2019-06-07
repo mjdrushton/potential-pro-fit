@@ -2,10 +2,10 @@ import sqlalchemy as sa
 
 import contextlib
 
-from _columnproviders import  _VariablesColumnProvider, _StatColumnProvider, _EvaluatorColumnProvider
-from _columnproviders import _RunningFilterColumnProvider, _NullFilter, _RunningMaxFilter, _RunningMinFilter
-from _util import calculatePercentageDifference
-import _metadata
+from ._columnproviders import  _VariablesColumnProvider, _StatColumnProvider, _EvaluatorColumnProvider
+from ._columnproviders import _RunningFilterColumnProvider, _NullFilter, _RunningMaxFilter, _RunningMinFilter
+from ._util import calculatePercentageDifference
+from . import _metadata
 
 metadata = _metadata.getMetadata()
 
@@ -18,7 +18,7 @@ class _FilterWrapper(object):
 
   def __init__(self, results, columnName, columnFilter):
     self.results = results
-    self.columns = results.keys()
+    self.columns = list(results.keys())
     self.columnName = columnName
     self.columnFilter = columnFilter
 
@@ -30,7 +30,7 @@ class _FilterWrapper(object):
         yield row
 
   def keys(self):
-    return self.results.keys()
+    return list(self.results.keys())
 
 
 def _createColumnProviders(conn, tempMeta, primaryColumnKey, columnLabels):
@@ -77,10 +77,10 @@ class _Columns(object):
     return columns
 
   def __iter__(self):
-    rkeys = self.results.keys()
+    rkeys = list(self.results.keys())
     for row in self.results:
       outrow = list(row)
-      rowdict = dict(zip(rkeys, row))
+      rowdict = dict(list(zip(rkeys, row)))
 
       extracols = []
       for cp in self.columnProviders:
@@ -164,8 +164,8 @@ class IterationSeriesTable(object):
 
     self._iter = self._createIterator()
 
-  def next(self):
-    return list(self._iter.next())
+  def __next__(self):
+    return list(next(self._iter))
 
   def __iter__(self):
     return self
@@ -262,7 +262,7 @@ class IterationSeriesTable(object):
     insertQuery = t.insert()
     insertData = []
     for row in popnresults:
-      insertData.append(dict(zip(popnresults.keys(), row)))
+      insertData.append(dict(list(zip(list(popnresults.keys()), row))))
     conn.execute(insertQuery, insertData)
 
     yield conn, tempMetaData
@@ -317,7 +317,7 @@ class IterationSeriesTable(object):
         columnProviders = _createColumnProviders(conn, tempMeta, self.primaryColumnKey, self._columns)
         results = _Columns(results, self._columns, columnProviders)
 
-      yield results.keys()
+      yield list(results.keys())
 
       for row in results:
         yield row

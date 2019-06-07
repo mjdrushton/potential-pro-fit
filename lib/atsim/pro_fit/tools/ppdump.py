@@ -185,14 +185,14 @@ def listColumns(engine, whichSet = 'all'):
 
   keys = colsets[whichSet](engine)
   for key in keys:
-    print key
+    print(key)
 
 def outputNumIterations(engine):
   """Display number of iterations in the file.
 
   :param engine: SQL Alchemy database engine"""
   f = db.Fitting(engine)
-  print f.current_iteration()
+  print(f.current_iteration())
 
 def outputTable(engine, columns, candidate_filter, outfile):
   iterationSeriesTable = db.IterationSeriesTable(
@@ -201,7 +201,7 @@ def outputTable(engine, columns, candidate_filter, outfile):
     columns = columns)
 
   for row in iterationSeriesTable:
-    print >>outfile, ",".join([str(v) for v in row])
+    print(",".join([str(v) for v in row]), file=outfile)
 
 def outputGrid(engine, gridtype, gridx, gridy, gridz, outfile, gridmissing):
   """Outputs data in grid formats.

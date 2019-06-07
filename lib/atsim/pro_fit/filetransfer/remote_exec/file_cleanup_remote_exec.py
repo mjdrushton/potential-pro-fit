@@ -2,7 +2,7 @@ import os
 import uuid
 
 import threading
-import Queue
+import queue
 import shutil
 import types
 
@@ -17,7 +17,7 @@ class FileDeleter(object):
   class _DeletionThread(threading.Thread):
 
     def __init__(self, root_path):
-      self.queue = Queue.Queue()
+      self.queue = queue.Queue()
       self.root_path = root_path
       super(FileDeleter._DeletionThread, self).__init__()
 
@@ -93,7 +93,7 @@ def _deleter_action(msg, channel, channel_id, remote_root, action, confirm_msg):
     try:
       action(p)
       return True
-    except KeyError, e:
+    except KeyError as e:
       error(channel, channel_id,
         "path not registerd with cleanup agent",
         ("PATHERROR", "UNKNOWN_PATH"),
@@ -109,7 +109,7 @@ def _deleter_action(msg, channel, channel_id, remote_root, action, confirm_msg):
   if transid is None:
     return
 
-  if type(path) is types.ListType or type(path) is types.TupleType:
+  if type(path) is list or type(path) is tuple:
     for p in path:
       p  = normalize_path_with_error(channel, channel_id, remote_root, p, trans_id = transid)
       if p is None:
@@ -207,7 +207,7 @@ def start_channel(channel):
 
   channel_id = msg.get('channel_id', str(uuid.uuid4()))
   remote_path = msg.get('remote_path', None)
-  if not msg.has_key('remote_path'):
+  if 'remote_path' not in msg:
     error(channel,
       channel_id,
       "UPLOAD message does not contain 'remote_path' argument for msg id = '%s'" % msg.get('id', None)

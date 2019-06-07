@@ -83,7 +83,7 @@ def _isValidDirectory():
 def _makeLockFile():
   #Put PID in lockfile
   with open('lockfile','wb') as outfile:
-    print >>outfile, os.getpid()
+    print(os.getpid(), file=outfile)
 
 def _removeLockFile():
   #Remove lockfile
@@ -157,8 +157,8 @@ def _getValidRunners():
   if not os.path.exists('fit.cfg'):
     return []
 
-  import ConfigParser
-  config = ConfigParser.SafeConfigParser()
+  import configparser
+  config = configparser.SafeConfigParser()
   config.optionxform = str
   with open('fit.cfg', 'rb') as fitCfgFile:
     config.readfp(fitCfgFile)
@@ -227,8 +227,8 @@ def _setupLogging(verbose):
   """Set-up python logging"""
   # Read logging information from logging.cfg in the resources package
   cfg = pkgutil.get_data('atsim.pro_fit', 'resources/logging.cfg')
-  import StringIO
-  cfg = StringIO.StringIO(cfg)
+  import io
+  cfg = io.StringIO(cfg)
 
   logging.config.fileConfig(cfg)
 

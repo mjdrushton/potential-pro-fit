@@ -67,7 +67,7 @@ def test_serializeTableForGNUPlot():
   engine = sa.create_engine("sqlite:///"+_getdbpath())
   table = _makeTable()
 
-  from StringIO import StringIO
+  from io import StringIO
 
   sio = StringIO()
   db.serializeTableForGNUPlot(table, sio, 'variable:A', 'variable:B', 'evaluator:mult:mult:val:Z:extracted_value')
@@ -137,7 +137,7 @@ def test_serializeTableForR_rangeDiscoveIterator():
     (0,3) ]
 
   for x,y in rows:
-    print rangeDiscover
+    print(rangeDiscover)
     rangeDiscover.feed(x,y)
 
   assert_that(rangeDiscover.x_range).is_equal_to([0])
@@ -152,7 +152,7 @@ def test_serializeTableForR_rangeDiscoveIterator():
     (3,0) ]
 
   for x,y in rows:
-    print rangeDiscover
+    print(rangeDiscover)
     rangeDiscover.feed(x,y)
 
   assert_that(rangeDiscover.x_range).is_equal_to([0,1,2,3])
@@ -176,7 +176,7 @@ def test_serializeTableForR_rangeDiscoveIterator_two_axes_changing():
     (2,2)]
 
   for x,y in rows:
-    print rangeDiscover
+    print(rangeDiscover)
     rangeDiscover.feed(x,y)
 
   assert_that(rangeDiscover.x_range).is_equal_to([0,1,2])
@@ -194,7 +194,7 @@ def test_serializeTableForR_rangeDiscoveIterator_negativeAxis():
     (0,0) ]
 
   for x,y in rows:
-    print rangeDiscover
+    print(rangeDiscover)
     rangeDiscover.feed(x,y)
 
   assert_that(rangeDiscover.x_range).is_equal_to([0])

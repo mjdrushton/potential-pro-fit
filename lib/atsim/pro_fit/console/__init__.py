@@ -1,10 +1,10 @@
-from _mainframe import MainFrame
-from _model import ConsoleModel, RunnerModel, _RunnerModel
-from _controller import ConsoleController
-from _palette import palette
+from ._mainframe import MainFrame
+from ._model import ConsoleModel, RunnerModel, _RunnerModel
+from ._controller import ConsoleController
+from ._palette import palette
 
 import urwid
-from _urwid_geventloop import GeventLoop
+from ._urwid_geventloop import GeventLoop
 
 import gevent
 
@@ -60,7 +60,7 @@ class BatchObserver(atsim.pro_fit.runners.BaseRemoteRunnerObserverAdapter):
     rm = _RunnerModel()
 
     attrs = ['total_jobs', 'uploaded', 'running', 'downloaded']
-    for batch in self._batches.itervalues():
+    for batch in self._batches.values():
       for attr in attrs:
         v = getattr(batch, attr)
         setattr(rm, attr, getattr(rm, attr) + v)
@@ -113,7 +113,7 @@ class Console(object):
 
   def _initialiseRunnerModel(self, cfg):
     # Create the runners
-    for runnername, runner in cfg.runners.iteritems():
+    for runnername, runner in cfg.runners.items():
       rm = RunnerModel()
       self.model.runners.append(rm)
       listener = BatchObserver(runnername, runner, rm)

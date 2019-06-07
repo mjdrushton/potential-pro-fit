@@ -1,4 +1,4 @@
-import ConfigParser
+import configparser
 
 import collections
 import tempfile
@@ -6,7 +6,7 @@ import os
 import shutil
 import logging
 
-import jobfactories
+from . import jobfactories
 
 import cexprtk
 
@@ -95,7 +95,7 @@ class FitConfig(object):
 
   def _closeRunners(self):
     evts = []
-    for name, r in self._runners.iteritems():
+    for name, r in self._runners.items():
       self._logger.info("Closing runner: '%s'", name)
       e = r.close()
       def repclose(evt, name):
@@ -165,7 +165,7 @@ class FitConfig(object):
   def _parseConfig(self, fitCfgFilename):
     """@param fitCfgFilename Filename for fit.cfg.
     @return ConfigParser object"""
-    config = ConfigParser.SafeConfigParser()
+    config = configparser.SafeConfigParser()
     config.optionxform = str
     with open(fitCfgFilename, 'rb') as fitCfgFile:
       config.readfp(fitCfgFile)
@@ -250,7 +250,7 @@ class FitConfig(object):
       for name, expression in cfgitems:
         try:
           cexprtk.check_expression(expression)
-        except cexprtk.ParseException, e:
+        except cexprtk.ParseException as e:
           raise ConfigException("Could not parse formula within [CalculatedVariables] for '%s' with expression '%s' : %s" % (name, expression, e.message))
 
       return CalculatedVariables(cfgitems)
@@ -287,7 +287,7 @@ class FitConfig(object):
 
     filtered = {}
     neededRunnerKeys = set([ jf.runnerName for jf in self._jobfactories])
-    for k, r in self._runners.iteritems():
+    for k, r in self._runners.items():
       if not k in neededRunnerKeys:
         self._logger.warn("Runner not assigned to any jobs and will therefore not be created: '%s'" % k)
       else:
@@ -297,7 +297,7 @@ class FitConfig(object):
   def _instantiateRunners(self):
     """Create runners"""
     instantiated = {}
-    for k, r in self._runners.iteritems():
+    for k, r in self._runners.items():
       self._logger.info("Creating runner: '%s'" % k)
       instantiated[k] = r()
     self._runners = instantiated
@@ -373,7 +373,7 @@ class FitConfig(object):
       raise ConfigException('Unknown job type: "%s" for job named: "%s"' % (jfclsname, jobname))
 
     runnername = fitcfg.get('Job', 'runner')
-    if not self.runners.has_key(runnername):
+    if runnername not in self.runners:
       raise ConfigException('Unknown runner: "%s" for job named: "%s"' % (runnername, jobname))
     return jfcls.createFromConfig(path, self._fitRootPath, runnername, jobname, evaluators, fitcfg.items('Job'))
 
@@ -438,7 +438,7 @@ class FitConfig(object):
       title =  self._cfg.get('FittingRun', 'title')
       if title == None:
         title = 'fitting_run'
-    except ConfigParser.NoSectionError:
+    except configparser.NoSectionError:
       title = 'fitting_run'
 
     return title
@@ -467,7 +467,7 @@ class Variables(object):
     self.id = None
 
     if bounds == None:
-     self._bounds = [ (float("-inf"), float("inf")) for i in xrange(len(varValPairs))]
+     self._bounds = [ (float("-inf"), float("inf")) for i in range(len(varValPairs))]
     else:
       assert(len(bounds) == len(varValPairs))
       self._bounds = bounds
@@ -481,7 +481,7 @@ class Variables(object):
     self._fitKeys = fitkeys
 
   def variablePairs(self):
-    return self._varDict.items()
+    return list(self._varDict.items())
   variablePairs = property(fget = variablePairs,
       doc = """Return list of (variable_name, variable_value) pairs""")
 
@@ -508,9 +508,9 @@ class Variables(object):
     :return: ``True`` if ``value`` is in bounds or ``False`` otherwise."""
 
     boundsDict = dict(
-      zip(
+      list(zip(
         [k for (k,v) in self.variablePairs],
-        self.bounds))
+        self.bounds)))
 
     bounds = boundsDict[varKey]
 
@@ -575,7 +575,7 @@ class Variables(object):
     if newvals is None:
       return Variables(self.flaggedVariablePairs, self.bounds)
 
-    ud = dict(zip(self.fitKeys, newvals))
+    ud = dict(list(zip(self.fitKeys, newvals)))
     ivt = self.flaggedVariablePairs
     updated = []
     for i, (k,v,isp) in enumerate(ivt):
@@ -633,7 +633,7 @@ class CalculatedVariables(object):
 
     # Don't forget the bounds
     bounds = variables.bounds
-    for i in xrange(len(extraVars)):
+    for i in range(len(extraVars)):
       bounds.append(None)
 
     newvariables = Variables(vartuples, bounds)
@@ -644,7 +644,7 @@ class CalculatedVariables(object):
     for name, expression in cfgitems:
       try:
         cexprtk.check_expression(expression)
-      except cexprtk.ParseException,e:
+      except cexprtk.ParseException as e:
         raise ConfigException("Could not parse expression when processing [CalculatedVariables]: %s : %s" % (expression, e.message))
 
     return CalculatedVariables(cfgitems)

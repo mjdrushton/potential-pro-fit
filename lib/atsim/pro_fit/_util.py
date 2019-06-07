@@ -160,12 +160,12 @@ class SkipWhiteSpaceDictReader(csv.DictReader):
       return None
     return [f.strip() for f in orignames]
 
-  def next(self):
+  def __next__(self):
     origdict = csv.DictReader.next(self)
     if not origdict:
       return origdict
     vals = []
-    for k,v in origdict.iteritems():
+    for k,v in origdict.items():
       if not k is None and hasattr(k, 'strip'):
         k = k.strip()
       if not v is None and hasattr(v, 'strip'):
@@ -189,7 +189,7 @@ class MultiCallback(list):
     list.__init__(self, *args)
 
     self.retLast = False
-    if kwargs.has_key('retLast'):
+    if 'retLast' in kwargs:
       self.retLast = kwargs['retLast']
 
   def __call__(self, *args, **kwargs):

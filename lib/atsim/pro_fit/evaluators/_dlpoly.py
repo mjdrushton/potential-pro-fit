@@ -1,7 +1,7 @@
-from _common import * # noqa
+from ._common import * # noqa
 
 # from atomsscripts import dlpoly
-import _dlpoly_parse
+from . import _dlpoly_parse
 
 import os
 
@@ -111,11 +111,11 @@ class DLPOLY_STATISEvaluator(object):
 
     del cfgdict['type']
 
-    if cfgdict.has_key('start_time'):
+    if 'start_time' in cfgdict:
       del cfgdict['start_time']
 
     triplets = []
-    for k,v in cfgdict.items():
+    for k,v in list(cfgdict.items()):
       tokens = v.split()
       if len(tokens) == 2:
         try:

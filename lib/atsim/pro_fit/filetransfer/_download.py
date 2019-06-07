@@ -10,8 +10,8 @@ import traceback
 import itertools
 
 from atsim.pro_fit._channel import MultiChannel
-from _basechannel import BaseChannel, ChannelFactory
-from remote_exec.file_transfer_remote_exec import FILE, DIR
+from ._basechannel import BaseChannel, ChannelFactory
+from .remote_exec.file_transfer_remote_exec import FILE, DIR
 from atsim.pro_fit._util import MultiCallback, NamedEvent
 
 _DirectoryRecord = collections.namedtuple("_DirectoryRecord", ['transid', 'path'])
@@ -312,7 +312,7 @@ class _DownloadCallback(object):
           self._process_queue_item(msg)
         except gevent.queue.Empty:
           pass
-        except Exception,e:
+        except Exception as e:
           exc = e
           break
         gevent.sleep(0)
@@ -324,7 +324,7 @@ class _DownloadCallback(object):
     try:
       if self.parent.download_handler.finish(e) != False:
         self._exc = sys.exc_info()
-    except Exception, e:
+    except Exception as e:
       self._exc = sys.exc_info()
       self._logger.exception("exception in download finish handler")
 
@@ -351,7 +351,7 @@ class _DownloadCallback(object):
     return (self.parent.transaction_id, path)
 
   def _get_channel(self):
-    ch = self.channel_iter.next()
+    ch = next(self.channel_iter)
     return ch
 
   def _channel_send(self, msg, transid, **kwargs):
@@ -467,7 +467,7 @@ class _DownloadCallback(object):
     self.enabled = False
     try:
       self.parent.download_handler.finish(exc)
-    except Exception, e:
+    except Exception as e:
       self._exc = sys.exc_info()
     self._finish()
     return self.event

@@ -1,4 +1,4 @@
-from _common import *
+from ._common import *
 from atsim.pro_fit.fittool import ConfigException
 from atsim.pro_fit._util import SkipWhiteSpaceDictReader
 
@@ -97,7 +97,7 @@ class TableEvaluator(object):
     try:
       with open(resultsFilename, 'rUb') as resultsFile:
         rowRecords = self._processRows(resultsFile, job, resultsFilename)
-    except IOError, ioe:
+    except IOError as ioe:
       self._logger.warning("Table evaluator '%s' could not open results file: '%s' for job '%s'" % (self._name, resultsFilename, job.name))
       errorRecord = ErrorEvaluatorRecord('table_sum', 0.0, ioe, weight = self._sumWeight, evaluatorName = self._name)
       rowRecords = [errorRecord]
@@ -116,7 +116,7 @@ class TableEvaluator(object):
       return [ErrorEvaluatorRecord('table_sum', 0.0, the, weight = self._sumWeight, evaluatorName = self._name)]
 
     rowRecords = []
-    for rowid, (expectRow, resultsRow) in enumerate(itertools.izip_longest(self._expectedTable, resultsTable)):
+    for rowid, (expectRow, resultsRow) in enumerate(itertools.zip_longest(self._expectedTable, resultsTable)):
       rowName = self._getRowLabel(rowid)
 
       # Is one of the tables longer than the other?
@@ -283,29 +283,29 @@ class TableEvaluator(object):
       'sum_only',
       'label_column'])
 
-    for k,v in cfgdict.iteritems():
+    for k,v in cfgdict.items():
       if not k in supportedFields:
         raise ConfigException("unknown configuration option for Table evaluator: '%s'" % k)
 
     # Get the required fields
     try:
       results_filename = cfgdict['results_filename']
-    except KeyError, e:
+    except KeyError as e:
       raise ConfigException("required field not found: 'results_filename'")
 
     try:
       expect_filename = cfgdict['expect_filename']
-    except KeyError, e:
+    except KeyError as e:
       raise ConfigException("required field not found: 'expect_filename'")
 
     try:
       row_compare = cfgdict['row_compare']
-    except KeyError, e:
+    except KeyError as e:
       raise ConfigException("required field not found: 'row_compare'")
 
     try:
       weight = float(cfgdict.get('weight', 1.0))
-    except ValueError, e:
+    except ValueError as e:
       raise ConfigException("couldn't parse 'weight' configuration option into float: ''" % weight)
 
     # Check that expect file exists
@@ -405,7 +405,7 @@ class TableEvaluator(object):
 
     try:
       cexprtk.check_expression(expression)
-    except cexprtk.ParseException, e:
+    except cexprtk.ParseException as e:
       raise BadExpressionException("Could not parse 'row_compare' expression: %s" % e.message)
 
     # Throw when unknown variables found. Will require changes to cexprtk.

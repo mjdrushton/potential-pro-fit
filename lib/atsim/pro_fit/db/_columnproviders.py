@@ -1,6 +1,6 @@
-from _util import calculatePercentageDifference
+from ._util import calculatePercentageDifference
 
-from _metadata import getMetadata
+from ._metadata import getMetadata
 
 _metadata = getMetadata()
 
@@ -255,7 +255,7 @@ class _EvaluatorColumnProvider(object):
 
   def __call__(self, iterationNumber, candidateNumber, rowDict):
     resrow = self.results.fetchone()
-    extrarowdict = dict(zip(self.results.keys(), resrow))
+    extrarowdict = dict(list(zip(list(self.results.keys()), resrow)))
     value = self.rowpostprocess(extrarowdict)
     assert(iterationNumber == resrow[1] and candidateNumber == resrow[2])
     return [(self.columnLabel, value)]
@@ -282,7 +282,7 @@ class _EvaluatorColumnProvider(object):
 
     keys = []
     for row in results.fetchall():
-      rowdict = dict(zip(results.keys(), row))
+      rowdict = dict(list(zip(list(results.keys()), row)))
       key = "evaluator:%(job_name)s:%(evaluator_name)s:%(value_name)s" % rowdict
       for suffix in cls._suffixes:
         keys.append(":".join([key, suffix]))
@@ -345,4 +345,4 @@ class _StatColumnProvider(object):
 
     :param engine: SQL Alchemy object supporting execute() method.
     :return list: List of column keys."""
-    return cls._calculators.keys()
+    return list(cls._calculators.keys())

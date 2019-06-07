@@ -4,7 +4,7 @@ import shutil
 
 import gevent
 
-from _common import * # noqa
+from ._common import * # noqa
 
 from atsim.pro_fit.fittool import ConfigException
 
@@ -133,7 +133,7 @@ class SingleStepMinimizer(object):
   def createFromConfig(variables, configitems):
     allowedkeys = set(['type', 'keep-files-directory'])
     configitems = dict(configitems)
-    for item in configitems.keys():
+    for item in list(configitems.keys()):
       if not item in allowedkeys:
         raise ConfigException("SingleStep minimizer unknown config key: %s" % item)
 

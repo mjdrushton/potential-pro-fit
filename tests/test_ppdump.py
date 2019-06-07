@@ -11,11 +11,11 @@ except ImportError:
   RPY_AVAILABLE=False
 
 def _getdbpath():
-  from test_db.test_iterationseries import ColumnKeysTestCase
+  from .test_db.test_iterationseries import ColumnKeysTestCase
   return ColumnKeysTestCase.dbPath()
 
 def _getpopdbpath():
-  from test_db.test_iterationseries import IterationSeriesTestCase
+  from .test_db.test_iterationseries import IterationSeriesTestCase
   return IterationSeriesTestCase.dbPath()
 
 def _run_ppdump(args):
@@ -24,7 +24,7 @@ def _run_ppdump(args):
   return actual
 
 def _columnKeys_test(arg, columnSetKey, sort = True):
-  from test_db.test_iterationseries import ColumnKeysTestCase
+  from .test_db.test_iterationseries import ColumnKeysTestCase
   actual = _run_ppdump([arg, "-f '%s'" % _getdbpath()])
   actual = [ v for v in actual if v]
   if sort:
@@ -59,7 +59,7 @@ def test_list_columns():
   _columnKeys_test("--list-columns", "all", sort = False)
 
 def testGetColumnList():
-  from test_db.test_iterationseries import ColumnKeysTestCase
+  from .test_db.test_iterationseries import ColumnKeysTestCase
   import sqlalchemy as sa
   engine = sa.create_engine("sqlite:///"+_getdbpath())
   from atsim.pro_fit.tools import ppdump
@@ -93,7 +93,7 @@ def testGetColumnList():
 
 def testColumnSets():
   """Tests ppdump --variable-columns --evaluator-columns --all-columns options"""
-  from test_db.test_iterationseries import ColumnKeysTestCase
+  from .test_db.test_iterationseries import ColumnKeysTestCase
 
   prefix = "iteration_number,candidate_number,merit_value"
   vkeys = ",".join(ColumnKeysTestCase.variableExpect())
@@ -190,10 +190,10 @@ def testOptionColumn():
   mcharge = [1.6656, 1.6656, 1.6656]
 
   extracols = [colkeys]
-  extracols.extend(zip(evaluator, mcharge))
+  extracols.extend(list(zip(evaluator, mcharge)))
 
   outputlines = _run_ppdump(["-f %s" % _getdbpath(), "-c %s" % " ".join(colkeys)])
-  print outputlines
+  print(outputlines)
   _check_table(outputlines, extracols = extracols)
 
 
@@ -260,7 +260,7 @@ def testCandidateFilterMax():
 @pytest.mark.skipif(not RPY_AVAILABLE, reason = "requires rpy2")
 def test_outputRGrid(tmpdir):
   """Test ppdump with --grid=R"""
-  from test_db.test_serializetable import _getdbpath,_checkRSerializedDB
+  from .test_db.test_serializetable import _getdbpath,_checkRSerializedDB
   outfilename = str(tmpdir.join("dget.r", abs = True))
   outputlines = _run_ppdump(["-f '%s'" % _getdbpath(), "-o", outfilename, "--grid=R", "--gridx=variable:A", "--gridy=variable:B", "--gridz=evaluator:mult:mult:val:Z:extracted_value"])
   assert_that(outfilename).exists()

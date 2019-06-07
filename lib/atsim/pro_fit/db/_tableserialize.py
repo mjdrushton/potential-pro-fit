@@ -129,7 +129,7 @@ class _RangeDiscoverIterator(object):
     return "".join(s)
 
 def _populateArrays(table, xcolumn, ycolumn, zcolumn, missingValues, transposeZ = False):
-  rowkeys = table.next()
+  rowkeys = next(table)
 
   if not (xcolumn in rowkeys):
     raise KeyError("xcolumn named '%s' not found in table" % xcolumn)
@@ -165,8 +165,8 @@ def _populateArrays(table, xcolumn, ycolumn, zcolumn, missingValues, transposeZ 
     newz = []
     numcol = len(rangeDiscover.y_range)
     numrow = len(rangeDiscover.x_range)
-    for col in xrange(numcol):
-      for row in xrange(numrow):
+    for col in range(numcol):
+      for row in range(numrow):
         zidx = row * numcol + col
         newz.append(zvals[zidx])
     zvals = newz
@@ -242,7 +242,7 @@ def serializeTableForGNUPlot(table, outfile, xcolumn, ycolumn, zcolumn, missingV
   zit = iter(zvals)
   for x in x_range:
     for y in y_range:
-      zval = zit.next()
+      zval = next(zit)
       if zval == None:
         zval = missingValues
       outfile.write("%s %s %s\n" % (x,y,zval))

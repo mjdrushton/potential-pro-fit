@@ -67,9 +67,9 @@ def cmpdirs(left, right):
       assert [] == dcmp.left_only
       assert [] == dcmp.right_only
     except AssertionError:
-      print dcmp.report()
+      print(dcmp.report())
       raise
-    for subcmp in dcmp.subdirs.values():
+    for subcmp in list(dcmp.subdirs.values()):
       docmp(subcmp)
   docmp(dcmp)
 

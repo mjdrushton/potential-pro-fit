@@ -23,9 +23,9 @@ def _mk_label(mapper, show_operations, show_attributes, show_datatypes, bordersi
   if show_operations:
     html += '<TR><TD ALIGN="LEFT">%s</TD></TR>' % '<BR ALIGN="LEFT"/>'.join(
       '%s(%s)' % (name,", ".join(default is _mk_label and ("%s") % arg or ("%s=%s" % (arg,repr(default))) for default,arg in
-        zip((func.func_defaults and len(func.func_code.co_varnames)-1-(len(func.func_defaults) or 0) or func.func_code.co_argcount-1)*[_mk_label]+list(func.func_defaults or []), func.func_code.co_varnames[1:])
+        zip((func.__defaults__ and len(func.__code__.co_varnames)-1-(len(func.__defaults__) or 0) or func.__code__.co_argcount-1)*[_mk_label]+list(func.__defaults__ or []), func.__code__.co_varnames[1:])
       ))
-      for name,func in mapper.class_.__dict__.items() if isinstance(func, types.FunctionType) and func.__module__ == mapper.class_.__module__
+      for name,func in list(mapper.class_.__dict__.items()) if isinstance(func, types.FunctionType) and func.__module__ == mapper.class_.__module__
     )
   html+= '</TABLE>>'
   return html
@@ -116,7 +116,7 @@ def _render_table_html(table, metadata, show_indexes, show_datatypes):
     indexes = dict((name,defin) for name,defin in metadata.bind.execute(text("SELECT indexname, indexdef FROM pg_indexes WHERE tablename = '%s'" % table.name)))
     if indexes and show_indexes:
       html += '<TR><TD BORDER="1" CELLPADDING="0"></TD></TR>'
-      for index, defin in indexes.items():
+      for index, defin in list(indexes.items()):
         ilabel = 'UNIQUE' in defin and 'UNIQUE ' or 'INDEX '
         ilabel += defin[defin.index('('):]
         html += '<TR><TD ALIGN="LEFT">%s</TD></TR>' % ilabel
@@ -135,7 +135,7 @@ def create_schema_graph(tables=None, metadata=None, show_indexes=True, show_data
   elif not tables and metadata:
     if not len(metadata.tables):
       metadata.reflect()
-    tables = metadata.tables.values()
+    tables = list(metadata.tables.values())
   else:
     raise Exception("You need to specify at least tables or metadata")
 
@@ -173,13 +173,13 @@ def create_schema_graph(tables=None, metadata=None, show_indexes=True, show_data
   return graph
 
 def show_uml_graph(*args, **kwargs):
-  from cStringIO import StringIO
+  from io import StringIO
   from PIL import Image
   iostream = StringIO(create_uml_graph(*args, **kwargs).create_png())
   Image.open(iostream).show(command=kwargs.get('command','gwenview'))
 
 def show_schema_graph(*args, **kwargs):
-  from cStringIO import StringIO
+  from io import StringIO
   from PIL import Image
   iostream = StringIO(create_schema_graph(*args, **kwargs).create_png())
   Image.open(iostream).show(command=kwargs.get('command','gwenview'))

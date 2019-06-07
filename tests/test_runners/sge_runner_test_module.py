@@ -17,7 +17,7 @@ def clearqueue(channel):
   job_ids = [ l.split()[0] for l in lines]
   for job_id in job_ids:
     cmd = "qdel %s" % job_id
-    print cmd
+    print(cmd)
     subprocess.call(cmd, shell = True)
   import time
   cleared = False

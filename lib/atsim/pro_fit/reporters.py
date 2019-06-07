@@ -1,13 +1,13 @@
 import sqlalchemy as sa
 import tabulate
 
-from _util import retry_backoff
+from ._util import retry_backoff
 
-import db
+from . import db
 
 import logging
 import os
-from cStringIO import StringIO
+from io import StringIO
 
 _retryLogger = logging.getLogger("atsim.pro_fit.reporters.SQLiteReporter.retry")
 
@@ -290,7 +290,7 @@ class LogReporter(object):
         if jobErrors:
           errorsFound = True
           sbuild.write(jobErrors)
-          print >>sbuild, ""
+          print("", file=sbuild)
 
     if errorsFound:
       return sbuild.getvalue()
@@ -299,19 +299,19 @@ class LogReporter(object):
 
   def _log(self, minimizerResults):
     sbuild = StringIO()
-    print >>sbuild, ""
-    print >>sbuild, "Results at iteration: %d" % self.currentIterationNumber
-    print >>sbuild, ""
+    print("", file=sbuild)
+    print("Results at iteration: %d" % self.currentIterationNumber, file=sbuild)
+    print("", file=sbuild)
 
     evaluatorErrors = self._formatEvaluatorErrors(minimizerResults)
     if evaluatorErrors:
       sbuild.write(evaluatorErrors)
-      print >>sbuild, ""
-      print >>sbuild, ""
+      print("", file=sbuild)
+      print("", file=sbuild)
 
-    print >>sbuild, "Variables and Merit Values:"
+    print("Variables and Merit Values:", file=sbuild)
     table = self._makeResultsTable(minimizerResults)
     sbuild.write(table)
-    print >>sbuild, ""
-    print >>sbuild, ""
+    print("", file=sbuild)
+    print("", file=sbuild)
     self._logger.info(sbuild.getvalue())

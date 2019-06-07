@@ -3,7 +3,7 @@ import threading
 import subprocess
 import os
 import collections
-import Queue
+import queue
 from multiprocessing import cpu_count
 import traceback
 import time
@@ -105,7 +105,7 @@ class Runners(threading.Thread):
     self._parent = parent
     self._semaphore = threading.BoundedSemaphore(nprocesses)
     self._lock = threading.RLock()
-    self._queued_jobs = Queue.Queue()
+    self._queued_jobs = queue.Queue()
     self._runcmd =  set()
     self._killevent = threading.Event()
     self._timeout = 0.01
@@ -124,7 +124,7 @@ class Runners(threading.Thread):
           return
         try:
           job = self._queued_jobs.get(True, self._timeout)
-        except Queue.Empty:
+        except queue.Empty:
           pass
 
       if self._killevent.is_set():

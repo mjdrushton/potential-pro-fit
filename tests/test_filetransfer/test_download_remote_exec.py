@@ -3,7 +3,7 @@ from atsim.pro_fit.filetransfer.remote_exec.file_transfer_remote_exec import FIL
 
 import os
 
-from _common import execnet_gw, channel_id
+from ._common import execnet_gw, channel_id
 
 import py.path
 
@@ -26,7 +26,7 @@ def testBadStart_nonexistent_directory(execnet_gw, channel_id):
     ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : badpath })
     msg = ch1.receive(10.0)
 
-    assert msg.has_key('reason')
+    assert 'reason' in msg
     assert msg['reason'].startswith('path does not exist')
     del msg['reason']
     msg == dict(msg =  "ERROR", channel_id = channel_id, remote_path = badpath)
@@ -90,7 +90,7 @@ def testListDir(tmpdir, execnet_gw, channel_id):
     ch1.send({'msg' : 'LIST', 'id': transid, 'remote_path' : tmpdir.strpath})
     msg = ch1.receive(10.0)
 
-    assert msg.has_key("files")
+    assert "files" in msg
     msg['files'] = sorted(msg['files'])
     assert expect == msg
   finally:
@@ -127,7 +127,7 @@ def testDownloadFile_bad(tmpdir, execnet_gw, channel_id):
     rpath.chmod(0o0)
     ch1.send({'msg' : 'DOWNLOAD_FILE', 'id' : 1, 'remote_path' : rpath.strpath})
     rcv = ch1.receive(10.0)
-    assert rcv.has_key('exc_msg')
+    assert 'exc_msg' in rcv
     del rcv['exc_msg']
     assert {'msg' : 'ERROR',
             'channel_id' : channel_id,

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import cStringIO
+import io
 import numbers
 import os
 import re
@@ -60,7 +60,7 @@ class _DefaultHandler(object):
         fmtstring = "{"+placeholder+"}"
       
       retstring = self._stringFormatter.format(fmtstring, **substitutionDict)
-    except KeyError, e:
+    except KeyError as e:
       raise CSVBuildKeyError(*e.args)
     return (True, retstring)
 
@@ -82,7 +82,7 @@ def _templateSubstitution(template, substitutionDict, skelpath):
 
   :return: Substituted string"""
   splitRegex = re.compile(r"((?<!\\)@(.*?)(?<!\\)@)")
-  sbuild = cStringIO.StringIO()
+  sbuild = io.StringIO()
 
   tokens = splitRegex.split(template)
   while len(tokens) > 0:
@@ -149,7 +149,7 @@ class _DirectoryWalker(object):
 
       try:
         filecontents = _templateSubstitution(filecontents, row, self.skeletonDirectory)
-      except CSVBuildKeyError, e:
+      except CSVBuildKeyError as e:
         augmentedException = CSVBuildKeyError(*e.args)
         augmentedException.templateFilename = srcpath
         raise augmentedException
@@ -219,7 +219,7 @@ def _setupLogging(level=logging.WARN):
   logger.addHandler(stderrHandler)
 
 def _commandLineParser():
-  usage = u"""usage: %prog [options] CSV_FILENAME TEMPLATE_DIRECTORY DESTINATION_DIRECTORY
+  usage = """usage: %prog [options] CSV_FILENAME TEMPLATE_DIRECTORY DESTINATION_DIRECTORY
 
 A tool that can be thought of as the equivalent of mail-merge for files and directories.
 Create a directory structure from the contents of a CSV file and a template directory structure.

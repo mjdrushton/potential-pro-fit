@@ -11,7 +11,7 @@ import gevent.event
 from atsim.pro_fit.filetransfer import  DownloadHandler, DownloadCancelledException, UploadCancelledException
 from atsim.pro_fit._util import linkevent_spawn
 
-from _run_remote_client import RunJobKilledException, NonZeroExitStatus
+from ._run_remote_client import RunJobKilledException, NonZeroExitStatus
 
 
 class _RunnerJobObservers(list):

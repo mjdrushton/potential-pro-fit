@@ -12,7 +12,7 @@ def mktempdir(channel, channel_id):
   try:
     tmpdir = tempfile.mkdtemp()
     return tmpdir
-  except Exception, e:
+  except Exception as e:
     error(channel,
       channel_id,
       "Couldn't create temporary directory. '%s' " % e,
@@ -44,7 +44,7 @@ def process_path(channel, channel_id, remote_path):
   try:
     os.mkdir(remote_path)
     return True, remote_path
-  except Exception, e:
+  except Exception as e:
     error(channel,
       channel_id,
       "Couldn't create directory. '%s' reason '%s'" % (remote_path, e),
@@ -66,7 +66,7 @@ def chkpath(channel, channel_id, remote_path):
   return True, remote_path
 
 def upload(channel, channel_id, remote_root, msg):
-  if not msg.has_key('id'):
+  if 'id' not in msg:
     error(channel,
       channel_id,
       "UPLOAD message does not contain 'id' argument",
@@ -92,7 +92,7 @@ def upload(channel, channel_id, remote_root, msg):
 
     with open(remote_path, 'wb') as outfile:
       outfile.write(file_data)
-  except Exception,e:
+  except Exception as e:
     error(channel, channel_id, "Error writing file: '%s'" % str(e),
       ("IOERROR", "WRITE"),
       remote_path = remote_path,
@@ -110,7 +110,7 @@ def upload(channel, channel_id, remote_root, msg):
   return True
 
 def mkdir(channel, channel_id, remote_root, msg):
-  if not msg.has_key('id'):
+  if 'id' not in msg:
     error(channel,
       channel_id,
       "MKDIR message does not contain 'id' argument",
@@ -129,7 +129,7 @@ def mkdir(channel, channel_id, remote_root, msg):
 
   try:
     os.mkdir(remote_path, mode)
-  except OSError, e:
+  except OSError as e:
     error(channel, channel_id, "Error making directory: '%s'" % str(e),
       ("IOERROR", "OSERROR"),
       remote_path = remote_path,
@@ -144,7 +144,7 @@ def mkdir(channel, channel_id, remote_root, msg):
   return True
 
 def mkdirs(channel, channel_id, remote_root, msg):
-  if not msg.has_key('id'):
+  if 'id' not in msg:
     error(channel,
       channel_id,
       "MKDIRS message does not contain 'id' argument",
@@ -170,7 +170,7 @@ def mkdirs(channel, channel_id, remote_root, msg):
   else:
     try:
       os.makedirs(remote_path, mode)
-    except OSError, e:
+    except OSError as e:
       error(channel, channel_id, "Error making directory: '%s'" % str(e),
         ("IOERROR", "OSERROR"),
         remote_path = remote_path,
@@ -207,7 +207,7 @@ def list_dir(channel, channel_id, remote_root, msg):
 
   try:
     file_list = os.listdir(path)
-  except OSError,e:
+  except OSError as e:
     error(channel, channel_id,
       "Could not list directory",
       ("OSERROR", "LISTDIR"),
@@ -271,7 +271,7 @@ def download_file(channel,channel_id, remote_root, msg):
   try:
     with open(path,'rb') as infile:
       filecontents = infile.read()
-  except IOError,e:
+  except IOError as e:
     error(channel,
       channel_id,
       "permission denied",
@@ -323,7 +323,7 @@ def upload_remote_exec(channel, channel_id, remote_path):
           "Unknown 'msg' type: '%s'" % (mtype,),
           ("MSGERROR", "UNKNOWN_MSGTYPE"),
           mtype = mtype)
-    except Exception,e:
+    except Exception as e:
       error(channel, channel_id,
         "Exception: %s" % str(e),
         ("EXCEPTION", str(type(e))),
@@ -362,7 +362,7 @@ def download_remote_exec(channel, channel_id, remote_path):
           "Unknown 'msg' type: '%s'" % (mtype,),
           ("MSGERROR", "UNKNOWN_MSGTYPE"),
           mtype = mtype)
-    except Exception,e:
+    except Exception as e:
       error(channel, channel_id,
       "Exception: %s" % str(e),
       ("EXCEPTION", str(type(e))),
@@ -379,7 +379,7 @@ def start_channel(channel):
     error(channel,
           None,
           'was expecting msg that is one of %s, got "%s" instead' % (
-            ",".join(['"%s"' % ctype for ctype in channeltypes.keys()],
+            ",".join(['"%s"' % ctype for ctype in list(channeltypes.keys())],
              ("MSGERROR", "UNKNOWN_MSGTYPE"),
              mtype))
           )

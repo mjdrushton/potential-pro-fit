@@ -4,7 +4,7 @@ from ..testutil import vagrant_torque, vagrant_basic
 from atsim.pro_fit.runners import _pbs_remote_exec
 from atsim.pro_fit import _execnet
 from atsim.pro_fit.runners._pbs_remote_exec import pbsIdentify, PBSIdentifyRecord
-from _runnercommon import channel_id, mkrunjobs, send_and_compare
+from ._runnercommon import channel_id, mkrunjobs, send_and_compare
 
 import py.path
 from pytest import fixture
@@ -19,7 +19,7 @@ def _mkexecnetgw(vagrant_box):
 
 @fixture(scope = "function")
 def clearqueue(vagrant_torque):
-  from pbs_runner_test_module import clearqueue
+  from .pbs_runner_test_module import clearqueue
   gw = _mkexecnetgw(vagrant_torque)
   ch = gw.remote_exec(clearqueue)
   ch.waitclose(20)

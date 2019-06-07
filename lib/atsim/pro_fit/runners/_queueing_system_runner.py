@@ -1,9 +1,9 @@
 from atsim.pro_fit.fittool import ConfigException
-from _queueing_system_client import QueueingSystemClient
-from _queueing_system_runner_batch import QueueingSystemRunnerBatch
+from ._queueing_system_client import QueueingSystemClient
+from ._queueing_system_runner_batch import QueueingSystemRunnerBatch
 
-from _base_remoterunner import BaseRemoteRunner
-from _base_remoterunner import RemoteRunnerCloseThreadBase
+from ._base_remoterunner import BaseRemoteRunner
+from ._base_remoterunner import RemoteRunnerCloseThreadBase
 
 import logging
 import os

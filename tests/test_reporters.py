@@ -3,7 +3,7 @@
 import unittest
 
 from atsim import pro_fit
-import testutil
+from . import testutil
 
 import sqlalchemy as sa
 
@@ -37,7 +37,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
 
     meritvals = []
     vinstances = []
-    for i in xrange(10):
+    for i in range(10):
       mval *= 0.1
       meritvals.append(mval)
       if not vinstances:
@@ -100,7 +100,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
       results = conn.execute(query)
       actual = []
       for row in results:
-        actual.append(dict(zip(row.keys(), row)))
+        actual.append(dict(list(zip(list(row.keys()), row))))
       results.close()
 
       expect = [
@@ -109,7 +109,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
         {'id' : 3, 'variable_name' : 'C', 'fit_flag' : False, 'low_bound' : float(0.0), "upper_bound" : float(5.0), "calculated_flag" : False, "calculation_expression" : None},
         {'id' : 4, 'variable_name' : 'E', 'fit_flag' : False, 'low_bound' : None, "upper_bound" : None, "calculated_flag" : True, "calculation_expression" : "A - C"},
         {'id' : 5, 'variable_name' : 'sum', 'fit_flag' : False, 'low_bound' : None, "upper_bound" : None, "calculated_flag" : True, "calculation_expression" : "A+rho+C"}]
-      tstcase.assertEquals(expect, actual)
+      tstcase.assertEqual(expect, actual)
 
       # Check that 'candidates' table contains what it should
       table = metadata.tables['candidates']
@@ -118,7 +118,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
       resultdicts = []
       results = conn.execute(query)
       for row in results:
-        resultdict = dict( zip(row.keys(), row))
+        resultdict = dict( list(zip(list(row.keys()), row)))
         resultdicts.append(resultdict)
 
       expect = [ {'id' : 1,
@@ -135,7 +135,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
       actual = []
       for row in results:
         actual.append(
-          dict(zip(row.keys(), row)) )
+          dict(list(zip(list(row.keys()), row))) )
       expect = [ {'id' : 1, 'variable_name' : 'A', 'candidate_id' : 1, 'value' : 1000.0},
                  {'id' : 2, 'variable_name' : 'rho', 'candidate_id' : 1, 'value' : 0.01},
                  {'id' : 3, 'variable_name' : 'C', 'candidate_id' : 1, 'value' : 32.0}]
@@ -280,7 +280,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
 
       actual = []
       for row in results:
-        actual.append( dict(zip(row.keys(), row)))
+        actual.append( dict(list(zip(list(row.keys()), row))))
       expect = [{'id' : 1, 'runstatus' : 'Running', 'title' : 'fitting_run'}]
       testutil.compareCollection(self, expect, actual)
       results.close()
@@ -290,7 +290,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
       actual = []
       results = conn.execute(query)
       for row in results:
-        actual.append( dict(zip(row.keys(), row)))
+        actual.append( dict(list(zip(list(row.keys()), row))))
       expect = [{'id' : 1, 'runstatus' : 'Finished', 'title' : 'fitting_run'}]
       testutil.compareCollection(self, expect, actual)
       results.close()
@@ -336,7 +336,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
       query = etable.select()
       actual = []
       for row in conn.execute(query):
-        actual.append( dict(zip(row.keys(), row)))
+        actual.append( dict(list(zip(list(row.keys()), row))))
       expect = [{
         'id' : 1,
         'job_id' : 1,
@@ -360,6 +360,6 @@ class SQLiteReporterTestCase(unittest.TestCase):
       query = etable.select()
       actual = []
       for row in conn.execute(query):
-        actual.append( dict(zip(row.keys(), row)))
+        actual.append( dict(list(zip(list(row.keys()), row))))
       testutil.compareCollection(self, expect, actual)
 

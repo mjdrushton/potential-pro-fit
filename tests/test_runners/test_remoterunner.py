@@ -19,7 +19,7 @@ from atsim import pro_fit
 
 from atsim.pro_fit.runners import RunnerClosedException
 
-from _runnercommon import runfixture, DIR, FILE, runnertestjob, CheckPIDS, isdir_remote
+from ._runnercommon import runfixture, DIR, FILE, runnertestjob, CheckPIDS, isdir_remote
 from .. import common
 from ..testutil import vagrant_basic
 
@@ -159,12 +159,12 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
   logger = logging.getLogger(__name__).getChild("testTerminate")
   # Create a long running job.
   jobiter = _mklongjob(tmpdir)
-  j1 = jobiter.next()
+  j1 = next(jobiter)
   assert(os.path.exists(str(tmpdir.join('0', 'job_files', 'runjob'))))
   assert(os.path.exists(str(tmpdir.join('0', 'runner_files'))))
 
-  batch1 = [jobiter.next() for i in xrange(4)]
-  batch2 = [jobiter.next() for i in xrange(4)]
+  batch1 = [next(jobiter) for i in range(4)]
+  batch2 = [next(jobiter) for i in range(4)]
 
   # Run the jobs
   runner = _createRunner(runfixture, vagrant_basic, 4)
@@ -182,7 +182,7 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
     # batchpath = posixpath.join(f._remotePath, f._batchDir)
     # Check five times with a sleep of 1s between attempts
     # if after that remote files don't appear, then they never will
-    for i in xrange(5):
+    for i in range(5):
       # Check paths
       count = 0
       pids = []
@@ -294,12 +294,12 @@ def testClose(runfixture, vagrant_basic, tmpdir):
   jobiter = _mklongjob(tmpdir)
 
   b1_jobs = []
-  for i in xrange(5):
-    b1_jobs.append(jobiter.next())
+  for i in range(5):
+    b1_jobs.append(next(jobiter))
 
   b2_jobs = []
-  for i in xrange(5):
-    b2_jobs.append(jobiter.next())
+  for i in range(5):
+    b2_jobs.append(next(jobiter))
 
   b1 = runner.runBatch(b1_jobs)
   b2 = runner.runBatch(b2_jobs)
@@ -310,7 +310,7 @@ def testClose(runfixture, vagrant_basic, tmpdir):
       # running =  [ j for j in itertools.chain(b1.jobs,b2.jobs) if  j.pidSetEvent != None ]
       running =  [ j for j in b1.jobs if  j.pidSetEvent != None ]
       running = [ j for j in running if j.pidSetEvent.is_set()]
-      print len(running)
+      print(len(running))
       gevent.sleep(0.1)
     return running
 
@@ -368,12 +368,12 @@ def testBatchTerminate2(runfixture, vagrant_basic, tmpdir):
     jobiter = _mklongjob(tmpdir)
 
     b1_jobs = []
-    for i in xrange(5):
-      b1_jobs.append(jobiter.next())
+    for i in range(5):
+      b1_jobs.append(next(jobiter))
 
     b2_jobs = []
-    for i in xrange(5):
-      b2_jobs.append(jobiter.next())
+    for i in range(5):
+      b2_jobs.append(next(jobiter))
 
     b1 = runner.runBatch(b1_jobs)
 

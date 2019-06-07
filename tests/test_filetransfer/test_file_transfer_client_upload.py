@@ -1,5 +1,5 @@
-from _common import execnet_gw, channel_id,  cmpdirs
-from _common import create_dir_structure as _create_dir_structure
+from ._common import execnet_gw, channel_id,  cmpdirs
+from ._common import create_dir_structure as _create_dir_structure
 
 from atsim.pro_fit.filetransfer import UploadChannels, UploadDirectory, UploadHandler
 from atsim.pro_fit.filetransfer import ChannelException, DirectoryUploadException, UploadCancelledException
@@ -20,7 +20,7 @@ def create_dir_structure(tmpdir):
   dpath.rename(rpath)
 
   with lpath.join("0", "1", "hello_world.txt").open("w") as outfile:
-    print >>outfile, "Hello World!"
+    print("Hello World!", file=outfile)
 
 def do_ul(tmpdir, channels, dl = None, do_cmp = True):
   spath = tmpdir.join("local")
@@ -40,7 +40,7 @@ def testUploadChannel_BadStart_nonexistent_directory(execnet_gw, channel_id):
   try:
     ch = UploadChannels(execnet_gw, badpath, channel_id = channel_id, keepAlive = KEEP_ALIVE)
     assert False,  "ChannelException should have been raised."
-  except ChannelException,e:
+  except ChannelException as e:
     pass
   finally:
     if ch:
@@ -212,10 +212,10 @@ def testDirectoryUpload_create_multiple_uploads(tmpdir, execnet_gw, channel_id):
   source2.ensure_dir()
 
   with source1.join("file.txt").open("w") as outfile:
-    print >>outfile, "Hello"
+    print("Hello", file=outfile)
 
   with source2.join("file.txt").open("w") as outfile:
-    print >>outfile, "Goodbye"
+    print("Goodbye", file=outfile)
 
   dest1 = tmpdir.join("dest_1")
   dest2 = tmpdir.join("dest_2")
@@ -248,7 +248,7 @@ def testDirectoryUpload_test_nonblocking(tmpdir, execnet_gw, channel_id):
   source1.ensure_dir()
 
   with source1.join("file.txt").open("w") as outfile:
-    print >>outfile, "Hello"
+    print("Hello", file=outfile)
 
   dest1 = tmpdir.join("dest_1")
 
@@ -304,7 +304,7 @@ def testDirectoryUpload_ensure_root(tmpdir, execnet_gw, channel_id):
   local.ensure_dir()
 
   with local.join("hello.txt").open("w") as outfile:
-    print >>outfile, "Hello World!"
+    print("Hello World!", file=outfile)
 
   local.join("blah").mkdir()
   dest = remote.join("Batch-0/0")
@@ -329,7 +329,7 @@ def testDirectoryUpload_cancel(tmpdir, execnet_gw, channel_id):
   source1.ensure_dir()
 
   with source1.join("file.txt").open("w") as outfile:
-    print >>outfile, "Hello"
+    print("Hello", file=outfile)
 
   dest1 = tmpdir.join("dest_1")
 

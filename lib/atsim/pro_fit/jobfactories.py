@@ -139,7 +139,7 @@ class TemplateJobFactory(object):
           rows,
           os.path.basename(srcdir),
           destdir)
-    except csvbuild.CSVBuildKeyError,e:
+    except csvbuild.CSVBuildKeyError as e:
       msg = "Unknown variable name '%s' specified in template: %s" % (e.args[0], os.path.join(srcdir, e.templateFilename))
       raise ConfigException(msg)
     finally:

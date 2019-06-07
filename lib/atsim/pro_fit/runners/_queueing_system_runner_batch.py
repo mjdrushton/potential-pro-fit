@@ -1,8 +1,8 @@
 
 from atsim.pro_fit._util import MultiCallback
 from atsim.pro_fit._util import linkevent_spawn
-from _runner_batch import RunnerBatch
-from _exceptions import JobKilledException
+from ._runner_batch import RunnerBatch
+from ._exceptions import JobKilledException
 
 import logging
 import weakref

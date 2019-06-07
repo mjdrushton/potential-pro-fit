@@ -2,7 +2,7 @@ from assertpy import assert_that, fail
 
 from atsim.pro_fit.filetransfer.remote_exec import file_transfer_remote_exec
 
-from _common import execnet_gw, channel_id
+from ._common import execnet_gw, channel_id
 
 import uuid
 import os

@@ -1,14 +1,14 @@
 import logging
 
 
-from _inspyred_common import VariableException
-from _inspyred_common import _BoundedVariableBaseClass
+from ._inspyred_common import VariableException
+from ._inspyred_common import _BoundedVariableBaseClass
 
-from _inspyred_common import _IntConvert
-from _inspyred_common import _FloatConvert
-from _inspyred_common import _RandomSeed
-from _inspyred_common import _ChoiceConvert
-from _inspyred_common import _EvolutionaryComputationMinimizerBaseClass
+from ._inspyred_common import _IntConvert
+from ._inspyred_common import _FloatConvert
+from ._inspyred_common import _RandomSeed
+from ._inspyred_common import _ChoiceConvert
+from ._inspyred_common import _EvolutionaryComputationMinimizerBaseClass
 
 import inspyred
 
@@ -70,7 +70,7 @@ class Particle_SwarmMinimizer(object):
     # Check bounds are defined
     try:
       _BoundedVariableBaseClass(variables)
-    except VariableException,e:
+    except VariableException as e:
       raise ConfigException("Particle_Swarm Minimizer:"+e.message)
 
     cfgdict = dict(configitems)
@@ -88,18 +88,18 @@ class Particle_SwarmMinimizer(object):
       random_seed = (None, _RandomSeed(clsname, "random_seed")))
 
     # Throw if cfgdict has any keys not in defaults
-    for k in cfgdict.iterkeys():
-      if not defaults.has_key(k):
+    for k in cfgdict.keys():
+      if k not in defaults:
         raise ConfigException("Unknown configuration option '%s' for Particle_Swarm minimizer" % (k,))
 
     # Override any values specified in cfgdict.
     optiondict = {}
-    for k, (default, converter) in defaults.iteritems():
+    for k, (default, converter) in defaults.items():
       optiondict[k] = converter(cfgdict.get(k, converter(default)))
 
     # Configure topology
     if optiondict["topology"] == "star":
-      if cfgdict.has_key("neighbourhood_size"):
+      if "neighbourhood_size" in cfgdict:
         raise ConfigException("Particle_Swarm Minimizer, the 'neighbourhood_size' option can only be used with 'topology' = 'ring'")
       del optiondict["neighbourhood_size"]
       topology = inspyred.swarm.topologies.star_topology
@@ -113,7 +113,7 @@ class Particle_SwarmMinimizer(object):
 
     # Log the options
     Particle_SwarmMinimizer.logger.info("Configuring Particle_SwarmMinimizer with following options:")
-    for k, v in optiondict.iteritems():
+    for k, v in optiondict.items():
       Particle_SwarmMinimizer.logger.info("%s = %s" % (k,v))
 
     del optiondict['topology']

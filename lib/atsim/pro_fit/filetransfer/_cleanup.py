@@ -1,5 +1,5 @@
 from atsim.pro_fit._channel import AbstractChannel
-from remote_exec import file_cleanup_remote_exec
+from .remote_exec import file_cleanup_remote_exec
 from atsim.pro_fit._util import CallbackRegister, NamedEvent
 
 import logging
@@ -202,7 +202,7 @@ class CleanupClient(object):
 
   @property
   def _transid(self):
-    return "%s-%d" % (self._base_transid, self._id_count.next())
+    return "%s-%d" % (self._base_transid, next(self._id_count))
 
 class NullCleanupClient(object):
   """Class that implements the CleanupClient interface but does nothing.

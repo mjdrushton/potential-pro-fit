@@ -2,7 +2,7 @@ import unittest
 
 
 from atsim import pro_fit
-import testutil
+from . import testutil
 
 class MockJob(object):
 
@@ -15,13 +15,13 @@ class MockJob(object):
 class FormulaMetaEvaluator(unittest.TestCase):
 
   def _parseListAsConfig(self, config):
-    import ConfigParser
+    import configparser
     import os
     config = os.linesep.join(config)
-    parser = ConfigParser.SafeConfigParser()
+    parser = configparser.SafeConfigParser()
     parser.optionxform = str
-    import StringIO
-    sio = StringIO.StringIO(config)
+    import io
+    sio = io.StringIO(config)
     parser.readfp(sio)
     return parser
 
@@ -111,15 +111,15 @@ class FormulaMetaEvaluator(unittest.TestCase):
     metaeval = pro_fit.metaevaluators.FormulaMetaEvaluator("Meta", [expression1], variables)
     expect1 = 123.0 + 100.0 + 123.0 + 2.0 + 1000.0 + 124.0 + 125.0 + 126.0
     actual = metaeval([mgojob, caojob])[0]
-    self.assertAlmostEquals(expect1, actual.meritValue)
-    self.assertEquals("Expression1", actual.name)
+    self.assertAlmostEqual(expect1, actual.meritValue)
+    self.assertEqual("Expression1", actual.name)
 
     expression2 = pro_fit.metaevaluators.Expression("Expression2", "(A+B)/2.0 - (2*(G+H+E+F))/3", 2.0, None)
     metaeval = pro_fit.metaevaluators.FormulaMetaEvaluator("Meta", [expression2], variables)
     expect2 = ((123.0 + 100.0)/2.0 - (2.0*(125.0+126.0+1000.0+124.0)/3.0)) * 2.0
     actual = metaeval([mgojob, caojob])[0]
-    self.assertAlmostEquals(expect2, actual.meritValue)
-    self.assertAlmostEquals(((123.0 + 100.0)/2.0 - (2.0*(125.0+126.0+1000.0+124.0)/3.0)), actual.extractedValue)
+    self.assertAlmostEqual(expect2, actual.meritValue)
+    self.assertAlmostEqual(((123.0 + 100.0)/2.0 - (2.0*(125.0+126.0+1000.0+124.0)/3.0)), actual.extractedValue)
 
     metaeval = pro_fit.metaevaluators.FormulaMetaEvaluator("Meta", [expression1, expression2], variables)
     actual = metaeval([mgojob, caojob])
@@ -142,10 +142,10 @@ class FormulaMetaEvaluator(unittest.TestCase):
     badexpression = pro_fit.metaevaluators.Expression("BadExpression1", "J+K", 1.0, None)
     metaeval = pro_fit.metaevaluators.FormulaMetaEvaluator("Meta", [badexpression], variables)
     actual = metaeval([mgojob, caojob])
-    self.assertEquals(1, len(actual))
+    self.assertEqual(1, len(actual))
     actual = actual[0]
-    self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(actual))
-    self.assertEquals("BadExpression1", actual.name)
+    self.assertEqual(pro_fit.evaluators.ErrorEvaluatorRecord, type(actual))
+    self.assertEqual("BadExpression1", actual.name)
 
   def testCreateFromConfig(self):
     """Test creation of FormulaMetaEvaluator from config items"""
@@ -159,7 +159,7 @@ class FormulaMetaEvaluator(unittest.TestCase):
       "weight_summed : 5.0"])
     cfgitems = parser.items("MetaEvaluator:Sumthings")
     evaluator = pro_fit.metaevaluators.FormulaMetaEvaluator.createFromConfig("Sumthings", "/a/path", cfgitems)
-    self.assertEquals(pro_fit.metaevaluators.FormulaMetaEvaluator, type(evaluator))
+    self.assertEqual(pro_fit.metaevaluators.FormulaMetaEvaluator, type(evaluator))
 
     testutil.compareCollection(self,
       [("summed", "A + B", 5.0, None),
@@ -181,7 +181,7 @@ class FormulaMetaEvaluator(unittest.TestCase):
       "weight_summed : 5.0"])
     cfgitems = parser.items("MetaEvaluator:Sumthings")
     evaluator = pro_fit.metaevaluators.FormulaMetaEvaluator.createFromConfig("Sumthings", "/a/path", cfgitems)
-    self.assertEquals(pro_fit.metaevaluators.FormulaMetaEvaluator, type(evaluator))
+    self.assertEqual(pro_fit.metaevaluators.FormulaMetaEvaluator, type(evaluator))
 
     testutil.compareCollection(self,
       [("summed", "A + B", 5.0, None),

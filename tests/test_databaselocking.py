@@ -12,7 +12,7 @@ import shutil
 from atsim.pro_fit.reporters import  SQLiteReporter
 from atsim import pro_fit
 
-import test_reporters
+from . import test_reporters
 
 class LockerException(Exception):
   pass

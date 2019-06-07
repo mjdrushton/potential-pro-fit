@@ -55,13 +55,13 @@ class InspyredSupportTestCase(unittest.TestCase):
 
     expect = [[-10.0, -20.0], [10.0, 20.0]]
     actual = bounder._bounds
-    self.assertEquals(expect, actual)
+    self.assertEqual(expect, actual)
 
     import inspyred
-    self.assertEquals(inspyred.ec.Bounder, type(bounder._bounder))
+    self.assertEqual(inspyred.ec.Bounder, type(bounder._bounder))
 
     # Check the generator
     import random
     generator = _inspyred.Generator(variables)
     actual = generator(random.Random(), {})
-    self.assertEquals(2, len(actual))
+    self.assertEqual(2, len(actual))

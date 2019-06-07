@@ -5,12 +5,12 @@ from atsim.pro_fit import _execnet
 import execnet
 import logging
 
-from _base_remoterunner import BaseRemoteRunner, RemoteRunnerCloseThreadBase
+from ._base_remoterunner import BaseRemoteRunner, RemoteRunnerCloseThreadBase
 
 EXECNET_TERM_TIMEOUT=10
 
-from _runner_batch import RunnerBatch
-from _run_remote_client import RunChannel, RunClient
+from ._runner_batch import RunnerBatch
+from ._run_remote_client import RunChannel, RunClient
 
 import gevent
 from gevent.event import Event
@@ -134,7 +134,7 @@ class RemoteRunner(object):
 
     cfgdict = dict(cfgitems)
 
-    for k in cfgdict.iterkeys():
+    for k in cfgdict.keys():
       if not k in allowedkeywords:
         raise ConfigException("Unknown keyword for Remote runner '%s'" % k)
     

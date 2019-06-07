@@ -185,7 +185,7 @@ def qdel_handler(channel, pbsConfig, channel_id, msg):
     else:
       expanded.extend(pbs_ids)
     qdel(pbs_ids, force, pbsConfig)
-  except QDelException,e:
+  except QDelException as e:
     error(channel,e.message, channel_id = channel_id)
     return
 
@@ -205,7 +205,7 @@ def qrls_handler(channel, pbsConfig, channel_id, msg):
     if pbsConfig.flavour == 'TORQUE':
       pbs_ids = uncompressTORQUEArrayJobs(pbs_id)
     qrls(pbs_ids)
-  except QRlsException,e:
+  except QRlsException as e:
     error(channel,e.message, channel_id = channel_id)
     return
 
@@ -248,7 +248,7 @@ def qsub_handler(channel, pbsConfig, channel_id, msg):
 def qselect_handler(channel, pbsConfig, channel_id, msg):
   try:
     pbs_ids = qselect()
-  except QSelectException, e:
+  except QSelectException as e:
     error(channel, e.message, channel_id = channel_id)
 
   if pbsConfig.flavour == 'TORQUE':

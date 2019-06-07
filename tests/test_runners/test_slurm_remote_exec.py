@@ -3,7 +3,7 @@ from ..testutil import vagrant_slurm, vagrant_basic
 
 from atsim.pro_fit.runners import _slurm_remote_exec
 from atsim.pro_fit import _execnet
-from _runnercommon import channel_id, mkrunjobs, send_and_compare
+from ._runnercommon import channel_id, mkrunjobs, send_and_compare
 
 import py.path
 from pytest import fixture

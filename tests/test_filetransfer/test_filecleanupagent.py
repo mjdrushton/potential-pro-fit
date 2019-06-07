@@ -2,7 +2,7 @@
 from atsim.pro_fit.filetransfer.remote_exec import file_cleanup_remote_exec
 from atsim.pro_fit.filetransfer import CleanupChannel, CleanupClient, CleanupChannelException
 
-from _common import execnet_gw, channel_id
+from ._common import execnet_gw, channel_id
 
 import posixpath
 import os
@@ -20,7 +20,7 @@ def test_file_cleanup_end_to_end(tmpdir, execnet_gw, channel_id):
 
   for i, subp in enumerate(['one', 'two', 'three', 'four']):
     p = p.join(subp)
-    for j in xrange(i+1):
+    for j in range(i+1):
       j += 1
       p.ensure("%d.txt" % j)
 
@@ -167,7 +167,7 @@ def test_file_cleanup_BadStart_nonexistent_directory(execnet_gw, channel_id):
     ch1.send({'msg' : 'START_CLEANUP_CHANNEL', 'channel_id' : channel_id, 'remote_path' : badpath })
     msg = ch1.receive(10.0)
 
-    assert msg.has_key('reason')
+    assert 'reason' in msg
     assert msg['reason'].startswith('path does not exist')
     del msg['reason']
     msg == dict(msg =  "ERROR", channel_id = channel_id, remote_path = badpath)
@@ -302,7 +302,7 @@ def test_file_cleanup_client(tmpdir, execnet_gw, channel_id):
 
   for i, subp in enumerate(['one', 'two', 'three', 'four']):
     p = p.join(subp)
-    for j in xrange(i+1):
+    for j in range(i+1):
       j += 1
       p.ensure("%d.txt" % j)
 
@@ -414,7 +414,7 @@ def cbcheck(call, expect_exception = None):
     try:
       raise cb.exception
       assert False, "Exception %s should have been raised" % expect_exception
-    except Exception,e:
+    except Exception as e:
       assert isinstance(e,expect_exception)
 
 def test_file_cleanup_client_lock_callback(tmpdir, execnet_gw, channel_id):
@@ -440,7 +440,7 @@ def test_file_cleanup_client_lock_exception(tmpdir, execnet_gw, channel_id):
     try:
       client.lock("..")
       assert False, "CleanupChannelException should have been raised and wasn't"
-    except CleanupChannelException,e:
+    except CleanupChannelException as e:
       pass
   finally:
     channel.close()
@@ -472,7 +472,7 @@ def test_file_cleanup_client_unlock_exception(tmpdir, execnet_gw, channel_id):
     try:
       client.unlock("one")
       assert False, "CleanupChannelException should have been raised and wasn't"
-    except CleanupChannelException,e:
+    except CleanupChannelException as e:
       pass
   finally:
     channel.close()

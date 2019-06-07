@@ -13,11 +13,11 @@ def assertFloatWithinPercentage(testCase, expect, actual, percenttolerance = 0.5
   that actual is the same as expect for given number of places"""
 
   if expect == 0.0:
-    testCase.assertAlmostEquals(expect, actual, places = places)
+    testCase.assertAlmostEqual(expect, actual, places = places)
   else:
     percentDifference = math.fabs( ((actual-expect)/float(expect)) * 100.0 )
     msg = "Actual %f != Expect %f within tolerance of %f%% (difference = %f%%)" % (actual, expect, percenttolerance, percentDifference)
-    testCase.assert_(percentDifference <= percenttolerance, msg)
+    testCase.assertTrue(percentDifference <= percenttolerance, msg)
 
 def checkVector(tc, expect, actual, msg=None, tolerance = 0.0025):
   """Assert that two vectors are within tolerance of each other
@@ -27,7 +27,7 @@ def checkVector(tc, expect, actual, msg=None, tolerance = 0.0025):
   @param actual Actual vector
   @param msg Test fail message
   @param tolerance Acceptable distance between expected and actual vectors"""
-  tc.assertEquals(len(expect), len(actual), msg=msg)
+  tc.assertEqual(len(expect), len(actual), msg=msg)
   diff = (expect[0] - actual[0], expect[1] - actual[1], expect[2]-actual[2])
   dist = math.sqrt( diff[0]**2 + diff[1]**2 + diff[2]**2)
   if msg == None:
@@ -36,25 +36,25 @@ def checkVector(tc, expect, actual, msg=None, tolerance = 0.0025):
 
 def _compareCollection(path, testCase, expect, actual, places, percenttolerance):
   expectType = type(expect)
-  if expectType == types.ListType or expectType == types.TupleType:
+  if expectType == list or expectType == tuple:
     #Compare lists
     try:
-      testCase.assertEquals(len(expect), len(actual))
-    except AssertionError, e:
+      testCase.assertEqual(len(expect), len(actual))
+    except AssertionError as e:
       raise AssertionError("%s at '%s'" % (str(e), path))
 
     for i,(e,a) in enumerate(zip(expect, actual)):
       _compareCollection(path+'[%d]'% i, testCase, e,a, places, percenttolerance)
-  elif expectType == types.DictType:
+  elif expectType == dict:
     #Compare dictionaries
-    ekeys = expect.keys()
-    akeys = actual.keys()
+    ekeys = list(expect.keys())
+    akeys = list(actual.keys())
     ekeys.sort()
     akeys.sort()
-    testCase.assertEquals(ekeys, akeys)
-    for k,v in expect.iteritems():
+    testCase.assertEqual(ekeys, akeys)
+    for k,v in expect.items():
       _compareCollection(path+'[%s]'% (k,), testCase, v, actual[k], places, percenttolerance)
-  elif expectType == types.FloatType:
+  elif expectType == float:
     #Compare float type in a fuzzy manner
     try:
       if math.isnan(expect):
@@ -62,14 +62,14 @@ def _compareCollection(path, testCase, expect, actual, places, percenttolerance)
       elif percenttolerance != None:
         assertFloatWithinPercentage(testCase, expect, actual, percenttolerance = percenttolerance, places = places)
       else:
-        testCase.assertAlmostEquals(expect, actual, places = places)
-    except AssertionError, e:
+        testCase.assertAlmostEqual(expect, actual, places = places)
+    except AssertionError as e:
       raise AssertionError("%s at '%s'" % (str(e), path))
   else:
     #Compare anything else
     try:
-      testCase.assertEquals(expect,actual)
-    except AssertionError, e:
+      testCase.assertEqual(expect,actual)
+    except AssertionError as e:
       raise AssertionError("%s at '%s'" % (str(e), path))
 
 def compareCollection(testCase, expect, actual, places = 5, percenttolerance = None):
@@ -84,7 +84,7 @@ def _getVagrantDir():
       'vagrant')
 
 def _make_vagrant_box(box_name):
-  import vagrant
+  from . import vagrant
   vagrantdir = os.path.join(_getVagrantDir(), box_name)
   v = vagrant.Vagrant(vagrantdir)
   status = v.status()[0].state

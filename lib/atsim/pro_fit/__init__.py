@@ -1,12 +1,12 @@
 # flake8: noqa
-import fittool
-import runners
-import jobfactories
-import evaluators
-import minimizers
-import reporters
-import metaevaluators
-import tools
-import db
+from . import fittool
+from . import runners
+from . import jobfactories
+from . import evaluators
+from . import minimizers
+from . import reporters
+from . import metaevaluators
+from . import tools
+from . import db
 
 __version__ = "0.8.3"

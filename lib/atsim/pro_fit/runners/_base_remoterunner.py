@@ -1,11 +1,11 @@
 import logging
 import uuid
 
-from _exceptions import RunnerClosedException
+from ._exceptions import RunnerClosedException
 from atsim.pro_fit.fittool import ConfigException
 from atsim.pro_fit._util import NamedEvent
-from _util import BatchNameIterator
-from _exceptions import BatchKilledException
+from ._util import BatchNameIterator
+from ._exceptions import BatchKilledException
 from atsim.pro_fit import filetransfer
 from atsim.pro_fit import _execnet
 from atsim.pro_fit.filetransfer import UploadHandler, DownloadHandler
@@ -337,7 +337,7 @@ class BaseRemoteRunner(object):
     if self._closed:
       raise RunnerClosedException()
 
-    batchId = self._batchNameIterator.next()
+    batchId = next(self._batchNameIterator)
     batchDir = self.batchDir(batchId)
 
     self._logger.debug("Starting batch %s, containing %d jobs.", batchId, len(jobs))

@@ -1,6 +1,6 @@
 import logging
 
-from _common import * # noqa
+from ._common import * # noqa
 from atsim.pro_fit.fittool import ConfigException
 
 import gevent
@@ -217,7 +217,7 @@ class NelderMeadMinimizer(object):
     except ValueError:
       raise ConfigException("Minimizer NelderMead could not convert 'function_tolerance' into a float: %s" % configitems['function_tolerance'])
 
-    if configitems.has_key('max_iterations'):
+    if 'max_iterations' in configitems:
       try:
         max_iterations = int(configitems.get('max_iterations'))
       except ValueError:

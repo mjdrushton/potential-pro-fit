@@ -157,7 +157,7 @@ def qrls_handler(channel, channel_id, msg):
   try:
     job_ids = [job_id]
     qrls(job_ids)
-  except QRlsException,e:
+  except QRlsException as e:
     error(channel,e.message, channel_id = channel_id)
     return
 
@@ -204,7 +204,7 @@ def qsub_handler(channel, channel_id, msg):
 def qselect_handler(channel, channel_id, msg):
   try:
     job_ids = qselect()
-  except QSelectException, e:
+  except QSelectException as e:
     error(channel, e.message, channel_id = channel_id)
 
   transid_send(channel, msg, 'QSELECT', channel_id = channel_id, job_ids = job_ids)

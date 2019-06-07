@@ -1,7 +1,7 @@
 import collections
 
-import fittool
-import evaluators
+from . import fittool
+from . import evaluators
 
 import cexprtk
 
@@ -105,7 +105,7 @@ class FormulaMetaEvaluator(object):
           er = evaluators.EvaluatorRecord(expression.name, 0.0, result, expression.weight,  weightedresult, self.name)
         else:
           er = evaluators.RMSEvaluatorRecord(expression.name, expression.expected_value, result, expression.weight, self.name)
-      except cexprtk.ParseException, e:
+      except cexprtk.ParseException as e:
         er = evaluators.ErrorEvaluatorRecord(expression.name, 0.0, e, expression.weight, self.name)
       retlist.append(er)
     return retlist
@@ -185,7 +185,7 @@ class FormulaMetaEvaluator(object):
         expect,formula = FormulaMetaEvaluator._parseExpect(k,v)
         try:
           cexprtk.check_expression(formula)
-        except cexprtk.ParseException,e:
+        except cexprtk.ParseException as e:
           raise fittool.ConfigException("Could not parse formula for Formula meta-evaluator '%s', for expression '%s': %s" % (name, k, e.message))
         expressions.append(Expression(ename,formula, weights.get(ename, 1.0), expect))
       else:

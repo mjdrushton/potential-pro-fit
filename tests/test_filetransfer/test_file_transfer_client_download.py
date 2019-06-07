@@ -7,7 +7,7 @@ import shutil
 import stat
 import threading
 
-from _common import execnet_gw, channel_id, create_dir_structure, cmpdirs
+from ._common import execnet_gw, channel_id, create_dir_structure, cmpdirs
 
 import py.path
 
@@ -42,9 +42,9 @@ def cmpdirs(left, right):
       assert [] == dcmp.left_only
       assert [] == dcmp.right_only
     except AssertionError:
-      print dcmp.report()
+      print(dcmp.report())
       raise
-    for subcmp in dcmp.subdirs.values():
+    for subcmp in list(dcmp.subdirs.values()):
       docmp(subcmp)
   docmp(dcmp)
 
@@ -67,7 +67,7 @@ def testDownloadChannel_BadStart_nonexistent_directory(execnet_gw, channel_id):
     try:
       ch = DownloadChannel(execnet_gw, badpath, channel_id = channel_id, keepAlive = KEEP_ALIVE)
       assert False,  "ChannelException should have been raised."
-    except ChannelException,e:
+    except ChannelException as e:
       pass
   finally:
     if ch:
@@ -118,7 +118,7 @@ def testDirectoryDownload_missing_dest(tmpdir, execnet_gw, channel_id):
   try:
     dl = DownloadDirectory(ch1, rpath.strpath, dpath.strpath)
     fail("DownloadDirectory.download() should have raised IOError")
-  except IOError,e:
+  except IOError as e:
     pass
   finally:
     ch1.broadcast(None)
@@ -349,10 +349,10 @@ def testDirectoryDownload_create_multiple_downloads(tmpdir, execnet_gw, channel_
   source2.ensure_dir()
 
   with source1.join("file.txt").open("w") as outfile:
-    print >>outfile, "Hello"
+    print("Hello", file=outfile)
 
   with source2.join("file.txt").open("w") as outfile:
-    print >>outfile, "Goodbye"
+    print("Goodbye", file=outfile)
 
   dest1 = tmpdir.join("dest_1")
   dest2 = tmpdir.join("dest_2")
@@ -387,7 +387,7 @@ def testDirectoryDownload_test_nonblocking(tmpdir, execnet_gw, channel_id):
   source1.ensure_dir()
 
   with source1.join("file.txt").open("w") as outfile:
-    print >>outfile, "Hello"
+    print("Hello", file=outfile)
 
   dest1 = tmpdir.join("dest_1")
 
@@ -444,10 +444,10 @@ def testDirectoryDownload_cancel(tmpdir, execnet_gw, channel_id):
   source1.ensure_dir()
 
   with source1.join("file.txt").open("w") as outfile:
-    print >>outfile, "Hello"
+    print("Hello", file=outfile)
 
   with source1.join("file2.txt").open("w") as outfile:
-    print >>outfile, "Hello"
+    print("Hello", file=outfile)
 
   dest1 = tmpdir.join("dest_1")
 

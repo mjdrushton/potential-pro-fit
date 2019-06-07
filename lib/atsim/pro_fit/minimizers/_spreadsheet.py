@@ -1,4 +1,4 @@
-from _common import *
+from ._common import *
 from atsim.pro_fit.fittool import ConfigException
 
 import logging
@@ -75,7 +75,7 @@ class SpreadsheetMinimizer(object):
       'batch_size',
       'row_step'])
 
-    for k in cfgdict.iterkeys():
+    for k in cfgdict.keys():
       if not (k in allowedkeys):
         raise ConfigException("Unknown configuration option: '%s'" % k)
 
