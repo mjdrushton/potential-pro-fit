@@ -412,8 +412,9 @@ def cbcheck(call, expect_exception = None):
     assert cb.exception is None
   else:
     try:
-      raise cb.exception
-      assert False, "Exception %s should have been raised" % expect_exception
+      et, ei, tb = cb.exception
+      raise ei.with_traceback(tb)
+      # assert False, "Exception %s should have been raised" % expect_exception
     except Exception as e:
       assert isinstance(e,expect_exception)
 

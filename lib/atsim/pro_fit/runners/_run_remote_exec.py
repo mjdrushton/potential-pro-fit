@@ -3,7 +3,12 @@ import threading
 import subprocess
 import os
 import collections
-import queue
+
+try:
+  import queue
+except ImportError:
+  import Queue as queue
+
 from multiprocessing import cpu_count
 import traceback
 import time
@@ -45,8 +50,8 @@ class RunCmd(threading.Thread):
 
       if not self.kill_called.is_set():
         with self.lock:
-          stdout = open(os.path.join(self.path, 'STDOUT'), 'w')
-          stderr = open(os.path.join(self.path, 'STDERR'), 'w')
+          stdout = open(os.path.join(self.path, 'STDOUT'), 'wb')
+          stderr = open(os.path.join(self.path, 'STDERR'), 'wb')
           self.popen = subprocess.Popen([self.shell, 'runjob'], cwd = self.path, stdout = stdout, stderr = stderr)
           self.parent.jobstarted(self.job_id, self.popen.pid, self.semval)
         self.popen.wait()
@@ -69,7 +74,7 @@ class RunCmd(threading.Thread):
       self.popen.terminate()
 
       def hardkill(slf, popen):
-        if slf.isAlive() and popen.poll() is None:
+        if slf.is_alive() and popen.poll() is None:
           popen.kill()
 
       if immediate_kill:
@@ -133,7 +138,7 @@ class Runners(threading.Thread):
 
       if not runcmd.kill_called.is_set():
         runcmd.start()
-      elif not runcmd.isAlive():
+      elif not runcmd.is_alive():
         self.jobdone(runcmd.job_id)
 
 
@@ -160,7 +165,7 @@ class Runners(threading.Thread):
         found = runcmd
         break
     if found:
-      if found.isAlive():
+      if found.is_alive():
         found.killjob(immediate_kill = immediate_kill, wait = wait)
       else:
         found.kill_called.set()
@@ -187,7 +192,12 @@ class Runners(threading.Thread):
     return self._parent.jobstarted(job_id, pid, semaphore)
 
   def _makeruncmd(self, job):
-    semval = self._semaphore._initial_value -  self._semaphore._Semaphore__value
+    if hasattr(self._semaphore, "_value"):
+      val = self._semaphore._value
+    else:
+      val = self._semaphore._Semaphore__value
+
+    semval = self._semaphore._initial_value -  val
     cmd = RunCmd(self, self._parent.shell, self._parent.hardkill_timeout, semval)
     cmd.job_id = job.job_id
     cmd.path = job.path
@@ -208,7 +218,7 @@ class Runners(threading.Thread):
         self.killjob(runcmd.job_id, immediate_kill = True, wait = True)
       else:
         runcmd.kill_called.set()
-      if runcmd.isAlive():
+      if runcmd.is_alive():
         joins.append(runcmd)
     for j in joins:
       j.join(60.0)

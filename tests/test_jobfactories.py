@@ -21,7 +21,7 @@ class TemplateJobFactoryTestCase(unittest.TestCase):
     self.rootDir = tempfile.mkdtemp()
     rndir = os.path.join(self.rootDir, 'runner_files', 'runner_name')
     os.makedirs(rndir)
-    with open(os.path.join(rndir,'@NAME@.in'), 'wb') as outfile:
+    with open(os.path.join(rndir,'@NAME@.in'), 'w') as outfile:
         print("Variable:@A@", file=outfile)
 
     self.tempd = tempfile.mkdtemp()
@@ -75,7 +75,7 @@ echo 5.0 > output.res
     self.assertEqual(expect,actual)
 
     with open(os.path.join(self.tempd, 'runner_files', 'Named')) as infile:
-        line = infile.next()[:-1]
+        line = next(infile)[:-1]
         self.assertEqual("Variable:5.0", line)
 
   def testCreateJob_no_runner_files(self):
@@ -125,14 +125,14 @@ echo 5.0 > output.res
 
   def testCreateFromConfig(self):
     """Test atsim.pro_fit.jobfactories.TemplateJobFactory.createFromConfig"""
-    parser = configparser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     import io
     sio = io.StringIO("""[Job]
 type : Template
 runner : runner_name
 """)
-    parser.readfp(sio)
+    parser.read_file(sio)
     sect = parser.items('Job')
 
     from . import mockeval1

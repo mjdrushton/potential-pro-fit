@@ -8,6 +8,7 @@ from ._runnercommon import channel_id, mkrunjobs, send_and_compare
 
 import py.path
 from pytest import fixture
+import pytest
 
 import time
 
@@ -36,13 +37,15 @@ def testStartChannel(vagrant_torque, channel_id):
                     'pbs_identify' : {'arrayFlag': '-t', 'flavour': 'TORQUE', 'arrayIDVariable': 'PBS_ARRAYID', 'qdelForceFlags' : ['-W', '0']}
                   }
   finally:
-    ch.send(None)
-    ch.waitclose(5)
+    if not ch.isclosed():
+      ch.send(None)
+      ch.waitclose(5)
 
+@pytest.mark.skip("Vagrant basic only has python3 reinstate when python2/3 tests implemented")
 def testHostHasNoPbs(vagrant_basic, channel_id):
   gw = _mkexecnetgw(vagrant_basic)
+  ch = gw.remote_exec(_pbs_remote_exec)
   try:
-    ch = gw.remote_exec(_pbs_remote_exec)
     ch.send({'msg' : 'START_CHANNEL', 'channel_id' : channel_id})
     msg = ch.receive(1.0)
     expect = {'msg' : 'ERROR', 'channel_id' : channel_id, 'reason' : "PBS not found: Could not run 'qselect'"}

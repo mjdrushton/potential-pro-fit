@@ -20,6 +20,7 @@ def _getpopdbpath():
 
 def _run_ppdump(args):
   output = subprocess.check_output("ppdump %s" % " ".join(args), shell = True)
+  output = output.decode("utf-8")
   actual = output.split(os.linesep)
   return actual
 
@@ -282,7 +283,7 @@ def test_default_fitting_run_db_cannot_be_opened(tmpdir):
   os.chdir(str(tmpdir))
   from atsim.pro_fit.tools import ppdump
 
-  with open('fitting_run.db', 'wb') as emptyfile:
+  with open('fitting_run.db', 'w') as emptyfile:
     pass
 
   with pytest.raises(subprocess.CalledProcessError) as excinfo:

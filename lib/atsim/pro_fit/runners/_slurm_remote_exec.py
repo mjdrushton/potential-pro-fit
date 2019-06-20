@@ -146,7 +146,7 @@ def qrls_handler(channel, channel_id, msg):
     job_ids = [job_id]
     qrls(job_ids)
   except QRlsException as e:
-    error(channel,e.message, channel_id = channel_id)
+    error(channel,str(e), channel_id = channel_id)
     return
 
   transid_send(channel, msg, 'QRLS',
@@ -163,7 +163,7 @@ def qsub_handler(channel, channel_id, msg):
   # Check that the job files exist.
   jobs = [os.path.abspath(p) for p in jobs]
   for j in jobs:
-    if not os.path.isfile(p):
+    if not os.path.isfile(j):
       error(channel, 'no job found at path for QSUB request: "%s"' % p, channel_id = channel_id)
       return
 
@@ -192,7 +192,7 @@ def qselect_handler(channel, channel_id, msg):
   try:
     job_ids = qselect()
   except QSelectException as e:
-    error(channel, e.message, channel_id = channel_id)
+    error(channel, str(e), channel_id = channel_id)
 
   transid_send(channel, msg, 'QSELECT', channel_id = channel_id, job_ids = job_ids)
 
@@ -267,7 +267,7 @@ def remote_exec(channel):
   try:
     versionstring = checkSlurm()
   except NoSlurmException as e:
-    msg = "Slurm not found: " + e.message
+    msg = "Slurm not found: " + str(e)
     error(channel, msg, channel_id = channel_id)
     return
 

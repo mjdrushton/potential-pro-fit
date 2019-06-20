@@ -84,7 +84,7 @@ def _getVagrantDir():
       'vagrant')
 
 def _make_vagrant_box(box_name):
-  from . import vagrant
+  import vagrant
   vagrantdir = os.path.join(_getVagrantDir(), box_name)
   v = vagrant.Vagrant(vagrantdir)
   status = v.status()[0].state

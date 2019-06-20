@@ -1,7 +1,4 @@
-try:
-  import io as StringIO
-except ImportError as e:
-  import io
+import io
 
 """Slices for use with columnSplitGenerator() that can split up matrix lines"""
 matrixSlices = [
@@ -80,7 +77,6 @@ def chunkIterator(glpFile):
   yield ("", chunk)
 
   def readChunkHeader(line):
-    #line = glpFile.next()
     if not line:
       return None
 
@@ -88,7 +84,7 @@ def chunkIterator(glpFile):
       raise ParseException("Was expecting chunk header line instead got '%s'" % line[:-1])
 
     chunkName = line[3:-2]
-    line = glpFile.next()[:-1]
+    line = next(glpFile)[:-1]
     assert(line == delimLine)
     return chunkName
 
@@ -223,7 +219,7 @@ def parseMechanicalProperties(glpFile):
     datadict['velocitySWave'] = rvhcolsplit(next(chunk))
     datadict['velocityPWave'] = rvhcolsplit(next(chunk))
     skip(chunk,1)
-    datadict['compressibility'] = float(chunk.next()[basecoldefs[0][1]])
+    datadict['compressibility'] = float(next(chunk)[basecoldefs[0][1]])
     skip(chunk,3)
     datadict['youngsModuli'] = listsplit(next(chunk))
     skip(chunk,1)

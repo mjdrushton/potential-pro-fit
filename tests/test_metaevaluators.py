@@ -18,11 +18,11 @@ class FormulaMetaEvaluator(unittest.TestCase):
     import configparser
     import os
     config = os.linesep.join(config)
-    parser = configparser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     import io
     sio = io.StringIO(config)
-    parser.readfp(sio)
+    parser.read_file(sio)
     return parser
 
   def testSplitVariables(self):

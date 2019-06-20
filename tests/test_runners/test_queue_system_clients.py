@@ -29,6 +29,7 @@ def _mkclient(channel_id, channel_class, vagrant_box):
 def testStartChannel(client):
   client.close()
 
+@pytest.mark.skip("Reinstate when support for both python 2 and 3 remote execs is added.")
 def testHostHasNoPbs(vagrant_basic, queueing_system_test_module, channel_id):
     with pytest.raises(ChannelException):
       _mkclient('testHostHasNoPbs', queueing_system_test_module.Channel_Class, vagrant_basic)
@@ -337,9 +338,9 @@ def testQueueingSystemClientMultipleJobsInMultipleBatches(gw, client):
       clch.send(None)
 
 @pytest.mark.usefixtures("clearqueue")
-def testQueueingSystemClientKillJob(gw, client):
+def testQueueingSystemClientKillJob(gw, client, channel):
     clch1, rj1 = mkrunjobs(gw, 1, numSuffix = True, sleep = None)
-    clch2, rj2 = mkrunjobs(gw, 3, numSuffix = True, sleep = 30)
+    clch2, rj2 = mkrunjobs(gw, 3, numSuffix = True, sleep = 3600)
 
     try:
       #TODO: Test after qsub but before pbsId received.
@@ -354,6 +355,19 @@ def testQueueingSystemClientKillJob(gw, client):
       jr2 = client.runJobs(rj2, j2cb)
 
       assert jr2.qsubEvent.wait(60)
+      
+      # Provide a pause to allow the job to be releaed
+      # Check that the jr2 jobs have appeared in the queue
+
+      def wait_for_release():
+        for i in range(10):
+          if jr2._qscallback.jobReleased:
+            return True
+          gevent.sleep(5)
+        return False
+
+      assert wait_for_release()
+      gevent.sleep(10)
 
       killEvent = jr2.kill()
 
@@ -403,6 +417,12 @@ def testQueueingSystemClientKillJob(gw, client):
           ch.close()
           ch.waitclose(5)
 
+
+      
+      # The second set of jobs should be running at this point and created output.
+      # but they won't have completed properly.
+      # The next bit of code is to check that when a job is terminated output files 
+      # are copied back corrctly.
       for i, job in enumerate(rj2):
         # Now check the contents of the output directory
         ch = gw.remote_exec(chIsDir)

@@ -14,6 +14,7 @@ import shutil
 import tempfile
 import contextlib
 import pkgutil
+import importlib.resources
 
 import jinja2
 import gevent
@@ -74,7 +75,7 @@ def _isValidDirectory():
   # Check for existence of a lockfile
   if os.path.isfile('lockfile'):
     with open('lockfile') as infile:
-      pidline = infile.next()[:-1]
+      pidline = next(infile)[:-1]
       logger.error("Found 'lockfile', this indicates that pprofit is already running with PID=%s" % pidline)
       return False
 
@@ -82,7 +83,7 @@ def _isValidDirectory():
 
 def _makeLockFile():
   #Put PID in lockfile
-  with open('lockfile','wb') as outfile:
+  with open('lockfile','w') as outfile:
     print(os.getpid(), file=outfile)
 
 def _removeLockFile():
@@ -110,7 +111,7 @@ def _initializeRun(directoryName):
     os.mkdir(directoryName)
     logging.getLogger('console').info("Created directory: %s" % directoryName)
   except Exception as e:
-    raise _DirectoryInitializationException(e.message)
+    raise _DirectoryInitializationException(str(e))
 
   # Create fit_files directory
   dirname = os.path.join(directoryName, 'fit_files')
@@ -118,7 +119,7 @@ def _initializeRun(directoryName):
     os.mkdir(dirname)
     logging.getLogger('console').info("Created directory: %s" % dirname)
   except Exception as e:
-    raise _DirectoryInitializationException("Could not create 'fit_files' directory: %s" % e.message)
+    raise _DirectoryInitializationException("Could not create 'fit_files' directory: %s" % str(e))
 
   templateLoader = jinja2.PackageLoader('atsim.pro_fit', 'resources/dirinit')
   env = jinja2.Environment(loader=templateLoader)
@@ -145,7 +146,7 @@ def _initializeRun(directoryName):
     os.makedirs(dirname)
     logging.getLogger('console').info("Created runner_files directory for the default runner '%s': %s" % (runner_name, dirname))
   except Exception as e:
-    raise _DirectoryInitializationException("Could not create 'runner_files' directory: %s" % e.message)
+    raise _DirectoryInitializationException("Could not create 'runner_files' directory: %s" % str(e))
 
 def _getValidRunners():
   """Open 'fit.cfg' and produce list of runner names.
@@ -160,8 +161,8 @@ def _getValidRunners():
   import configparser
   config = configparser.SafeConfigParser()
   config.optionxform = str
-  with open('fit.cfg', 'rb') as fitCfgFile:
-    config.readfp(fitCfgFile)
+  with open('fit.cfg', 'r') as fitCfgFile:
+    config.read_file(fitCfgFile)
 
   runners = []
   for s in config.sections():
@@ -206,7 +207,7 @@ def _initializeJob(jobDescription):
   try:
     os.mkdir(jobDirname)
   except Exception as e:
-    raise _DirectoryInitializationException("Could not create job directory '%s': %s" % (jobDirname, e.message))
+    raise _DirectoryInitializationException("Could not create job directory '%s': %s" % (jobDirname, str(e)))
 
   # Create 'job.cfg'
   templateLoader = jinja2.PackageLoader('atsim.pro_fit', 'resources/jobinit')
@@ -226,7 +227,8 @@ def _initializeJob(jobDescription):
 def _setupLogging(verbose):
   """Set-up python logging"""
   # Read logging information from logging.cfg in the resources package
-  cfg = pkgutil.get_data('atsim.pro_fit', 'resources/logging.cfg')
+  # cfg = pkgutil.get_data('atsim.pro_fit', 'resources/logging.cfg')
+  cfg = importlib.resources.read_text("atsim.pro_fit.resources", 'logging.cfg')
   import io
   cfg = io.StringIO(cfg)
 
@@ -495,7 +497,7 @@ def main():
        sys.exit(0)
     except _DirectoryInitializationException as e:
       logging.getLogger('console').error("Error initializing directory:")
-      logging.getLogger('console').error(e.message)
+      logging.getLogger('console').error(str(e))
       sys.exit(1)
   elif options.initjob:
     # Initialize job
@@ -504,7 +506,7 @@ def main():
       sys.exit(0)
     except _DirectoryInitializationException as e:
       logging.getLogger('console').error("Error initializing job:")
-      logging.getLogger('console').error(e.message)
+      logging.getLogger('console').error(str(e))
       sys.exit(1)
 
   # Check that directory is valid
@@ -536,10 +538,10 @@ def main():
 
     _invokeMinimizer(cfg, logger,logsql, console)
   except (_FittingToolException, pro_fit.fittool.ConfigException, pro_fit.minimizers.MinimizerException) as e:
-    logger.error(e.message)
+    logger.error(str(e))
 
     if console and console.started:
-      evt = console.terminalError(e.message)
+      evt = console.terminalError(str(e))
       evt.wait()
     exit_code = 1
   finally:

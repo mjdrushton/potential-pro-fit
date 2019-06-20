@@ -164,8 +164,8 @@ def _parseSTATISInternal(infile):
 
   keys = statisColumnKeys
 
-  while 1:
-    line = next(infile)
+  for line in infile:
+    # line = next(infile)
     line = line[:-1].strip()
     block = []
     try:
@@ -183,7 +183,7 @@ def _parseSTATISInternal(infile):
     nument = int(nument)
     #Read block
     while len(block) < nument:
-      line = infile.next()[:-1]
+      line = next(infile)[:-1]
       lineitems = [float(item) for item in line.split()]
       block.extend(lineitems)
 

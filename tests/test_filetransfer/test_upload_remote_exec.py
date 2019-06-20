@@ -110,7 +110,7 @@ def testSendFile(tmpdir, execnet_gw, channel_id):
 
     assert_that(destpath.exists()).is_false()
 
-    filecontents = ofilename.read()
+    filecontents = ofilename.open("rb").read()
     mode = os.stat(ofilename.strpath).st_mode
 
     fileid = str(uuid.uuid4())

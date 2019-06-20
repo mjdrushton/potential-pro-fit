@@ -279,9 +279,6 @@ class RunJobCallback(object):
     self.finishEvent.set()
     return True
 
-  # def ready(self):
-  #   self._runjobState.readyEvent.set()
-
   def raise_exception(self):
     if self.should_raise:
       if self.exception:

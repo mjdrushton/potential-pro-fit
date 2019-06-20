@@ -353,7 +353,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
       # Now check the evaluatorerror table
       expect = [{
         'id' : 1,
-        'msg' : str(exc)
+        'msg' : str(mybad)
       }]
 
       etable = metadata.tables['evaluatorerror']

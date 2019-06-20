@@ -16,7 +16,6 @@ def validate(engine):
     """
     md = getMetadata()
     tablenames = set([table.name for table in md.sorted_tables])
-
     inspector = inspect(engine)
 
     actual_table_names = inspector.get_sorted_table_and_fkc_names()

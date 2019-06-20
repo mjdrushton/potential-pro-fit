@@ -135,9 +135,9 @@ Ucharge : electroneg * 4
 
     import io
 
-    cfg = configparser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(io.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('CalculatedVariables')
 
     variables = pro_fit.fittool.Variables(
@@ -168,9 +168,9 @@ Ocharge : -electroneg * 2
 Ucharge : electroneg * 4
 """
 
-    cfg = configparser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(io.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('CalculatedVariables')
 
     with self.assertRaises(pro_fit.fittool.ConfigException):

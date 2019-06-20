@@ -70,7 +70,7 @@ class DEAMinimizer(object):
     try:
       _BoundedVariableBaseClass(variables)
     except VariableException as e:
-      raise ConfigException("DEA Minimizer:"+e.message)
+      raise ConfigException("DEA Minimizer:"+str(e))
 
     cfgdict = dict(configitems)
     del cfgdict['type']

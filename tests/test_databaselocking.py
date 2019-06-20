@@ -5,7 +5,7 @@ import multiprocessing as mp
 import sqlalchemy as sa
 import sqlite3
 
-from contextlib import nested, closing
+from contextlib import closing
 import os
 import shutil
 

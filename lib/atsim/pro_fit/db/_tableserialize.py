@@ -1,5 +1,6 @@
 """Module to support serializing fitting_run.db data into various table formats."""
 
+from .._util import cmp
 
 class _RangeDiscoverIterator(object):
 

@@ -108,7 +108,7 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
     header_include = cfgdict.get('header_include', None)
     if header_include:
       try:
-        header_include = open(header_include, 'rb').read()
+        header_include = open(header_include, 'r').read()
       except IOError:
         raise ConfigException("Could not open file specified by 'header_include' directive: %s" % header_include)
 

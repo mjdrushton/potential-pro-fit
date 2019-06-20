@@ -74,7 +74,7 @@ def upload(channel, channel_id, remote_root, msg):
       key = 'id')
     return False
 
-  file_data = msg.get("file_data", "")
+  file_data = msg.get("file_data", b"")
   mode = msg.get("mode", None)
   fileid = msg['id']
   rp = child_path(channel, channel_id, remote_root, msg)
@@ -169,7 +169,7 @@ def mkdirs(channel, channel_id, remote_root, msg):
     dirmade_msg['path_already_exists'] = True
   else:
     try:
-      os.makedirs(remote_path, mode)
+      _makedirs(remote_path, mode)
     except OSError as e:
       error(channel, channel_id, "Error making directory: '%s'" % str(e),
         ("IOERROR", "OSERROR"),
@@ -178,6 +178,16 @@ def mkdirs(channel, channel_id, remote_root, msg):
       return False
   channel.send(dirmade_msg)
   return True
+
+def _makedirs(path, mode):
+    if not path or os.path.exists(path):
+        return []
+    (head, tail) = os.path.split(path)
+    res = _makedirs(head, mode)
+    os.mkdir(path)
+    os.chmod(path, mode)
+    res += [path]
+    return res
 
 def list_dir(channel, channel_id, remote_root, msg):
   # Extract required arguments
@@ -370,6 +380,8 @@ def download_remote_exec(channel, channel_id, remote_path):
 
 def start_channel(channel):
   msg = channel.receive()
+  if not msg:
+    return
 
   mtype = msg.get('msg', None)
   channeltypes = {'START_UPLOAD_CHANNEL' : upload_remote_exec,

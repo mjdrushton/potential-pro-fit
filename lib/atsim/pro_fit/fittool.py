@@ -167,8 +167,8 @@ class FitConfig(object):
     @return ConfigParser object"""
     config = configparser.SafeConfigParser()
     config.optionxform = str
-    with open(fitCfgFilename, 'rb') as fitCfgFile:
-      config.readfp(fitCfgFile)
+    with open(fitCfgFilename, 'r') as fitCfgFile:
+      config.read_file(fitCfgFile)
     return config
 
   def _validateConfigStructure(self, fitCfgFilename):
@@ -228,7 +228,7 @@ class FitConfig(object):
         try:
           bound = Variables._parseBounds(groups[1])
         except ConfigException as ce:
-          raise ConfigException("Variable '%s' has invalid bounds: %s" % (k, ce.message))
+          raise ConfigException("Variable '%s' has invalid bounds: %s" % (k, ce))
       else:
         bound = defaultBound
 
@@ -251,7 +251,7 @@ class FitConfig(object):
         try:
           cexprtk.check_expression(expression)
         except cexprtk.ParseException as e:
-          raise ConfigException("Could not parse formula within [CalculatedVariables] for '%s' with expression '%s' : %s" % (name, expression, e.message))
+          raise ConfigException("Could not parse formula within [CalculatedVariables] for '%s' with expression '%s' : %s" % (name, expression, e))
 
       return CalculatedVariables(cfgitems)
 
@@ -645,7 +645,7 @@ class CalculatedVariables(object):
       try:
         cexprtk.check_expression(expression)
       except cexprtk.ParseException as e:
-        raise ConfigException("Could not parse expression when processing [CalculatedVariables]: %s : %s" % (expression, e.message))
+        raise ConfigException("Could not parse expression when processing [CalculatedVariables]: %s : %s" % (expression, e))
 
     return CalculatedVariables(cfgitems)
 

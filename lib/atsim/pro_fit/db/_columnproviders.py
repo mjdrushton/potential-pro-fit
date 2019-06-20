@@ -1,4 +1,6 @@
 from ._util import calculatePercentageDifference
+from .._util import cmp
+
 
 from ._metadata import getMetadata
 
@@ -11,9 +13,6 @@ import contextlib
 import operator
 import re
 import math
-
-
-
 
 def _mean(data):
   """Calculate mean of values in data.
@@ -30,13 +29,13 @@ def _median(data):
   data = sorted(data)
   # Even length
   if len(data) % 2 == 0 :
-    idx = len(data)/2
+    idx = len(data)//2
     v1 = data[idx]
     v2 = data[idx-1]
     return (v1+v2) / float(2.0)
   # Odd length
   else:
-    return data[len(data)/2]
+    return data[len(data)//2]
 
 def _quartile(data, q):
   """Calculate quartiles.
@@ -285,11 +284,8 @@ class _EvaluatorColumnProvider(object):
       rowdict = dict(list(zip(list(results.keys()), row)))
       key = "evaluator:%(job_name)s:%(evaluator_name)s:%(value_name)s" % rowdict
       for suffix in cls._suffixes:
-        keys.append(":".join([key, suffix]))
-      keys = [k.encode("utf-8") for k in keys]
+        keys.append(u":".join([key, suffix]))
     return keys
-
-
 
 class _StatColumnProvider(object):
   """Class responsible for fetching column of data for a particular iteration and

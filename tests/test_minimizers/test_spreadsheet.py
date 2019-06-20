@@ -21,9 +21,9 @@ filename : %(filename)s
 
     """ % {'filename' : spreadfilename}
 
-    cfg = configparser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(io.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     variables = pro_fit.fittool.Variables([
@@ -64,9 +64,9 @@ start_row : 1
 
     """ % {'filename' : spreadfilename}
 
-    cfg = configparser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(io.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     variables = pro_fit.fittool.Variables([
@@ -101,9 +101,9 @@ end_row : 2
 
     """ % {'filename' : spreadfilename}
 
-    cfg = configparser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(io.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     variables = pro_fit.fittool.Variables([
@@ -138,9 +138,9 @@ end_row : 2
 
     """ % {'filename' : spreadfilename}
 
-    cfg = configparser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(io.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     variables = pro_fit.fittool.Variables([
@@ -171,9 +171,9 @@ batch_size : 2
 
     """ % {'filename' : spreadfilename}
 
-    cfg = configparser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(io.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     variables = pro_fit.fittool.Variables([
@@ -226,9 +226,9 @@ batch_size : 2
 
     """ % {'filename' : spreadfilename}
 
-    cfg = configparser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(io.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     variables = pro_fit.fittool.Variables([
@@ -284,9 +284,9 @@ row_step : 2
 
       """ % {'filename' : spreadfilename}
 
-      cfg = configparser.SafeConfigParser()
+      cfg = configparser.ConfigParser()
       cfg.optionxform = str
-      cfg.readfp(io.StringIO(config))
+      cfg.read_file(io.StringIO(config))
       configitems = cfg.items('Minimizer')
 
       variables = pro_fit.fittool.Variables([

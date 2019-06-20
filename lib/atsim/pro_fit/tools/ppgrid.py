@@ -160,11 +160,11 @@ def main():
   try:
     griddims = _argsToGridRanges(opts.range, args)
   except ArgumentException as e:
-    print("Error:", e.message, file=sys.stderr)
+    print("Error:", str(e), file=sys.stderr)
     sys.exit(1)
 
   if opts.outfilename:
-    outfile = open(opts.outfilename, 'wb')
+    outfile = open(opts.outfilename, 'w')
   else:
     outfile = sys.stdout
 

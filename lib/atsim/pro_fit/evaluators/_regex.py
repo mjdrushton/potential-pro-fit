@@ -35,7 +35,7 @@ class _RegexSubEvaluator(object):
 
     foundinstance = None
     try:
-      with open(outputfilename,'rb') as infile:
+      with open(outputfilename,'r') as infile:
         for line in infile:
           line = line[:-1]
           m = self._variableRegex.search(line)

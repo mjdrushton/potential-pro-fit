@@ -150,11 +150,11 @@ class CSVBuildTestCase(unittest.TestCase):
     os.mkdir('skel')
     os.mkdir('dest')
 
-    with open('include_me', 'wb') as outfile:
+    with open('include_me', 'w') as outfile:
       print("Hello", file=outfile)
       print("Goodbye", file=outfile)
 
-    with open(os.path.join('skel', 'boom.in'), 'wb') as outfile:
+    with open(os.path.join('skel', 'boom.in'), 'w') as outfile:
       print("@INCLUDE:rel_filename@", file=outfile)
       print("@INCLUDE:abs_filename@", file=outfile)
 
@@ -171,7 +171,7 @@ Goodbye
 
 """
 
-    actual = open(os.path.join('dest', 'boom'), 'rb').read()
+    actual = open(os.path.join('dest', 'boom'), 'r').read()
     self.assertEqual(expect, actual)
 
 
@@ -220,15 +220,14 @@ Goodbye
     csvbuild.buildDirs(rows, 'skel', 'dest')
     actual = []
 
-    def visit(arg, dirname, names):
+    for dirname, dirnames , names in os.walk('dest'):
+      for dn in dirnames:
+        actual.append(os.path.join(dirname, dn))
       for n in names:
         ln = os.path.join(dirname, n)
         actual.append(ln)
-        if os.path.isdir(n):
-          os.path.walk(n, visit, None)
 
-    os.path.walk('dest', visit, None)
     actual.sort()
     self.assertEqual(expect, actual)
 
-    self.assertEqual('1', open(os.path.join('dest', 'DL_POLY_1', 'support_1', 'file2'), 'rb').readline()[:-1])
+    self.assertEqual('1', open(os.path.join('dest', 'DL_POLY_1', 'support_1', 'file2'), 'r').readline()[:-1])

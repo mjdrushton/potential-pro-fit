@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.9.0]
+### Changed
+- Updated Potential Pro-Fit to use python 3. Python 2.7 is now not supported for the main code base. Remote runners will still support python 3 to allow jobs to run on legacy systems.
+
 ## [0.8.3] - 2019-6-4
 ### Fixed
 - csvbuild "File overwriting disabled" messages now no longer appear in the log file.

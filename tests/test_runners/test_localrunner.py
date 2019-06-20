@@ -145,13 +145,13 @@ class LocalRunnerTestCase(unittest.TestCase):
 
   def testCreateFromConfig(self):
     """Test createFromConfig()"""
-    parser = configparser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     sio = io.StringIO("""[Runner:RunnerName]
 type: Local
 nprocesses : 5
 """)
-    parser.readfp(sio)
+    parser.read_file(sio)
     runner = pro_fit.runners.LocalRunner.createFromConfig('RunnerName', self.tempd, parser.items('Runner:RunnerName'))
     self.assertEqual(pro_fit.runners.LocalRunner, type(runner))
     self.assertEqual('RunnerName', runner.name)

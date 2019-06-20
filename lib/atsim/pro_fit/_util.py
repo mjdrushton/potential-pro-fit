@@ -8,6 +8,8 @@ import gevent.event
 
 import logging
 
+
+
 _logger = logging.getLogger("atsim.pro_fit.retry")
 
 def retry(func, handledExceptions, retryCallback, logger=None):
@@ -161,7 +163,7 @@ class SkipWhiteSpaceDictReader(csv.DictReader):
     return [f.strip() for f in orignames]
 
   def __next__(self):
-    origdict = csv.DictReader.next(self)
+    origdict = super().__next__()
     if not origdict:
       return origdict
     vals = []
@@ -218,11 +220,17 @@ class CallbackRegister(list):
 
     self[:] = [ cb for cb in self if cb.active ]
 
+class NamedEvent(gevent.event.Event):
 
-def NamedEvent(name):
-  event = gevent.event.Event()
-  event.name = name
-  return event
+  def __init__(self, name):
+    super().__init__()
+    self.name = name
+
+
+# def NamedEvent(name):
+#   event = gevent.event.Event()
+#   event.name = name
+#   return event
 
 def linkevent(evt, depend):
   evt.wait()
@@ -231,3 +239,13 @@ def linkevent(evt, depend):
 def linkevent_spawn(evt, depend):
   return gevent.spawn(linkevent, evt, depend)
 
+def cmp(x, y):
+    """
+    Replacement for built-in function cmp that was removed in Python 3
+
+    Compare the two objects x and y and return an integer according to
+    the outcome. The return value is negative if x < y, zero if x == y
+    and strictly positive if x > y.
+    """
+
+    return (x > y) - (x < y)

@@ -19,7 +19,7 @@ def test_validatebad(tmpdir):
   """Test atsim.pro_fit.db.validate() for a bad database"""
   os.chdir(str(tmpdir))
 
-  with open('emptyfile', 'wb') as outfile:
+  with open('emptyfile', 'w') as outfile:
     pass
 
   dburl = "sqlite:///emptyfile"

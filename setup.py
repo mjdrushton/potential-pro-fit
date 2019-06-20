@@ -25,12 +25,12 @@ def preprocess(infilename):
     path = os.path.dirname(infilename)
     bname = os.path.basename(infilename)
     os.chdir(path)
-    with open(bname, 'rb') as infile:
+    with open(bname, 'r', encoding = 'utf-8') as infile:
       for inline in infile:
         m = include_regex.match(inline)
         if m:
           includefilename = m.groups()[0]
-          with open(includefilename, 'rb') as includefile:
+          with open(includefilename, 'r', encoding = 'utf-8') as includefile:
             outfile.write(includefile.read())
         else:
           outfile.write(inline)
@@ -77,16 +77,16 @@ setup(name="potential-pro-fit",
   cmdclass = {'build_py' : my_build},
   install_requires = ["setuptools",
                       'sqlalchemy',
-                      'more-itertools<6.0.0',
-                      'cherrypy<18.0.0',
-                      'Jinja2==2.10',
-                      'inspyred==1.0.1',
-                      'cexprtk==0.2.0',
-                      'urwid==1.3.1',
-                      'mystic==0.3.1',
-                      'execnet>=1.2',
-                      'gevent==1.2.1',
-                      'tabulate==0.7.7'],
+                      'more-itertools>6.0.0',
+                      'cherrypy>18.0.0',
+                      'Jinja2>=2.10',
+                      'inspyred>=1.0.1',
+                      'cexprtk>=0.3.0',
+                      'urwid>=2.0.1',
+                      'mystic>=0.3.3',
+                      'execnet>=1.6',
+                      'gevent>=1.3',
+                      'tabulate>=0.8.3'],
   tests_require = ['pytest',
                   'wsgi_intercept',
                   'mechanize',

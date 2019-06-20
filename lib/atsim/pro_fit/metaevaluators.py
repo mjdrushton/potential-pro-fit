@@ -186,7 +186,7 @@ class FormulaMetaEvaluator(object):
         try:
           cexprtk.check_expression(formula)
         except cexprtk.ParseException as e:
-          raise fittool.ConfigException("Could not parse formula for Formula meta-evaluator '%s', for expression '%s': %s" % (name, k, e.message))
+          raise fittool.ConfigException("Could not parse formula for Formula meta-evaluator '%s', for expression '%s': %s" % (name, k, e))
         expressions.append(Expression(ename,formula, weights.get(ename, 1.0), expect))
       else:
         raise fittool.ConfigException("Error parsing configuration for meta evaluator '%s'. Unknown item: '%s'" % (name, k))

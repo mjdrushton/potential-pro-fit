@@ -14,10 +14,10 @@ class RegexEvaluatorTestCase(unittest.TestCase):
 
   def testEvaluator(self):
     """Test atsim.pro_fit.evaluators.RegexEvaluator"""
-    parser = configparser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     with open(os.path.join(_getResourceDir(), 'job_files', 'job.cfg')) as infile:
-      parser.readfp(infile)
+      parser.read_file(infile)
 
     evaluator = pro_fit.evaluators.RegexEvaluator.createFromConfig(
       'regex',

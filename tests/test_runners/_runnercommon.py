@@ -204,14 +204,14 @@ def mkrunjobs(gw, num, numSuffix = False, sleep = None):
         nd = os.path.join(tmpdir, str(i))
         os.mkdir(nd)
         filename = os.path.join(nd, 'runjob')
-        with open(filename, 'wb') as outfile:
+        with open(filename, 'w') as outfile:
           if not sleep is None:
-            print("sleep %d" % sleep, file=outfile)
+            outfile.write("sleep %d\n" % sleep)
 
           if numSuffix:
-            print("echo Hello%d > outfile" % i, file=outfile)
+            outfile.write("echo Hello%d > outfile\n" % i)
           else:
-            print("echo Hello > outfile", file=outfile)
+            outfile.write("echo Hello > outfile\n")
         outpaths.append(filename)
       channel.send(outpaths)
       rcv = channel.receive()

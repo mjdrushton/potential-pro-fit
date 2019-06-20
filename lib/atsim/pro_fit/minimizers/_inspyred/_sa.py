@@ -159,7 +159,7 @@ class Simulated_AnnealingMinimizer(object):
     try:
       _BoundedVariableBaseClass(variables)
     except VariableException as e:
-      raise ConfigException("Simulated_Annealing Minimizer:"+e.message)
+      raise ConfigException("Simulated_Annealing Minimizer:"+str(e))
 
     cfgdict = dict(configitems)
     del cfgdict['type']

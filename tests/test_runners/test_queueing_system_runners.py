@@ -360,6 +360,7 @@ def _tstSingleBatch(runner_class, runfixture, vagrant_box, sub_batch_size):
 
 @pytest.mark.usefixtures("clearqueue")
 def testAllInSingleBatch(runner_class, runfixture, vagrant_box):
+  # import pdb; pdb.set_trace()
   _tstSingleBatch(runner_class, runfixture, vagrant_box, None)
 
 @pytest.mark.usefixtures("clearqueue")

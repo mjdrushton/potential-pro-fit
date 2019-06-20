@@ -80,6 +80,10 @@ class DownloadHandler(object):
     mode = msg['mode']
     self._logger.debug("writing file with path: '%s' and mode %o", local_path, mode)
     filedata = msg['file_data']
+
+    if type(filedata) == str:
+      filedata = filedata.encode("ascii")
+
     with open(local_path,'wb') as outfile:
       outfile.write(filedata)
     os.chmod(local_path, mode)
@@ -205,7 +209,8 @@ class DownloadDirectory(object):
     else:
       grl.join()
       if self.exception and self.exception != (None,None,None):
-        raise self.exception
+        et, ei, tb = self.exception
+        raise ei.with_traceback(tb)
       log.info("Finished download id='%s'", self.transaction_id)
 
   def cancel(self):
@@ -313,7 +318,7 @@ class _DownloadCallback(object):
         except gevent.queue.Empty:
           pass
         except Exception as e:
-          exc = e
+          exc = sys.  exc_info()
           break
         gevent.sleep(0)
     self.enabled = False

@@ -39,7 +39,7 @@ def _includeHandler(placeholder, substitutionDict, skelpath):
     fname = os.path.join(skelpath, fname)
 
   logging.getLogger('csvbuild._includeHandler').debug('@INCLUDE: filename="%s"' % fname)
-  with open(fname, 'rb') as infile:
+  with open(fname, 'r') as infile:
     includedTemplate = infile.read()
     substituted = _templateSubstitution(includedTemplate, substitutionDict, skelpath)
     return (True, substituted)
@@ -144,7 +144,7 @@ class _DirectoryWalker(object):
         self._logger.debug("'%s' exists, will not overwrite" % dstpath)
         return
       self._logger.debug("Template processing: %s ---> %s" % (srcpath, dstpath))
-      with open(srcpath, 'rb') as infile:
+      with open(srcpath, 'r') as infile:
         filecontents = infile.read()
 
       try:
@@ -154,7 +154,7 @@ class _DirectoryWalker(object):
         augmentedException.templateFilename = srcpath
         raise augmentedException
 
-      with open(dstpath, 'wb') as outfile:
+      with open(dstpath, 'w') as outfile:
         outfile.write(filecontents)
 
 
@@ -167,13 +167,13 @@ class _DirectoryWalker(object):
     shutil.copystat(dirname, destdirname)
     for n in names:
       fname = os.path.join(dirname, n)
-      if os.path.isdir(fname):
-        os.path.walk(fname, self._processDirectory, row)
-      else:
-        self._processFile(dirname, destdirname, n, row)
+      self._processFile(dirname, destdirname, n, row)
 
   def processRow(self, row):
-    os.path.walk(self.skeletonDirectory, self._processDirectory, row)
+    for dirpath, dirnames, filenames in os.walk(self.skeletonDirectory, topdown=True):
+      for dn in dirnames:
+        self._processDirectory(row, os.path.join(dirpath, dn), [])
+      self._processDirectory(row, dirpath, filenames)
 
 
 def buildDirs(rows,
@@ -350,7 +350,7 @@ def main():
 
   import csv
   try:
-    infile = open(csvfilename, 'rUb')
+    infile = open(csvfilename, 'r')
   except IOError:
     optionparser.error("Couldn't open: %s" % csvfilename)
 

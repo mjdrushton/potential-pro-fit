@@ -37,7 +37,7 @@ class GulpDrvParser(object):
 
     retlist = []
     for i in range(numline):
-      line = infile.next()[:-1]
+      line = next(infile)[:-1]
       tokens = line.split()[1:]
       g = tuple([float(v) for v in tokens])
       retlist.append(g)
@@ -45,11 +45,11 @@ class GulpDrvParser(object):
 
   def _parseGradientsStrain(self, currline, infile):
     retlist = []
-    tokens = infile.next()[:-1].split()
+    tokens = next(infile)[:-1].split()
     tokens = [float(v) for v in tokens]
     retlist.extend(tokens)
 
-    tokens = infile.next()[:-1].split()
+    tokens = next(infile)[:-1].split()
     tokens = [float(v) for v in tokens]
     retlist.extend(tokens)
     self.gradientsStrain = self.StrainGradient(*retlist)
@@ -99,7 +99,7 @@ class Gulp_DRVEvaluator(object):
 
   def _createParser(self, job):
     outputpath = os.path.join(job.outputPath, self._filename)
-    with open(outputpath, 'rb') as infile:
+    with open(outputpath, 'r') as infile:
       parser = GulpDrvParser(infile)
     return parser
 

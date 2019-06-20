@@ -302,7 +302,8 @@ class _UploadCallback(object):
     if not non_blocking:
       self.event.wait()
       if self._exc:
-        raise self._exc
+        et, ei, tb = self._exc
+        raise ei.with_traceback(tb)
     else:
       return self.event
 

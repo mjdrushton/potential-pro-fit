@@ -8,7 +8,7 @@ import logging
 import weakref
 import posixpath
 import os
-import pkgutil
+import importlib.resources
 
 from gevent.event import Event
 
@@ -152,7 +152,8 @@ class QueueingSystemRunnerBatch(RunnerBatch):
   def _addAdditionalFilesToJobDir(self, job):
     # Add a new runjob to sourcePath
     runjobpath = os.path.join(job.sourcePath, 'runjob')
-    dat = pkgutil.get_data(__name__, 'templates/queueing_system_jobrun')
+    from . import templates
+    dat = importlib.resources.read_text(templates, 'queueing_system_jobrun')
     with open(runjobpath, 'w') as runjob:
       runjob.write(dat)
 

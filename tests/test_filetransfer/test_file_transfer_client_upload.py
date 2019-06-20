@@ -41,13 +41,12 @@ def testUploadChannel_BadStart_nonexistent_directory(execnet_gw, channel_id):
     ch = UploadChannels(execnet_gw, badpath, channel_id = channel_id, keepAlive = KEEP_ALIVE)
     assert False,  "ChannelException should have been raised."
   except ChannelException as e:
-    pass
+    assert str(e).endswith('are existing directories.')
   finally:
     if ch:
       ch.broadcast(None)
       ch.waitclose(2)
 
-  assert e.message.endswith('are existing directories.')
 
 def testDirectoryUpload_single_channel(tmpdir, execnet_gw, channel_id):
   create_dir_structure(tmpdir)
@@ -230,12 +229,12 @@ def testDirectoryUpload_create_multiple_uploads(tmpdir, execnet_gw, channel_id):
 
     dl1.upload()
     assert dest1.join("file.txt").isfile()
-    line = dest1.join("file.txt").open().next()[:-1]
+    line = next(dest1.join("file.txt").open())[:-1]
     assert line == "Hello"
 
     dl2.upload()
     assert dest2.join("file.txt").isfile()
-    line = dest2.join("file.txt").open().next()[:-1]
+    line = next(dest2.join("file.txt").open())[:-1]
     assert line == "Goodbye"
   finally:
     ch1.broadcast(None)
@@ -288,7 +287,7 @@ def testDirectoryUpload_test_nonblocking(tmpdir, execnet_gw, channel_id):
     time.sleep(2)
     finished_event.wait(10)
     assert dest1.join("file.txt").isfile()
-    line = dest1.join("file.txt").open().next()[:-1]
+    line = next(dest1.join("file.txt").open())[:-1]
     assert line == "Hello"
 
     assert not ct.dest1_state

@@ -9,4 +9,4 @@ from . import metaevaluators
 from . import tools
 from . import db
 
-__version__ = "0.8.3"
+__version__ = "0.9.0dev"

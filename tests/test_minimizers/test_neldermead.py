@@ -18,9 +18,9 @@ value_tolerance : 1.0E-3
 max_iterations : 30
 
 """
-    cfg = configparser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(io.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     variables = pro_fit.fittool.Variables([
@@ -50,9 +50,9 @@ type : NelderMead
 value_tolerance : 1.0E-3
 
 """
-    cfg = configparser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(io.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     minimizer = pro_fit.minimizers.NelderMeadMinimizer.createFromConfig(variables, configitems)
@@ -63,9 +63,9 @@ type : NelderMead
 max_iterations : 30
 
 """
-    cfg = configparser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(io.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     minimizer = pro_fit.minimizers.NelderMeadMinimizer.createFromConfig(variables, configitems)
@@ -81,9 +81,9 @@ value_tolerance : 1.0E-3
 max_iterations : 30
 
 """
-    cfg = configparser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(io.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     variables = pro_fit.fittool.Variables([

@@ -80,7 +80,6 @@ def testUrlParse():
 def testSingle(runfixture, vagrant_basic):
   import logging
   import sys
-
   runner = _createRunner(runfixture,vagrant_basic, 1)
 
   batch = _runBatch(runner, [runfixture.jobs[0]])
@@ -116,7 +115,7 @@ def _mklongjob(tmpdir):
   jf = common.MockJobFactory("Remote", "Job", [])
 
   for i in itertools.count():
-    tempd = tmpdir.mkdir(str(i))
+    tempd = tmpdir.join(str(i)).mkdir()
     logger.debug("Created longjob directory: %s", tempd)
     jfdir = tempd.mkdir("job_files")
     rfdir = tempd.mkdir("runner_files")
@@ -154,10 +153,11 @@ def _read_pids(channel):
       return
     channel.send(open(path).read())
 
-def testTerminate(tmpdir, runfixture, vagrant_basic):
+def testTerminate(tmpdir_factory, runfixture, vagrant_basic):
   """Test runner future's .terminate() method."""
   logger = logging.getLogger(__name__).getChild("testTerminate")
   # Create a long running job.
+  tmpdir = tmpdir_factory.mktemp("jobs")
   jobiter = _mklongjob(tmpdir)
   j1 = next(jobiter)
   assert(os.path.exists(str(tmpdir.join('0', 'job_files', 'runjob'))))
@@ -227,7 +227,7 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
   jobs1 = list(b1_future.jobs)
 
   b1_term = b1_future.terminate()
-  assert b1_term.wait(5)
+  assert b1_term.wait(20)
 
   cp.checkpids(b1_pids, False)
   cp.close()
@@ -282,8 +282,9 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
   isdirchannel.close()
   isdirchannel.waitclose()
 
-def testClose(runfixture, vagrant_basic, tmpdir):
+def testClose(runfixture, vagrant_basic, tmpdir_factory):
   """Test runner's .close() method."""
+  tmpdir = tmpdir_factory.mktemp("jobs")
   ncpu = 3
   runner = _createRunner(runfixture, vagrant_basic, ncpu)
   gw = _mkexecnetgw(vagrant_basic)
@@ -354,12 +355,12 @@ def testClose(runfixture, vagrant_basic, tmpdir):
   rstatus = runner._inner._gw.remote_status()
   assert rstatus.numchannels == 0
 
-def testBatchTerminate2(runfixture, vagrant_basic, tmpdir):
+def testBatchTerminate2(runfixture, vagrant_basic, tmpdir_factory):
   """Test runner's .close() method."""
-
+  tmpdir = tmpdir_factory.mktemp("jobs")
+  ncpu = 3
+  runner = _createRunner(runfixture, vagrant_basic, ncpu)
   try:
-    ncpu = 3
-    runner = _createRunner(runfixture, vagrant_basic, ncpu)
     gw = _mkexecnetgw(vagrant_basic)
 
     rstatus = runner._inner._gw.remote_status()
@@ -418,4 +419,5 @@ def testBatchTerminate2(runfixture, vagrant_basic, tmpdir):
     statuses = [ j.status for j in itertools.chain(b1.jobs, b2.jobs) ]
     assert status_expect == statuses
   finally:
-    runner.close()
+    if runner:
+      runner.close()

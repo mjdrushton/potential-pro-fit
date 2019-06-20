@@ -35,11 +35,11 @@ class DLPOLY_STATISEvaluator(object):
 
     # Parse the config
     try:
-      with open(configFilename, 'rb') as configfile:
+      with open(configFilename, 'r') as configfile:
         config = _dlpoly_parse.parseCONFIG(configfile)
-      with open(controlFilename,'rb') as controlfile:
+      with open(controlFilename,'r') as controlfile:
         nptflag = self._isNPT(controlfile)
-      with open(statisFilename, 'rb') as statisfile:
+      with open(statisFilename, 'r') as statisfile:
         statisIterator = _dlpoly_parse.parseSTATIS(statisfile, config, nptflag)
         rows = self._extractValues(statisIterator)
         return self._makeRecords(rows)

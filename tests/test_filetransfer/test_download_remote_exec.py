@@ -76,10 +76,12 @@ def testListDir(tmpdir, execnet_gw, channel_id):
 
   transid = 0
 
+  import operator
+
   expect = {'msg' : 'LIST',
    'id' : transid,
    'channel_id' : channel_id,
-   'files' : sorted(files)}
+   'files' : sorted(files, key=operator.itemgetter("remote_path"))}
 
   ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
   try:
@@ -91,7 +93,7 @@ def testListDir(tmpdir, execnet_gw, channel_id):
     msg = ch1.receive(10.0)
 
     assert "files" in msg
-    msg['files'] = sorted(msg['files'])
+    msg['files'] = sorted(msg['files'],key=operator.itemgetter("remote_path"))
     assert expect == msg
   finally:
     ch1.send(None)
@@ -147,7 +149,7 @@ def testDownloadFile(tmpdir, execnet_gw, channel_id):
     msg = ch1.receive(10.0)
 
     chpath = tmpdir.join("0").join("1").join("file")
-    contents = "one two three four"
+    contents = b"one two three four"
     chpath.write(contents, ensure = True)
 
     ch1.send({'msg' : 'DOWNLOAD_FILE', 'id' : 1, 'remote_path' : chpath.strpath})

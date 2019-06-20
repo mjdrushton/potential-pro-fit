@@ -43,8 +43,9 @@ def testShellDoesntExist(execnet_gw, tmpdir, channel_id):
     msg = ch1.receive(10.0)
     assert msg == dict(msg =  "ERROR", channel_id = channel_id, reason = "shell cannot be executed: '%s'" % '/this/shell/doesnt/exist')
   finally:
-    ch1.send(None)
-    ch1.waitclose(5)
+    if not ch1.isclosed():
+      ch1.send(None)
+      ch1.waitclose(5)
 
 def testStart(execnet_gw, tmpdir, channel_id):
   ch1 = execnet_gw.remote_exec(_run_remote_exec)

@@ -47,10 +47,10 @@ class TableEvaluatorTestCase(unittest.TestCase):
     resdir_after = os.path.join(resdir, 'end_to_end', 'end_to_end_after_run')
 
     # Configure the evaluator
-    parser = configparser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     with open(os.path.join(resdir_before, 'evaluator.cfg')) as infile:
-      parser.readfp(infile)
+      parser.read_file(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
@@ -74,10 +74,10 @@ class TableEvaluatorTestCase(unittest.TestCase):
     resdir_after = os.path.join(resdir, 'end_to_end', 'end_to_end_after_run')
 
     # Configure the evaluator
-    parser = configparser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     with open(os.path.join(resdir_before, 'expect_value.cfg')) as infile:
-      parser.readfp(infile)
+      parser.read_file(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
@@ -104,10 +104,10 @@ class TableEvaluatorTestCase(unittest.TestCase):
     resdir_after = os.path.join(resdir, 'end_to_end', 'end_to_end_after_run')
 
     # Configure the evaluator
-    parser = configparser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     with open(os.path.join(resdir_before, 'expect_value_nocol.cfg')) as infile:
-      parser.readfp(infile)
+      parser.read_file(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
@@ -134,10 +134,10 @@ class TableEvaluatorTestCase(unittest.TestCase):
     resdir_after = os.path.join(resdir, 'end_to_end', 'end_to_end_after_run')
 
     # Configure the evaluator
-    parser = configparser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     with open(os.path.join(resdir_before, 'evaluator_individual_rows.cfg')) as infile:
-      parser.readfp(infile)
+      parser.read_file(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
@@ -165,10 +165,10 @@ class TableEvaluatorTestCase(unittest.TestCase):
     resdir_after = os.path.join(resdir, 'label_column_and_weights', 'after_run')
 
     # Configure the evaluator
-    parser = configparser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     with open(os.path.join(resdir_before, 'label_column.cfg')) as infile:
-      parser.readfp(infile)
+      parser.read_file(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
@@ -198,10 +198,10 @@ class TableEvaluatorTestCase(unittest.TestCase):
     resdir_after = os.path.join(resdir, 'label_column_and_weights', 'after_run')
 
     # Configure the evaluator
-    parser = configparser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     with open(os.path.join(resdir_before, 'weight_column.cfg')) as infile:
-      parser.readfp(infile)
+      parser.read_file(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
@@ -229,10 +229,10 @@ class TableEvaluatorTestCase(unittest.TestCase):
     resdir_after = os.path.join(resdir, 'label_column_and_weights', 'after_run')
 
     # Configure the evaluator
-    parser = configparser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     with open(os.path.join(resdir_before, 'weight_and_weight_column.cfg')) as infile:
-      parser.readfp(infile)
+      parser.read_file(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
@@ -443,6 +443,7 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     print("2,3,4,5", file=sio)
 
     sio.seek(0)
+    # import pdb; pdb.set_trace()
     with self.assertRaises(pro_fit.evaluators._table.TableHeaderException):
       pro_fit.evaluators.TableEvaluator._validateExpectRows("e_A", sio)
 
@@ -477,7 +478,7 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     # Test that error-flag is set
     self.assertEqual(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
     self.assertEqual(True, r.errorFlag)
-    self.assertEqual(IOError, type(r.exception))
+    self.assertEqual(FileNotFoundError, type(r.exception))
     self.assertEqual("Table", r.evaluatorName)
 
   def testMissingOutputFile(self):
@@ -504,7 +505,7 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
 
     weight = 1.0
 
-    exc = IOError("")
+    exc = FileNotFoundError("")
 
     expectedRecords = [
       EER('row_0'       , 3.0   , exc        , weight , "Table") ,

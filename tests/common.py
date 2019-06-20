@@ -41,7 +41,7 @@ def mockfuture(jobs):
       os.chmod('runjob', stat.S_IRWXU)
       status = subprocess.check_call('./runjob', shell = True)
       logger.debug('Runjob status: %s' % status)
-      with open('STATUS', 'wb') as outfile:
+      with open('STATUS', 'w') as outfile:
         print("%d" % status, file=outfile)
       logger.debug('Directory contents after run: %s' % os.listdir('.'))
     finally:
@@ -56,7 +56,7 @@ class MockEvaluator(object):
     opath = os.path.join(job.path, 'job_files', 'output', 'output.res')
     logger.debug("Call output path: %s" % opath)
     d = {}
-    with open(opath, 'rb') as infile:
+    with open(opath, 'r') as infile:
       for line in infile:
         tokens = line.split(':')
         k = tokens[0].strip()
@@ -100,7 +100,7 @@ class MockJobFactory(object):
     #Create runjob
     logger.debug("createJob destdir: %s" % destdir)
     runjobfilename = os.path.join(jfdir, 'runjob')
-    with open(runjobfilename, 'wb') as outfile:
+    with open(runjobfilename, 'w') as outfile:
       print("#! /bin/bash", file=outfile)
       print("#Job: %s" % self.name, file=outfile)
       print("#Runner: %s" % self.runnerName, file=outfile)

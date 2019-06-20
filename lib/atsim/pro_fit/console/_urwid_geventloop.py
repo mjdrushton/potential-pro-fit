@@ -18,11 +18,13 @@ import gevent
 from gevent import select
 from urwid import ExitMainLoop
 from collections import deque
+import signal
+
 
 class GeventLoop(object):
 
     def __init__(self):
-        super(GeventLoop, self).__init__()
+        super().__init__()
         self._completed_greenlets = deque()
         self._idle_callbacks = []
         self._idle_event = gevent.event.Event()
@@ -84,3 +86,18 @@ class GeventLoop(object):
                     self._idle_event.clear()
         except ExitMainLoop:
             pass
+
+
+    def set_signal_handler(self, signum, handler):
+        """
+        Sets the signal handler for signal signum.
+
+        The default implementation of :meth:`set_signal_handler`
+        is simply a proxy function that calls :func:`signal.signal()`
+        and returns the resulting value.
+
+        signum -- signal number
+        handler -- function (taking signum as its single argument),
+        or `signal.SIG_IGN`, or `signal.SIG_DFL`
+        """
+        return signal.signal(signum, handler)

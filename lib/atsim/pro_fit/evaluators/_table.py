@@ -95,7 +95,7 @@ class TableEvaluator(object):
 
     # Open results file and then compare rows.
     try:
-      with open(resultsFilename, 'rUb') as resultsFile:
+      with open(resultsFilename, 'r') as resultsFile:
         rowRecords = self._processRows(resultsFile, job, resultsFilename)
     except IOError as ioe:
       self._logger.warning("Table evaluator '%s' could not open results file: '%s' for job '%s'" % (self._name, resultsFilename, job.name))
@@ -190,14 +190,14 @@ class TableEvaluator(object):
         evaluatorName = self._name)
 
   def _augmentExceptionMessage(self, e, rowid, expectRow, resultsRow):
-    message = e.message
+    message = str(e)
     message = "%s when comparing row number %d. Expect table row: '%s'. Results table row: '%s'" % (message, rowid, expectRow, resultsRow)
     return message
 
   def _makeErrorRowRecord(self, e, rowName, expect, rowid, job):
     rowrecord = ErrorEvaluatorRecord(rowName, expect, e, weight = self._getRowWeight(rowid), evaluatorName = self._name)
     self._logger.warning("Table evaluator (%s, job: %s) could not evaluate expression '%s': %s" % (
-      self._name, job.name, self._rowCompare.expressionString, e.message ) )
+      self._name, job.name, self._rowCompare.expressionString, str(e) ) )
     return rowrecord
 
   def _makeReturnRecords(self, rowRecords, job):
@@ -317,7 +317,7 @@ class TableEvaluator(object):
     sum_only = cls._validateSumOnly(cfgdict)
 
     try:
-      with open(csvfilename, 'rUb') as csvfile:
+      with open(csvfilename, 'r') as csvfile:
         label_column = cfgdict.get('label_column', None)
         weight_column = cfgdict.get('weight_column', None)
         expect_value = cfgdict.get('expect_value', None)
@@ -406,7 +406,7 @@ class TableEvaluator(object):
     try:
       cexprtk.check_expression(expression)
     except cexprtk.ParseException as e:
-      raise BadExpressionException("Could not parse 'row_compare' expression: %s" % e.message)
+      raise BadExpressionException("Could not parse 'row_compare' expression: %s" % str(e))
 
     # Throw when unknown variables found. Will require changes to cexprtk.
     callback = _UnknownVariableResolver()
@@ -485,9 +485,8 @@ class TableEvaluator(object):
     dr = SkipWhiteSpaceDictReader(expectCSVFile)
 
     fieldnames = sorted(dr.fieldnames)
-
     for i,row in enumerate(dr):
-      if fieldnames != sorted(row.keys()):
+      if set(fieldnames) != set(row.keys()):
         raise TableHeaderException(
           "Number of columns for row %d of '%s' is different to that specified by header row." % (i, csvFilename) )
       for k in requiredVariables:
@@ -594,7 +593,7 @@ class _RowComparator(object):
        val = float(expectRow[var])
       except ValueError as ve:
         raise ValueError(
-          "for expect table variable '%s',  %s." % ( varkey,ve.message))
+          "for expect table variable '%s',  %s." % ( varkey,ve))
       except KeyError as ke:
         raise UnknownVariableException(self.expressionString, [varkey])
 
@@ -607,7 +606,7 @@ class _RowComparator(object):
          val = float(resultsRow[var])
       except ValueError as ve:
         raise ValueError(
-          "for results table variable '%s', %s." % (varkey,ve.message))
+          "for results table variable '%s', %s." % (varkey,ve))
       except KeyError as ke:
         raise UnknownVariableException(self.expressionString, [varkey])
 

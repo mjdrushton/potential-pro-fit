@@ -14,7 +14,10 @@ def clearqueue(channel):
     return
   lines = output.strip().split(os.linesep)
   lines = lines[2:]
-  job_ids = [ l.split()[0] for l in lines]
+  job_ids = []
+  for l in lines:
+    job_ids.append(l.split()[0])
+    
   for job_id in job_ids:
     cmd = "qdel %s" % job_id
     print(cmd)

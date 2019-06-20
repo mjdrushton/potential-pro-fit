@@ -66,18 +66,18 @@ class MeritTestCase(unittest.TestCase):
   def _jobToDict(self, job):
     d = {}
     infilename = os.path.join(job.path, 'job_files', 'runjob')
-    with open(infilename, 'rb') as infile:
+    with open(infilename, 'r') as infile:
       next(infile)
 
-      line = infile.next()[:-1]
+      line = next(infile)[:-1]
       self.assertTrue(line.startswith('#Job:'))
       d['Job'] = line.split(':')[1].strip()
 
-      line = infile.next()[:-1]
+      line = next(infile)[:-1]
       self.assertTrue(line.startswith('#Runner:'))
       d['Runner'] = line.split(':')[1].strip()
 
-      line = infile.next()[:-1]
+      line = next(infile)[:-1]
       self.assertTrue(line.startswith('#Candidate:'))
       d['Candidate'] = int(line.split(':')[1].strip())
 
