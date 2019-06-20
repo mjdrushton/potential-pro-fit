@@ -136,8 +136,8 @@ class _RunnerJobThread(object):
       self._logger.warning("Could not start upload for %s, directory lock failed: %s",self.job, exc)
       self.finishJob(exc)
       return False
-      self._logger.info("Directory locked for %s.", self.job)
-      self.job.observers.notifyJobDirectoryLocked(self.job)
+    self._logger.info("Directory locked for %s.", self.job)
+    self.job.observers.notifyJobDirectoryLocked(self.job)
     return True
 
   def doUpload(self):
@@ -211,7 +211,7 @@ class _RunnerJobThread(object):
           pass
         except:
           self._logger.warning("Job execution finished (finishJobRun) for %s, with exception: %s" , self.job, exc)
-        self.finishJob(exc)
+        self.finishJob(sys.exc_info())
         return False
       else:
         self._logger.info("Job execution finished successfully (finishJobRun) for %s" , self.job)

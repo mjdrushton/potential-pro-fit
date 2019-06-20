@@ -3,7 +3,7 @@ import os
 
 def readversion():
   basedir = os.path.dirname(__file__)
-  versionPath = os.path.join(basedir, "lib", "atsim", "pro_fit", "__init__.py")
+  versionPath = os.path.join(basedir, "lib", "atsim", "pro_fit", "_version.py")
 
   with open(versionPath) as vfile:
     for line in vfile:

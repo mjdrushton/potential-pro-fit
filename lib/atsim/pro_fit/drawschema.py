@@ -190,11 +190,12 @@ def main():
   outputfilename = sys.argv[1]
 
   # Generate metadata object
-  from atsim import pro_fit
-  r = pro_fit.reporters.SQLiteReporter(
+  from atsim.pro_fit import reporters
+  from atsim.profit import fittool
+  r = reporters.SQLiteReporter(
     None,
-    pro_fit.fittool.Variables([]),
-    pro_fit.fittool.CalculatedVariables([]) )
+    fittool.Variables([]),
+    fittool.CalculatedVariables([]) )
 
   md = r.getMetaData()
   pdgraph = create_schema_graph(metadata = md, show_datatypes = False)

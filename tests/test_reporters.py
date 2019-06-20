@@ -2,7 +2,7 @@
 
 import unittest
 
-from atsim import pro_fit
+from atsim.pro_fit import minimizers, reporters, evaluators, fittool
 from . import testutil
 
 import sqlalchemy as sa
@@ -20,7 +20,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
 
   @staticmethod
   def getInitialVariables():
-    variables = pro_fit.fittool.Variables([
+    variables = fittool.Variables([
       ('A', 1000.0, False),
       ('rho', 0.1, True),
       ('C', 32.0, False) ], [None, (10.0, None), (0.0, 5.0)])
@@ -28,7 +28,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
 
   @staticmethod
   def getCalculatedVariables():
-    return pro_fit.fittool.CalculatedVariables([("E", "A - C"), ("sum", "A+rho+C")])
+    return fittool.CalculatedVariables([("E", "A - C"), ("sum", "A+rho+C")])
 
   @staticmethod
   def getVariables():
@@ -50,7 +50,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
     # Create Jobs
     subevals =  [ ["Cell"], ["Penalty", "Bulk"], ["Value"]]
 
-    ER = pro_fit.evaluators.EvaluatorRecord
+    ER = evaluators.EvaluatorRecord
 
     mval = meritvals[0]
     jobs = [
@@ -70,7 +70,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
          ER('Bulk3', 90.0, 101.0, 1.0, 4.0, evaluatorName= "Penalty Evaluator")],
         [ER('Value3', 0.5, 0.8, 1.2, 5.0, evaluatorName = "Value Evaluator")]]) ]
 
-    return [pro_fit.minimizers.MinimizerResults([mval], [(vinstances[0], jobs)])]
+    return [minimizers.MinimizerResults([mval], [(vinstances[0], jobs)])]
 
   def setUp(self):
     # Create some MinimizerResults to feed to
@@ -79,7 +79,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
     self.minimizerResults = self.getVariables()
 
   def testInsertSingleMinimizerResult(self):
-    reporter = pro_fit.reporters.SQLiteReporter(None, self.initialVariables, self.calculatedVariables)
+    reporter = reporters.SQLiteReporter(None, self.initialVariables, self.calculatedVariables)
     engine = reporter._saengine
     engine.echo = True
     reporter(self.minimizerResults[0])
@@ -264,7 +264,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
 
   def testStatus(self):
     """Test population of the 'status' table"""
-    reporter = pro_fit.reporters.SQLiteReporter(None, self.initialVariables, self.calculatedVariables,'fitting_run')
+    reporter = reporters.SQLiteReporter(None, self.initialVariables, self.calculatedVariables,'fitting_run')
     #reporter = SQLiteReporter('/Users/mr498/Desktop/db.sqlite', self.initialVariables)
     engine = reporter._saengine
     engine.echo = True
@@ -297,7 +297,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
 
   def testErrorEvaluatorRecord(self):
     """Test for insertion of evaluators.ErrorEvaluatorRecord"""
-    reporter = pro_fit.reporters.SQLiteReporter(None, self.initialVariables,self.calculatedVariables)
+    reporter = reporters.SQLiteReporter(None, self.initialVariables,self.calculatedVariables)
     engine = reporter._saengine
     engine.echo = True
 
@@ -314,7 +314,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
       except Exception as exc:
         mybad = exc
 
-      erecord = pro_fit.evaluators.ErrorEvaluatorRecord(
+      erecord = evaluators.ErrorEvaluatorRecord(
         "BadEvalValue",
         10.0,
         mybad,

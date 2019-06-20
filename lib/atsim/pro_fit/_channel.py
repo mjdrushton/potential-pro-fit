@@ -121,8 +121,6 @@ class AbstractChannel(object):
       return None
     return self._callback.callback
 
-    return self._callback
-
   callback = property(fget = getcallback, fset = setcallback)
 
   def __iter__(self):

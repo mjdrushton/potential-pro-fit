@@ -6,7 +6,7 @@ import os
 import shutil
 import logging
 
-from . import jobfactories
+from atsim.pro_fit import jobfactories
 
 import cexprtk
 
@@ -182,7 +182,7 @@ class FitConfig(object):
 
     import re
 
-    regex = re.compile('^\s*\[(.*)\]')
+    regex = re.compile(r'^\s*\[(.*)\]')
 
     def sectionIterator():
       with open(fitCfgFilename) as infile:

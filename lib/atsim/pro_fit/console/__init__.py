@@ -8,7 +8,9 @@ from ._urwid_geventloop import GeventLoop
 
 import gevent
 
+import atsim.pro_fit.runners
 import atsim.pro_fit
+import atsim.pro_fit._version
 
 class JobObserver(atsim.pro_fit.runners.RunnerJobObserverAdapter):
 
@@ -80,7 +82,7 @@ class Console(object):
     self._controller = ConsoleController(self.model, self.mainframe)
     self._greenlet = None
 
-    self.model.messages.lines.append("Potential Pro-Fit v%s" % atsim.pro_fit.__version__)
+    self.model.messages.lines.append("Potential Pro-Fit v%s" % atsim.pro_fit._version.__version__)
     self.model.messages.lines.append("")
     self.model.messages.lines.append("Starting...")
     self.model.messages.visible = True

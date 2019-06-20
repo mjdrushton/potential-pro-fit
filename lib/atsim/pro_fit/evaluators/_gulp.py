@@ -174,6 +174,9 @@ class _GulpSubEvaluatorBase(object):
       actual = self.extractValue(infile)
       return FractionalDifferenceEvaluatorRecord(self._name, self._expect, actual, self._weight)
 
+  def extractValue(self, infile):
+    raise NotImplementedError()
+
 
 class _GulpElasticSubEvaluator(_GulpSubEvaluatorBase):
   """Extracts values from Gulp output files elastic constant matrix"""

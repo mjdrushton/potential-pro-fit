@@ -3,7 +3,7 @@
 from atsim.pro_fit._channel import AbstractChannel, MultiChannel
 from atsim.pro_fit._util import CallbackRegister, NamedEvent
 from ._exceptions import JobKilledException, NonZeroExitStatus
-from .._keepalive import KeepAlive
+from atsim.pro_fit._keepalive import KeepAlive
 
 import itertools
 import logging

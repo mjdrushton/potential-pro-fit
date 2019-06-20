@@ -1,11 +1,12 @@
 """Module to support serializing fitting_run.db data into various table formats."""
 
-from .._util import cmp
+from atsim.pro_fit._util import cmp
+
+class RangeException(Exception):
+  pass
 
 class _RangeDiscoverIterator(object):
 
-  class RangeException(Exception):
-    pass
 
   def __init__(self):
     self.x_range = []

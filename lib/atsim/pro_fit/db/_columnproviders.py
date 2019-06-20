@@ -1,5 +1,5 @@
 from ._util import calculatePercentageDifference
-from .._util import cmp
+from atsim.pro_fit._util import cmp
 
 
 from ._metadata import getMetadata

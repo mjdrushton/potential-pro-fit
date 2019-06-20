@@ -3,7 +3,7 @@ from atsim.pro_fit._channel import AbstractChannel
 import logging
 import itertools
 
-from .._keepalive import KeepAlive
+from atsim.pro_fit._keepalive import KeepAlive
 
 class BaseChannel(AbstractChannel):
   """Base class for DownloadChannel and UploadChannel."""
