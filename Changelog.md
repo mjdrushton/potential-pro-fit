@@ -4,6 +4,9 @@
 ### Changed
 - Updated Potential Pro-Fit to use python 3. Python 2.7 is now not supported for the main code base. Remote runners will still support python 3 to allow jobs to run on legacy systems.
 
+### Added
+- Plugins installed into the `atsim.pro_fit.plugins` namespace are now registered automatically with `pprofit`
+
 ## [0.8.3] - 2019-6-4
 ### Fixed
 - csvbuild "File overwriting disabled" messages now no longer appear in the log file.

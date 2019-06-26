@@ -11,7 +11,7 @@ import atsim.pro_fit.minimizers
 import atsim.pro_fit.reporters
 import atsim.pro_fit.runners
 
-from atsim.pro_fit._util import MultiCallback
+from atsim.pro_fit._util import MultiCallback, iter_namespace
 from atsim.pro_fit.console import Console
 
 
@@ -323,14 +323,27 @@ def _getfitcfg(jobdir, cls = atsim.pro_fit.fittool.FitConfig, pluginmodules = []
      @param cls FitConfig class
      @param pluginmodules Additional modules to be scanned by FitConfig for evaluators, runners etc.
      @return atsim.pro_fit.fittool.FitConfig instance"""
+  import atsim.pro_fit.runners
   runners = [atsim.pro_fit.runners]
   evaluators = [atsim.pro_fit.evaluators]
   metaevaluators = [atsim.pro_fit.metaevaluators]
   jobfactories = [atsim.pro_fit.jobfactories]
   minimizers = [atsim.pro_fit.minimizers]
 
+  # Introspect the the atsim.pro_fit.plugins namespace and add these to pluginmodules too.
+  ns_pluginsmodules = []
+  try:
+    import atsim.pro_fit.plugins
+    import importlib
+    for finder, name, ispkg in  iter_namespace(atsim.pro_fit.plugins):
+      m = importlib.import_module(name)
+      ns_pluginsmodules.append(m)
+  except ImportError:
+    pass
+
   for l in [runners, evaluators, metaevaluators, jobfactories, minimizers]:
     l.extend(pluginmodules)
+    l.extend(ns_pluginsmodules)
 
   return cls('fit.cfg',
     runners,
