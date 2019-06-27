@@ -1,4 +1,4 @@
-# Potential Pro-Fit v0.8.3
+# Potential Pro-Fit v0.9.0
 
 ## Installing Potential Pro-Fit
 
