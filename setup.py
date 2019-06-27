@@ -25,12 +25,12 @@ def preprocess(infilename):
     path = os.path.dirname(infilename)
     bname = os.path.basename(infilename)
     os.chdir(path)
-    with open(bname, 'rb') as infile:
+    with open(bname, 'r', encoding = 'utf-8') as infile:
       for inline in infile:
         m = include_regex.match(inline)
         if m:
           includefilename = m.groups()[0]
-          with open(includefilename, 'rb') as includefile:
+          with open(includefilename, 'r', encoding = 'utf-8') as includefile:
             outfile.write(includefile.read())
         else:
           outfile.write(inline)
@@ -67,26 +67,38 @@ def package_files(directory):
   os.chdir(cwd)
   return paths
 
-pkgs = find_packages('lib', exclude=["tests"])
+# pkgs = find_packages('lib', exclude=["tests"])
+pkgs = ['atsim.pro_fit',
+        'atsim.pro_fit.tools',
+        'atsim.pro_fit.minimizers',
+        'atsim.pro_fit.resources',
+        'atsim.pro_fit.webmonitor',
+        'atsim.pro_fit.evaluators',
+        'atsim.pro_fit.filetransfer',
+        'atsim.pro_fit.db',
+        'atsim.pro_fit.runners',
+        'atsim.pro_fit.console',
+        'atsim.pro_fit.minimizers._inspyred',
+        'atsim.pro_fit.filetransfer.remote_exec',
+        'atsim.pro_fit.runners.templates']
 
 setup(name="potential-pro-fit",
   version = readversion(),
   package_dir = {'' : 'lib/'},
   packages = pkgs,
-  namespace_packages = ["atsim"],
   cmdclass = {'build_py' : my_build},
   install_requires = ["setuptools",
                       'sqlalchemy',
-                      'more-itertools<6.0.0',
-                      'cherrypy<18.0.0',
-                      'Jinja2==2.10',
-                      'inspyred==1.0.1',
-                      'cexprtk==0.2.0',
-                      'urwid==1.3.1',
-                      'mystic==0.3.1',
-                      'execnet>=1.2',
-                      'gevent==1.2.1',
-                      'tabulate==0.7.7'],
+                      'more-itertools>6.0.0',
+                      'cherrypy>18.0.0',
+                      'Jinja2>=2.10',
+                      'inspyred>=1.0.1',
+                      'cexprtk>=0.3.0',
+                      'urwid>=2.0.1',
+                      'mystic>=0.3.3',
+                      'execnet>=1.6',
+                      'gevent>=1.3',
+                      'tabulate>=0.8.3'],
   tests_require = ['pytest',
                   'wsgi_intercept',
                   'mechanize',

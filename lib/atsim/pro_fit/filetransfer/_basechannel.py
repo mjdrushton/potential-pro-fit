@@ -3,7 +3,7 @@ from atsim.pro_fit._channel import AbstractChannel
 import logging
 import itertools
 
-from .._keepalive import KeepAlive
+from atsim.pro_fit._keepalive import KeepAlive
 
 class BaseChannel(AbstractChannel):
   """Base class for DownloadChannel and UploadChannel."""
@@ -22,7 +22,7 @@ class BaseChannel(AbstractChannel):
         connection_timeout (int, optional): Timeout in seconds after which connection will fail if 'READY' message not received.
         keepAlive (int, optional): Send a `KEEP_ALIVE` message to the server every `keepAlive` seconds. If `None` do not send `KEEP_ALIVE` messages.
     """
-    from remote_exec import file_transfer_remote_exec
+    from .remote_exec import file_transfer_remote_exec
     self._startmsg = startmsg
     self._remote_path = remote_path
     super(BaseChannel, self).__init__(execnet_gw, file_transfer_remote_exec, channel_id, connection_timeout)

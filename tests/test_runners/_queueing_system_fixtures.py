@@ -1,6 +1,6 @@
 import pytest
 
-from test_pbs_remote_exec import _mkexecnetgw
+from .test_pbs_remote_exec import _mkexecnetgw
 
 import atsim.pro_fit.runners._queueing_system_client as generic_client
 

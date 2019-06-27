@@ -1,11 +1,11 @@
-import ConfigParser
+import configparser
 import math
 import os
 import shutil
 import unittest
 
 from atsim import pro_fit
-import testutil
+from . import testutil
 
 def _getResourceDir():
   return os.path.join(
@@ -47,10 +47,10 @@ class TableEvaluatorTestCase(unittest.TestCase):
     resdir_after = os.path.join(resdir, 'end_to_end', 'end_to_end_after_run')
 
     # Configure the evaluator
-    parser = ConfigParser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     with open(os.path.join(resdir_before, 'evaluator.cfg')) as infile:
-      parser.readfp(infile)
+      parser.read_file(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
@@ -63,9 +63,9 @@ class TableEvaluatorTestCase(unittest.TestCase):
     self.assertEqual(1, len(evaluated))
 
     rec = evaluated[0]
-    self.assertAlmostEquals(0.0, rec.expectedValue)
-    self.assertAlmostEquals(46.983161698072, rec.extractedValue)
-    self.assertAlmostEquals(2.0 * 46.983161698072, rec.meritValue)
+    self.assertAlmostEqual(0.0, rec.expectedValue)
+    self.assertAlmostEqual(46.983161698072, rec.extractedValue)
+    self.assertAlmostEqual(2.0 * 46.983161698072, rec.meritValue)
 
   def testEndToEnd_expect_value(self):
     """Test TableEvaluator with expect_value cfg option"""
@@ -74,10 +74,10 @@ class TableEvaluatorTestCase(unittest.TestCase):
     resdir_after = os.path.join(resdir, 'end_to_end', 'end_to_end_after_run')
 
     # Configure the evaluator
-    parser = ConfigParser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     with open(os.path.join(resdir_before, 'expect_value.cfg')) as infile:
-      parser.readfp(infile)
+      parser.read_file(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
@@ -104,10 +104,10 @@ class TableEvaluatorTestCase(unittest.TestCase):
     resdir_after = os.path.join(resdir, 'end_to_end', 'end_to_end_after_run')
 
     # Configure the evaluator
-    parser = ConfigParser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     with open(os.path.join(resdir_before, 'expect_value_nocol.cfg')) as infile:
-      parser.readfp(infile)
+      parser.read_file(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
@@ -134,10 +134,10 @@ class TableEvaluatorTestCase(unittest.TestCase):
     resdir_after = os.path.join(resdir, 'end_to_end', 'end_to_end_after_run')
 
     # Configure the evaluator
-    parser = ConfigParser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     with open(os.path.join(resdir_before, 'evaluator_individual_rows.cfg')) as infile:
-      parser.readfp(infile)
+      parser.read_file(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
@@ -165,10 +165,10 @@ class TableEvaluatorTestCase(unittest.TestCase):
     resdir_after = os.path.join(resdir, 'label_column_and_weights', 'after_run')
 
     # Configure the evaluator
-    parser = ConfigParser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     with open(os.path.join(resdir_before, 'label_column.cfg')) as infile:
-      parser.readfp(infile)
+      parser.read_file(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
@@ -198,10 +198,10 @@ class TableEvaluatorTestCase(unittest.TestCase):
     resdir_after = os.path.join(resdir, 'label_column_and_weights', 'after_run')
 
     # Configure the evaluator
-    parser = ConfigParser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     with open(os.path.join(resdir_before, 'weight_column.cfg')) as infile:
-      parser.readfp(infile)
+      parser.read_file(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
@@ -229,10 +229,10 @@ class TableEvaluatorTestCase(unittest.TestCase):
     resdir_after = os.path.join(resdir, 'label_column_and_weights', 'after_run')
 
     # Configure the evaluator
-    parser = ConfigParser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     with open(os.path.join(resdir_before, 'weight_and_weight_column.cfg')) as infile:
-      parser.readfp(infile)
+      parser.read_file(infile)
 
     evaluator = pro_fit.evaluators.TableEvaluator.createFromConfig(
       'Table',
@@ -258,25 +258,25 @@ class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
 
   def testRowCompareValidation(self):
     """Check field validation for 'row_compare' configuration option."""
-    import StringIO
+    import io
     # Test a malformed expression
     expression = "sqrt( (e_x - rx)^2"
 
     with self.assertRaises(pro_fit.evaluators._table.BadExpressionException):
-      pro_fit.evaluators.TableEvaluator._validateExpression(expression, StringIO.StringIO())
+      pro_fit.evaluators.TableEvaluator._validateExpression(expression, io.StringIO())
 
     # Test the case when expression references a column that is not in in the csv file.
     expression = "e_x + e_y + e_z + e_bad"
 
-    sio = StringIO.StringIO()
-    print >>sio, "x,y,z,expect"
-    print >>sio, "1,2,3,0"
+    sio = io.StringIO()
+    print("x,y,z,expect", file=sio)
+    print("1,2,3,0", file=sio)
     sio.seek(0)
 
     try:
-      pro_fit.evaluators.TableEvaluator._validateExpression(expression, StringIO.StringIO())
+      pro_fit.evaluators.TableEvaluator._validateExpression(expression, io.StringIO())
       self.fail("_validateExpression() did not raise UnknownVariableException")
-    except pro_fit.evaluators._table.UnknownVariableException, e:
+    except pro_fit.evaluators._table.UnknownVariableException as e:
       self.assertEqual(["bad"], e.unknownVariables)
 
     # Check when expression references column that doesn't exist in expect
@@ -293,10 +293,10 @@ class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
 
     expression = "(e_A+e_B) - (r_A + r_B)"
 
-    import StringIO
-    sio = StringIO.StringIO()
-    print >>sio, "A,B"
-    print >>sio, "1,2"
+    import io
+    sio = io.StringIO()
+    print("A,B", file=sio)
+    print("1,2", file=sio)
     sio.seek(0)
 
     with self.assertRaises(pro_fit.fittool.ConfigException):
@@ -307,9 +307,9 @@ class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
     sio.seek(0)
 
     #
-    sio = StringIO.StringIO()
-    print >>sio, "A,B,expect"
-    print >>sio, "1,2,1.0"
+    sio = io.StringIO()
+    print("A,B,expect", file=sio)
+    print("1,2,1.0", file=sio)
     sio.seek(0)
 
     pro_fit.evaluators.TableEvaluator._validateExpectColumns(sio)
@@ -335,56 +335,56 @@ class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
     st = cexprtk.Symbol_Table({}, add_constants = True)
     expression = "sqrt( (e_jabble + e_x - r_x)^2)"
     cexprtk.Expression(expression, st, callback)
-    self.assertEquals(["e_jabble", "e_x", "r_x"], callback.variables)
+    self.assertEqual(["e_jabble", "e_x", "r_x"], callback.variables)
 
-    self.assertEquals(["jabble", "x"], callback.expectVariables)
-    self.assertEquals(["x"], callback.resultsVariables)
+    self.assertEqual(["jabble", "x"], callback.expectVariables)
+    self.assertEqual(["x"], callback.resultsVariables)
 
     callback = pro_fit.evaluators._table._UnknownVariableResolver()
     st = cexprtk.Symbol_Table({}, add_constants = True)
     expression = "pi + blah + r_A_B  - r_E_B + sqrt(booble) + e_Z "
     cexprtk.Expression(expression, st, callback)
-    self.assertEquals(["blah", "booble", "e_Z", "r_A_B", "r_E_B"], callback.variables)
-    self.assertEquals(["Z"], callback.expectVariables)
-    self.assertEquals(["A_B", "E_B"], callback.resultsVariables)
-    self.assertEquals(["blah", "booble"], callback.otherVariables)
+    self.assertEqual(["blah", "booble", "e_Z", "r_A_B", "r_E_B"], callback.variables)
+    self.assertEqual(["Z"], callback.expectVariables)
+    self.assertEqual(["A_B", "E_B"], callback.resultsVariables)
+    self.assertEqual(["blah", "booble"], callback.otherVariables)
 
   def testRowValidation(self):
     """Test row by row validation of table files"""
     from atsim.pro_fit.evaluators._table import TableEvaluator, TableEvaluatorConfigException
 
-    import StringIO
-    sio = StringIO.StringIO()
+    import io
+    sio = io.StringIO()
 
     # Test that should pass
-    print >> sio, "A,B,C,expect"
-    print >> sio, "1,2,3,4"
+    print("A,B,C,expect", file=sio)
+    print("1,2,3,4", file=sio)
     sio.seek(0)
 
     TableEvaluator._validateExpectRows("e_A + e_B + e_C", sio)
 
     # Test non-numeric value in the 'expect' column.
-    sio = StringIO.StringIO()
-    print >> sio, "A,B,C,expect"
-    print >> sio, "1,2,3,X"
+    sio = io.StringIO()
+    print("A,B,C,expect", file=sio)
+    print("1,2,3,X", file=sio)
     sio.seek(0)
 
     with self.assertRaises(TableEvaluatorConfigException):
       TableEvaluator._validateExpectRows("e_A + e_B + e_C", sio)
 
-    sio = StringIO.StringIO()
-    print >> sio, "A,B,C"
-    print >> sio, "1,2,3"
+    sio = io.StringIO()
+    print("A,B,C", file=sio)
+    print("1,2,3", file=sio)
     sio.seek(0)
     TableEvaluator._validateExpectRows("e_A + e_B + e_C", sio, expect_value = 3.0)
 
     # Test that non-numeric values in fields un-used by expression passes.
-    sio = StringIO.StringIO()
-    print >> sio, "A,B,C,expect,weight"
-    print >> sio, "1,X,X,2,1"
-    print >> sio, "3,4,5,6,X"
-    print >> sio, "7,8,X,9,3"
-    print >> sio, "1,X,7,10,11"
+    sio = io.StringIO()
+    print("A,B,C,expect,weight", file=sio)
+    print("1,X,X,2,1", file=sio)
+    print("3,4,5,6,X", file=sio)
+    print("7,8,X,9,3", file=sio)
+    print("1,X,7,10,11", file=sio)
     sio.seek(0)
 
     with self.assertRaises(TableEvaluatorConfigException):
@@ -408,16 +408,16 @@ class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
     optionDict = {
     }
 
-    self.assertEquals(False, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict))
+    self.assertEqual(False, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict))
 
     optionDict['sum_only'] = 'false'
-    self.assertEquals(False, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict))
+    self.assertEqual(False, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict))
     optionDict['sum_only'] = 'False'
-    self.assertEquals(False, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict))
+    self.assertEqual(False, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict))
     optionDict['sum_only'] = 'true'
-    self.assertEquals(True, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict))
+    self.assertEqual(True, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict))
     optionDict['sum_only'] = 'True'
-    self.assertEquals(True, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict))
+    self.assertEqual(True, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict))
 
     with self.assertRaises(pro_fit.evaluators._table.TableEvaluatorConfigException):
       optionDict['sum_only'] = 'booom'
@@ -429,28 +429,29 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
 
   def testHeaderExceptions(self):
     """Test _validateExpectColumns() and _validateExpectRows() raises TableHeaderException under error conditions."""
-    import StringIO
-    sio = StringIO.StringIO()
+    import io
+    sio = io.StringIO()
 
     # Completely empty file
     with self.assertRaises(pro_fit.evaluators._table.TableHeaderException):
       pro_fit.evaluators.TableEvaluator._validateExpectColumns(sio)
 
     # File where header has different number of columns than body
-    sio = StringIO.StringIO()
-    print >>sio, "A,B,expect"
-    print >>sio, "1,2,3"
-    print >>sio, "2,3,4,5"
+    sio = io.StringIO()
+    print("A,B,expect", file=sio)
+    print("1,2,3", file=sio)
+    print("2,3,4,5", file=sio)
 
     sio.seek(0)
+    # import pdb; pdb.set_trace()
     with self.assertRaises(pro_fit.evaluators._table.TableHeaderException):
       pro_fit.evaluators.TableEvaluator._validateExpectRows("e_A", sio)
 
     # File where header has different number of columns than body
-    sio = StringIO.StringIO()
-    print >>sio, "A,B,expect"
-    print >>sio, "1,2,3,4"
-    print >>sio, "2,3,4"
+    sio = io.StringIO()
+    print("A,B,expect", file=sio)
+    print("1,2,3,4", file=sio)
+    print("2,3,4", file=sio)
 
     sio.seek(0)
     with self.assertRaises(pro_fit.evaluators._table.TableHeaderException):
@@ -475,10 +476,10 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     r = evaluated[0]
 
     # Test that error-flag is set
-    self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
-    self.assertEquals(True, r.errorFlag)
-    self.assertEquals(IOError, type(r.exception))
-    self.assertEquals("Table", r.evaluatorName)
+    self.assertEqual(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
+    self.assertEqual(True, r.errorFlag)
+    self.assertEqual(FileNotFoundError, type(r.exception))
+    self.assertEqual("Table", r.evaluatorName)
 
   def testMissingOutputFile(self):
     """Test error condition when results table is missing when sum_only = False"""
@@ -504,7 +505,7 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
 
     weight = 1.0
 
-    exc = IOError("")
+    exc = FileNotFoundError("")
 
     expectedRecords = [
       EER('row_0'       , 3.0   , exc        , weight , "Table") ,
@@ -543,10 +544,10 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
       self.assertEqual(1, len(evaluated))
       r = evaluated[0]
 
-      self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
-      self.assertEquals(True, r.errorFlag)
-      self.assertEquals(pro_fit.evaluators._table.TableHeaderException, type(r.exception))
-      self.assertEquals("Table", r.evaluatorName)
+      self.assertEqual(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
+      self.assertEqual(True, r.errorFlag)
+      self.assertEqual(pro_fit.evaluators._table.TableHeaderException, type(r.exception))
+      self.assertEqual("Table", r.evaluatorName)
 
     finally:
       shutil.rmtree(tempdir, ignore_errors = True)
@@ -569,12 +570,12 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     r = evaluated[0]
 
     # Test that error-flag is set
-    self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
-    self.assertEquals(True, r.errorFlag)
-    self.assertEquals(pro_fit.evaluators._table.UnknownVariableException, type(r.exception))
-    self.assertEquals(['r_A'], r.exception.unknownVariables)
-    self.assertEquals('r_A', r.exception.expression)
-    self.assertEquals("Table", r.evaluatorName)
+    self.assertEqual(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
+    self.assertEqual(True, r.errorFlag)
+    self.assertEqual(pro_fit.evaluators._table.UnknownVariableException, type(r.exception))
+    self.assertEqual(['r_A'], r.exception.unknownVariables)
+    self.assertEqual('r_A', r.exception.expression)
+    self.assertEqual("Table", r.evaluatorName)
 
   def testExpectResultsDifferentLengths_ExpectLonger_sumonly(self):
     """Test correct behaviour when expect table and results table have different lengths sum_only = True"""
@@ -601,11 +602,11 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     r = evaluated[0]
 
     # Test that error-flag is set
-    self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
-    self.assertEquals(True, r.errorFlag)
-    self.assertEquals(pro_fit.evaluators._table.TableLengthException, type(r.exception))
-    self.assertEquals(False, r.exception.isResultsLonger)
-    self.assertEquals("Table", r.evaluatorName)
+    self.assertEqual(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
+    self.assertEqual(True, r.errorFlag)
+    self.assertEqual(pro_fit.evaluators._table.TableLengthException, type(r.exception))
+    self.assertEqual(False, r.exception.isResultsLonger)
+    self.assertEqual("Table", r.evaluatorName)
 
   def testExpectResultsDifferentLengths_ExpectLonger(self):
     """Test correct behaviour when expect table and results table have different lengths"""
@@ -664,11 +665,11 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     r = evaluated[0]
 
     # Test that error-flag is set
-    self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
-    self.assertEquals(True, r.errorFlag)
-    self.assertEquals(pro_fit.evaluators._table.TableLengthException, type(r.exception))
-    self.assertEquals(True, r.exception.isResultsLonger)
-    self.assertEquals("Table", r.evaluatorName)
+    self.assertEqual(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
+    self.assertEqual(True, r.errorFlag)
+    self.assertEqual(pro_fit.evaluators._table.TableLengthException, type(r.exception))
+    self.assertEqual(True, r.exception.isResultsLonger)
+    self.assertEqual("Table", r.evaluatorName)
 
   def testExpectResultsDifferentLengths_ResultsLonger(self):
     # Results longer than expect
@@ -722,10 +723,10 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     r = evaluated[0]
 
     # Test that error-flag is set
-    self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
-    self.assertEquals(True, r.errorFlag)
-    self.assertEquals(ValueError, type(r.exception))
-    self.assertEquals("Table", r.evaluatorName)
+    self.assertEqual(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
+    self.assertEqual(True, r.errorFlag)
+    self.assertEqual(ValueError, type(r.exception))
+    self.assertEqual("Table", r.evaluatorName)
 
   def testMathDomainError(self):
     """Check correct behaviour when row_compare expression yields bad values"""
@@ -749,10 +750,10 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     r = evaluated[0]
 
     # Test that error-flag is set
-    self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
-    self.assertEquals(True, r.errorFlag)
-    self.assertEquals(ValueError, type(r.exception))
-    self.assertEquals("Table", r.evaluatorName)
+    self.assertEqual(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
+    self.assertEqual(True, r.errorFlag)
+    self.assertEqual(ValueError, type(r.exception))
+    self.assertEqual("Table", r.evaluatorName)
 
     evaluator = pro_fit.evaluators.TableEvaluator("Table",
       [
@@ -772,10 +773,10 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
     self.assertEqual(1, len(evaluated))
     r = evaluated[0]
 
-    self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
-    self.assertEquals(True, r.errorFlag)
-    self.assertEquals(ValueError, type(r.exception))
-    self.assertEquals("Table", r.evaluatorName)
+    self.assertEqual(pro_fit.evaluators.ErrorEvaluatorRecord, type(r))
+    self.assertEqual(True, r.errorFlag)
+    self.assertEqual(ValueError, type(r.exception))
+    self.assertEqual("Table", r.evaluatorName)
 
 
 class RowComparatorTestCase(unittest.TestCase):
@@ -787,7 +788,7 @@ class RowComparatorTestCase(unittest.TestCase):
       {'label' : 'hello', 'x' : '1.0', 'y' : '2.1', 'expect' : '0.0'},
       {'label' : 'boom', 'x' : '15.0', 'y' : '2.2', 'ignored' : '5.0'})
     expect = (15.0 - 1.0) + (2.2 - 2.1)
-    self.assertAlmostEquals(expect, actual)
+    self.assertAlmostEqual(expect, actual)
 
   def testPopulateSymbolTable(self):
     comparator = pro_fit.evaluators._table._RowComparator("(r_x - e_x) + (r_y - e_y)")

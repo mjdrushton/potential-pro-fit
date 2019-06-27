@@ -2,8 +2,8 @@
 
 import unittest
 
-from atsim import pro_fit
-import testutil
+from atsim.pro_fit import minimizers, reporters, evaluators, fittool
+from . import testutil
 
 import sqlalchemy as sa
 
@@ -20,7 +20,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
 
   @staticmethod
   def getInitialVariables():
-    variables = pro_fit.fittool.Variables([
+    variables = fittool.Variables([
       ('A', 1000.0, False),
       ('rho', 0.1, True),
       ('C', 32.0, False) ], [None, (10.0, None), (0.0, 5.0)])
@@ -28,7 +28,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
 
   @staticmethod
   def getCalculatedVariables():
-    return pro_fit.fittool.CalculatedVariables([("E", "A - C"), ("sum", "A+rho+C")])
+    return fittool.CalculatedVariables([("E", "A - C"), ("sum", "A+rho+C")])
 
   @staticmethod
   def getVariables():
@@ -37,7 +37,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
 
     meritvals = []
     vinstances = []
-    for i in xrange(10):
+    for i in range(10):
       mval *= 0.1
       meritvals.append(mval)
       if not vinstances:
@@ -50,7 +50,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
     # Create Jobs
     subevals =  [ ["Cell"], ["Penalty", "Bulk"], ["Value"]]
 
-    ER = pro_fit.evaluators.EvaluatorRecord
+    ER = evaluators.EvaluatorRecord
 
     mval = meritvals[0]
     jobs = [
@@ -70,7 +70,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
          ER('Bulk3', 90.0, 101.0, 1.0, 4.0, evaluatorName= "Penalty Evaluator")],
         [ER('Value3', 0.5, 0.8, 1.2, 5.0, evaluatorName = "Value Evaluator")]]) ]
 
-    return [pro_fit.minimizers.MinimizerResults([mval], [(vinstances[0], jobs)])]
+    return [minimizers.MinimizerResults([mval], [(vinstances[0], jobs)])]
 
   def setUp(self):
     # Create some MinimizerResults to feed to
@@ -79,7 +79,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
     self.minimizerResults = self.getVariables()
 
   def testInsertSingleMinimizerResult(self):
-    reporter = pro_fit.reporters.SQLiteReporter(None, self.initialVariables, self.calculatedVariables)
+    reporter = reporters.SQLiteReporter(None, self.initialVariables, self.calculatedVariables)
     engine = reporter._saengine
     engine.echo = True
     reporter(self.minimizerResults[0])
@@ -100,7 +100,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
       results = conn.execute(query)
       actual = []
       for row in results:
-        actual.append(dict(zip(row.keys(), row)))
+        actual.append(dict(list(zip(list(row.keys()), row))))
       results.close()
 
       expect = [
@@ -109,7 +109,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
         {'id' : 3, 'variable_name' : 'C', 'fit_flag' : False, 'low_bound' : float(0.0), "upper_bound" : float(5.0), "calculated_flag" : False, "calculation_expression" : None},
         {'id' : 4, 'variable_name' : 'E', 'fit_flag' : False, 'low_bound' : None, "upper_bound" : None, "calculated_flag" : True, "calculation_expression" : "A - C"},
         {'id' : 5, 'variable_name' : 'sum', 'fit_flag' : False, 'low_bound' : None, "upper_bound" : None, "calculated_flag" : True, "calculation_expression" : "A+rho+C"}]
-      tstcase.assertEquals(expect, actual)
+      tstcase.assertEqual(expect, actual)
 
       # Check that 'candidates' table contains what it should
       table = metadata.tables['candidates']
@@ -118,7 +118,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
       resultdicts = []
       results = conn.execute(query)
       for row in results:
-        resultdict = dict( zip(row.keys(), row))
+        resultdict = dict( list(zip(list(row.keys()), row)))
         resultdicts.append(resultdict)
 
       expect = [ {'id' : 1,
@@ -135,7 +135,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
       actual = []
       for row in results:
         actual.append(
-          dict(zip(row.keys(), row)) )
+          dict(list(zip(list(row.keys()), row))) )
       expect = [ {'id' : 1, 'variable_name' : 'A', 'candidate_id' : 1, 'value' : 1000.0},
                  {'id' : 2, 'variable_name' : 'rho', 'candidate_id' : 1, 'value' : 0.01},
                  {'id' : 3, 'variable_name' : 'C', 'candidate_id' : 1, 'value' : 32.0}]
@@ -264,7 +264,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
 
   def testStatus(self):
     """Test population of the 'status' table"""
-    reporter = pro_fit.reporters.SQLiteReporter(None, self.initialVariables, self.calculatedVariables,'fitting_run')
+    reporter = reporters.SQLiteReporter(None, self.initialVariables, self.calculatedVariables,'fitting_run')
     #reporter = SQLiteReporter('/Users/mr498/Desktop/db.sqlite', self.initialVariables)
     engine = reporter._saengine
     engine.echo = True
@@ -280,7 +280,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
 
       actual = []
       for row in results:
-        actual.append( dict(zip(row.keys(), row)))
+        actual.append( dict(list(zip(list(row.keys()), row))))
       expect = [{'id' : 1, 'runstatus' : 'Running', 'title' : 'fitting_run'}]
       testutil.compareCollection(self, expect, actual)
       results.close()
@@ -290,14 +290,14 @@ class SQLiteReporterTestCase(unittest.TestCase):
       actual = []
       results = conn.execute(query)
       for row in results:
-        actual.append( dict(zip(row.keys(), row)))
+        actual.append( dict(list(zip(list(row.keys()), row))))
       expect = [{'id' : 1, 'runstatus' : 'Finished', 'title' : 'fitting_run'}]
       testutil.compareCollection(self, expect, actual)
       results.close()
 
   def testErrorEvaluatorRecord(self):
     """Test for insertion of evaluators.ErrorEvaluatorRecord"""
-    reporter = pro_fit.reporters.SQLiteReporter(None, self.initialVariables,self.calculatedVariables)
+    reporter = reporters.SQLiteReporter(None, self.initialVariables,self.calculatedVariables)
     engine = reporter._saengine
     engine.echo = True
 
@@ -314,7 +314,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
       except Exception as exc:
         mybad = exc
 
-      erecord = pro_fit.evaluators.ErrorEvaluatorRecord(
+      erecord = evaluators.ErrorEvaluatorRecord(
         "BadEvalValue",
         10.0,
         mybad,
@@ -336,7 +336,7 @@ class SQLiteReporterTestCase(unittest.TestCase):
       query = etable.select()
       actual = []
       for row in conn.execute(query):
-        actual.append( dict(zip(row.keys(), row)))
+        actual.append( dict(list(zip(list(row.keys()), row))))
       expect = [{
         'id' : 1,
         'job_id' : 1,
@@ -353,13 +353,13 @@ class SQLiteReporterTestCase(unittest.TestCase):
       # Now check the evaluatorerror table
       expect = [{
         'id' : 1,
-        'msg' : str(exc)
+        'msg' : str(mybad)
       }]
 
       etable = metadata.tables['evaluatorerror']
       query = etable.select()
       actual = []
       for row in conn.execute(query):
-        actual.append( dict(zip(row.keys(), row)))
+        actual.append( dict(list(zip(list(row.keys()), row))))
       testutil.compareCollection(self, expect, actual)
 

@@ -1,8 +1,8 @@
 import urwid
 
-from _header import Header
-from _variables import Variables, CurrentBestTuple
-from _jobs import Runners
+from ._header import Header
+from ._variables import Variables, CurrentBestTuple
+from ._jobs import Runners
 
 DIALOG_GROUP = 'DIALOG'
 

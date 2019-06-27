@@ -1,5 +1,5 @@
 
-from _metadata import getMetadata
+from ._metadata import getMetadata
 
 from sqlalchemy import inspect
 
@@ -16,7 +16,6 @@ def validate(engine):
     """
     md = getMetadata()
     tablenames = set([table.name for table in md.sorted_tables])
-
     inspector = inspect(engine)
 
     actual_table_names = inspector.get_sorted_table_and_fkc_names()
@@ -27,6 +26,6 @@ def validate(engine):
 
     for tn in actual_table_names:
       if tn and not tn in tablenames:
-        print tn
+        print(tn)
         return False
     return True

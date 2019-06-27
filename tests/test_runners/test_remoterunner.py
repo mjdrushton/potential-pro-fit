@@ -19,7 +19,7 @@ from atsim import pro_fit
 
 from atsim.pro_fit.runners import RunnerClosedException
 
-from _runnercommon import runfixture, DIR, FILE, runnertestjob, CheckPIDS, isdir_remote
+from ._runnercommon import runfixture, DIR, FILE, runnertestjob, CheckPIDS, isdir_remote
 from .. import common
 from ..testutil import vagrant_basic
 
@@ -80,7 +80,6 @@ def testUrlParse():
 def testSingle(runfixture, vagrant_basic):
   import logging
   import sys
-
   runner = _createRunner(runfixture,vagrant_basic, 1)
 
   batch = _runBatch(runner, [runfixture.jobs[0]])
@@ -116,7 +115,7 @@ def _mklongjob(tmpdir):
   jf = common.MockJobFactory("Remote", "Job", [])
 
   for i in itertools.count():
-    tempd = tmpdir.mkdir(str(i))
+    tempd = tmpdir.join(str(i)).mkdir()
     logger.debug("Created longjob directory: %s", tempd)
     jfdir = tempd.mkdir("job_files")
     rfdir = tempd.mkdir("runner_files")
@@ -154,17 +153,18 @@ def _read_pids(channel):
       return
     channel.send(open(path).read())
 
-def testTerminate(tmpdir, runfixture, vagrant_basic):
+def testTerminate(tmpdir_factory, runfixture, vagrant_basic):
   """Test runner future's .terminate() method."""
   logger = logging.getLogger(__name__).getChild("testTerminate")
   # Create a long running job.
+  tmpdir = tmpdir_factory.mktemp("jobs")
   jobiter = _mklongjob(tmpdir)
-  j1 = jobiter.next()
+  j1 = next(jobiter)
   assert(os.path.exists(str(tmpdir.join('0', 'job_files', 'runjob'))))
   assert(os.path.exists(str(tmpdir.join('0', 'runner_files'))))
 
-  batch1 = [jobiter.next() for i in xrange(4)]
-  batch2 = [jobiter.next() for i in xrange(4)]
+  batch1 = [next(jobiter) for i in range(4)]
+  batch2 = [next(jobiter) for i in range(4)]
 
   # Run the jobs
   runner = _createRunner(runfixture, vagrant_basic, 4)
@@ -182,7 +182,7 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
     # batchpath = posixpath.join(f._remotePath, f._batchDir)
     # Check five times with a sleep of 1s between attempts
     # if after that remote files don't appear, then they never will
-    for i in xrange(5):
+    for i in range(5):
       # Check paths
       count = 0
       pids = []
@@ -227,7 +227,7 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
   jobs1 = list(b1_future.jobs)
 
   b1_term = b1_future.terminate()
-  assert b1_term.wait(5)
+  assert b1_term.wait(20)
 
   cp.checkpids(b1_pids, False)
   cp.close()
@@ -282,8 +282,9 @@ def testTerminate(tmpdir, runfixture, vagrant_basic):
   isdirchannel.close()
   isdirchannel.waitclose()
 
-def testClose(runfixture, vagrant_basic, tmpdir):
+def testClose(runfixture, vagrant_basic, tmpdir_factory):
   """Test runner's .close() method."""
+  tmpdir = tmpdir_factory.mktemp("jobs")
   ncpu = 3
   runner = _createRunner(runfixture, vagrant_basic, ncpu)
   gw = _mkexecnetgw(vagrant_basic)
@@ -294,12 +295,12 @@ def testClose(runfixture, vagrant_basic, tmpdir):
   jobiter = _mklongjob(tmpdir)
 
   b1_jobs = []
-  for i in xrange(5):
-    b1_jobs.append(jobiter.next())
+  for i in range(5):
+    b1_jobs.append(next(jobiter))
 
   b2_jobs = []
-  for i in xrange(5):
-    b2_jobs.append(jobiter.next())
+  for i in range(5):
+    b2_jobs.append(next(jobiter))
 
   b1 = runner.runBatch(b1_jobs)
   b2 = runner.runBatch(b2_jobs)
@@ -310,7 +311,7 @@ def testClose(runfixture, vagrant_basic, tmpdir):
       # running =  [ j for j in itertools.chain(b1.jobs,b2.jobs) if  j.pidSetEvent != None ]
       running =  [ j for j in b1.jobs if  j.pidSetEvent != None ]
       running = [ j for j in running if j.pidSetEvent.is_set()]
-      print len(running)
+      print(len(running))
       gevent.sleep(0.1)
     return running
 
@@ -354,12 +355,12 @@ def testClose(runfixture, vagrant_basic, tmpdir):
   rstatus = runner._inner._gw.remote_status()
   assert rstatus.numchannels == 0
 
-def testBatchTerminate2(runfixture, vagrant_basic, tmpdir):
+def testBatchTerminate2(runfixture, vagrant_basic, tmpdir_factory):
   """Test runner's .close() method."""
-
+  tmpdir = tmpdir_factory.mktemp("jobs")
+  ncpu = 3
+  runner = _createRunner(runfixture, vagrant_basic, ncpu)
   try:
-    ncpu = 3
-    runner = _createRunner(runfixture, vagrant_basic, ncpu)
     gw = _mkexecnetgw(vagrant_basic)
 
     rstatus = runner._inner._gw.remote_status()
@@ -368,12 +369,12 @@ def testBatchTerminate2(runfixture, vagrant_basic, tmpdir):
     jobiter = _mklongjob(tmpdir)
 
     b1_jobs = []
-    for i in xrange(5):
-      b1_jobs.append(jobiter.next())
+    for i in range(5):
+      b1_jobs.append(next(jobiter))
 
     b2_jobs = []
-    for i in xrange(5):
-      b2_jobs.append(jobiter.next())
+    for i in range(5):
+      b2_jobs.append(next(jobiter))
 
     b1 = runner.runBatch(b1_jobs)
 
@@ -418,4 +419,5 @@ def testBatchTerminate2(runfixture, vagrant_basic, tmpdir):
     statuses = [ j.status for j in itertools.chain(b1.jobs, b2.jobs) ]
     assert status_expect == statuses
   finally:
-    runner.close()
+    if runner:
+      runner.close()

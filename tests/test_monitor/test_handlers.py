@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from _cherrypydbtestcase import CherryPyDBTestCaseBase
+from ._cherrypydbtestcase import CherryPyDBTestCaseBase
 
 from .. import testutil
 
@@ -13,7 +13,7 @@ class TestHandlers(CherryPyDBTestCaseBase):
   def testCurrentGeneration(self):
     """Test pprofitmon /fitting/current_iteration"""
     j = self.fetchJSON("current_iteration")
-    self.assertEquals(5, j['current_iteration'])
+    self.assertEqual(5, j['current_iteration'])
 
   def testBestCandidate(self):
     """Test pprofitmon /fitting/best_candidate"""
@@ -93,7 +93,7 @@ class TestHandlers(CherryPyDBTestCaseBase):
     ('morse_O_O_C'    , 1 , 0.1   , 5.0  , 0 , None, 3.76040282662184),
     ('lennard_O_O_A'  , 0 , 0.0   , 50.0 , 1 , 'morse_O_O_C * 2', 11.221208824602)]
 
-    expect = [ dict(zip(keys, v)) for v in values ]
+    expect = [ dict(list(zip(keys, v))) for v in values ]
     testutil.compareCollection(self, expect, j)
 
   def testEvaluators(self):
@@ -139,5 +139,5 @@ class TestHandlers(CherryPyDBTestCaseBase):
               ( 'MgO:Gulp' , 'cell_a'               , 4.212  , 5.061349 , 10.0   , 8.49349  , None               , 'MgO', 20.1649810066477 ),
               ( 'MgO:Gulp' , 'optimisation_penalty' , 0.0    , 0.0      , 1000.0 , 0.0      , None               , 'MgO', None )]
     keys = ['evaluator_name', 'value_name', 'expected_value', 'extracted_value', 'weight', 'merit_value', 'error_message', 'job_name', 'percent_difference']
-    expect = [ dict(zip(keys, r)) for r in expect ]
+    expect = [ dict(list(zip(keys, r))) for r in expect ]
     testutil.compareCollection(self, expect, j)

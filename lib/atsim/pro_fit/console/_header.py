@@ -1,6 +1,6 @@
 import urwid
 
-import atsim.pro_fit
+import atsim.pro_fit._version
 
 class Header(urwid.WidgetWrap):
 
@@ -9,8 +9,8 @@ class Header(urwid.WidgetWrap):
 
   def _makeWidgets(self):
     #Header row
-    title_label = urwid.Text(u'Potential Pro-Fit v %s' % atsim.pro_fit.__version__, wrap = 'clip')
-    self._run_name_label = urwid.Text(u'Run Name')
+    title_label = urwid.Text('Potential Pro-Fit v %s' % atsim.pro_fit._version.__version__, wrap = 'clip')
+    self._run_name_label = urwid.Text('Run Name')
     self._current_iteration_number_label = urwid.Text('NA', align = "right")
     self._best_iteration_number_label = urwid.Text('NA', align = "right")
     self._current_merit_value_label = urwid.Text('NA', align = "right")

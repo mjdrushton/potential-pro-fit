@@ -67,14 +67,14 @@ def test_serializeTableForGNUPlot():
   engine = sa.create_engine("sqlite:///"+_getdbpath())
   table = _makeTable()
 
-  from StringIO import StringIO
+  from io import StringIO
 
   sio = StringIO()
   db.serializeTableForGNUPlot(table, sio, 'variable:A', 'variable:B', 'evaluator:mult:mult:val:Z:extracted_value')
 
   sio.seek(0)
 
-  line = sio.next()[:-1]
+  line = next(sio)[:-1]
   assert_that(line).starts_with('#')
   a,b,c = line[1:].split()
   assert_that(a).is_equal_to('variable:A')
@@ -83,7 +83,7 @@ def test_serializeTableForGNUPlot():
 
   for i in [1,2,3,4,5]:
     for j in [0, 2,4,6,8,10]:
-       line = sio.next()[:-1]
+       line = next(sio)[:-1]
        x,y,z = line.split()
        x = float(x)
        y = float(y)
@@ -93,7 +93,7 @@ def test_serializeTableForGNUPlot():
        assert_that(y).is_equal_to(j)
        assert_that(z).is_equal_to(i*j)
 
-    line = sio.next()[:-1]
+    line = next(sio)[:-1]
     assert_that(line).is_empty()
 
 
@@ -102,7 +102,7 @@ def test_serializeTableForR(tmpdir):
   """Test atsim.pro_fit.db.serializeTableForR()"""
   table = _makeTable()
   filename = str(tmpdir.join("dget.r", abs = True))
-  with open(str(filename), "wb") as outfile:
+  with open(str(filename), "w") as outfile:
     db.serializeTableForR(table, outfile, 'variable:A', 'variable:B', 'evaluator:mult:mult:val:Z:extracted_value')
 
   assert_that(filename).exists()
@@ -119,7 +119,7 @@ def test_serializeTableForR_badcolumnkeys(tmpdir):
     columns = ['evaluator:mult:mult:val:Z:extracted_value', 'variable:A', 'variable:Bad'])
 
   filename = str(tmpdir.join("dget.r", abs = True))
-  with open(filename, "wb") as outfile:
+  with open(filename, "w") as outfile:
     try:
       db.serializeTableForR(table, outfile, 'variable:A', 'variable:B', 'evaluator:mult:mult:val:Z:extracted_value')
       fail("KeyError not raised")
@@ -137,7 +137,7 @@ def test_serializeTableForR_rangeDiscoveIterator():
     (0,3) ]
 
   for x,y in rows:
-    print rangeDiscover
+    print(rangeDiscover)
     rangeDiscover.feed(x,y)
 
   assert_that(rangeDiscover.x_range).is_equal_to([0])
@@ -152,7 +152,7 @@ def test_serializeTableForR_rangeDiscoveIterator():
     (3,0) ]
 
   for x,y in rows:
-    print rangeDiscover
+    print(rangeDiscover)
     rangeDiscover.feed(x,y)
 
   assert_that(rangeDiscover.x_range).is_equal_to([0,1,2,3])
@@ -176,7 +176,7 @@ def test_serializeTableForR_rangeDiscoveIterator_two_axes_changing():
     (2,2)]
 
   for x,y in rows:
-    print rangeDiscover
+    print(rangeDiscover)
     rangeDiscover.feed(x,y)
 
   assert_that(rangeDiscover.x_range).is_equal_to([0,1,2])
@@ -194,7 +194,7 @@ def test_serializeTableForR_rangeDiscoveIterator_negativeAxis():
     (0,0) ]
 
   for x,y in rows:
-    print rangeDiscover
+    print(rangeDiscover)
     rangeDiscover.feed(x,y)
 
   assert_that(rangeDiscover.x_range).is_equal_to([0])

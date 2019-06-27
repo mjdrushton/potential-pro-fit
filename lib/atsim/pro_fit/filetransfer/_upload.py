@@ -8,8 +8,8 @@ import gevent
 import gevent.queue
 
 from atsim.pro_fit._channel import MultiChannel
-from _basechannel import BaseChannel, ChannelFactory
-from remote_exec.file_transfer_remote_exec import FILE, DIR
+from ._basechannel import BaseChannel, ChannelFactory
+from .remote_exec.file_transfer_remote_exec import FILE, DIR
 from atsim.pro_fit._util import MultiCallback, NamedEvent
 
 
@@ -278,12 +278,12 @@ class _UploadCallback(object):
       elif mtype == 'MKDIRS':
         self._donext(msg)
 
-    except Exception,e:
+    except Exception as e:
       self.enabled = False
       try:
         if self.parent.upload_handler.finish(e) != False:
           self._exc = sys.exc_info()
-      except Exception, e:
+      except Exception as e:
         self._exc = sys.exc_info()
         self._logger.exception("Exception during file upload")
       self._finish()
@@ -302,7 +302,8 @@ class _UploadCallback(object):
     if not non_blocking:
       self.event.wait()
       if self._exc:
-        raise self._exc
+        et, ei, tb = self._exc
+        raise ei.with_traceback(tb)
     else:
       return self.event
 
@@ -325,7 +326,7 @@ class _UploadCallback(object):
   def _next_iteration(self):
     """Gets the next set of directories and files to be uploaded and makes requests to channels"""
     try:
-      root_path, directories, files = self._walk_iterator.next()
+      root_path, directories, files = next(self._walk_iterator)
 
       # Move on if directory is empty
       if not directories and not files:
@@ -486,7 +487,7 @@ class _UploadCallback(object):
     ch.send(msgdict)
 
   def _get_channel(self):
-    ch = self.channel_iter.next()
+    ch = next(self.channel_iter)
     return ch
 
   def _unregister_callback(self):
@@ -498,7 +499,7 @@ class _UploadCallback(object):
     self.enabled = False
     try:
       self.parent.upload_handler.finish(exc)
-    except Exception, e:
+    except Exception as e:
       self._exc = sys.exc_info()
     self._finish()
     return self.event

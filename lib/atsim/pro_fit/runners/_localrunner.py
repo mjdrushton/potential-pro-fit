@@ -1,8 +1,8 @@
 from atsim.pro_fit.fittool import ConfigException
 from atsim.pro_fit import _execnet
-from _localrunner_batch import LocalRunnerBatch
-from _run_remote_client import RunChannel, RunClient
-from _base_remoterunner import BaseRemoteRunner, RemoteRunnerCloseThreadBase
+from ._localrunner_batch import LocalRunnerBatch
+from ._run_remote_client import RunChannel, RunClient
+from ._base_remoterunner import BaseRemoteRunner, RemoteRunnerCloseThreadBase
 
 import execnet
 import gevent
@@ -211,7 +211,7 @@ class LocalRunner(object):
     allowedkeywords = set(['nprocesses', 'type'])
     cfgdict = dict(cfgitems)
 
-    for k in cfgdict.iterkeys():
+    for k in cfgdict.keys():
       if not k in allowedkeywords:
         raise LocalRunner._makeException(runnerName, "Unknown keyword '%s'" % k)
 

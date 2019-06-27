@@ -1,11 +1,11 @@
 import unittest
-import StringIO
-import ConfigParser
+import io
+import configparser
 
 from atsim import pro_fit
 from .. import testutil
 
-from _common import *
+from ._common import *
 
 class NelderMeadTestCase(unittest.TestCase):
   """Test atsim.prof_fit.minimizers"""
@@ -18,9 +18,9 @@ value_tolerance : 1.0E-3
 max_iterations : 30
 
 """
-    cfg = ConfigParser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(StringIO.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     variables = pro_fit.fittool.Variables([
@@ -50,26 +50,26 @@ type : NelderMead
 value_tolerance : 1.0E-3
 
 """
-    cfg = ConfigParser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(StringIO.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     minimizer = pro_fit.minimizers.NelderMeadMinimizer.createFromConfig(variables, configitems)
-    self.assertEquals(pro_fit.minimizers.NelderMeadMinimizer, type(minimizer))
+    self.assertEqual(pro_fit.minimizers.NelderMeadMinimizer, type(minimizer))
 
     config = """[Minimizer]
 type : NelderMead
 max_iterations : 30
 
 """
-    cfg = ConfigParser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(StringIO.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     minimizer = pro_fit.minimizers.NelderMeadMinimizer.createFromConfig(variables, configitems)
-    self.assertEquals(pro_fit.minimizers.NelderMeadMinimizer, type(minimizer))
+    self.assertEqual(pro_fit.minimizers.NelderMeadMinimizer, type(minimizer))
 
   def testNelderMead(self):
     """Tests for the atsim.prof_fit.minimizers.NelderMead wrapper"""
@@ -81,9 +81,9 @@ value_tolerance : 1.0E-3
 max_iterations : 30
 
 """
-    cfg = ConfigParser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(StringIO.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     variables = pro_fit.fittool.Variables([
@@ -93,12 +93,12 @@ max_iterations : 30
       ('D', 4.0, True)])
 
     minimizer = pro_fit.minimizers.NelderMeadMinimizer.createFromConfig(variables, configitems)
-    self.assertEquals(pro_fit.minimizers.NelderMeadMinimizer, type(minimizer))
+    self.assertEqual(pro_fit.minimizers.NelderMeadMinimizer, type(minimizer))
 
     args = minimizer._inner._initialArgs()
     testutil.compareCollection(self, [2.0, 4.0], args)
 
-    self.assertEquals(None, minimizer._inner._getBounds())
+    self.assertEqual(None, minimizer._inner._getBounds())
 
     variables = minimizer._inner._argsToVariables([5.0, 6.0])
     testutil.compareCollection(self,
@@ -112,7 +112,7 @@ max_iterations : 30
     finalmeritval = optimized.bestMeritValue
     optimized = optimized.bestVariables
 
-    self.assertAlmostEquals(0.0668765184732, finalmeritval)
+    self.assertAlmostEqual(0.0668765184732, finalmeritval)
     testutil.compareCollection(self,
       [('A', 1.0),
        ('B', 1.25066832),

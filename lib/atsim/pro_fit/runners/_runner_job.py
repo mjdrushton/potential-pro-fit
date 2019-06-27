@@ -11,7 +11,7 @@ import gevent.event
 from atsim.pro_fit.filetransfer import  DownloadHandler, DownloadCancelledException, UploadCancelledException
 from atsim.pro_fit._util import linkevent_spawn
 
-from _run_remote_client import RunJobKilledException, NonZeroExitStatus
+from ._run_remote_client import RunJobKilledException, NonZeroExitStatus
 
 
 class _RunnerJobObservers(list):
@@ -82,9 +82,6 @@ class RunnerJobObserverAdapter(object):
   def jobRunFinished(self, job):
     pass
 
-  def jobRunFinished(self, job):
-    pass
-
   def jobDownloadStarted(self, job):
     pass
 
@@ -125,13 +122,13 @@ class _RunnerJobThread(object):
       exception = sys.exc_info()
       self._logger.getChild("run_exception").exception("%s run exception", self.job)
       self.finishJob(exception)
-      raise exception
+      et, ei, tb = exception
+      raise ei.with_traceback(tb)
 
   def doLock(self):
     if self.killedEvent.is_set():
-      self.finishJob(JobKilledException())
-      return False
-
+      return self.finishJob_Killed()
+      
     lockEvent = self.job._lockDirectory()
     lockEvent.wait()
     exc = self.job.exception
@@ -139,15 +136,13 @@ class _RunnerJobThread(object):
       self._logger.warning("Could not start upload for %s, directory lock failed: %s",self.job, exc)
       self.finishJob(exc)
       return False
-      self._logger.info("Directory locked for %s.", self.job)
-      self.job.observers.notifyJobDirectoryLocked(self.job)
+    self._logger.info("Directory locked for %s.", self.job)
+    self.job.observers.notifyJobDirectoryLocked(self.job)
     return True
-    self.startUpload()
 
   def doUpload(self):
     if self.killedEvent.is_set():
-      self.finishJob(JobKilledException())
-      return False
+      return self.finishJob_Killed()
 
     self.job.status.append("start upload")
     uploadedEvent, uploadDirectory = self.job._startUpload()
@@ -161,8 +156,7 @@ class _RunnerJobThread(object):
         self.cancelUpload(uploadDirectory)
         return False
       else:
-        self.finishJob(RunJobKilledException())
-        return False
+        return self.finishJob_Killed()
     elif uploadedEvent.is_set():
       self.job.status.append("finish upload")
       exc = self.job.exception
@@ -188,8 +182,7 @@ class _RunnerJobThread(object):
 
   def doRun(self):
     if self.killedEvent.is_set():
-      self.finishJob(JobKilledException())
-      return False
+      return self.finishJob_Killed()
 
     self.job.status.append("start job run")
     jobRunEvent, jobRun = self.job._startJobRun()
@@ -206,8 +199,7 @@ class _RunnerJobThread(object):
         return False
       else:
         self.job.status.append("finish job run killed")
-        self.finishJob(RunJobKilledException())
-        return False
+        return self.finishJob_Killed()
     elif jobRunEvent.is_set():
       self.job.status.append("finish job run")
       exc = self.job.exception
@@ -219,7 +211,7 @@ class _RunnerJobThread(object):
           pass
         except:
           self._logger.warning("Job execution finished (finishJobRun) for %s, with exception: %s" , self.job, exc)
-        self.finishJob(exc)
+        self.finishJob(sys.exc_info())
         return False
       else:
         self._logger.info("Job execution finished successfully (finishJobRun) for %s" , self.job)
@@ -230,13 +222,11 @@ class _RunnerJobThread(object):
     killEvent = jobRun.kill()
     killEvent.wait()
     self.job.status.append("finish job run killed")
-    self.finishJob(RunJobKilledException())
-    return False
+    return self.finishJob_Killed()
 
   def doDownload(self):
     if self.killedEvent.is_set():
-      self.finishJob(JobKilledException())
-      return False
+      return self.finishJob_Killed()
 
     self.job.status.append("start download")
     downloadedEvent, downloadDirectory = self.job._startDownload()
@@ -250,8 +240,7 @@ class _RunnerJobThread(object):
         self.cancelDownload(downloadDirectory)
         return False
       else:
-        self.finishJob(RunJobKilledException())
-        return False
+        return self.finishJob_Killed()
     elif downloadedEvent.is_set():
       self.job.status.append("finish download")
       exc = self.job.exception
@@ -267,7 +256,16 @@ class _RunnerJobThread(object):
   def cancelDownload(self, downloadDirectory):
     cancelEvent = downloadDirectory.cancel()
     cancelEvent.wait()
-    self.finishJob(RunJobKilledException())
+    return self.finishJob_Killed()
+
+
+  def finishJob_Killed(self):
+    try:
+      raise RunJobKilledException()
+    except RunJobKilledException:
+      exc_tuple = sys.exc_info()
+      self.finishJob(exc_tuple)
+    return False
 
   def finishJob(self, exception):
     if self.exception:
@@ -283,13 +281,13 @@ class _RunnerJobThread(object):
         self.job.status.append("finish job")
       else:
         try:
-          raise exception
+          et, ei, tb = exception
+          raise ei.with_traceback(tb)
         except (RunJobKilledException, DownloadCancelledException, UploadCancelledException):
           self._logger.debug("finish job killed")
           self.job.status.append("finish job killed")
         except NonZeroExitStatus:
-          self._logger.warning("%s finished with non-zero exit status: %s", self.job, exception.message)
-
+          self._logger.warning("%s finished with non-zero exit status: %s", self.job, exception)
         except:
           self._logger.debug("finish job error")
           self.job.status.append("finish job error")

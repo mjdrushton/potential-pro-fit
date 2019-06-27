@@ -4,7 +4,7 @@ import sys
 import os
 
 from ..testutil import vagrant_torque
-from _runnercommon import runfixture, DIR, FILE, runnertestjob
+from ._runnercommon import runfixture, DIR, FILE, runnertestjob
 
 from atsim import pro_fit
 
@@ -13,16 +13,16 @@ from atsim.pro_fit.runners._queueing_system_runner_batch import QueueingSystemRu
 from atsim.pro_fit.runners._queueing_system_runner_batch import QueueingSystemRunnerJobRecord
 from atsim.pro_fit.runners._pbs_channel import PBSChannel
 
-from _queueing_system_fixtures import queueing_system_test_module
-from _queueing_system_fixtures import gw
-from _queueing_system_fixtures import clearqueue
-from _queueing_system_fixtures import vagrant_box
-from _queueing_system_fixtures import client
-from _queueing_system_fixtures import channel
-from _queueing_system_fixtures import channel_class
-from _queueing_system_fixtures import runner_class
+from ._queueing_system_fixtures import queueing_system_test_module
+from ._queueing_system_fixtures import gw
+from ._queueing_system_fixtures import clearqueue
+from ._queueing_system_fixtures import vagrant_box
+from ._queueing_system_fixtures import client
+from ._queueing_system_fixtures import channel
+from ._queueing_system_fixtures import channel_class
+from ._queueing_system_fixtures import runner_class
 
-from test_queue_system_clients import chIsDir
+from .test_queue_system_clients import chIsDir
 
 import gevent
 
@@ -107,7 +107,7 @@ def testBatchTerminate(runfixture, gw, vagrant_box, channel_class, runner_class)
     try:
       def qsel():
         ch.send({'msg': 'QSELECT'})
-        msg = ch.next()
+        msg = next(ch)
         assert 'QSELECT' == msg.get('msg', None)
         running_pbsids = set(msg['job_ids'])
         return running_pbsids
@@ -133,7 +133,7 @@ def testBatchTerminate(runfixture, gw, vagrant_box, channel_class, runner_class)
       assert closevent.wait(60)
       attempts = 5
       delay = 1
-      for i in xrange(5):
+      for i in range(5):
         try:
           assert qsel() == set([jr1.jobId, ij3.jobId])
         except AssertionError:
@@ -158,7 +158,7 @@ def testBatchTerminate(runfixture, gw, vagrant_box, channel_class, runner_class)
       assert closevent.wait(60)
       attempts = 5
       delay = 1
-      for i in xrange(5):
+      for i in range(5):
         try:
           assert qsel() == set([ij3.jobId])
         except AssertionError:
@@ -186,7 +186,7 @@ def testBatchTerminate(runfixture, gw, vagrant_box, channel_class, runner_class)
       assert closevent.wait(60)
       attempts = 5
       delay = 1
-      for i in xrange(5):
+      for i in range(5):
         try:
           assert qsel() == set()
         except AssertionError:
@@ -260,7 +260,7 @@ def testRunnerClose(runfixture, vagrant_box, runner_class, channel_class, gw):
   try:
     def qsel():
       ch.send({'msg': 'QSELECT'})
-      msg = ch.next()
+      msg = next(ch)
       assert 'QSELECT' == msg.get('msg', None)
       running_pbsids = set(msg['job_ids'])
       return running_pbsids
@@ -286,7 +286,7 @@ def testRunnerClose(runfixture, vagrant_box, runner_class, channel_class, gw):
     assert closevent.wait(60)
     attempts = 5
     delay = 5
-    for i in xrange(5):
+    for i in range(5):
       try:
         assert qsel() == set([ij3.jobId])
       except AssertionError:
@@ -311,7 +311,7 @@ def testRunnerClose(runfixture, vagrant_box, runner_class, channel_class, gw):
     assert closevent.wait(60)
     attempts = 5
     delay = 1
-    for i in xrange(5):
+    for i in range(5):
       try:
         assert qsel() == set([ij3.jobId])
       except AssertionError:
@@ -360,6 +360,7 @@ def _tstSingleBatch(runner_class, runfixture, vagrant_box, sub_batch_size):
 
 @pytest.mark.usefixtures("clearqueue")
 def testAllInSingleBatch(runner_class, runfixture, vagrant_box):
+  # import pdb; pdb.set_trace()
   _tstSingleBatch(runner_class, runfixture, vagrant_box, None)
 
 @pytest.mark.usefixtures("clearqueue")

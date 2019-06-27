@@ -2,12 +2,12 @@ import logging
 
 import math
 
-from _inspyred_common import VariableException
-from _inspyred_common import _BoundedVariableBaseClass
-from _inspyred_common import _IntConvert
-from _inspyred_common import _FloatConvert
-from _inspyred_common import _RandomSeed
-from _inspyred_common import _EvolutionaryComputationMinimizerBaseClass
+from ._inspyred_common import VariableException
+from ._inspyred_common import _BoundedVariableBaseClass
+from ._inspyred_common import _IntConvert
+from ._inspyred_common import _FloatConvert
+from ._inspyred_common import _RandomSeed
+from ._inspyred_common import _EvolutionaryComputationMinimizerBaseClass
 
 from atsim.pro_fit.fittool import ConfigException
 
@@ -69,8 +69,8 @@ class DEAMinimizer(object):
     # Check bounds are defined
     try:
       _BoundedVariableBaseClass(variables)
-    except VariableException,e:
-      raise ConfigException("DEA Minimizer:"+e.message)
+    except VariableException as e:
+      raise ConfigException("DEA Minimizer:"+str(e))
 
     cfgdict = dict(configitems)
     del cfgdict['type']
@@ -87,18 +87,18 @@ class DEAMinimizer(object):
       random_seed = (None, _RandomSeed("DEA minimizer", "random_seed")))
 
     # Throw if cfgdict has any keys not in defaults
-    for k in cfgdict.iterkeys():
-      if not defaults.has_key(k):
+    for k in cfgdict.keys():
+      if k not in defaults:
         raise ConfigException("Unknown configuration option '%s' for DEA minimizer" % (k,))
 
     # Override any values specified in cfgdict.
     optiondict = {}
-    for k, (default, converter) in defaults.iteritems():
+    for k, (default, converter) in defaults.items():
       optiondict[k] = converter(cfgdict.get(k, converter(default)))
 
     # Log the options
     DEAMinimizer.logger.info("Configuring DEAMinimizer with following options:")
-    for k, v in optiondict.iteritems():
+    for k, v in optiondict.items():
       DEAMinimizer.logger.info("%s = %s" % (k,v))
 
     return DEAMinimizer(variables, **optiondict)

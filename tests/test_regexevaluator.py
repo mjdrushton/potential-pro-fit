@@ -2,10 +2,10 @@ import unittest
 
 import os
 
-import ConfigParser
+import configparser
 
 from atsim import pro_fit
-import testutil
+from . import testutil
 
 def _getResourceDir():
   return os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'regex_evaluator')
@@ -14,10 +14,10 @@ class RegexEvaluatorTestCase(unittest.TestCase):
 
   def testEvaluator(self):
     """Test atsim.pro_fit.evaluators.RegexEvaluator"""
-    parser = ConfigParser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
     with open(os.path.join(_getResourceDir(), 'job_files', 'job.cfg')) as infile:
-      parser.readfp(infile)
+      parser.read_file(infile)
 
     evaluator = pro_fit.evaluators.RegexEvaluator.createFromConfig(
       'regex',

@@ -4,7 +4,7 @@ import os
 
 from atsim.pro_fit.evaluators import _gulp_parse
 
-import testutil
+from . import testutil
 
 """Module for atsim.pro_fit.evaluators._gulp_parse"""
 

@@ -7,7 +7,7 @@ import logging
 from atsim.pro_fit.fittool import ConfigException
 
 
-from _common import RMSEvaluatorRecord, ErrorEvaluatorRecord
+from ._common import RMSEvaluatorRecord, ErrorEvaluatorRecord
 
 _logger = logging.getLogger("atsim.pro_fit.evaluators.RegexEvaluator")
 
@@ -35,7 +35,7 @@ class _RegexSubEvaluator(object):
 
     foundinstance = None
     try:
-      with open(outputfilename,'rb') as infile:
+      with open(outputfilename,'r') as infile:
         for line in infile:
           line = line[:-1]
           m = self._variableRegex.search(line)
@@ -52,7 +52,7 @@ class _RegexSubEvaluator(object):
               v = float(v)
               return RMSEvaluatorRecord(self.name, self.expectedValue, v, self.weight)
       raise RegexEvaluatorException("Regular expression did not match file contents or did not match sufficient times")
-    except Exception, e:
+    except Exception as e:
       return ErrorEvaluatorRecord(self.name, self.expectedValue, e, self.weight)
 
 
@@ -139,7 +139,7 @@ class RegexEvaluator(object):
     del od['type']
 
     variables = []
-    for k, v in od.iteritems():
+    for k, v in od.items():
       sube = _RegexSubEvaluator(k, v, filename)
 
       variables.append(sube)

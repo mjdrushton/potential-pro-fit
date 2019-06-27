@@ -1,7 +1,7 @@
 import urwid
 import math
 
-from _palette import palette
+from ._palette import palette
 
 class RunnerProgressBars(urwid.WidgetWrap):
 
@@ -64,7 +64,7 @@ class _RunnerGrid(urwid.WidgetWrap):
     padlength = int(math.ceil(float(len(w))/float(self._columns)) * self._columns)
     extra = padlength - len(w)
 
-    for i in xrange(extra):
+    for i in range(extra):
       extra_widget = urwid.SolidFill()
       w.append(extra_widget)
 

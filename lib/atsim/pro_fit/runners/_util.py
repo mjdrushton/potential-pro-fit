@@ -17,5 +17,5 @@ class BatchNameIterator(object):
       s = self.prefix + str(c)
       yield s
 
-  def next(self):
-    return self._iter.next()
+  def __next__(self):
+    return next(self._iter)

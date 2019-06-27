@@ -2,8 +2,8 @@
 
 import math
 import sqlalchemy as sa
-from _util import calculatePercentageDifference
-import _metadata
+from ._util import calculatePercentageDifference
+from . import _metadata
 
 metadata = _metadata.getMetadata()
 
@@ -60,7 +60,7 @@ class Fitting(object):
       sa.func.min(table.c.merit_value).label('merit_value')
       ])
     results = self.engine.execute(query)
-    row = dict(zip(results.keys(), results.fetchone()))
+    row = dict(list(zip(list(results.keys()), results.fetchone())))
     return row
 
   def run_status(self):
@@ -78,7 +78,7 @@ class Fitting(object):
     table = metadata.tables['runstatus']
     query = sa.select([table.c.runstatus, table.c.title])
     results = self.engine.execute(query)
-    row = dict(zip(results.keys(), results.fetchone()))
+    row = dict(list(zip(list(results.keys()), results.fetchone())))
     return row
 
   def iteration_overview(self, iterationNumber):
@@ -120,7 +120,7 @@ class Fitting(object):
       sa.func.max(table.c.merit_value).label('merit_value')])\
         .where(table.c.iteration_number == iterationNumber)
     results = self.engine.execute(query)
-    maxRecord = dict(zip(results.keys(), results.fetchone()))
+    maxRecord = dict(list(zip(list(results.keys()), results.fetchone())))
 
     # Get minimum record
     query = sa.select([
@@ -130,7 +130,7 @@ class Fitting(object):
       sa.func.min(table.c.merit_value).label('merit_value')])\
         .where(table.c.iteration_number == iterationNumber)
     results = self.engine.execute(query)
-    minRecord = dict(zip(results.keys(),results.fetchone()))
+    minRecord = dict(list(zip(list(results.keys()),results.fetchone())))
 
     # Get number of population members and mean
     query = sa.select([
@@ -206,7 +206,7 @@ class Fitting(object):
     results = self.engine.execute(query)
     output = []
     for row in results:
-      d = dict(zip(results.keys(), row))
+      d = dict(list(zip(list(results.keys()), row)))
       if d['low_bound'] and math.isinf(float(d['low_bound'])):
         d['low_bound'] = None
 
@@ -266,7 +266,7 @@ class Fitting(object):
 
     output = []
     for row in results:
-      d = dict(zip(results.keys(), row))
+      d = dict(list(zip(list(results.keys()), row)))
       d['percent_difference'] = calculatePercentageDifference(d)
       output.append(d)
 

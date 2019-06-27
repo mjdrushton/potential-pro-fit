@@ -1,5 +1,5 @@
 import operator
-
+from functools import total_ordering
 
 class ExistingCallbackException(Exception):
   pass
@@ -7,6 +7,7 @@ class ExistingCallbackException(Exception):
 class MinimizerException(Exception):
   pass
 
+@total_ordering
 class MinimizerResults(object):
   """Container for the results obtained from an iteration of a minimizer"""
 
@@ -36,5 +37,8 @@ class MinimizerResults(object):
     return self.candidateJobList[self.indexOfBest][0]
   bestVariables = property(bestVariables, doc = "Return Variables belonging to best solution in these MinimizerResults")
 
-  def __cmp__(self, other ):
-    return cmp(self.bestMeritValue, other.bestMeritValue)
+  def __eq__(self, other):
+    return self.bestMeritValue == other.bestMeritValue
+
+  def __lt__(self, other):
+    return (self.bestMeritValue < other.bestMeritValue)

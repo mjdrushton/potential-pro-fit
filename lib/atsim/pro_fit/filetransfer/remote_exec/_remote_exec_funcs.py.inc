@@ -47,7 +47,7 @@ def normalize_path_with_error(channel, channel_id, remote_root, remote_path, tra
 def child_path(channel, channel_id, remote_root, msg):
   """Extract 'remote_path' from msg and normalize path.
   Create error message and return None if path not found to be under `remote_root` """
-  if not msg.has_key('remote_path'):
+  if not 'remote_path' in msg:
     error(channel,
       channel_id,
       "message does not contain 'remote_path' argument for msg id = '%s'" % msg.get('id', None),

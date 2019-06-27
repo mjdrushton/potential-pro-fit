@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from .. import testutil
 
-from _dbtestcase import DBTestCase
+from ._dbtestcase import DBTestCase
 
 from atsim.pro_fit import db
 import atsim.pro_fit.db._columnproviders as cp
@@ -194,7 +194,7 @@ class IterationSeriesTestCase(DBTestCase):
                     [5 ,3, 964.64312, False]
                   ]}
 
-    actual = { 'columns' : t.next(),
+    actual = { 'columns' : next(t),
                'values' : list(t)}
     testutil.compareCollection(self, expect, actual)
 
@@ -213,7 +213,7 @@ class IterationSeriesTestCase(DBTestCase):
                     [5 ,3, 964.64312, False]
                   ]}
 
-    actual = { 'columns' : t.next(),
+    actual = { 'columns' : next(t),
                'values' : list(t)}
     testutil.compareCollection(self, expect, actual)
 
@@ -231,7 +231,7 @@ class IterationSeriesTestCase(DBTestCase):
                     [4 ,1, 964.64312, True, False],
                     [5 ,3, 964.64312, False, False]
                   ]}
-    actual = { 'columns' : t.next(),
+    actual = { 'columns' : next(t),
                'values' : list(t)}
     testutil.compareCollection(self, expect, actual)
 
@@ -254,7 +254,7 @@ class IterationSeriesTestCase(DBTestCase):
 
 
       results = conn.execute(query)
-      actual = { 'columns' : results.keys(),
+      actual = { 'columns' : list(results.keys()),
                  'values'  : results.fetchall()}
 
       # Check what's in the table

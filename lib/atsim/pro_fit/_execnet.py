@@ -19,8 +19,8 @@ def urlParse(url):
 
   @param url  URL of form [username@]host/remote_path
   @return Tuple (username, host, path). If any component not specified then it will be None."""
-  import urlparse
-  parsed = urlparse.urlparse(url)
+  import urllib.parse
+  parsed = urllib.parse.urlparse(url)
   username = parsed.username
   if username == None:
     username = ''

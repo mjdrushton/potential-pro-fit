@@ -1,10 +1,10 @@
 import os
 import shutil
 import stat
-import StringIO
+import io
 import tempfile
 import unittest
-import ConfigParser
+import configparser
 
 from .. import common
 
@@ -26,7 +26,7 @@ class LocalRunnerTestCase(unittest.TestCase):
     self.jobfactory = common.MockJobFactory('Runner', 'Test', [evaluator])
     jobs = []
 
-    for i in xrange(12):
+    for i in range(12):
       variables = pro_fit.fittool.Variables([('A', i, True)])
       variables.id = i
       jd = os.path.join(self.tempd, str(i))
@@ -145,17 +145,17 @@ class LocalRunnerTestCase(unittest.TestCase):
 
   def testCreateFromConfig(self):
     """Test createFromConfig()"""
-    parser = ConfigParser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
-    sio = StringIO.StringIO("""[Runner:RunnerName]
+    sio = io.StringIO("""[Runner:RunnerName]
 type: Local
 nprocesses : 5
 """)
-    parser.readfp(sio)
+    parser.read_file(sio)
     runner = pro_fit.runners.LocalRunner.createFromConfig('RunnerName', self.tempd, parser.items('Runner:RunnerName'))
-    self.assertEquals(pro_fit.runners.LocalRunner, type(runner))
-    self.assertEquals('RunnerName', runner.name)
-    self.assertEquals(5, runner._inner._nprocesses)
+    self.assertEqual(pro_fit.runners.LocalRunner, type(runner))
+    self.assertEqual('RunnerName', runner.name)
+    self.assertEqual(5, runner._inner._nprocesses)
 
     with self.assertRaises(pro_fit.fittool.ConfigException):
       runner = pro_fit.runners.LocalRunner.createFromConfig('RunnerName', self.tempd, [])

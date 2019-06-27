@@ -4,7 +4,7 @@ import unittest
 
 from .. import testutil
 
-from _dbtestcase import DBTestCase
+from ._dbtestcase import DBTestCase
 
 from atsim.pro_fit import db
 
@@ -38,7 +38,7 @@ class IterationSeries_VariablesColumns_TestCase(DBTestCase):
                     [5 ,3, 964.64312, 0.10328268378764]
                   ]}
 
-    columns = tableIterator.next()
+    columns = next(tableIterator)
     actual = {
       'columns' : columns,
       'values'  : list(tableIterator)
@@ -56,7 +56,7 @@ class IterationSeries_VariablesColumns_TestCase(DBTestCase):
 
     with itseries._temporaryCandidateContextManager('merit_value', 'running_min', 'min') as (conn,meta):
       col = _VariablesColumnProvider(conn, meta, 'variable:morse_Ca_O_A')
-      self.assertEquals('morse_Ca_O_A', col.variableName)
+      self.assertEqual('morse_Ca_O_A', col.variableName)
 
       # Check that internal results set is as expected.
       expect = {
@@ -67,7 +67,7 @@ class IterationSeries_VariablesColumns_TestCase(DBTestCase):
       ]}
 
       actual = {
-        'columns' : col.results.keys(),
+        'columns' : list(col.results.keys()),
         'values'  : col.results.fetchall()
       }
       testutil.compareCollection(self, expect,actual)

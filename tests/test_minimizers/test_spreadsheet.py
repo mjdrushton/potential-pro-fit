@@ -2,12 +2,12 @@ import unittest
 from .. import testutil
 
 import os
-import ConfigParser
-import StringIO
+import configparser
+import io
 
 from atsim import pro_fit
 
-from _common import *
+from ._common import *
 
 class SpreadsheetTestCase(unittest.TestCase):
   """Tests for atsim.pro_fit.minimizers.SpreadsheetMinimizer"""
@@ -21,9 +21,9 @@ filename : %(filename)s
 
     """ % {'filename' : spreadfilename}
 
-    cfg = ConfigParser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(StringIO.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     variables = pro_fit.fittool.Variables([
@@ -33,7 +33,7 @@ filename : %(filename)s
       ('D', 40.0, True)])
 
     minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(variables, configitems)
-    self.assertEquals(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
+    self.assertEqual(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
 
     minimizer.stepCallback = StepCallBack()
     optimized = minimizer.minimize(MockMerit())
@@ -64,9 +64,9 @@ start_row : 1
 
     """ % {'filename' : spreadfilename}
 
-    cfg = ConfigParser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(StringIO.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     variables = pro_fit.fittool.Variables([
@@ -76,7 +76,7 @@ start_row : 1
       ('D', 40.0, True)])
 
     minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(variables, configitems)
-    self.assertEquals(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
+    self.assertEqual(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
 
     minimizer.stepCallback = StepCallBack()
     minimizer.minimize(MockMerit())
@@ -101,9 +101,9 @@ end_row : 2
 
     """ % {'filename' : spreadfilename}
 
-    cfg = ConfigParser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(StringIO.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     variables = pro_fit.fittool.Variables([
@@ -113,7 +113,7 @@ end_row : 2
       ('D', 40.0, True)])
 
     minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(variables, configitems)
-    self.assertEquals(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
+    self.assertEqual(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
 
     minimizer.stepCallback = StepCallBack()
     minimizer.minimize(MockMerit())
@@ -138,9 +138,9 @@ end_row : 2
 
     """ % {'filename' : spreadfilename}
 
-    cfg = ConfigParser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(StringIO.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     variables = pro_fit.fittool.Variables([
@@ -150,7 +150,7 @@ end_row : 2
       ('D', 40.0, True)])
 
     minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(variables, configitems)
-    self.assertEquals(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
+    self.assertEqual(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
 
     minimizer.stepCallback = StepCallBack()
     minimizer.minimize(MockMerit())
@@ -171,9 +171,9 @@ batch_size : 2
 
     """ % {'filename' : spreadfilename}
 
-    cfg = ConfigParser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(StringIO.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     variables = pro_fit.fittool.Variables([
@@ -183,7 +183,7 @@ batch_size : 2
       ('D', 40.0, True)])
 
     minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(variables, configitems)
-    self.assertEquals(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
+    self.assertEqual(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
 
     cvalpairs = []
     def afterMerit(meritvals, candvalpairs):
@@ -226,9 +226,9 @@ batch_size : 2
 
     """ % {'filename' : spreadfilename}
 
-    cfg = ConfigParser.SafeConfigParser()
+    cfg = configparser.ConfigParser()
     cfg.optionxform = str
-    cfg.readfp(StringIO.StringIO(config))
+    cfg.read_file(io.StringIO(config))
     configitems = cfg.items('Minimizer')
 
     variables = pro_fit.fittool.Variables([
@@ -238,7 +238,7 @@ batch_size : 2
       ('D', 40.0, True)])
 
     minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(variables, configitems)
-    self.assertEquals(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
+    self.assertEqual(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
 
     cvalpairs = []
     def afterMerit(meritvals, candvalpairs):
@@ -284,9 +284,9 @@ row_step : 2
 
       """ % {'filename' : spreadfilename}
 
-      cfg = ConfigParser.SafeConfigParser()
+      cfg = configparser.ConfigParser()
       cfg.optionxform = str
-      cfg.readfp(StringIO.StringIO(config))
+      cfg.read_file(io.StringIO(config))
       configitems = cfg.items('Minimizer')
 
       variables = pro_fit.fittool.Variables([
@@ -296,7 +296,7 @@ row_step : 2
         ('D', 40.0, True)])
 
       minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(variables, configitems)
-      self.assertEquals(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
+      self.assertEqual(pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer))
 
       cvalpairs = []
       def afterMerit(meritvals, candvalpairs):
@@ -545,10 +545,10 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
 
     from atsim.pro_fit.minimizers._spreadsheet import _SpreadsheetRowIterator, _RowRangeException
 
-    import StringIO
+    import io
 
-    sio = StringIO.StringIO()
-    print >>sio, "A,B,C,D"
+    sio = io.StringIO()
+    print("A,B,C,D", file=sio)
     sio.seek(0)
     rowit = _SpreadsheetRowIterator(variables, sio)
     with self.assertRaises(_RowRangeException):

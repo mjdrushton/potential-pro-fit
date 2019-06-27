@@ -4,7 +4,7 @@ import unittest
 
 from .. import testutil
 
-from _dbtestcase import DBTestCase
+from ._dbtestcase import DBTestCase
 
 from atsim.pro_fit import db
 
@@ -36,7 +36,7 @@ class IterationSeries_StatsColumns_TestCase(DBTestCase):
         [4,1, 964.64312, 1303.278318],
         [5,3, 964.64312, 4142.853898]
       ] }
-    actual = {'columns' : t.next(),
+    actual = {'columns' : next(t),
               'values'  : list(t)}
     testutil.compareCollection(self, expect, actual)
 
@@ -90,7 +90,7 @@ class IterationSeries_StatsColumns_TestCase(DBTestCase):
         [4,1, 964.64312, 973.78207],
         [5,3, 964.64312, (973.78207+1998.33524)/2.0]
       ] }
-    actual = {'columns' : t.next(),
+    actual = {'columns' : next(t),
               'values'  : list(t)}
     testutil.compareCollection(self, expect, actual)
 
@@ -120,7 +120,7 @@ class IterationSeries_StatsColumns_TestCase(DBTestCase):
        [4, 1, 964.64312, 575.9927005],
        [5, 3, 964.64312, 4920.71359]
       ] }
-    actual = {'columns' : t.next(),
+    actual = {'columns' : next(t),
               'values'  : list(t)}
     testutil.compareCollection(self, expect, actual)
 
@@ -180,7 +180,7 @@ class IterationSeries_StatsColumns_TestCase(DBTestCase):
       expect = {
         'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'stat:quartile'+q],
         'values' : values}
-      actual = {'columns' : t.next(),
+      actual = {'columns' : next(t),
                 'values'  : list(t)}
       testutil.compareCollection(self, expect, actual)
 
@@ -203,6 +203,6 @@ class IterationSeries_StatsColumns_TestCase(DBTestCase):
       'columns' : ['iteration_number', 'candidate_number', 'merit_value', 'stat:min', 'stat:max', 'stat:quartile1', 'stat:quartile2', 'stat:quartile3'],
       'values' : expectvalues }
 
-    actual = {'columns' : t.next(),
+    actual = {'columns' : next(t),
               'values'  : list(t)}
     testutil.compareCollection(self, expect, actual)

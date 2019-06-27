@@ -1,7 +1,7 @@
-from _common import * # noqa
+from ._common import * # noqa
 
 # from atomsscripts import dlpoly
-import _dlpoly_parse
+from . import _dlpoly_parse
 
 import os
 
@@ -35,11 +35,11 @@ class DLPOLY_STATISEvaluator(object):
 
     # Parse the config
     try:
-      with open(configFilename, 'rb') as configfile:
+      with open(configFilename, 'r') as configfile:
         config = _dlpoly_parse.parseCONFIG(configfile)
-      with open(controlFilename,'rb') as controlfile:
+      with open(controlFilename,'r') as controlfile:
         nptflag = self._isNPT(controlfile)
-      with open(statisFilename, 'rb') as statisfile:
+      with open(statisFilename, 'r') as statisfile:
         statisIterator = _dlpoly_parse.parseSTATIS(statisfile, config, nptflag)
         rows = self._extractValues(statisIterator)
         return self._makeRecords(rows)
@@ -111,11 +111,11 @@ class DLPOLY_STATISEvaluator(object):
 
     del cfgdict['type']
 
-    if cfgdict.has_key('start_time'):
+    if 'start_time' in cfgdict:
       del cfgdict['start_time']
 
     triplets = []
-    for k,v in cfgdict.items():
+    for k,v in list(cfgdict.items()):
       tokens = v.split()
       if len(tokens) == 2:
         try:

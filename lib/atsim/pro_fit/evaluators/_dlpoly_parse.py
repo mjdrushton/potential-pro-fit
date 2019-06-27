@@ -158,14 +158,14 @@ statisColumnKeys = ['engcns',
 
 def _parseSTATISInternal(infile):
   #Skip Title line
-  infile.next()
+  next(infile)
   #Skip Energy units
-  infile.next()
+  next(infile)
 
   keys = statisColumnKeys
 
-  while 1:
-    line = infile.next()
+  for line in infile:
+    # line = next(infile)
     line = line[:-1].strip()
     block = []
     try:
@@ -174,21 +174,21 @@ def _parseSTATISInternal(infile):
       if not line == None:
         try:
           #Skip Title line
-          infile.next()
+          next(infile)
           #Skip Energy units
-          line = infile.next()
+          line = next(infile)
           timestep, time, nument = line.split()
         except:
           return
     nument = int(nument)
     #Read block
     while len(block) < nument:
-      line = infile.next()[:-1]
+      line = next(infile)[:-1]
       lineitems = [float(item) for item in line.split()]
       block.extend(lineitems)
 
     #Convert block to a dictionary
-    blockdict = dict(zip(keys, block[:len(keys)]))
+    blockdict = dict(list(zip(keys, block[:len(keys)])))
     blockdict['timestep'] = int(timestep)
     blockdict['time'] = float(time)
 
@@ -225,5 +225,5 @@ def _extraFieldDictIterator(statisIterator, speciesNames, nptFlag):
 
     newb = dict(b)
     del newb['extra_items'][:len(extrafieldkeys)]
-    newb.update(dict( zip(extrafieldkeys, extra_items)))
+    newb.update(dict( list(zip(extrafieldkeys, extra_items))))
     yield newb

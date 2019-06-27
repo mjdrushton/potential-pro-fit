@@ -1,6 +1,6 @@
 import unittest
 
-import testutil
+from . import testutil
 
 from atsim.pro_fit.tools import ppgrid
 
@@ -13,7 +13,7 @@ class PPGridTestCase(unittest.TestCase):
       ('A', -1, 1, 6),
       ('B', 0.1, 0.1, 3),
       ('C', 1, 1, 1)])
-    self.assertEquals(['A','B','C'], gridgen.fieldnames)
+    self.assertEqual(['A','B','C'], gridgen.fieldnames)
 
     expect = [
       {'A' : -1 , 'B' : 0.1, 'C' : 1},

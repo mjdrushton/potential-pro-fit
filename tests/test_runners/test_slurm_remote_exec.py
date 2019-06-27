@@ -3,10 +3,11 @@ from ..testutil import vagrant_slurm, vagrant_basic
 
 from atsim.pro_fit.runners import _slurm_remote_exec
 from atsim.pro_fit import _execnet
-from _runnercommon import channel_id, mkrunjobs, send_and_compare
+from ._runnercommon import channel_id, mkrunjobs, send_and_compare
 
 import py.path
 from pytest import fixture
+import pytest
 
 import time
 
@@ -39,6 +40,7 @@ def testStartChannel(vagrant_slurm, channel_id):
     ch.send(None)
     ch.waitclose(5)
 
+@pytest.mark.skip("Vagrant basic doesn't have python 3 revisit this when checking that remote execs work with python 2 and 3")
 def testHostHasNoSlurm(vagrant_basic, channel_id):
   gw = _mkexecnetgw(vagrant_basic)
   ch = gw.remote_exec(_slurm_remote_exec)
@@ -69,7 +71,7 @@ def testQSub(clearqueue, channel_id):
         'header_lines' : ["#SBATCH -p blah"]
         })
 
-      expect = {'msg' : 'ERROR', 'reason' : 'sbatch: error: Batch job submission failed: Invalid partition name specified', 'channel_id' : channel_id}
+      expect = {'msg' : 'ERROR', 'reason' : 'sbatch: error: invalid partition specified: blah\nsbatch: error: Batch job submission failed: Invalid partition name specified', 'channel_id' : channel_id}
       actual = ch.receive(2)
       assert expect == actual
     finally:

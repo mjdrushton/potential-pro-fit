@@ -3,9 +3,9 @@ import unittest
 import shutil
 import tempfile
 import os
-import ConfigParser
+import configparser
 
-from common import *
+from .common import *
 from atsim import pro_fit
 
 def _getResourceDir():
@@ -21,8 +21,8 @@ class TemplateJobFactoryTestCase(unittest.TestCase):
     self.rootDir = tempfile.mkdtemp()
     rndir = os.path.join(self.rootDir, 'runner_files', 'runner_name')
     os.makedirs(rndir)
-    with open(os.path.join(rndir,'@NAME@.in'), 'wb') as outfile:
-        print >>outfile, "Variable:@A@"
+    with open(os.path.join(rndir,'@NAME@.in'), 'w') as outfile:
+        print("Variable:@A@", file=outfile)
 
     self.tempd = tempfile.mkdtemp()
 
@@ -75,8 +75,8 @@ echo 5.0 > output.res
     self.assertEqual(expect,actual)
 
     with open(os.path.join(self.tempd, 'runner_files', 'Named')) as infile:
-        line = infile.next()[:-1]
-        self.assertEquals("Variable:5.0", line)
+        line = next(infile)[:-1]
+        self.assertEqual("Variable:5.0", line)
 
   def testCreateJob_no_runner_files(self):
     """Test TemplateJobFactory.createJob()"""
@@ -125,17 +125,17 @@ echo 5.0 > output.res
 
   def testCreateFromConfig(self):
     """Test atsim.pro_fit.jobfactories.TemplateJobFactory.createFromConfig"""
-    parser = ConfigParser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
-    import StringIO
-    sio = StringIO.StringIO("""[Job]
+    import io
+    sio = io.StringIO("""[Job]
 type : Template
 runner : runner_name
 """)
-    parser.readfp(sio)
+    parser.read_file(sio)
     sect = parser.items('Job')
 
-    import mockeval1
+    from . import mockeval1
     eval1 = mockeval1.MockEvaluator1Evaluator()
     jf = pro_fit.jobfactories.TemplateJobFactory.createFromConfig('path/to/sourcedir', self.rootDir, 'runner_name', 'Blah', [eval1], sect)
     self.assertEqual(pro_fit.jobfactories.TemplateJobFactory, type(jf))

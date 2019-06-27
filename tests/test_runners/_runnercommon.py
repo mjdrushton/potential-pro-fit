@@ -88,7 +88,7 @@ def runfixture(tmpdir, request):
   jobfactory = common.MockJobFactory('Runner', 'Test', [evaluator])
   jobs = []
 
-  for i in xrange(12):
+  for i in range(12):
     variables = pro_fit.fittool.Variables([('A', i, True)])
     variables.id = i
     jd = tmpdir.join(str(i))
@@ -142,9 +142,9 @@ def cmpdirs(left, right):
       assert [] == dcmp.left_only
       assert [] == dcmp.right_only
     except AssertionError:
-      print dcmp.report()
+      print(dcmp.report())
       raise
-    for subcmp in dcmp.subdirs.values():
+    for subcmp in list(dcmp.subdirs.values()):
       docmp(subcmp)
   docmp(dcmp)
 
@@ -200,18 +200,18 @@ def mkrunjobs(gw, num, numSuffix = False, sleep = None):
     tmpdir = tempfile.mkdtemp()
     try:
       outpaths = []
-      for i in xrange(num):
+      for i in range(num):
         nd = os.path.join(tmpdir, str(i))
         os.mkdir(nd)
         filename = os.path.join(nd, 'runjob')
-        with open(filename, 'wb') as outfile:
+        with open(filename, 'w') as outfile:
           if not sleep is None:
-            print >>outfile, "sleep %d" % sleep
+            outfile.write("sleep %d\n" % sleep)
 
           if numSuffix:
-            print >>outfile, "echo Hello%d > outfile" % i
+            outfile.write("echo Hello%d > outfile\n" % i)
           else:
-            print >>outfile, "echo Hello > outfile"
+            outfile.write("echo Hello > outfile\n")
         outpaths.append(filename)
       channel.send(outpaths)
       rcv = channel.receive()
@@ -224,7 +224,7 @@ def mkrunjobs(gw, num, numSuffix = False, sleep = None):
 
 def send_and_compare(ch, sendmsg, expect):
   pause = 0.5
-  for i in xrange(10):
+  for i in range(10):
     ch.send(sendmsg)
     msg = ch.receive(2)
     try:

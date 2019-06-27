@@ -66,7 +66,7 @@ def configure_session(dburi='sqlite:///database.sqlite',
     engine = _engines.get(dburi, None) # Look up the dict.
     if engine is None:              # If missing engine, create and store it.
         _engines[dburi] = engine = \
-            create_engine(dburi, echo=echo, convert_unicode=convert_unicode)
+            create_engine(dburi, echo=echo)
     session.configure(bind=engine) # Set engine for this thread or request
 
 def configure_session_for_app(app, echo=False, convert_unicode=True):

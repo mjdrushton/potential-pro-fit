@@ -10,8 +10,8 @@ import traceback
 import itertools
 
 from atsim.pro_fit._channel import MultiChannel
-from _basechannel import BaseChannel, ChannelFactory
-from remote_exec.file_transfer_remote_exec import FILE, DIR
+from ._basechannel import BaseChannel, ChannelFactory
+from .remote_exec.file_transfer_remote_exec import FILE, DIR
 from atsim.pro_fit._util import MultiCallback, NamedEvent
 
 _DirectoryRecord = collections.namedtuple("_DirectoryRecord", ['transid', 'path'])
@@ -80,6 +80,10 @@ class DownloadHandler(object):
     mode = msg['mode']
     self._logger.debug("writing file with path: '%s' and mode %o", local_path, mode)
     filedata = msg['file_data']
+
+    if type(filedata) == str:
+      filedata = filedata.encode("ascii")
+
     with open(local_path,'wb') as outfile:
       outfile.write(filedata)
     os.chmod(local_path, mode)
@@ -205,7 +209,8 @@ class DownloadDirectory(object):
     else:
       grl.join()
       if self.exception and self.exception != (None,None,None):
-        raise self.exception
+        et, ei, tb = self.exception
+        raise ei.with_traceback(tb)
       log.info("Finished download id='%s'", self.transaction_id)
 
   def cancel(self):
@@ -312,8 +317,8 @@ class _DownloadCallback(object):
           self._process_queue_item(msg)
         except gevent.queue.Empty:
           pass
-        except Exception,e:
-          exc = e
+        except Exception as e:
+          exc = sys.  exc_info()
           break
         gevent.sleep(0)
     self.enabled = False
@@ -324,7 +329,7 @@ class _DownloadCallback(object):
     try:
       if self.parent.download_handler.finish(e) != False:
         self._exc = sys.exc_info()
-    except Exception, e:
+    except Exception as e:
       self._exc = sys.exc_info()
       self._logger.exception("exception in download finish handler")
 
@@ -351,7 +356,7 @@ class _DownloadCallback(object):
     return (self.parent.transaction_id, path)
 
   def _get_channel(self):
-    ch = self.channel_iter.next()
+    ch = next(self.channel_iter)
     return ch
 
   def _channel_send(self, msg, transid, **kwargs):
@@ -467,7 +472,7 @@ class _DownloadCallback(object):
     self.enabled = False
     try:
       self.parent.download_handler.finish(exc)
-    except Exception, e:
+    except Exception as e:
       self._exc = sys.exc_info()
     self._finish()
     return self.event

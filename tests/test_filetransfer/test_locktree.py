@@ -1,6 +1,6 @@
 
 from atsim.pro_fit.filetransfer.remote_exec import file_cleanup_remote_exec
-from _common import execnet_gw, channel_id
+from ._common import execnet_gw, channel_id
 
 import posixpath
 import os

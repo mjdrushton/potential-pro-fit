@@ -1,4 +1,4 @@
-from _common import *
+from ._common import *
 from atsim.pro_fit.fittool import ConfigException
 
 import logging
@@ -75,7 +75,7 @@ class SpreadsheetMinimizer(object):
       'batch_size',
       'row_step'])
 
-    for k in cfgdict.iterkeys():
+    for k in cfgdict.keys():
       if not (k in allowedkeys):
         raise ConfigException("Unknown configuration option: '%s'" % k)
 
@@ -133,23 +133,23 @@ class SpreadsheetMinimizer(object):
       raise ConfigException("Could not open spreadsheet with 'filename' '%s': %s" % (filename, e.strerror))
 
     # Do a test-run through the spreadsheet
-    with open(filename, 'rUb') as infile:
+    with open(filename, 'r') as infile:
       SpreadsheetMinimizer._logger.info("Checking integrity of spreadsheet: '%s'" % filename)
       rowit = _SpreadsheetRowIterator(variables, infile, startRow = startRow, endRow = endRow)
       try:
         for row in rowit:
           pass
       except _RowColException as rce:
-        msg = "In spreadsheet: '%s', %s for col: '%s', line: %d, value = '%s'" % (filename, rce.message, rce.columnKey, rce.lineno, rce.value)
+        msg = "In spreadsheet: '%s', %s for col: '%s', line: %d, value = '%s'" % (filename, rce, rce.columnKey, rce.lineno, rce.value)
         raise ConfigException(msg)
       except  _MissingColumnException as mce:
         raise ConfigException("Spreadsheet did not contain column for fitting variable named '%s'" % mce.columnKey)
       except _RowRangeException as rre:
-        raise ConfigException(rre.message)
+        raise ConfigException(str(rre))
       SpreadsheetMinimizer._logger.info("Spreadsheet integrity test, passed")
 
     # Finally, build the SpreadsheetMinimiser object
-    infile = open(filename, 'rUb')
+    infile = open(filename, 'r')
     SpreadsheetMinimizer._logger.info("Creating Spreadsheet minimizer with options:")
     SpreadsheetMinimizer._logger.info("  'filename'   : %s" % filename)
     SpreadsheetMinimizer._logger.info("  'start_row'  : %s" % startRow)

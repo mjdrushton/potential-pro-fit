@@ -1,7 +1,4 @@
-try:
-  import cStringIO as StringIO
-except ImportError, e:
-  import StringIO
+import io
 
 """Slices for use with columnSplitGenerator() that can split up matrix lines"""
 matrixSlices = [
@@ -64,7 +61,7 @@ def chunkIterator(glpFile):
     chunkLines = []
     for line in glpFile:
       if line[:-1] == delimLine:
-        nextLine = glpFile.next()
+        nextLine = next(glpFile)
         if nextLine.startswith('*') and nextLine[:-1] != delimLine:
           break
         else:
@@ -73,14 +70,13 @@ def chunkIterator(glpFile):
           nextLine = None
       else:
         chunkLines.append(line)
-    return nextLine, StringIO.StringIO("".join(chunkLines))
+    return nextLine, io.StringIO("".join(chunkLines))
 
   #Yield the first untitled chunk
   headerLine, chunk = makeChunk()
   yield ("", chunk)
 
   def readChunkHeader(line):
-    #line = glpFile.next()
     if not line:
       return None
 
@@ -88,7 +84,7 @@ def chunkIterator(glpFile):
       raise ParseException("Was expecting chunk header line instead got '%s'" % line[:-1])
 
     chunkName = line[3:-2]
-    line = glpFile.next()[:-1]
+    line = next(glpFile)[:-1]
     assert(line == delimLine)
     return chunkName
 
@@ -112,8 +108,8 @@ def _getFirstOutputConfigurationChunk(glpFile):
 
 
 def skip(fileObj, n):
-  for i in xrange(n):
-    fileObj.next()
+  for i in range(n):
+    next(fileObj)
 
 def columnSplitGenerator(columnSlices):
   """Generates a function that given a set of slice objects splits a string up.
@@ -145,7 +141,7 @@ def columnSplitGenerator(columnSlices):
     #Convert to dictionary if neccessary
     if retdict:
       keys = [ key for key, callable, sliceobj in columnSlices]
-      return dict( zip(keys,l))
+      return dict( list(zip(keys,l)))
 
     #Otherwise return list
     return l
@@ -156,8 +152,8 @@ def createMatrixParse(coldefs, rows, numSkip = 4):
   def func(outputChunk):
     mat = []
     skip(outputChunk, numSkip)
-    for i in xrange(rows):
-      mat.append(splitLine(outputChunk.next()))
+    for i in range(rows):
+      mat.append(splitLine(next(outputChunk)))
     return mat
   return func
 
@@ -217,15 +213,15 @@ def parseMechanicalProperties(glpFile):
   def readData():
     datadict = {}
     skip(chunk,4)
-    datadict['bulkModulus'] = rvhcolsplit(chunk.next())
-    datadict['shearModulus'] = rvhcolsplit(chunk.next())
+    datadict['bulkModulus'] = rvhcolsplit(next(chunk))
+    datadict['shearModulus'] = rvhcolsplit(next(chunk))
     skip(chunk,1)
-    datadict['velocitySWave'] = rvhcolsplit(chunk.next())
-    datadict['velocityPWave'] = rvhcolsplit(chunk.next())
+    datadict['velocitySWave'] = rvhcolsplit(next(chunk))
+    datadict['velocityPWave'] = rvhcolsplit(next(chunk))
     skip(chunk,1)
-    datadict['compressibility'] = float(chunk.next()[basecoldefs[0][1]])
+    datadict['compressibility'] = float(next(chunk)[basecoldefs[0][1]])
     skip(chunk,3)
-    datadict['youngsModuli'] = listsplit(chunk.next())
+    datadict['youngsModuli'] = listsplit(next(chunk))
     skip(chunk,1)
     datadict['poissonsRatio'] = poissonsplit(chunk)
     return datadict
@@ -274,27 +270,27 @@ def parseFinalCellParametersAndDerivatives(glpFile):
 
   def readData():
     d = {}
-    outputChunk.next()
-    outputChunk.next()
-    d['a'], d['dE/de1(xx)'] = extractFields('a', 'dE/de1(xx)', outputChunk.next())
-    d['b'], d['dE/de2(yy)'] = extractFields('b', 'dE/de2(yy)', outputChunk.next())
-    d['c'], d['dE/de3(zz)'] = extractFields('c', 'dE/de3(zz)', outputChunk.next())
-    d['alpha'], d['dE/de4(yz)'] = extractFields('alpha', 'dE/de4(yz)', outputChunk.next())
-    d['beta'], d['dE/de5(xz)'] = extractFields('beta', 'dE/de5(xz)', outputChunk.next())
-    d['gamma'], d['dE/de6(xy)'] = extractFields('gamma', 'dE/de6(xy)', outputChunk.next())
-    outputChunk.next()
-    outputChunk.next()
-    line = outputChunk.next()
+    next(outputChunk)
+    next(outputChunk)
+    d['a'], d['dE/de1(xx)'] = extractFields('a', 'dE/de1(xx)', next(outputChunk))
+    d['b'], d['dE/de2(yy)'] = extractFields('b', 'dE/de2(yy)', next(outputChunk))
+    d['c'], d['dE/de3(zz)'] = extractFields('c', 'dE/de3(zz)', next(outputChunk))
+    d['alpha'], d['dE/de4(yz)'] = extractFields('alpha', 'dE/de4(yz)', next(outputChunk))
+    d['beta'], d['dE/de5(xz)'] = extractFields('beta', 'dE/de5(xz)', next(outputChunk))
+    d['gamma'], d['dE/de6(xy)'] = extractFields('gamma', 'dE/de6(xy)', next(outputChunk))
+    next(outputChunk)
+    next(outputChunk)
+    line = next(outputChunk)
     if not line.startswith('  Primitive cell volume'):
       raise ParseException("Parsing 'Final cell parameters and derivatives' expected 'Primitive cell volume' in line '%s'" % line)
     d['primitiveCellVolume'] = float(line[25:46].strip())
-    outputChunk.next()
-    line = outputChunk.next()
+    next(outputChunk)
+    line = next(outputChunk)
     if not line.startswith('  Density of cell'):
       raise ParseException("Parsing 'Final cell parameters and derivatives' expected '  Density of cell' in line '%s'" % line)
     d['densityOfCell'] = float(line[19:33].strip())
-    outputChunk.next()
-    line = outputChunk.next()
+    next(outputChunk)
+    line = next(outputChunk)
     if not line.startswith('  Non-primitive cell volume'):
       raise ParseException("Parsing 'Final cell parameters and derivatives' expected 'Non-primitive cell volume' in line '%s'" % line)
     d['nonPrimitiveCellVolume'] = float(line[29:50].strip())
@@ -351,8 +347,8 @@ def parseComponentsOfEnergy(glpFile):
 
   def readEnergy():
     d = {}
-    outputChunk.next()
-    outputChunk.next()
+    next(outputChunk)
+    next(outputChunk)
     for line in outputChunk:
       if line.startswith('-'):
         break
@@ -361,16 +357,16 @@ def parseComponentsOfEnergy(glpFile):
         if match(line):
           d[outkey] = extractField(line)
           break
-    line = outputChunk.next()
+    line = next(outputChunk)
     if not line.startswith('  Total lattice energy'):
       raise ParseException('Error reading "Components of energy", expecting "Total lattice energy" got "%s"' % line[:-1])
     d['totalLatticeEnergy'] = extractField(line)
-    outputChunk.next()
-    line = outputChunk.next()
+    next(outputChunk)
+    line = next(outputChunk)
     if not line.startswith('  Total lattice energy'):
       raise ParseException('Error reading "Components of energy", expecting "Total lattice energy" got "%s"' % line[:-1])
     d['totalLatticeEnergykJPerMoleUnitCells'] = extractField(line)
-    outputChunk.next()
+    next(outputChunk)
     return d
 
   if findStart(outputChunk):

@@ -1,9 +1,9 @@
 from atsim.pro_fit.fittool import ConfigException
 from atsim.pro_fit._channel import ChannelException
 
-from _pbs_channel import PBSChannel
+from ._pbs_channel import PBSChannel
 
-from _queueing_system_runner import QueueingSystemRunnerBaseClass
+from ._queueing_system_runner import QueueingSystemRunnerBaseClass
 
 from atsim.pro_fit import _execnet
 import execnet
@@ -88,7 +88,7 @@ class PBSRunner(object):
                 'pbspollinterval' : 'pollinterval'}
 
     allowedkeywords = ['type']
-    allowedkeywords.extend(synonyms.keys())
+    allowedkeywords.extend(list(synonyms.keys()))
     allowedkeywords.extend(InnerPBSRunner.allowedConfigKeywords())
     allowedkeywords = set(allowedkeywords)
 

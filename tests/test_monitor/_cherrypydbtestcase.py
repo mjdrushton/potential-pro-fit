@@ -26,10 +26,10 @@ class CherryPyDBTestCaseBase(unittest.TestCase):
 
   def fetchJSON(self, url):
     br = Browser()
-    import urllib
-    url = urllib.quote(url, safe='/?=')
+    import urllib.request, urllib.parse, urllib.error
+    url = urllib.parse.quote(url, safe='/?=')
     br.open('%s/%s' % (self.baseurl, url))
     response = br.response()
-    self.assertEquals('application/json', response.info()['Content-Type'])
+    self.assertEqual('application/json', response.info()['Content-Type'])
     j = json.loads(br.response().read())
     return j

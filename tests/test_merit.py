@@ -1,9 +1,9 @@
 import unittest
 
 from atsim import pro_fit
-import testutil
+from . import testutil
 
-from common import *
+from .common import *
 import os
 import shutil
 import stat
@@ -66,18 +66,18 @@ class MeritTestCase(unittest.TestCase):
   def _jobToDict(self, job):
     d = {}
     infilename = os.path.join(job.path, 'job_files', 'runjob')
-    with open(infilename, 'rb') as infile:
-      infile.next()
+    with open(infilename, 'r') as infile:
+      next(infile)
 
-      line = infile.next()[:-1]
+      line = next(infile)[:-1]
       self.assertTrue(line.startswith('#Job:'))
       d['Job'] = line.split(':')[1].strip()
 
-      line = infile.next()[:-1]
+      line = next(infile)[:-1]
       self.assertTrue(line.startswith('#Runner:'))
       d['Runner'] = line.split(':')[1].strip()
 
-      line = infile.next()[:-1]
+      line = next(infile)[:-1]
       self.assertTrue(line.startswith('#Candidate:'))
       d['Candidate'] = int(line.split(':')[1].strip())
 
@@ -218,7 +218,7 @@ class MeritTestCase(unittest.TestCase):
     batchpaths, batchedjobs, candidatejoblists = self.metamerit._prepareJobs(self.candidates)
     finishedEvents = self.metamerit._runBatches(batchedjobs)
 
-    self.assertEquals(2, len(candidatejoblists))
+    self.assertEqual(2, len(candidatejoblists))
     batchOneLength = len(candidatejoblists[0][1])
     batchTwoLength = len(candidatejoblists[1][1])
 
@@ -226,23 +226,23 @@ class MeritTestCase(unittest.TestCase):
     self.metamerit._applyEvaluators(batchedjobs)
     self.metamerit._applyMetaEvaluators([joblist for (c, joblist) in candidatejoblists])
 
-    self.assertEquals(batchOneLength+1, len(candidatejoblists[0][1]))
-    self.assertEquals(batchTwoLength+1, len(candidatejoblists[1][1]))
+    self.assertEqual(batchOneLength+1, len(candidatejoblists[0][1]))
+    self.assertEqual(batchTwoLength+1, len(candidatejoblists[1][1]))
 
-    self.assertEquals(1, candidatejoblists[0][1][0].variables.id)
-    self.assertEquals(2, candidatejoblists[1][1][0].variables.id)
+    self.assertEqual(1, candidatejoblists[0][1][0].variables.id)
+    self.assertEqual(2, candidatejoblists[1][1][0].variables.id)
 
     metajob1 = candidatejoblists[0][1][-1]
     metajob2 = candidatejoblists[1][1][-1]
 
-    self.assertEquals(1, metajob1.variables.id)
-    self.assertEquals(2, metajob2.variables.id)
+    self.assertEqual(1, metajob1.variables.id)
+    self.assertEqual(2, metajob2.variables.id)
 
     self.assertTrue(True, metajob1.isMetaEvaluatorJob)
     self.assertTrue(True, metajob2.isMetaEvaluatorJob)
 
-    self.assertEquals((-2 - 1.0/3.0) - 9.0, metajob1.evaluatorRecords[0][0].meritValue)
-    self.assertEquals((-1.0) - 15.0, metajob2.evaluatorRecords[0][0].meritValue)
+    self.assertEqual((-2 - 1.0/3.0) - 9.0, metajob1.evaluatorRecords[0][0].meritValue)
+    self.assertEqual((-1.0) - 15.0, metajob2.evaluatorRecords[0][0].meritValue)
 
   def testDefaultReductionFunction(self):
     """Test fittool._sumValuesReductionFunction()"""
@@ -270,7 +270,7 @@ class MeritTestCase(unittest.TestCase):
     testutil.compareCollection(self, expect, actual)
 
     # Check that files are cleaned up
-    print os.listdir(self.tempd)
+    print(os.listdir(self.tempd))
     self.assertTrue(len(os.listdir(self.tempd)) == 0)
 
   def testCalculateMeritMetaEvaluator(self):

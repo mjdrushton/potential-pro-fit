@@ -3,7 +3,17 @@ from gevent import monkey
 monkey.patch_all()
 monkey.patch_thread()
 
-from atsim import pro_fit
+import atsim.pro_fit.evaluators
+import atsim.pro_fit.fittool
+import atsim.pro_fit.jobfactories
+import atsim.pro_fit.metaevaluators
+import atsim.pro_fit.minimizers
+import atsim.pro_fit.reporters
+import atsim.pro_fit.runners
+
+from atsim.pro_fit._util import MultiCallback, iter_namespace
+from atsim.pro_fit.console import Console
+
 
 import optparse
 import sys
@@ -14,12 +24,11 @@ import shutil
 import tempfile
 import contextlib
 import pkgutil
+import importlib.resources
 
 import jinja2
 import gevent
 
-from atsim.pro_fit._util import MultiCallback
-from atsim.pro_fit.console import Console
 
 def _monkeyPatchExecnetSIGINT():
   """The ssh instances launched by execnet were receiving SIGINT before cleanup had completed.
@@ -74,7 +83,7 @@ def _isValidDirectory():
   # Check for existence of a lockfile
   if os.path.isfile('lockfile'):
     with open('lockfile') as infile:
-      pidline = infile.next()[:-1]
+      pidline = next(infile)[:-1]
       logger.error("Found 'lockfile', this indicates that pprofit is already running with PID=%s" % pidline)
       return False
 
@@ -82,8 +91,8 @@ def _isValidDirectory():
 
 def _makeLockFile():
   #Put PID in lockfile
-  with open('lockfile','wb') as outfile:
-    print >>outfile, os.getpid()
+  with open('lockfile','w') as outfile:
+    print(os.getpid(), file=outfile)
 
 def _removeLockFile():
   #Remove lockfile
@@ -110,7 +119,7 @@ def _initializeRun(directoryName):
     os.mkdir(directoryName)
     logging.getLogger('console').info("Created directory: %s" % directoryName)
   except Exception as e:
-    raise _DirectoryInitializationException(e.message)
+    raise _DirectoryInitializationException(str(e))
 
   # Create fit_files directory
   dirname = os.path.join(directoryName, 'fit_files')
@@ -118,7 +127,7 @@ def _initializeRun(directoryName):
     os.mkdir(dirname)
     logging.getLogger('console').info("Created directory: %s" % dirname)
   except Exception as e:
-    raise _DirectoryInitializationException("Could not create 'fit_files' directory: %s" % e.message)
+    raise _DirectoryInitializationException("Could not create 'fit_files' directory: %s" % str(e))
 
   templateLoader = jinja2.PackageLoader('atsim.pro_fit', 'resources/dirinit')
   env = jinja2.Environment(loader=templateLoader)
@@ -145,7 +154,7 @@ def _initializeRun(directoryName):
     os.makedirs(dirname)
     logging.getLogger('console').info("Created runner_files directory for the default runner '%s': %s" % (runner_name, dirname))
   except Exception as e:
-    raise _DirectoryInitializationException("Could not create 'runner_files' directory: %s" % e.message)
+    raise _DirectoryInitializationException("Could not create 'runner_files' directory: %s" % str(e))
 
 def _getValidRunners():
   """Open 'fit.cfg' and produce list of runner names.
@@ -157,11 +166,11 @@ def _getValidRunners():
   if not os.path.exists('fit.cfg'):
     return []
 
-  import ConfigParser
-  config = ConfigParser.SafeConfigParser()
+  import configparser
+  config = configparser.SafeConfigParser()
   config.optionxform = str
-  with open('fit.cfg', 'rb') as fitCfgFile:
-    config.readfp(fitCfgFile)
+  with open('fit.cfg', 'r') as fitCfgFile:
+    config.read_file(fitCfgFile)
 
   runners = []
   for s in config.sections():
@@ -206,7 +215,7 @@ def _initializeJob(jobDescription):
   try:
     os.mkdir(jobDirname)
   except Exception as e:
-    raise _DirectoryInitializationException("Could not create job directory '%s': %s" % (jobDirname, e.message))
+    raise _DirectoryInitializationException("Could not create job directory '%s': %s" % (jobDirname, str(e)))
 
   # Create 'job.cfg'
   templateLoader = jinja2.PackageLoader('atsim.pro_fit', 'resources/jobinit')
@@ -226,9 +235,10 @@ def _initializeJob(jobDescription):
 def _setupLogging(verbose):
   """Set-up python logging"""
   # Read logging information from logging.cfg in the resources package
-  cfg = pkgutil.get_data('atsim.pro_fit', 'resources/logging.cfg')
-  import StringIO
-  cfg = StringIO.StringIO(cfg)
+  # cfg = pkgutil.get_data('atsim.pro_fit', 'resources/logging.cfg')
+  cfg = importlib.resources.read_text("atsim.pro_fit.resources", 'logging.cfg')
+  import io
+  cfg = io.StringIO(cfg)
 
   logging.config.fileConfig(cfg)
 
@@ -307,20 +317,33 @@ This gives name of runner (defined in fit.cfg) to be associated with created JOB
 
   return options
 
-def _getfitcfg(jobdir, cls = pro_fit.fittool.FitConfig, pluginmodules = []):
+def _getfitcfg(jobdir, cls = atsim.pro_fit.fittool.FitConfig, pluginmodules = []):
   """Creates atsim.pro_fit.fittool.FitConfig from configuration files.
      @param jobdir Directory in which temporary job files should be created.
      @param cls FitConfig class
      @param pluginmodules Additional modules to be scanned by FitConfig for evaluators, runners etc.
      @return atsim.pro_fit.fittool.FitConfig instance"""
-  runners = [pro_fit.runners]
-  evaluators = [pro_fit.evaluators]
-  metaevaluators = [pro_fit.metaevaluators]
-  jobfactories = [pro_fit.jobfactories]
-  minimizers = [pro_fit.minimizers]
+  import atsim.pro_fit.runners
+  runners = [atsim.pro_fit.runners]
+  evaluators = [atsim.pro_fit.evaluators]
+  metaevaluators = [atsim.pro_fit.metaevaluators]
+  jobfactories = [atsim.pro_fit.jobfactories]
+  minimizers = [atsim.pro_fit.minimizers]
+
+  # Introspect the the atsim.pro_fit.plugins namespace and add these to pluginmodules too.
+  ns_pluginsmodules = []
+  try:
+    import atsim.pro_fit.plugins
+    import importlib
+    for finder, name, ispkg in  iter_namespace(atsim.pro_fit.plugins):
+      m = importlib.import_module(name)
+      ns_pluginsmodules.append(m)
+  except ImportError:
+    pass
 
   for l in [runners, evaluators, metaevaluators, jobfactories, minimizers]:
     l.extend(pluginmodules)
+    l.extend(ns_pluginsmodules)
 
   return cls('fit.cfg',
     runners,
@@ -338,9 +361,9 @@ def _getSingleStepCfg(jobdir, keepDirectory, pluginmodules):
   @param keepDirectory Path into which job files are copied following run.
   @param pluginmodules List of module objects to be scanned by FitConfig
   @return atsim.pro_fit.fittool.FitConfig like object configured to use SingleStepMinimizer"""
-  class CustomConfig(pro_fit.fittool.FitConfig):
+  class CustomConfig(atsim.pro_fit.fittool.FitConfig):
     def _createMinimizer(self, minimizermodules):
-      return pro_fit.minimizers.SingleStepMinimizer(self.variables, keepDirectory)
+      return atsim.pro_fit.minimizers.SingleStepMinimizer(self.variables, keepDirectory)
   return _getfitcfg(jobdir, cls = CustomConfig, pluginmodules = pluginmodules)
 
 def _getCreateFilesCfg(jobdir, keepDirectory, pluginmodules):
@@ -355,12 +378,12 @@ def _getCreateFilesCfg(jobdir, keepDirectory, pluginmodules):
   @return atsim.pro_fit.fittool.FitConfig like object configured to use SingleStepMinimizer"""
   import collections
   def defaultfactory():
-    return pro_fit.runners.NullRunner
+    return atsim.pro_fit.runners.NullRunner
   runnerdict = collections.defaultdict(defaultfactory)
 
-  class CustomConfig(pro_fit.fittool.FitConfig):
+  class CustomConfig(atsim.pro_fit.fittool.FitConfig):
     def _createMinimizer(self, minimizermodules):
-      return pro_fit.minimizers.SingleStepMinimizer(self.variables, keepDirectory)
+      return atsim.pro_fit.minimizers.SingleStepMinimizer(self.variables, keepDirectory)
 
     def _findClasses(self, modulelist, nameSuffix):
       if nameSuffix == 'Runner':
@@ -390,18 +413,18 @@ def _invokeMinimizer(cfg, logger, logsql, console):
     raise _FittingToolException('Minimization run. Job temporary directory does not exist: "%s"' % cfg.jobdir)
 
   if len(cfg.variables.fitKeys) == 0:
-    raise pro_fit.fittool.ConfigException('No variables selected to change during minimization within "fit.cfg" [Variables] section.')
+    raise atsim.pro_fit.fittool.ConfigException('No variables selected to change during minimization within "fit.cfg" [Variables] section.')
 
   # Set-up reporters
   stepCallback = MultiCallback()
   # ... create the console log reporter
-  stepCallback.append(pro_fit.reporters.LogReporter())
+  stepCallback.append(atsim.pro_fit.reporters.LogReporter())
   # ... create SQLiteReporter
   if logsql:
     if os.path.exists('fitting_run.db'):
       _console_log(console, logger, logging.INFO, "Removing existing 'fitting_run.db'")
       os.remove('fitting_run.db')
-    sqlreporter = pro_fit.reporters.SQLiteReporter('fitting_run.db',cfg.variables, cfg.merit.calculatedVariables, cfg.title)
+    sqlreporter = atsim.pro_fit.reporters.SQLiteReporter('fitting_run.db',cfg.variables, cfg.merit.calculatedVariables, cfg.title)
     stepCallback.append(sqlreporter)
 
   minimizer = cfg.minimizer
@@ -495,7 +518,7 @@ def main():
        sys.exit(0)
     except _DirectoryInitializationException as e:
       logging.getLogger('console').error("Error initializing directory:")
-      logging.getLogger('console').error(e.message)
+      logging.getLogger('console').error(str(e))
       sys.exit(1)
   elif options.initjob:
     # Initialize job
@@ -504,7 +527,7 @@ def main():
       sys.exit(0)
     except _DirectoryInitializationException as e:
       logging.getLogger('console').error("Error initializing job:")
-      logging.getLogger('console').error(e.message)
+      logging.getLogger('console').error(str(e))
       sys.exit(1)
 
   # Check that directory is valid
@@ -535,11 +558,11 @@ def main():
       cfg = _getfitcfg(tempdir, pluginmodules= pluginmodules)
 
     _invokeMinimizer(cfg, logger,logsql, console)
-  except (_FittingToolException, pro_fit.fittool.ConfigException, pro_fit.minimizers.MinimizerException) as e:
-    logger.error(e.message)
+  except (_FittingToolException, atsim.pro_fit.fittool.ConfigException, atsim.pro_fit.minimizers.MinimizerException) as e:
+    logger.error(str(e))
 
     if console and console.started:
-      evt = console.terminalError(e.message)
+      evt = console.terminalError(str(e))
       evt.wait()
     exit_code = 1
   finally:

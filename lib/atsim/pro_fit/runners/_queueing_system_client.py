@@ -63,7 +63,7 @@ Terminate jobs.
 from atsim.pro_fit._channel import AbstractChannel
 from atsim.pro_fit._util import MultiCallback, CallbackRegister
 
-from _exceptions import JobKilledException
+from ._exceptions import JobKilledException
 
 import logging
 

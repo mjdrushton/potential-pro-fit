@@ -3,7 +3,7 @@ from atsim.pro_fit.filetransfer.remote_exec.file_transfer_remote_exec import FIL
 
 import os
 
-from _common import execnet_gw, channel_id
+from ._common import execnet_gw, channel_id
 
 import py.path
 
@@ -26,7 +26,7 @@ def testBadStart_nonexistent_directory(execnet_gw, channel_id):
     ch1.send({'msg' : 'START_DOWNLOAD_CHANNEL', 'channel_id' : channel_id, 'remote_path' : badpath })
     msg = ch1.receive(10.0)
 
-    assert msg.has_key('reason')
+    assert 'reason' in msg
     assert msg['reason'].startswith('path does not exist')
     del msg['reason']
     msg == dict(msg =  "ERROR", channel_id = channel_id, remote_path = badpath)
@@ -76,10 +76,12 @@ def testListDir(tmpdir, execnet_gw, channel_id):
 
   transid = 0
 
+  import operator
+
   expect = {'msg' : 'LIST',
    'id' : transid,
    'channel_id' : channel_id,
-   'files' : sorted(files)}
+   'files' : sorted(files, key=operator.itemgetter("remote_path"))}
 
   ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
   try:
@@ -90,8 +92,8 @@ def testListDir(tmpdir, execnet_gw, channel_id):
     ch1.send({'msg' : 'LIST', 'id': transid, 'remote_path' : tmpdir.strpath})
     msg = ch1.receive(10.0)
 
-    assert msg.has_key("files")
-    msg['files'] = sorted(msg['files'])
+    assert "files" in msg
+    msg['files'] = sorted(msg['files'],key=operator.itemgetter("remote_path"))
     assert expect == msg
   finally:
     ch1.send(None)
@@ -127,7 +129,7 @@ def testDownloadFile_bad(tmpdir, execnet_gw, channel_id):
     rpath.chmod(0o0)
     ch1.send({'msg' : 'DOWNLOAD_FILE', 'id' : 1, 'remote_path' : rpath.strpath})
     rcv = ch1.receive(10.0)
-    assert rcv.has_key('exc_msg')
+    assert 'exc_msg' in rcv
     del rcv['exc_msg']
     assert {'msg' : 'ERROR',
             'channel_id' : channel_id,
@@ -147,7 +149,7 @@ def testDownloadFile(tmpdir, execnet_gw, channel_id):
     msg = ch1.receive(10.0)
 
     chpath = tmpdir.join("0").join("1").join("file")
-    contents = "one two three four"
+    contents = b"one two three four"
     chpath.write(contents, ensure = True)
 
     ch1.send({'msg' : 'DOWNLOAD_FILE', 'id' : 1, 'remote_path' : chpath.strpath})

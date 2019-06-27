@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from _variables import CurrentBestTuple
+from ._variables import CurrentBestTuple
 
 import weakref
 
@@ -152,7 +152,7 @@ class _VariableUpdateHandler(object):
 
     # Convert to tuples
     tuple_table = []
-    for d in table.itervalues():
+    for d in table.values():
       tuple_table.append(CurrentBestTuple(d['name'], d['current'], d['best']))
 
     self._consoleModel.variables_table = tuple_table

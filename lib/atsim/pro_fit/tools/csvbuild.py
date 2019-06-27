@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import cStringIO
+import io
 import numbers
 import os
 import re
@@ -39,7 +39,7 @@ def _includeHandler(placeholder, substitutionDict, skelpath):
     fname = os.path.join(skelpath, fname)
 
   logging.getLogger('csvbuild._includeHandler').debug('@INCLUDE: filename="%s"' % fname)
-  with open(fname, 'rb') as infile:
+  with open(fname, 'r') as infile:
     includedTemplate = infile.read()
     substituted = _templateSubstitution(includedTemplate, substitutionDict, skelpath)
     return (True, substituted)
@@ -60,7 +60,7 @@ class _DefaultHandler(object):
         fmtstring = "{"+placeholder+"}"
       
       retstring = self._stringFormatter.format(fmtstring, **substitutionDict)
-    except KeyError, e:
+    except KeyError as e:
       raise CSVBuildKeyError(*e.args)
     return (True, retstring)
 
@@ -82,7 +82,7 @@ def _templateSubstitution(template, substitutionDict, skelpath):
 
   :return: Substituted string"""
   splitRegex = re.compile(r"((?<!\\)@(.*?)(?<!\\)@)")
-  sbuild = cStringIO.StringIO()
+  sbuild = io.StringIO()
 
   tokens = splitRegex.split(template)
   while len(tokens) > 0:
@@ -144,17 +144,17 @@ class _DirectoryWalker(object):
         self._logger.debug("'%s' exists, will not overwrite" % dstpath)
         return
       self._logger.debug("Template processing: %s ---> %s" % (srcpath, dstpath))
-      with open(srcpath, 'rb') as infile:
+      with open(srcpath, 'r') as infile:
         filecontents = infile.read()
 
       try:
         filecontents = _templateSubstitution(filecontents, row, self.skeletonDirectory)
-      except CSVBuildKeyError, e:
+      except CSVBuildKeyError as e:
         augmentedException = CSVBuildKeyError(*e.args)
         augmentedException.templateFilename = srcpath
         raise augmentedException
 
-      with open(dstpath, 'wb') as outfile:
+      with open(dstpath, 'w') as outfile:
         outfile.write(filecontents)
 
 
@@ -167,13 +167,13 @@ class _DirectoryWalker(object):
     shutil.copystat(dirname, destdirname)
     for n in names:
       fname = os.path.join(dirname, n)
-      if os.path.isdir(fname):
-        os.path.walk(fname, self._processDirectory, row)
-      else:
-        self._processFile(dirname, destdirname, n, row)
+      self._processFile(dirname, destdirname, n, row)
 
   def processRow(self, row):
-    os.path.walk(self.skeletonDirectory, self._processDirectory, row)
+    for dirpath, dirnames, filenames in os.walk(self.skeletonDirectory, topdown=True):
+      for dn in dirnames:
+        self._processDirectory(row, os.path.join(dirpath, dn), [])
+      self._processDirectory(row, dirpath, filenames)
 
 
 def buildDirs(rows,
@@ -219,7 +219,7 @@ def _setupLogging(level=logging.WARN):
   logger.addHandler(stderrHandler)
 
 def _commandLineParser():
-  usage = u"""usage: %prog [options] CSV_FILENAME TEMPLATE_DIRECTORY DESTINATION_DIRECTORY
+  usage = """usage: %prog [options] CSV_FILENAME TEMPLATE_DIRECTORY DESTINATION_DIRECTORY
 
 A tool that can be thought of as the equivalent of mail-merge for files and directories.
 Create a directory structure from the contents of a CSV file and a template directory structure.
@@ -350,7 +350,7 @@ def main():
 
   import csv
   try:
-    infile = open(csvfilename, 'rUb')
+    infile = open(csvfilename, 'r')
   except IOError:
     optionparser.error("Couldn't open: %s" % csvfilename)
 

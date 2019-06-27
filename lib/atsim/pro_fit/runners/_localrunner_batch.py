@@ -1,6 +1,6 @@
 
-from _runner_batch import RunnerBatch
-from _exceptions import JobKilledException
+from ._runner_batch import RunnerBatch
+from ._exceptions import JobKilledException
 
 import logging
 import os

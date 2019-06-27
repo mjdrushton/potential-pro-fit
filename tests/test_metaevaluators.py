@@ -1,8 +1,7 @@
 import unittest
 
-
-from atsim import pro_fit
-import testutil
+from atsim.pro_fit import metaevaluators, jobfactories,evaluators, fittool
+from . import testutil
 
 class MockJob(object):
 
@@ -15,42 +14,42 @@ class MockJob(object):
 class FormulaMetaEvaluator(unittest.TestCase):
 
   def _parseListAsConfig(self, config):
-    import ConfigParser
+    import configparser
     import os
     config = os.linesep.join(config)
-    parser = ConfigParser.SafeConfigParser()
+    parser = configparser.ConfigParser()
     parser.optionxform = str
-    import StringIO
-    sio = StringIO.StringIO(config)
-    parser.readfp(sio)
+    import io
+    sio = io.StringIO(config)
+    parser.read_file(sio)
     return parser
 
   def testSplitVariables(self):
     variables = [
-      pro_fit.metaevaluators.FormulaVariable("A", "MgO:Gulp:lattice_energy"),
-      pro_fit.metaevaluators.FormulaVariable("B", "MgO:Gulp:lattice_energy:extracted_value"),
-      pro_fit.metaevaluators.FormulaVariable("C", "MgO:Gulp:lattice_energy:merit_value"),
-      pro_fit.metaevaluators.FormulaVariable("D", "MgO:Gulp:lattice_energy:weight"),
-      pro_fit.metaevaluators.FormulaVariable("E", "MgO:Gulp:lattice_energy:expected_value")]
+      metaevaluators.FormulaVariable("A", "MgO:Gulp:lattice_energy"),
+      metaevaluators.FormulaVariable("B", "MgO:Gulp:lattice_energy:extracted_value"),
+      metaevaluators.FormulaVariable("C", "MgO:Gulp:lattice_energy:merit_value"),
+      metaevaluators.FormulaVariable("D", "MgO:Gulp:lattice_energy:weight"),
+      metaevaluators.FormulaVariable("E", "MgO:Gulp:lattice_energy:expected_value")]
 
-    SVK = pro_fit.metaevaluators.SplitVariableKey
+    SVK = metaevaluators.SplitVariableKey
     expect = [ ('A', SVK("MgO", "Gulp", "lattice_energy", "merit_value")),
                ('B', SVK("MgO", "Gulp", "lattice_energy", "extracted_value")),
                ('C', SVK("MgO", "Gulp", "lattice_energy", "merit_value")),
                ('D', SVK("MgO", "Gulp", "lattice_energy", "weight")),
                ('E', SVK("MgO", "Gulp", "lattice_energy", "expected_value"))]
 
-    testutil.compareCollection(self, expect, pro_fit.metaevaluators.FormulaMetaEvaluator._splitVariables(variables))
+    testutil.compareCollection(self, expect, metaevaluators.FormulaMetaEvaluator._splitVariables(variables))
 
-    with self.assertRaises(pro_fit.fittool.ConfigException):
-      pro_fit.metaevaluators.FormulaMetaEvaluator._splitVariables([
-        pro_fit.metaevaluators.FormulaVariable("A", "MgO:Gulp:lattice_energy:blibble")])
+    with self.assertRaises(fittool.ConfigException):
+      metaevaluators.FormulaMetaEvaluator._splitVariables([
+        metaevaluators.FormulaVariable("A", "MgO:Gulp:lattice_energy:blibble")])
 
 
   def testGetVariableValues(self):
-    """Test pro_fit.metaevaluators.FormulaMetaEvaluator"""
-    Job = pro_fit.jobfactories.Job
-    ER = pro_fit.evaluators.EvaluatorRecord
+    """Test metaevaluators.FormulaMetaEvaluator"""
+    Job = jobfactories.Job
+    ER = evaluators.EvaluatorRecord
 
     le = ER("lattice_energy", 1000.0, 100.0, 2.0,123.0, "MgO:Gulp")
     e1v1 = ER("value1", 2000.0, 200.0, 3.0,124.0, "CaO:Eval1")
@@ -61,16 +60,16 @@ class FormulaMetaEvaluator(unittest.TestCase):
     caojob = MockJob("CaO", [[e1v1], [e2v1, e2v2]])
 
     variables = [
-      pro_fit.metaevaluators.FormulaVariable("A", "MgO:Gulp:lattice_energy"),
-      pro_fit.metaevaluators.FormulaVariable("B", "MgO:Gulp:lattice_energy:extracted_value"),
-      pro_fit.metaevaluators.FormulaVariable("C", "MgO:Gulp:lattice_energy:merit_value"),
-      pro_fit.metaevaluators.FormulaVariable("D", "MgO:Gulp:lattice_energy:weight"),
-      pro_fit.metaevaluators.FormulaVariable("E", "MgO:Gulp:lattice_energy:expected_value"),
-      pro_fit.metaevaluators.FormulaVariable("F", "CaO:Eval1:value1"),
-      pro_fit.metaevaluators.FormulaVariable("G", "CaO:Eval2:value1"),
-      pro_fit.metaevaluators.FormulaVariable("H", "CaO:Eval2:value2")]
-    variables = pro_fit.metaevaluators.FormulaMetaEvaluator._splitVariables(variables)
-    metaeval = pro_fit.metaevaluators.FormulaMetaEvaluator("Meta", "A+B", variables)
+      metaevaluators.FormulaVariable("A", "MgO:Gulp:lattice_energy"),
+      metaevaluators.FormulaVariable("B", "MgO:Gulp:lattice_energy:extracted_value"),
+      metaevaluators.FormulaVariable("C", "MgO:Gulp:lattice_energy:merit_value"),
+      metaevaluators.FormulaVariable("D", "MgO:Gulp:lattice_energy:weight"),
+      metaevaluators.FormulaVariable("E", "MgO:Gulp:lattice_energy:expected_value"),
+      metaevaluators.FormulaVariable("F", "CaO:Eval1:value1"),
+      metaevaluators.FormulaVariable("G", "CaO:Eval2:value1"),
+      metaevaluators.FormulaVariable("H", "CaO:Eval2:value2")]
+    variables = metaevaluators.FormulaMetaEvaluator._splitVariables(variables)
+    metaeval = metaevaluators.FormulaMetaEvaluator("Meta", "A+B", variables)
     variabledict = metaeval._makeVariableDict([mgojob, caojob])
 
     expect = { "A" : 123.0,
@@ -86,8 +85,8 @@ class FormulaMetaEvaluator(unittest.TestCase):
 
   def testEvaluate(self):
     """Test that formula FormulaMetaEvaluator performs calculations correctly"""
-    Job = pro_fit.jobfactories.Job
-    ER = pro_fit.evaluators.EvaluatorRecord
+    Job = jobfactories.Job
+    ER = evaluators.EvaluatorRecord
 
     le = ER("lattice_energy", 1000.0, 100.0, 2.0,123.0, "MgO:Gulp")
     e1v1 = ER("value1", 2000.0, 200.0, 3.0,124.0, "CaO:Eval1")
@@ -98,30 +97,30 @@ class FormulaMetaEvaluator(unittest.TestCase):
     caojob = MockJob("CaO", [[e1v1], [e2v1, e2v2]])
 
     variables = [
-      pro_fit.metaevaluators.FormulaVariable("A", "MgO:Gulp:lattice_energy"),
-      pro_fit.metaevaluators.FormulaVariable("B", "MgO:Gulp:lattice_energy:extracted_value"),
-      pro_fit.metaevaluators.FormulaVariable("C", "MgO:Gulp:lattice_energy:merit_value"),
-      pro_fit.metaevaluators.FormulaVariable("D", "MgO:Gulp:lattice_energy:weight"),
-      pro_fit.metaevaluators.FormulaVariable("E", "MgO:Gulp:lattice_energy:expected_value"),
-      pro_fit.metaevaluators.FormulaVariable("F", "CaO:Eval1:value1"),
-      pro_fit.metaevaluators.FormulaVariable("G", "CaO:Eval2:value1"),
-      pro_fit.metaevaluators.FormulaVariable("H", "CaO:Eval2:value2")]
-    variables = pro_fit.metaevaluators.FormulaMetaEvaluator._splitVariables(variables)
-    expression1 = pro_fit.metaevaluators.Expression("Expression1", "A + B+C+D+E+F+G+H", 1.0, None)
-    metaeval = pro_fit.metaevaluators.FormulaMetaEvaluator("Meta", [expression1], variables)
+      metaevaluators.FormulaVariable("A", "MgO:Gulp:lattice_energy"),
+      metaevaluators.FormulaVariable("B", "MgO:Gulp:lattice_energy:extracted_value"),
+      metaevaluators.FormulaVariable("C", "MgO:Gulp:lattice_energy:merit_value"),
+      metaevaluators.FormulaVariable("D", "MgO:Gulp:lattice_energy:weight"),
+      metaevaluators.FormulaVariable("E", "MgO:Gulp:lattice_energy:expected_value"),
+      metaevaluators.FormulaVariable("F", "CaO:Eval1:value1"),
+      metaevaluators.FormulaVariable("G", "CaO:Eval2:value1"),
+      metaevaluators.FormulaVariable("H", "CaO:Eval2:value2")]
+    variables = metaevaluators.FormulaMetaEvaluator._splitVariables(variables)
+    expression1 = metaevaluators.Expression("Expression1", "A + B+C+D+E+F+G+H", 1.0, None)
+    metaeval = metaevaluators.FormulaMetaEvaluator("Meta", [expression1], variables)
     expect1 = 123.0 + 100.0 + 123.0 + 2.0 + 1000.0 + 124.0 + 125.0 + 126.0
     actual = metaeval([mgojob, caojob])[0]
-    self.assertAlmostEquals(expect1, actual.meritValue)
-    self.assertEquals("Expression1", actual.name)
+    self.assertAlmostEqual(expect1, actual.meritValue)
+    self.assertEqual("Expression1", actual.name)
 
-    expression2 = pro_fit.metaevaluators.Expression("Expression2", "(A+B)/2.0 - (2*(G+H+E+F))/3", 2.0, None)
-    metaeval = pro_fit.metaevaluators.FormulaMetaEvaluator("Meta", [expression2], variables)
+    expression2 = metaevaluators.Expression("Expression2", "(A+B)/2.0 - (2*(G+H+E+F))/3", 2.0, None)
+    metaeval = metaevaluators.FormulaMetaEvaluator("Meta", [expression2], variables)
     expect2 = ((123.0 + 100.0)/2.0 - (2.0*(125.0+126.0+1000.0+124.0)/3.0)) * 2.0
     actual = metaeval([mgojob, caojob])[0]
-    self.assertAlmostEquals(expect2, actual.meritValue)
-    self.assertAlmostEquals(((123.0 + 100.0)/2.0 - (2.0*(125.0+126.0+1000.0+124.0)/3.0)), actual.extractedValue)
+    self.assertAlmostEqual(expect2, actual.meritValue)
+    self.assertAlmostEqual(((123.0 + 100.0)/2.0 - (2.0*(125.0+126.0+1000.0+124.0)/3.0)), actual.extractedValue)
 
-    metaeval = pro_fit.metaevaluators.FormulaMetaEvaluator("Meta", [expression1, expression2], variables)
+    metaeval = metaevaluators.FormulaMetaEvaluator("Meta", [expression1, expression2], variables)
     actual = metaeval([mgojob, caojob])
     testutil.compareCollection(self, [expect1, expect2], [er.meritValue for er in actual])
     testutil.compareCollection(self, ["Expression1", "Expression2"], [er.name for er in actual])
@@ -129,23 +128,23 @@ class FormulaMetaEvaluator(unittest.TestCase):
 
 
     # Check RMS evaluation
-    rmsexpression = pro_fit.metaevaluators.Expression('rmsvalue', "A+B", 1.0, 22.0)
-    rmsexpression2 = pro_fit.metaevaluators.Expression('rmsvalue', "A+B", 0.5, 22.0)
+    rmsexpression = metaevaluators.Expression('rmsvalue', "A+B", 1.0, 22.0)
+    rmsexpression2 = metaevaluators.Expression('rmsvalue', "A+B", 0.5, 22.0)
 
-    metaeval = pro_fit.metaevaluators.FormulaMetaEvaluator("Meta", [rmsexpression, rmsexpression2], variables)
+    metaeval = metaevaluators.FormulaMetaEvaluator("Meta", [rmsexpression, rmsexpression2], variables)
     actual = metaeval([mgojob, caojob])
     testutil.compareCollection(self, [201.0, 201.0/2.0], [er.meritValue for er in actual])
     testutil.compareCollection(self, ["rmsvalue", "rmsvalue"], [er.name for er in actual])
     testutil.compareCollection(self, ["Meta", "Meta"], [er.evaluatorName for er in actual])
 
     # Check bad evaluation
-    badexpression = pro_fit.metaevaluators.Expression("BadExpression1", "J+K", 1.0, None)
-    metaeval = pro_fit.metaevaluators.FormulaMetaEvaluator("Meta", [badexpression], variables)
+    badexpression = metaevaluators.Expression("BadExpression1", "J+K", 1.0, None)
+    metaeval = metaevaluators.FormulaMetaEvaluator("Meta", [badexpression], variables)
     actual = metaeval([mgojob, caojob])
-    self.assertEquals(1, len(actual))
+    self.assertEqual(1, len(actual))
     actual = actual[0]
-    self.assertEquals(pro_fit.evaluators.ErrorEvaluatorRecord, type(actual))
-    self.assertEquals("BadExpression1", actual.name)
+    self.assertEqual(evaluators.ErrorEvaluatorRecord, type(actual))
+    self.assertEqual("BadExpression1", actual.name)
 
   def testCreateFromConfig(self):
     """Test creation of FormulaMetaEvaluator from config items"""
@@ -158,8 +157,8 @@ class FormulaMetaEvaluator(unittest.TestCase):
       "expression_product : A*B",
       "weight_summed : 5.0"])
     cfgitems = parser.items("MetaEvaluator:Sumthings")
-    evaluator = pro_fit.metaevaluators.FormulaMetaEvaluator.createFromConfig("Sumthings", "/a/path", cfgitems)
-    self.assertEquals(pro_fit.metaevaluators.FormulaMetaEvaluator, type(evaluator))
+    evaluator = metaevaluators.FormulaMetaEvaluator.createFromConfig("Sumthings", "/a/path", cfgitems)
+    self.assertEqual(metaevaluators.FormulaMetaEvaluator, type(evaluator))
 
     testutil.compareCollection(self,
       [("summed", "A + B", 5.0, None),
@@ -180,8 +179,8 @@ class FormulaMetaEvaluator(unittest.TestCase):
       "expression_product3 : 25.0 = A*B",
       "weight_summed : 5.0"])
     cfgitems = parser.items("MetaEvaluator:Sumthings")
-    evaluator = pro_fit.metaevaluators.FormulaMetaEvaluator.createFromConfig("Sumthings", "/a/path", cfgitems)
-    self.assertEquals(pro_fit.metaevaluators.FormulaMetaEvaluator, type(evaluator))
+    evaluator = metaevaluators.FormulaMetaEvaluator.createFromConfig("Sumthings", "/a/path", cfgitems)
+    self.assertEqual(metaevaluators.FormulaMetaEvaluator, type(evaluator))
 
     testutil.compareCollection(self,
       [("summed", "A + B", 5.0, None),
@@ -202,7 +201,7 @@ class FormulaMetaEvaluator(unittest.TestCase):
       "weight_summed : 5.0"])
     cfgitems = parser.items("MetaEvaluator:Sumthings")
     with self.assertRaises(ConfigException):
-      evaluator = pro_fit.metaevaluators.FormulaMetaEvaluator.createFromConfig("Sumthings", "/a/path", cfgitems)
+      evaluator = metaevaluators.FormulaMetaEvaluator.createFromConfig("Sumthings", "/a/path", cfgitems)
 
     parser = self._parseListAsConfig(
       ["[MetaEvaluator:Sumthings]",
@@ -213,5 +212,5 @@ class FormulaMetaEvaluator(unittest.TestCase):
       "weight_summed : 5.0"])
     cfgitems = parser.items("MetaEvaluator:Sumthings")
     with self.assertRaises(ConfigException):
-      evaluator = pro_fit.metaevaluators.FormulaMetaEvaluator.createFromConfig("Sumthings", "/a/path", cfgitems)
+      evaluator = metaevaluators.FormulaMetaEvaluator.createFromConfig("Sumthings", "/a/path", cfgitems)
 

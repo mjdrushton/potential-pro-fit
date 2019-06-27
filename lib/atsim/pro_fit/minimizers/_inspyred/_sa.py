@@ -2,12 +2,12 @@ import logging
 
 import math
 
-from _inspyred_common import _BoundedVariableBaseClass
-from _inspyred_common import VariableException
-from _inspyred_common import _IntConvert
-from _inspyred_common import _FloatConvert
-from _inspyred_common import _RandomSeed
-from _inspyred_common import _EvolutionaryComputationMinimizerBaseClass
+from ._inspyred_common import _BoundedVariableBaseClass
+from ._inspyred_common import VariableException
+from ._inspyred_common import _IntConvert
+from ._inspyred_common import _FloatConvert
+from ._inspyred_common import _RandomSeed
+from ._inspyred_common import _EvolutionaryComputationMinimizerBaseClass
 
 import inspyred
 
@@ -76,7 +76,7 @@ class _TemperatureVariableBounder(object):
   def createFromConfig(cls, variables, configitems):
     cfgdict = dict(configitems)
 
-    if not cfgdict.has_key("temperature_variable"):
+    if "temperature_variable" not in cfgdict:
       cls._logger.debug("'temperature_variable' not found. Returning generic _TemperatureVariableBounder")
       return _TemperatureVariableBounder(variables, None)
 
@@ -158,13 +158,13 @@ class Simulated_AnnealingMinimizer(object):
     # Check bounds are defined
     try:
       _BoundedVariableBaseClass(variables)
-    except VariableException,e:
-      raise ConfigException("Simulated_Annealing Minimizer:"+e.message)
+    except VariableException as e:
+      raise ConfigException("Simulated_Annealing Minimizer:"+str(e))
 
     cfgdict = dict(configitems)
     del cfgdict['type']
 
-    if cfgdict.has_key('temperature_variable'):
+    if 'temperature_variable' in cfgdict:
       del cfgdict['temperature_variable']
 
 
@@ -178,20 +178,20 @@ class Simulated_AnnealingMinimizer(object):
       random_seed = (None, _RandomSeed("Simulated_Annealing minimizer", "random_seed")))
 
     # Throw if cfgdict has any keys not in defaults
-    for k in cfgdict.iterkeys():
-      if not defaults.has_key(k):
+    for k in cfgdict.keys():
+      if k not in defaults:
         raise ConfigException("Unknown configuration option '%s' for Simulated_Annealing minimizer" % (k,))
 
     # Override any values specified in cfgdict.
     optiondict = {}
-    for k, (default, converter) in defaults.iteritems():
+    for k, (default, converter) in defaults.items():
       optiondict[k] = converter(cfgdict.get(k, converter(default)))
 
     tbound = _TemperatureVariableBounder.createFromConfig(variables, configitems)
 
     # Log the options
     Simulated_AnnealingMinimizer.logger.info("Configuring Simulated_AnnealingMinimizer with following options:")
-    for k, v in optiondict.iteritems():
+    for k, v in optiondict.items():
       Simulated_AnnealingMinimizer.logger.info("%s = %s" % (k,v))
 
     return Simulated_AnnealingMinimizer(variables, tbound, **optiondict)

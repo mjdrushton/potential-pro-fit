@@ -5,14 +5,14 @@ import multiprocessing as mp
 import sqlalchemy as sa
 import sqlite3
 
-from contextlib import nested, closing
+from contextlib import closing
 import os
 import shutil
 
 from atsim.pro_fit.reporters import  SQLiteReporter
 from atsim import pro_fit
 
-import test_reporters
+from . import test_reporters
 
 class LockerException(Exception):
   pass

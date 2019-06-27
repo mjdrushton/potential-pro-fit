@@ -5,8 +5,16 @@ import itertools
 import threading
 import gevent
 import gevent.event
+import pkgutil
 
 import logging
+
+def iter_namespace(ns_pkg):
+    # Specifying the second argument (prefix) to iter_modules makes the
+    # returned name an absolute name instead of a relative one. This allows
+    # import_module to work without having to do additional modification to
+    # the name.
+    return pkgutil.iter_modules(ns_pkg.__path__, ns_pkg.__name__ + ".")
 
 _logger = logging.getLogger("atsim.pro_fit.retry")
 
@@ -160,12 +168,12 @@ class SkipWhiteSpaceDictReader(csv.DictReader):
       return None
     return [f.strip() for f in orignames]
 
-  def next(self):
-    origdict = csv.DictReader.next(self)
+  def __next__(self):
+    origdict = super().__next__()
     if not origdict:
       return origdict
     vals = []
-    for k,v in origdict.iteritems():
+    for k,v in origdict.items():
       if not k is None and hasattr(k, 'strip'):
         k = k.strip()
       if not v is None and hasattr(v, 'strip'):
@@ -189,7 +197,7 @@ class MultiCallback(list):
     list.__init__(self, *args)
 
     self.retLast = False
-    if kwargs.has_key('retLast'):
+    if 'retLast' in kwargs:
       self.retLast = kwargs['retLast']
 
   def __call__(self, *args, **kwargs):
@@ -218,11 +226,17 @@ class CallbackRegister(list):
 
     self[:] = [ cb for cb in self if cb.active ]
 
+class NamedEvent(gevent.event.Event):
 
-def NamedEvent(name):
-  event = gevent.event.Event()
-  event.name = name
-  return event
+  def __init__(self, name):
+    super().__init__()
+    self.name = name
+
+
+# def NamedEvent(name):
+#   event = gevent.event.Event()
+#   event.name = name
+#   return event
 
 def linkevent(evt, depend):
   evt.wait()
@@ -231,3 +245,13 @@ def linkevent(evt, depend):
 def linkevent_spawn(evt, depend):
   return gevent.spawn(linkevent, evt, depend)
 
+def cmp(x, y):
+    """
+    Replacement for built-in function cmp that was removed in Python 3
+
+    Compare the two objects x and y and return an integer according to
+    the outcome. The return value is negative if x < y, zero if x == y
+    and strictly positive if x > y.
+    """
+
+    return (x > y) - (x < y)

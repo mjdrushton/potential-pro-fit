@@ -42,7 +42,7 @@ class GridGenerator(object):
   def _makeAxis(self, prange):
     name, low, gridInc, steps = prange
     v = low
-    for i in xrange(steps):
+    for i in range(steps):
       yield (name, v + i * gridInc)
 
 
@@ -160,11 +160,11 @@ def main():
   try:
     griddims = _argsToGridRanges(opts.range, args)
   except ArgumentException as e:
-    print >> sys.stderr, "Error:", e.message
+    print("Error:", str(e), file=sys.stderr)
     sys.exit(1)
 
   if opts.outfilename:
-    outfile = open(opts.outfilename, 'wb')
+    outfile = open(opts.outfilename, 'w')
   else:
     outfile = sys.stdout
 
@@ -173,7 +173,7 @@ def main():
   dw.writeheader()
   dw.writerows(gen)
 
-  print >> sys.stderr, "%d rows written" % gen.rows
+  print("%d rows written" % gen.rows, file=sys.stderr)
 
 
 

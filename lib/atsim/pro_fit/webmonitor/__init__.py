@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from atsim.pro_fit import reporters, db
 
 from atsim.pro_fit._sqlalchemy_cherrypy_integration import session, configure_session
-import  _jinja_cherrypy_integration # noqa
+from . import  _jinja_cherrypy_integration # noqa
 
 class Root:
   extensionToResponseHeader = {
@@ -231,7 +231,7 @@ class _FilterWrapper(object):
 
   def __init__(self, results, columnName, columnFilter):
     self.results = results
-    self.columns = results.keys()
+    self.columns = list(results.keys())
     self.columnName = columnName
     self.columnFilter = columnFilter
 
@@ -243,7 +243,7 @@ class _FilterWrapper(object):
         yield row
 
   def keys(self):
-    return self.results.keys()
+    return list(self.results.keys())
 
 
 class IterationSeries:
@@ -376,7 +376,7 @@ class IterationSeries:
       candidateFilter = candidateFilter,
       columns = columns)
 
-    colheads = t.next()
+    colheads = next(t)
 
     j = { 'columns' : colheads,
           'values'  : list(t)}

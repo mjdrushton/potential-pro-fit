@@ -2,7 +2,7 @@
 
 import unittest
 
-from _dbtestcase import DBTestCase
+from ._dbtestcase import DBTestCase
 
 from .. import testutil
 
@@ -34,7 +34,7 @@ class IterationSeries_CandidateFilter_TestCase(DBTestCase):
                     [4 ,1, 964.64312],
                     [5 ,3, 964.64312]
                   ]}
-    actual = {'columns' : t.next(),
+    actual = {'columns' : next(t),
               'values'  : list(t)}
     testutil.compareCollection(self, expect, actual)
 
@@ -60,7 +60,7 @@ class IterationSeries_CandidateFilter_TestCase(DBTestCase):
         [5, 1, 12634.65516],
       ]
     }
-    actual = {'columns' : t.next(),
+    actual = {'columns' : next(t),
               'values'  : list(t)}
     testutil.compareCollection(self, expect, actual)
 
@@ -99,6 +99,6 @@ class IterationSeries_CandidateFilter_TestCase(DBTestCase):
       ]
     }
 
-    actual = {'columns' : t.next(),
+    actual = {'columns' : next(t),
               'values'  : list(t)}
     testutil.compareCollection(self, expect, actual)

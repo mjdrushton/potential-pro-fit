@@ -2,8 +2,8 @@
 
 from atsim.pro_fit._channel import AbstractChannel, MultiChannel
 from atsim.pro_fit._util import CallbackRegister, NamedEvent
-from _exceptions import JobKilledException, NonZeroExitStatus
-from .._keepalive import KeepAlive
+from ._exceptions import JobKilledException, NonZeroExitStatus
+from atsim.pro_fit._keepalive import KeepAlive
 
 import itertools
 import logging
@@ -33,7 +33,7 @@ class RunChannel(AbstractChannel):
         keepAlive (int, optional): Send a `KEEP_ALIVE` message to the server every `keepAlive` seconds. If `None` do not send `KEEP_ALIVE` messages.
 
     """
-    import _run_remote_exec
+    from . import _run_remote_exec
     self.shell = shell
     self.hardkill_timeout = hardkill_timeout
     self.nprocesses = nprocesses
@@ -114,7 +114,7 @@ class RunClient(object):
 
   @property
   def _transid(self):
-    return "%s-%d" % (self._base_transid, self._id_count.next())
+    return "%s-%d" % (self._base_transid, next(self._id_count))
 
   def _submitJob(self, cbobj):
     cbobj.channel_id = self.channel.channel_id
@@ -278,9 +278,6 @@ class RunJobCallback(object):
     self.callback(self.exception, self)
     self.finishEvent.set()
     return True
-
-  # def ready(self):
-  #   self._runjobState.readyEvent.set()
 
   def raise_exception(self):
     if self.should_raise:

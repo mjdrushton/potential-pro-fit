@@ -27,7 +27,7 @@ class Node(object):
   def treeIterator(self, visitor =nullVisitor, state = None):
     state = visitor(self, state)
     yield (self,state)
-    for child in self.children.itervalues():
+    for child in self.children.values():
       for (node,childstate) in child.treeIterator(visitor, state):
         yield (node,childstate)
 

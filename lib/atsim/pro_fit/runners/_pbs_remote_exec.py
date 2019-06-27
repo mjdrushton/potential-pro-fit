@@ -185,8 +185,8 @@ def qdel_handler(channel, pbsConfig, channel_id, msg):
     else:
       expanded.extend(pbs_ids)
     qdel(pbs_ids, force, pbsConfig)
-  except QDelException,e:
-    error(channel,e.message, channel_id = channel_id)
+  except QDelException as e:
+    error(channel,str(e), channel_id = channel_id)
     return
 
   transid_send(channel, msg, 'QDEL',
@@ -205,8 +205,8 @@ def qrls_handler(channel, pbsConfig, channel_id, msg):
     if pbsConfig.flavour == 'TORQUE':
       pbs_ids = uncompressTORQUEArrayJobs(pbs_id)
     qrls(pbs_ids)
-  except QRlsException,e:
-    error(channel,e.message, channel_id = channel_id)
+  except QRlsException as e:
+    error(channel,str(e), channel_id = channel_id)
     return
 
   transid_send(channel, msg, 'QRLS',
@@ -223,8 +223,8 @@ def qsub_handler(channel, pbsConfig, channel_id, msg):
   # Check that the job files exist.
   jobs = [os.path.abspath(p) for p in jobs]
   for j in jobs:
-    if not os.path.isfile(p):
-      error(channel, 'no job found at path for QSUB request: "%s"' % p, channel_id = channel_id)
+    if not os.path.isfile(j):
+      error(channel, 'no job found at path for QSUB request: "%s"' % j, channel_id = channel_id)
       return
 
   header_lines = msg.get('header_lines', [])
@@ -248,8 +248,8 @@ def qsub_handler(channel, pbsConfig, channel_id, msg):
 def qselect_handler(channel, pbsConfig, channel_id, msg):
   try:
     pbs_ids = qselect()
-  except QSelectException, e:
-    error(channel, e.message, channel_id = channel_id)
+  except QSelectException as e:
+    error(channel, str(e), channel_id = channel_id)
 
   if pbsConfig.flavour == 'TORQUE':
     pbs_ids = compressTORQUEArrayJobs(pbs_ids)
@@ -361,7 +361,7 @@ def remote_exec(channel):
   try:
     versionstring = checkPBS()
   except NoPBSException as e:
-    msg = "PBS not found: " + e.message
+    msg = "PBS not found: %s" % str(e)
     error(channel, msg, channel_id = channel_id)
     return
 
