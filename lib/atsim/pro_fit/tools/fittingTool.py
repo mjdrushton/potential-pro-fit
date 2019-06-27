@@ -242,6 +242,9 @@ def _setupLogging(verbose):
 
   logging.config.fileConfig(cfg)
 
+  # Messages from warnings.warn shoud go into the logging system.
+  logging.captureWarnings(True)
+
   if verbose:
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
