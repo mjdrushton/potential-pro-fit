@@ -1,8 +1,8 @@
 # Changelog
 
-## [0.9.0]
+## [0.9.0] - 2019-6-27
 ### Changed
-- Updated Potential Pro-Fit to use python 3. Python 2.7 is now not supported for the main code base. Remote runners will still support python 3 to allow jobs to run on legacy systems.
+- Updated Potential Pro-Fit to use Python 3. Python 2.7 is now not supported for the main code base. Remote runners will still support python 3 to allow jobs to run on legacy systems.
 
 ### Added
 - Plugins installed into the `atsim.pro_fit.plugins` namespace are now registered automatically with `pprofit`
