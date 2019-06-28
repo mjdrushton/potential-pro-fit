@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 
 def version_path():
     basedir = os.path.dirname(__file__)
@@ -34,6 +35,42 @@ def setversion(version):
     readme_path = os.path.join(os.path.dirname(__file__), "README.md")
 
     with open(readme_path) as infile:
-        line = next(infile)
+        line = next(infile)[:-1]
+        tokens = line.split()
+        assert version_re.match(tokens[-1][1:])
+        tokens[-1] = "v{}".format(version)
+        line = " ".join(tokens)
+        sio.write(line+"\n")
         
+        for line in infile:
+            sio.write(line)
 
+    sio.seek(0)
+    with open(readme_path, "w") as outfile:
+        outfile.write(sio.read())
+
+    # Set version in the version file
+    vp = version_path()
+    sio = io.StringIO()
+
+    with open(vp) as infile:
+        for line in infile:
+            if line.startswith("__version__"):
+                line = "__version__='{}'\n".format(version)
+            sio.write(line)
+    sio.seek(0)
+    with open(vp, 'w') as outfile:
+        outfile.write(sio.read())
+
+
+def main():
+    args = sys.argv[1:]
+
+    if not args:
+        print(readversion())
+    else:
+        version = args[0]
+        setversion(version)
+
+if __name__ == "__main__":
+    main()
