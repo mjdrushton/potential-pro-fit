@@ -1,4 +1,4 @@
-from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit.exceptions import ConfigException
 
 from atsim.pro_fit import _execnet
 

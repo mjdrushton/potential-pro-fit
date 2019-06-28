@@ -328,10 +328,10 @@ def main():
 
     # Generate metadata object
     from atsim.pro_fit import reporters
-    from atsim.profit import fittool
+    from atsim.pro_fit import variables
 
     r = reporters.SQLiteReporter(
-        None, fittool.Variables([]), fittool.CalculatedVariables([])
+        None, variables.Variables([]), variables.CalculatedVariables([])
     )
 
     md = r.getMetaData()

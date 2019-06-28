@@ -8,7 +8,7 @@ The basic interface for a Minimizer is as follows:
       Invoked to perform minimisation of merit values calculated by
       Merit object (arg: merit).
 
-      @param merit atsim.pro_fit.fittool.Merit instance
+      @param merit atsim.pro_fit.merit.Merit instance
       @return MinimizerResults instance giving minimized values.
       ...
 
@@ -17,7 +17,7 @@ The basic interface for a Minimizer is as follows:
       Allows creation of Minimizer from data [Minimizer] section of
       fit.cfg file.
 
-      @param variables atsim.pro_fit.fittool.Variables instance
+      @param variables atsim.pro_fit.variables.Variables instance
                        representing starting values for fitting.
       @param configitems list of key value pairs extracted from [Minimizer]
                        section of fit.cfg

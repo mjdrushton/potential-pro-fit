@@ -93,7 +93,7 @@ class Console(object):
     This triggers the display of the main  GUI.
 
     Args:
-        cfg (atsim.pro_fit.fittool.FitConfig): Config used to initialise the console
+        cfg (atsim.pro_fit.fitconfig.FitConfig): Config used to initialise the console
 
     """
         self.model.endEvent = cfg.endEvent

@@ -1,4 +1,4 @@
-from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit.exceptions import ConfigException
 from ._queueing_system_client import QueueingSystemClient
 from ._queueing_system_runner_batch import QueueingSystemRunnerBatch
 
@@ -128,7 +128,7 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
             of file referred to by the `header_include` configuration option. If option is not found, `VALUE` is `None`.
       
     Raises:
-      atsim.pro_fit.fittool.ConfigException: thrown if configuration problem found."""
+      atsim.pro_fit.exceptions.ConfigException: thrown if configuration problem found."""
         cfgdict = dict(cfgitems)
         header_include = cfgdict.get("header_include", None)
         if header_include:
@@ -156,7 +156,7 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
             If option is not found, `VALUE` is `None`.
       
     Raises:
-      atsim.pro_fit.fittool.ConfigException: thrown if configuration problem found."""
+      atsim.pro_fit.exceptions.ConfigException: thrown if configuration problem found."""
         cfgdict = dict(cfgitems)
         arraysize = cfgdict.get("arraysize", None)
         if arraysize != None and arraysize.strip() == "None":
@@ -194,7 +194,7 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
       dict: If option is dictionary `{ 'pollinterval' : VALUE}` is returned. Where `VALUE` is value of `pollinterval` configuration option. 
       
     Raises:
-      atsim.pro_fit.fittool.ConfigException: thrown if configuration problem found."""
+      atsim.pro_fit.exceptions.ConfigException: thrown if configuration problem found."""
         cfgdict = dict(cfgitems)
         pollinterval = cfgdict.get("pollinterval", 30.0)
         try:
@@ -233,7 +233,7 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
       dict : Dictionary of the form listed above.
 
     Raises:
-      atsim.pro_fit.fittool.ConfigException : Thrown if invalide configuration values found"""
+      atsim.pro_fit.exceptions.ConfigException : Thrown if invalide configuration values found"""
         option_dict = super(QueueingSystemRunnerBaseClass, cls).parseConfig(
             runnerName, fitRootPath, cfgitems
         )

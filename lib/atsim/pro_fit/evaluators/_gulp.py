@@ -1,4 +1,4 @@
-from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit.exceptions import ConfigException
 from . import _gulp_parse
 
 import collections
@@ -39,7 +39,7 @@ class GulpDrvParser(object):
         numline = int(numlines)
 
         retlist = []
-        for i in range(numline):
+        for _i in range(numline):
             line = next(infile)[:-1]
             tokens = line.split()[1:]
             g = tuple([float(v) for v in tokens])

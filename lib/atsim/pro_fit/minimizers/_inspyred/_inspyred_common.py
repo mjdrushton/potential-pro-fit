@@ -7,12 +7,12 @@ from .._common import MinimizerResults
 
 from atsim.pro_fit._util import MultiCallback
 
-from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit.exceptions import ConfigException
 
 
 class VariableException(Exception):
     """Exception raised by inspyred related classes when a problem is found with
-  input atsim.pro_fit.fittool.Variables instances"""
+  input atsim.pro_fit.variables.Variables instances"""
 
     pass
 
@@ -97,7 +97,7 @@ class Evaluator(object):
 
     def __init__(self, initialVariables, merit):
         """@param initialVariables Variables instance.
-       @param merit atsim.pro_fit.fittool.Merit instance"""
+       @param merit atsim.pro_fit.variables.Merit instance"""
 
         self._initialVariables = initialVariables
         self._merit = merit
@@ -179,7 +179,7 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
     def __init__(
         self, initialVariables, evolutionaryComputation, populationSize, **args
     ):
-        """@param initialVariables atsim.pro_fit.fittool.Variables instance providing bounds for generator and bounder applied to
+        """@param initialVariables atsim.pro_fit.variables.Variables instance providing bounds for generator and bounder applied to
                 population used within evolutionaryComputation.
        @param evolutionaryComputation Instance of inspyred.ec.EvolutionaryComputation.
                 Note: the evaluator, bounder and generator of the evolutionaryComputation are overwritten by this class.
@@ -196,7 +196,7 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
     def minimize(self, merit):
         """Perform minimization.
 
-    @param merit atsim.pro_fit.fittool.Merit instance used to calculate merit value.
+    @param merit atsim.pro_fit.merit.Merit instance used to calculate merit value.
     @return MinimizerResults for candidate solution population containing best merit value."""
         self._greenlet = gevent.spawn(self._minimize, merit)
         self._greenlet.start()
@@ -205,7 +205,7 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
     def _minimize(self, merit):
         """Perform minimization.
 
-    @param merit atsim.pro_fit.fittool.Merit instance used to calculate merit value.
+    @param merit atsim.pro_fit.merit.Merit instance used to calculate merit value.
     @return MinimizerResults for candidate solution population containing best merit value."""
 
         bounder = Bounder(self._initialVariables)

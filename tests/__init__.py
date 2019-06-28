@@ -19,7 +19,7 @@ def _getResourceDir():
 
 
 class FitConfigTestCase(unittest.TestCase):
-    """Tests pro_fit.fittool.FitConfig"""
+    """Tests pro_fit.fitconfig.FitConfig"""
 
     def setUp(self):
         cfgFilename = os.path.join(_getResourceDir(), "fit.cfg")
@@ -28,7 +28,7 @@ class FitConfigTestCase(unittest.TestCase):
         from . import mockeval2
         from . import mockfactories
 
-        cfgobject = pro_fit.fittool.FitConfig(
+        cfgobject = pro_fit.fitconfig.FitConfig(
             cfgFilename,
             runnermodules=[mockrunners],
             evaluatormodules=[mockeval1, mockeval2],
@@ -51,7 +51,7 @@ class FitConfigTestCase(unittest.TestCase):
         from . import mockeval2
         from . import mockfactories
 
-        cfgobject = pro_fit.fittool.FitConfig(
+        cfgobject = pro_fit.fitconfig.FitConfig(
             cfgFilename,
             runnermodules=[mockrunners],
             evaluatormodules=[mockeval1, mockeval2],
@@ -121,8 +121,8 @@ class FitConfigTestCase(unittest.TestCase):
         from . import mockeval2
         from . import mockfactories
 
-        with self.assertRaises(pro_fit.fittool.ConfigException):
-            cfgobject = pro_fit.fittool.FitConfig(
+        with self.assertRaises(pro_fit.exceptions.ConfigException):
+            pro_fit.fitconfig.FitConfig(
                 cfgFilename,
                 runnermodules=[mockrunners],
                 evaluatormodules=[mockeval1, mockeval2],
@@ -141,8 +141,8 @@ class FitConfigTestCase(unittest.TestCase):
         from . import mockeval2
         from . import mockfactories
 
-        with self.assertRaises(pro_fit.fittool.ConfigException):
-            cfgobject = pro_fit.fittool.FitConfig(
+        with self.assertRaises(pro_fit.exceptions.ConfigException):
+            pro_fit.fitconfig.FitConfig(
                 cfgFilename,
                 runnermodules=[mockrunners],
                 evaluatormodules=[mockeval1, mockeval2],
@@ -161,8 +161,8 @@ class FitConfigTestCase(unittest.TestCase):
         from . import mockeval2
         from . import mockfactories
 
-        with self.assertRaises(pro_fit.fittool.MultipleSectionConfigException):
-            cfgobject = pro_fit.fittool.FitConfig(
+        with self.assertRaises(pro_fit.exceptions.MultipleSectionConfigException):
+            cfgobject = pro_fit.fitconfig.FitConfig(
                 cfgFilename,
                 runnermodules=[mockrunners],
                 evaluatormodules=[mockeval1, mockeval2],
@@ -185,15 +185,15 @@ class FitConfigTestCase(unittest.TestCase):
         ]
 
         for i, e in inputExpect:
-            actual = pro_fit.fittool.Variables._parseBounds(i)
+            actual = pro_fit.variables.Variables._parseBounds(i)
             testutil.compareCollection(self, e, actual)
 
         # Check some error conditions
         inputs = [("(10.0, 1.0)"), "()", "(A,B)"]
 
         for i in inputs:
-            with self.assertRaises(pro_fit.fittool.ConfigException):
-                pro_fit.fittool.Variables._parseBounds(i)
+            with self.assertRaises(pro_fit.exceptions.ConfigException):
+                pro_fit.variables.Variables._parseBounds(i)
 
     def testRunners(self):
         runners = self.cfgobject.runners
@@ -205,9 +205,7 @@ class FitConfigTestCase(unittest.TestCase):
 
         self.assertEqual(mockrunners.MockRunner1Runner, r.__class__)
         self.assertEqual("Short", r.name)
-        self.assertEqual(
-            "mjdr@login.cx1.hpc.ic.ac.uk:/work/mjdr/jobs", r.remote_dir
-        )
+        self.assertEqual("mjdr@login.cx1.hpc.ic.ac.uk:/work/mjdr/jobs", r.remote_dir)
         self.assertEqual("short.pbs", r.header_filename)
         self.assertEqual(_getResourceDir(), r.fitpath)
 
@@ -215,16 +213,12 @@ class FitConfigTestCase(unittest.TestCase):
         r = runners["EightCPU"]
         self.assertEqual(mockrunners.MockRunner2Runner, r.__class__)
         self.assertEqual("EightCPU", r.name)
-        self.assertEqual(
-            "mjdr@login.cx1.hpc.ic.ac.uk:/work/mjdr/jobs", r.remote_dir
-        )
+        self.assertEqual("mjdr@login.cx1.hpc.ic.ac.uk:/work/mjdr/jobs", r.remote_dir)
         self.assertEqual(int(5), r.ncpus)
 
     def testMinimizer(self):
         minimizer = self.cfgobject.minimizer
-        self.assertEqual(
-            pro_fit.minimizers.NelderMeadMinimizer, type(minimizer)
-        )
+        self.assertEqual(pro_fit.minimizers.NelderMeadMinimizer, type(minimizer))
         self.assertEqual(self.cfgobject.variables, minimizer._initialVariables)
 
     def testMetaEvaluators(self):
@@ -237,17 +231,17 @@ class FitConfigTestCase(unittest.TestCase):
 
     def testCalculatedVariables(self):
         cvars = self.cfgobject.calculatedVariables
-        self.assertEqual(pro_fit.fittool.CalculatedVariables, type(cvars))
+        self.assertEqual(pro_fit.variables.CalculatedVariables, type(cvars))
         transvars = cvars(self.cfgobject.variables)
         self.assertAlmostEqual(
             405.66942 + 0.75271639, dict(transvars.variablePairs)["cvar"]
         )
 
-        # Check that fittool throws if a calculated variable name shadows an existing variable
+        # Check that pprofit throws if a calculated variable name shadows an existing variable
         # name.
         badcfgfilename = os.path.join(_getResourceDir(), "bad_calcvars.cfg")
         self.cfgobject._cfg = self.cfgobject._parseConfig(badcfgfilename)
         self.cfgobject._variables = self.cfgobject._createVariables()
 
-        with self.assertRaises(pro_fit.fittool.ConfigException):
+        with self.assertRaises(pro_fit.exceptions.ConfigException):
             self.cfgobject._createCalculatedVariables()

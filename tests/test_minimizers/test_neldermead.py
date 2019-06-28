@@ -24,7 +24,7 @@ max_iterations : 30
         cfg.read_file(io.StringIO(config))
         configitems = cfg.items("Minimizer")
 
-        variables = pro_fit.fittool.Variables(
+        variables = pro_fit.variables.Variables(
             [
                 ("A", 1.0, False),
                 ("B", 2.0, True),
@@ -42,7 +42,7 @@ max_iterations : 30
 
     def testNelderMeadSingleConfig(self):
         """Tests for the atsim.prof_fit.minimizers.NelderMead wrapper"""
-        variables = pro_fit.fittool.Variables(
+        variables = pro_fit.variables.Variables(
             [
                 ("A", 1.0, False),
                 ("B", 2.0, True),
@@ -100,7 +100,7 @@ max_iterations : 30
         cfg.read_file(io.StringIO(config))
         configitems = cfg.items("Minimizer")
 
-        variables = pro_fit.fittool.Variables(
+        variables = pro_fit.variables.Variables(
             [
                 ("A", 1.0, False),
                 ("B", 2.0, True),

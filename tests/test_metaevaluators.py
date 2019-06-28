@@ -1,6 +1,6 @@
 import unittest
 
-from atsim.pro_fit import metaevaluators, jobfactories, evaluators, fittool
+from atsim.pro_fit import metaevaluators, jobfactories, evaluators, exceptions, variables
 from . import testutil
 
 
@@ -59,7 +59,7 @@ class FormulaMetaEvaluator(unittest.TestCase):
             metaevaluators.FormulaMetaEvaluator._splitVariables(variables),
         )
 
-        with self.assertRaises(fittool.ConfigException):
+        with self.assertRaises(exceptions.ConfigException):
             metaevaluators.FormulaMetaEvaluator._splitVariables(
                 [
                     metaevaluators.FormulaVariable(
@@ -287,7 +287,7 @@ class FormulaMetaEvaluator(unittest.TestCase):
 
     def testCreateFromConfigWithBadExpect(self):
         """Test creation of FormulaMetaEvaluator from config items containing expected values with bad syntax"""
-        from atsim.pro_fit.fittool import ConfigException
+        from atsim.pro_fit.exceptions import ConfigException
 
         parser = self._parseListAsConfig(
             [

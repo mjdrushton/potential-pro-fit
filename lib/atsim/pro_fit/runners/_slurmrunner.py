@@ -1,4 +1,4 @@
-from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit.exceptions import ConfigException
 from atsim.pro_fit._channel import ChannelException
 
 from ._slurm_channel import SlurmChannel
@@ -94,7 +94,7 @@ class SlurmRunner(object):
         allowedkeywords = set(allowedkeywords)
 
         # Now rename pbs prefixed options to their standard forms
-        for k, v in cfgitems:
+        for k, _v in cfgitems:
             if not k in allowedkeywords:
                 raise ConfigException(
                     "Unknown keyword for Remote runner '%s'" % k

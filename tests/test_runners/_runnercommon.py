@@ -95,7 +95,7 @@ def runfixture(tmpdir, request):
     jobs = []
 
     for i in range(12):
-        variables = pro_fit.fittool.Variables([("A", i, True)])
+        variables = pro_fit.variables.Variables([("A", i, True)])
         variables.id = i
         jd = tmpdir.join(str(i))
         jd.mkdir()

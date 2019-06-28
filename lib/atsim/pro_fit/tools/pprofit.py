@@ -5,12 +5,13 @@ monkey.patch_all()
 monkey.patch_thread()
 
 import atsim.pro_fit.evaluators
-import atsim.pro_fit.fittool
 import atsim.pro_fit.jobfactories
 import atsim.pro_fit.metaevaluators
 import atsim.pro_fit.minimizers
 import atsim.pro_fit.reporters
 import atsim.pro_fit.runners
+import atsim.pro_fit.fitconfig
+import atsim.pro_fit.exceptions
 
 from atsim.pro_fit._util import MultiCallback, iter_namespace
 from atsim.pro_fit.console import Console
@@ -405,12 +406,12 @@ This gives name of runner (defined in fit.cfg) to be associated with created JOB
     return options
 
 
-def _getfitcfg(jobdir, cls=atsim.pro_fit.fittool.FitConfig, pluginmodules=[]):
-    """Creates atsim.pro_fit.fittool.FitConfig from configuration files.
+def _getfitcfg(jobdir, cls=atsim.pro_fit.fitconfig.FitConfig, pluginmodules=[]):
+    """Creates atsim.pro_fit.fitconfig.FitConfig from configuration files.
      @param jobdir Directory in which temporary job files should be created.
      @param cls FitConfig class
      @param pluginmodules Additional modules to be scanned by FitConfig for evaluators, runners etc.
-     @return atsim.pro_fit.fittool.FitConfig instance"""
+     @return atsim.pro_fit.fitconfig.FitConfig instance"""
     import atsim.pro_fit.runners
 
     runners = [atsim.pro_fit.runners]
@@ -447,16 +448,16 @@ def _getfitcfg(jobdir, cls=atsim.pro_fit.fittool.FitConfig, pluginmodules=[]):
 
 
 def _getSingleStepCfg(jobdir, keepDirectory, pluginmodules):
-    """Creates atsim.pro_fit.fittool.FitConfig like object from configuration files.
+    """Creates atsim.pro_fit.fitconfig.FitConfig like object from configuration files.
   Object is customised such that its minimizer property return SingleStepMinimizer that will
   copy files to keepDirectory following run.
 
   @param jobdir Directory in which temporary job files should be created.
   @param keepDirectory Path into which job files are copied following run.
   @param pluginmodules List of module objects to be scanned by FitConfig
-  @return atsim.pro_fit.fittool.FitConfig like object configured to use SingleStepMinimizer"""
+  @return atsim.pro_fit.fitconfig.FitConfig like object configured to use SingleStepMinimizer"""
 
-    class CustomConfig(atsim.pro_fit.fittool.FitConfig):
+    class CustomConfig(atsim.pro_fit.fitconfig.FitConfig):
         def _createMinimizer(self, minimizermodules):
             return atsim.pro_fit.minimizers.SingleStepMinimizer(
                 self.variables, keepDirectory
@@ -466,7 +467,7 @@ def _getSingleStepCfg(jobdir, keepDirectory, pluginmodules):
 
 
 def _getCreateFilesCfg(jobdir, keepDirectory, pluginmodules):
-    """Creates atsim.pro_fit.fittool.FitConfig like object from configuration files.
+    """Creates atsim.pro_fit.fitconfig.FitConfig like object from configuration files.
   Object is customised such that its minimizer property return SingleStepMinimizer that will
   copy files to keepDirectory following run. In addition evaluators and meta-evaluators are disabled.
   Further, all runners are replaced by NullRunner instances.
@@ -474,7 +475,7 @@ def _getCreateFilesCfg(jobdir, keepDirectory, pluginmodules):
   @param jobdir Directory in which temporary job files should be created.
   @param keepDirectory Path into which job files are copied following run.
   @param pluginmodules List of modules to be scanned by FitConfig for runners, evaluators etc.
-  @return atsim.pro_fit.fittool.FitConfig like object configured to use SingleStepMinimizer"""
+  @return atsim.pro_fit.fitconfig.FitConfig like object configured to use SingleStepMinimizer"""
     import collections
 
     def defaultfactory():
@@ -482,7 +483,7 @@ def _getCreateFilesCfg(jobdir, keepDirectory, pluginmodules):
 
     runnerdict = collections.defaultdict(defaultfactory)
 
-    class CustomConfig(atsim.pro_fit.fittool.FitConfig):
+    class CustomConfig(atsim.pro_fit.fitconfig.FitConfig):
         def _createMinimizer(self, minimizermodules):
             return atsim.pro_fit.minimizers.SingleStepMinimizer(
                 self.variables, keepDirectory
@@ -527,7 +528,7 @@ def _invokeMinimizer(cfg, logger, logsql, console):
         )
 
     if len(cfg.variables.fitKeys) == 0:
-        raise atsim.pro_fit.fittool.ConfigException(
+        raise atsim.pro_fit.exceptions.ConfigException(
             'No variables selected to change during minimization within "fit.cfg" [Variables] section.'
         )
 
@@ -714,7 +715,7 @@ def main():
         _invokeMinimizer(cfg, logger, logsql, console)
     except (
         _FittingToolException,
-        atsim.pro_fit.fittool.ConfigException,
+        atsim.pro_fit.exceptions.ConfigException,
         atsim.pro_fit.minimizers.MinimizerException,
     ) as e:
         logger.error(str(e))

@@ -6,7 +6,7 @@ import gevent
 
 from ._common import *  # noqa
 
-from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit.exceptions import ConfigException
 
 
 class SingleStepMinimizer(object):
@@ -130,7 +130,7 @@ class SingleStepMinimizer(object):
     def _minimize(self, merit):
         """Perform minimization.
 
-    @param merit atsim.pro_fit.fittool.Merit instance.
+    @param merit atsim.pro_fit.merit.Merit instance.
     @return MinimizerResults containing values obtained after merit function evaluation"""
         self._logger.info("Performing single step merit function evaluation.")
 
@@ -140,7 +140,7 @@ class SingleStepMinimizer(object):
             merit.calculate([self._initialArgs])
 
             if self.stepCallback:
-                self.stepCallback(cb.minimizerResults)
+                self.stepCallback(cb.minimizerResults) # pylint: disable=not-callable
 
             return cb.minimizerResults
         finally:
@@ -149,7 +149,7 @@ class SingleStepMinimizer(object):
     def minimize(self, merit):
         """Perform minimization.
 
-    @param merit atsim.pro_fit.fittool.Merit instance.
+    @param merit atsim.pro_fit.merit.Merit instance.
     @return MinimizerResults containing values obtained after merit function evaluation"""
         self._greenlet = gevent.Greenlet(self._minimize, merit)
         self._greenlet.start()

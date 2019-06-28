@@ -44,7 +44,7 @@ class TemplateJobFactoryTestCase(unittest.TestCase):
             [],
         )
 
-        variables = pro_fit.fittool.Variables(
+        variables = pro_fit.variables.Variables(
             [("NAME", "Named", True), ("A", 5.0, False)]
         )
 
@@ -90,7 +90,7 @@ echo 5.0 > output.res
             srcpath, None, "Runner", "Job", []
         )
 
-        variables = pro_fit.fittool.Variables(
+        variables = pro_fit.variables.Variables(
             [("NAME", "Named", True), ("A", 5.0, False)]
         )
 

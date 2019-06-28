@@ -1,4 +1,4 @@
-"""Module containing fittool job runners.
+"""Module containing pprofit job runners.
 
 The basic interface for a runner is as follows:
 

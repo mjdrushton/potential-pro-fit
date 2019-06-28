@@ -27,7 +27,7 @@ class LocalRunnerTestCase(unittest.TestCase):
         jobs = []
 
         for i in range(12):
-            variables = pro_fit.fittool.Variables([("A", i, True)])
+            variables = pro_fit.variables.Variables([("A", i, True)])
             variables.id = i
             jd = os.path.join(self.tempd, str(i))
             os.mkdir(jd)
@@ -162,7 +162,7 @@ nprocesses : 5
         self.assertEqual("RunnerName", runner.name)
         self.assertEqual(5, runner._inner._nprocesses)
 
-        with self.assertRaises(pro_fit.fittool.ConfigException):
+        with self.assertRaises(pro_fit.exceptions.ConfigException):
             runner = pro_fit.runners.LocalRunner.createFromConfig(
                 "RunnerName", self.tempd, []
             )

@@ -1,13 +1,14 @@
 import unittest
 
 from . import testutil
-from atsim import pro_fit
+
+import atsim.pro_fit.variables
 
 import configparser
 
 
 class VariablesTestCase(unittest.TestCase):
-    """Tests pro_fit.fittool._Variables class"""
+    """Tests pro_fit.variables.Variables class"""
 
     def testFlaggedVariablePairs(self):
         """Test flaggedVariablePairs property of Variables class"""
@@ -19,13 +20,13 @@ class VariablesTestCase(unittest.TestCase):
             ("E", 5.0, True),
         ]
 
-        v = pro_fit.fittool.Variables(expect)
+        v = atsim.pro_fit.variables.Variables(expect)
         actual = v.flaggedVariablePairs
         testutil.compareCollection(self, expect, actual)
 
     def testCreateUpdated(self):
-        """Ensure correct behaviour of pro_fit.fittool._Variables.createUpdated()"""
-        initialVariables = pro_fit.fittool.Variables(
+        """Ensure correct behaviour of atsim.pro_fit.variables.Variables.createUpdated()"""
+        initialVariables = atsim.pro_fit.variables.Variables(
             [("A", 1.0, False), ("B", 2.0, True), ("C", 3.0, True)]
         )
 
@@ -64,12 +65,12 @@ class CalculatedVariables(unittest.TestCase):
 
     def testNoExpressions(self):
         """Test that variables pass through CalculatedVariables unchanged when no expressions specified"""
-        variables = pro_fit.fittool.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [("A", 1.23, False), ("B", 4.56, False), ("electroneg", 0.4, True)],
             bounds=[None, None, (0, 1)],
         )
 
-        calculatedVariables = pro_fit.fittool.CalculatedVariables([])
+        calculatedVariables = atsim.pro_fit.variables.CalculatedVariables([])
         outVars = calculatedVariables(variables)
 
         expect = [
@@ -87,12 +88,12 @@ class CalculatedVariables(unittest.TestCase):
         expression2 = "-electroneg * 2"
         expression3 = "electroneg * 4"
 
-        variables = pro_fit.fittool.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [("A", 1.23, False), ("B", 4.56, False), ("electroneg", 0.4, True)],
             bounds=[None, None, (0, 1)],
         )
 
-        calculatedVariables = pro_fit.fittool.CalculatedVariables(
+        calculatedVariables = atsim.pro_fit.variables.CalculatedVariables(
             [
                 ("sum", expression1),
                 ("Ocharge", expression2),
@@ -134,12 +135,12 @@ Ucharge : electroneg * 4
         cfg.read_file(io.StringIO(config))
         configitems = cfg.items("CalculatedVariables")
 
-        variables = pro_fit.fittool.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [("A", 1.23, False), ("B", 4.56, False), ("electroneg", 0.4, True)],
             bounds=[None, None, (0, 1)],
         )
 
-        calculatedVariables = pro_fit.fittool.CalculatedVariables.createFromConfig(
+        calculatedVariables = atsim.pro_fit.variables.CalculatedVariables.createFromConfig(
             cfg.items("CalculatedVariables")
         )
         outVars = calculatedVariables(variables)
@@ -167,15 +168,15 @@ Ucharge : electroneg * 4
         cfg.read_file(io.StringIO(config))
         configitems = cfg.items("CalculatedVariables")
 
-        with self.assertRaises(pro_fit.fittool.ConfigException):
-            pro_fit.fittool.CalculatedVariables.createFromConfig(
+        with self.assertRaises(atsim.pro_fit.exceptions.ConfigException):
+            atsim.pro_fit.variables.CalculatedVariables.createFromConfig(
                 cfg.items("CalculatedVariables")
             )
 
     def testInBounds(self):
         """Test Variables.inBounds method"""
 
-        variables = pro_fit.fittool.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [("A", 1.23, False), ("B", 4.56, False), ("electroneg", 0.4, True)],
             bounds=[None, (float("-inf"), 4.0), (2.0, 3.0)],
         )

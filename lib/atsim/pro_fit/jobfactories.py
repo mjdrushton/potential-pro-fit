@@ -1,7 +1,7 @@
-"""Directory containing job factories for fittool.py.
+"""Directory containing job factories for pprofit.
 
 A job factory is responsible for creating a directory representing a job within a fitting run from
-an instance of fittool.Variables.
+an instance of variables.Variables.
 
 The directory created should contain an executable script or program named 'runjob' that when invoked
 will produce output that is later evaluated (see atsim.pro_fit.evaluators) to produce a merit
@@ -23,7 +23,7 @@ The interface for a JobFactory is as follows:
     def createJob(self, destdir, variables):
       Args:
          destdir:   Absolute path in which job factory should create files.
-         variables: atsim.pro_fit.fittool.Variables instance from
+         variables: atsim.pro_fit.variables.Variables instance from
                     the values of which are used to create job files.
 
       Returns:
@@ -53,7 +53,7 @@ class Job(object):
     Args:
         jobFactory: Job factory instance used to create this job.
         path (string): Path in which job's files are located.
-        variables (atsim.pro_fit.fittool.Variables): Variables instance from which job files were created.
+        variables (atsim.pro_fit.variables.Variables): Variables instance from which job files were created.
     """
         self.jobFactory = jobFactory
         self.path = path
@@ -91,7 +91,7 @@ class MetaEvaluatorJob(object):
     Args:
         name (string): Evaluator name.
         evaluatorRecords (list): EvaluatorRecords returned by evaluatorRecords property.
-        variables (atsim.prof_fit.fittool.Variables): Variables instance.
+        variables (atsim.prof_fit.variables.Variables): Variables instance.
     """
         self.name = name
         self.evaluatorRecords = evaluatorRecords
@@ -139,7 +139,7 @@ class TemplateJobFactory(object):
 
     def _createFiles(self, srcdir, destdir, variables):
         import os
-        from atsim.pro_fit.fittool import ConfigException
+        from atsim.pro_fit.exceptions import ConfigException
 
         oldcwd = os.getcwd()
         try:

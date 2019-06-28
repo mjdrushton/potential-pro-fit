@@ -11,7 +11,7 @@ class MinimizerResultsTestCase(unittest.TestCase):
     def testMinimizerResults(self):
         meritVals = [2.0, 3.0, 1.0]
 
-        V = pro_fit.fittool.Variables
+        V = pro_fit.variables.Variables
         c1 = V([("A", 1.0, False), ("B", 2.0, True)])
         c2 = V([("A", 1.0, False), ("B", 2.0, True)])
         c3 = V([("A", 1.0, False), ("B", 2.0, True)])
@@ -37,7 +37,7 @@ class MinimizerResultsTestCase(unittest.TestCase):
         meritVals = [2.0, 3.0, 1.0]
         meritVals2 = [2.0, 0.0, 1.0]
 
-        V = pro_fit.fittool.Variables
+        V = pro_fit.variables.Variables
         c1 = V([("A", 1.0, False), ("B", 2.0, True)])
         c2 = V([("A", 1.0, False), ("B", 2.0, True)])
         c3 = V([("A", 1.0, False), ("B", 2.0, True)])

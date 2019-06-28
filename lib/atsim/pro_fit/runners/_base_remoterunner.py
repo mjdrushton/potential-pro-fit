@@ -2,7 +2,7 @@ import logging
 import uuid
 
 from ._exceptions import RunnerClosedException
-from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit.exceptions import ConfigException
 from atsim.pro_fit._util import NamedEvent
 from ._util import BatchNameIterator
 from ._exceptions import BatchKilledException
@@ -685,7 +685,7 @@ class BaseRemoteRunner(object):
         dict : Dictionary of the form listed above.
 
       Raises:
-        atsim.pro_fit.fittool.ConfigException : Thrown if invalide configuration values found"""
+        atsim.pro_fit.exceptions.ConfigException : Thrown if invalide configuration values found"""
         option_dict = cls.parseConfigItem_remotehost(
             runnerName, fitRootPath, cfgitems
         )
@@ -720,7 +720,7 @@ class BaseRemoteRunner(object):
       dict: Dictionary of form `{ 'do_cleanup' : VALUE}` where `VALUE` is True or False depending on value in configuration file.
       
     Raises:
-      atsim.pro_fit.fittool.ConfigException: thrown if configuration problem found."""
+      atsim.pro_fit.exceptions.ConfigException: thrown if configuration problem found."""
 
         cfgdict = dict(cfgitems)
         do_cleanup = True

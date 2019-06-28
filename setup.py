@@ -67,19 +67,19 @@ def package_files(directory):
   return paths
 
 # pkgs = find_packages('lib', exclude=["tests"])
-pkgs = ['atsim.pro_fit',
-        'atsim.pro_fit.tools',
-        'atsim.pro_fit.minimizers',
-        'atsim.pro_fit.resources',
-        'atsim.pro_fit.webmonitor',
+pkgs = ['atsim.pro_fit', 
+        'atsim.pro_fit.console',
+        'atsim.pro_fit.db',
         'atsim.pro_fit.evaluators',
         'atsim.pro_fit.filetransfer',
-        'atsim.pro_fit.db',
-        'atsim.pro_fit.runners',
-        'atsim.pro_fit.console',
-        'atsim.pro_fit.minimizers._inspyred',
         'atsim.pro_fit.filetransfer.remote_exec',
-        'atsim.pro_fit.runners.templates']
+        'atsim.pro_fit.minimizers',
+        'atsim.pro_fit.minimizers._inspyred',
+        'atsim.pro_fit.resources',
+        'atsim.pro_fit.runners',
+        'atsim.pro_fit.runners.templates',
+        'atsim.pro_fit.tools',
+        'atsim.pro_fit.webmonitor']
 
 setup(name="potential-pro-fit",
   version = readversion(),

@@ -1,7 +1,7 @@
 import logging
 
 from ._common import *  # noqa
-from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit.exceptions import ConfigException
 
 import gevent
 import mystic
@@ -95,7 +95,7 @@ class _NelderMeadInner(object):
     def __init__(self, variables, maxiter, xtol, ftol):
         """Create simplex minimizer
 
-    @param variables Initial parameter set (atomsscript.fitting.fittool.Variables)
+    @param variables Initial parameter set (atomsscript.fitting.variables.Variables)
     @param maxiter Maximum number of minimization max_iterations
     @param xtol Variable value convergence criterion
     @param ftol Merit function convergence criterion"""
@@ -145,7 +145,7 @@ class _NelderMeadInner(object):
     def minimize(self, merit, stepevaluator):
         """Perform minimization.
 
-    @param merit atsim.pro_fit.fittool.Merit instance used to calculate merit value.
+    @param merit atsim.pro_fit.merit.Merit instance used to calculate merit value.
     @param stepevaluator _NelderMeadStepMonitor called every step, used to monitor minimizer progress.
     @return MinimizerResults for candidate solution population containing best merit value."""
         self._logger.info("Starting minimisation.")
@@ -193,17 +193,18 @@ class NelderMeadMinimizer(object):
     def __init__(self, variables, maxiter, xtol, ftol):
         """Create simplex minimizer
 
-    @param variables Initial parameter set (atomsscript.fitting.fittool.Variables)
+    @param variables Initial parameter set (atomsscript.fitting.variables.Variables)
     @param maxiter Maximum number of minimization max_iterations
     @param xtol Variable value convergence criterion
     @param ftol Merit function convergence criterion"""
         self._inner = _NelderMeadInner(variables, maxiter, xtol, ftol)
         self._greenlet = gevent.Greenlet()
+        self.stepCallback = None
 
     def minimize(self, merit):
         """Perform minimization.
 
-    @param merit atsim.pro_fit.fittool.Merit instance used to calculate merit value.
+    @param merit atsim.pro_fit.merit.Merit instance used to calculate merit value.
     @return MinimizerResults for candidate solution population containing best merit value."""
         stepevaluator = _NelderMeadStepMonitor(self.stepCallback, merit)
         self._greenlet = gevent.Greenlet(
@@ -221,7 +222,7 @@ class NelderMeadMinimizer(object):
     def createFromConfig(variables, configitems):
         """Create NelderMeadMinimizer from [Minimizer] section of fit.cfg config file.
 
-    @param variables atsim.pro_fit.fittool.Variables instance containing starting parameters for minimization.
+    @param variables atsim.pro_fit.variables.Variables instance containing starting parameters for minimization.
     @param configitems List of key,value pairs extracted from [Minimizer] section of config file.
     @return Instance of NelderMeadMinimizer"""
 

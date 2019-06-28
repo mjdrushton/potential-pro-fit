@@ -1,4 +1,4 @@
-from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit.exceptions import ConfigException
 from atsim.pro_fit import _execnet
 from ._localrunner_batch import LocalRunnerBatch
 from ._run_remote_client import RunChannel, RunClient

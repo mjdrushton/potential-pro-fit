@@ -1,5 +1,5 @@
 from ._common import *
-from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit.exceptions import ConfigException
 
 import logging
 
@@ -24,7 +24,7 @@ class SpreadsheetMinimizer(object):
     def minimize(self, merit):
         """Perform minimization.
 
-    :param merit: atsim.pro_fit.fittool.Merit instance.
+    :param merit: atsim.pro_fit.merit.Merit instance.
     :return: MinimizerResults containing values obtained after merit function evaluation"""
 
         minimizerResults = None
@@ -61,7 +61,7 @@ class SpreadsheetMinimizer(object):
                 )
 
             if self.stepCallback:
-                self.stepCallback(currentMinimizerResults)
+                self.stepCallback(currentMinimizerResults) # pylint: disable=not-callable
         return minimizerResults
 
     def _batchIt(self):

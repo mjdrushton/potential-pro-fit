@@ -9,7 +9,7 @@ from ._inspyred_common import _FloatConvert
 from ._inspyred_common import _RandomSeed
 from ._inspyred_common import _EvolutionaryComputationMinimizerBaseClass
 
-from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit.exceptions import ConfigException
 
 
 import inspyred
@@ -67,7 +67,7 @@ class DEAMinimizer(object):
     def createFromConfig(variables, configitems):
         """Create DEAMinimizer from [Minimizer] section of fit.cfg config file.
 
-    @param variables atsim.pro_fit.fittool.Variables instance containing starting parameters for minimization.
+    @param variables atsim.pro_fit.variables.Variables instance containing starting parameters for minimization.
     @param configitems List of key,value pairs extracted from [Minimizer] section of config file.
     @return Instance of DEAMinimizer"""
 

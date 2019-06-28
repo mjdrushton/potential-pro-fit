@@ -10,7 +10,6 @@ import os
 import shutil
 
 from atsim.pro_fit.reporters import SQLiteReporter
-from atsim import pro_fit
 
 from . import test_reporters
 
@@ -42,14 +41,14 @@ def locker(dbfilename, pipe):
             try:
                 msg = pipe.recv()
                 if msg == "stop":
-                    cursor = _unlock(conn, cursor)
+                    _unlock(conn, cursor)
                     pipe.send(("okay", None))
                     return
                 elif msg == "lock":
                     cursor = _lock(conn, cursor)
                     pipe.send(("okay", None))
                 elif msg == "unlock":
-                    cursor = _unlock(conn, cursor)
+                    _unlock(conn, cursor)
                     pipe.send(("okay", None))
             except Exception as e:
                 pipe.send(("error", e))

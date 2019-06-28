@@ -1,7 +1,8 @@
 import collections
 
-from . import fittool
-from . import evaluators
+from atsim.pro_fit.exceptions import ConfigException
+
+import atsim.pro_fit.evaluators as evaluators
 
 import cexprtk
 
@@ -37,9 +38,7 @@ class FormulaMetaEvaluator(object):
 
     If VALUE not specified then 'merit_value' is used."""
 
-    _logger = logging.getLogger(
-        "atsim.pro_fit.metaevaluators.FormulaMetaEvaluator"
-    )
+    _logger = logging.getLogger("atsim.pro_fit.metaevaluators.FormulaMetaEvaluator")
 
     def __init__(self, name, expressionList, variables):
         """@param name Meta evaluator name.
@@ -82,9 +81,7 @@ class FormulaMetaEvaluator(object):
             found = False
             for evalrecords in job.evaluatorRecords:
                 for evalrecord in evalrecords:
-                    evaluatorName = evalrecord.evaluatorName[
-                        len(job.name) + 1 :
-                    ]
+                    evaluatorName = evalrecord.evaluatorName[len(job.name) + 1 :]
                     self._logger.debug("evaluatorName: %s " % evaluatorName)
                     if (
                         evaluatorName == splitkey.evaluator
@@ -155,7 +152,7 @@ class FormulaMetaEvaluator(object):
             if len(tokens) == 4:
                 attr = tokens[3]
             elif len(tokens) != 3:
-                raise fittool.ConfigException(
+                raise ConfigException(
                     "Wrong number of fields when parsing key for Formula meta-evaluator variable '%s': '%s'"
                     % (variable.name, variable.key)
                 )
@@ -168,14 +165,12 @@ class FormulaMetaEvaluator(object):
                 "weight",
                 "expected_value",
             ]:
-                raise fittool.ConfigException(
+                raise ConfigException(
                     "Unknown field in '%s' variable definition: '%s' for key '%s"
                     % (variable.name, attr, variable.key)
                 )
 
-            splitvariable = SplitVariableKey(
-                tokens[0], tokens[1], tokens[2], attr
-            )
+            splitvariable = SplitVariableKey(tokens[0], tokens[1], tokens[2], attr)
 
             splitvariables.append(FormulaVariable(variable.name, splitvariable))
         return splitvariables
@@ -188,7 +183,7 @@ class FormulaMetaEvaluator(object):
         tokens = expression.split("=")
 
         if len(tokens) > 2:
-            raise fittool.ConfigException(
+            raise ConfigException(
                 "Error when splitting Formula meta-evaluator formula into expected_value = expression pair. Got > 2 tokens. (Expression may contain more than one = sign): '%s' : %s"
                 % (k, expression)
             )
@@ -198,7 +193,7 @@ class FormulaMetaEvaluator(object):
             try:
                 expect = float(expect)
             except ValueError:
-                raise fittool.ConfigException(
+                raise ConfigException(
                     "Error when parsing expected_value for Formula meta-evaluator. Could not convert '%s' into a float. ('%s' : %s)"
                     % (expect, k, expression)
                 )
@@ -220,8 +215,8 @@ class FormulaMetaEvaluator(object):
                 try:
                     v = float(v)
                 except ValueError:
-                    raise fittool.ConfigException(
-                        "Error parsing configuration for meta evaluator '%s'. Variable weight '%s' couldn't be parsed into float: %s"(
+                    raise ConfigException(
+                        "Error parsing configuration for meta evaluator '{}'. Variable weight '{}' couldn't be parsed into float: {}".format(
                             name, wname, v
                         )
                     )
@@ -241,7 +236,7 @@ class FormulaMetaEvaluator(object):
                 try:
                     cexprtk.check_expression(formula)
                 except cexprtk.ParseException as e:
-                    raise fittool.ConfigException(
+                    raise ConfigException(
                         "Could not parse formula for Formula meta-evaluator '%s', for expression '%s': %s"
                         % (name, k, e)
                     )
@@ -249,22 +244,16 @@ class FormulaMetaEvaluator(object):
                     Expression(ename, formula, weights.get(ename, 1.0), expect)
                 )
             else:
-                raise fittool.ConfigException(
+                raise ConfigException(
                     "Error parsing configuration for meta evaluator '%s'. Unknown item: '%s'"
                     % (name, k)
                 )
         variables = FormulaMetaEvaluator._splitVariables(variables)
 
-        FormulaMetaEvaluator._logger.info(
-            "Creating Formula meta-evaluator: %s" % name
-        )
+        FormulaMetaEvaluator._logger.info("Creating Formula meta-evaluator: %s" % name)
         FormulaMetaEvaluator._logger.debug("MetaEvaluator name=%s" % name)
-        FormulaMetaEvaluator._logger.debug(
-            "MetaEvaluator expressions=%s" % expressions
-        )
-        FormulaMetaEvaluator._logger.debug(
-            "MetaEvaluator variables=%s" % variables
-        )
+        FormulaMetaEvaluator._logger.debug("MetaEvaluator expressions=%s" % expressions)
+        FormulaMetaEvaluator._logger.debug("MetaEvaluator variables=%s" % variables)
 
         # Create the MetaEvaluator
         return FormulaMetaEvaluator(name, expressions, variables)

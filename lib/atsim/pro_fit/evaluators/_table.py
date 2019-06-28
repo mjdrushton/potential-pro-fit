@@ -1,5 +1,5 @@
 from ._common import *
-from atsim.pro_fit.fittool import ConfigException
+from atsim.pro_fit.exceptions import ConfigException
 from atsim.pro_fit._util import SkipWhiteSpaceDictReader
 
 import csv
@@ -26,19 +26,19 @@ class BadExpressionException(TableEvaluatorConfigException):
 class UnknownVariableException(TableEvaluatorConfigException):
     def __init__(self, expression, unknownVariables, msg=None):
         if not msg:
-            super(TableEvaluatorConfigException, self).__init__(
+            super().__init__(
                 "Expression refers to unknown variables '%s' : %s"
                 % (",".join([str(v) for v in unknownVariables]), expression)
             )
         else:
-            super(TableEvaluatorConfigException, self).__init__(msg)
+            super().__init__(msg)
         self.expression = expression
         self.unknownVariables = unknownVariables
 
 
 class TableLengthException(Exception):
     def __init__(self, msg, isResultsLonger=False):
-        super(Exception, self).__init__(msg)
+        super().__init__(msg)
         self.isResultsLonger = isResultsLonger
 
 

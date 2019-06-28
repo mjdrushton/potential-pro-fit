@@ -11,7 +11,9 @@ from ._inspyred_common import _EvolutionaryComputationMinimizerBaseClass
 
 import inspyred
 
-from atsim.pro_fit.fittool import ConfigException, Variables
+from atsim.pro_fit.exceptions import ConfigException
+from atsim.pro_fit.variables import Variables
+
 from .._common import MinimizerResults
 
 
@@ -177,7 +179,7 @@ class Simulated_AnnealingMinimizer(object):
     def createFromConfig(variables, configitems):
         """Create Simulated_AnnealingMinimizer from [Minimizer] section of fit.cfg config file.
 
-    @param variables atsim.pro_fit.fittool.Variables instance containing starting parameters for minimization.
+    @param variables atsim.pro_fit.variables.Variables instance containing starting parameters for minimization.
     @param configitems List of key,value pairs extracted from [Minimizer] section of config file.
     @return Instance of Simulated_AnnealingMinimizer"""
 

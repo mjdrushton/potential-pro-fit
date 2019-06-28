@@ -341,7 +341,7 @@ class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
             self.assertEqual(["bad"], e.unknownVariables)
 
         # Check when expression references column that doesn't exist in expect
-        with self.assertRaises(pro_fit.fittool.ConfigException):
+        with self.assertRaises(pro_fit.exceptions.ConfigException):
             pro_fit.evaluators.TableEvaluator._validateExpression(
                 "e_bad + e_A", sio
             )
@@ -367,7 +367,7 @@ class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
         print("1,2", file=sio)
         sio.seek(0)
 
-        with self.assertRaises(pro_fit.fittool.ConfigException):
+        with self.assertRaises(pro_fit.exceptions.ConfigException):
             pro_fit.evaluators.TableEvaluator._validateExpectColumns(sio)
 
         sio.seek(0)
@@ -385,7 +385,7 @@ class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
         pro_fit.evaluators.TableEvaluator._validateExpectColumns(sio)
 
         sio.seek(0)
-        with self.assertRaises(pro_fit.fittool.ConfigException):
+        with self.assertRaises(pro_fit.exceptions.ConfigException):
             pro_fit.evaluators.TableEvaluator._validateExpectColumns(
                 sio, label_column="Boom"
             )
@@ -396,7 +396,7 @@ class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
         )
 
         sio.seek(0)
-        with self.assertRaises(pro_fit.fittool.ConfigException):
+        with self.assertRaises(pro_fit.exceptions.ConfigException):
             pro_fit.evaluators.TableEvaluator._validateExpectColumns(
                 sio, weight_column="Boom"
             )

@@ -1,6 +1,10 @@
 import unittest
 
-from atsim import pro_fit
+import atsim.pro_fit.variables
+import atsim.pro_fit.evaluators
+import atsim.pro_fit.merit
+
+
 from . import testutil
 
 from .common import *
@@ -12,11 +16,11 @@ import sys
 
 
 class MeritTestCase(unittest.TestCase):
-    """Test for the pro_fit.fitting.fittool.Merit class"""
+    """Test for the pro_fit.fitting.merit.Merit class"""
 
     def setUp(self):
         # Create two initial candidates
-        initialVariables = pro_fit.fittool.Variables(
+        initialVariables = atsim.pro_fit.variables.Variables(
             [
                 ("A", 1.0, False),
                 ("B", 2.0, True),
@@ -56,7 +60,7 @@ class MeritTestCase(unittest.TestCase):
                     elif j.name == "Job3":
                         meritval += j.evaluatorRecords[2][0].meritValue
                 return [
-                    pro_fit.evaluators.EvaluatorRecord(
+                    atsim.pro_fit.evaluators.EvaluatorRecord(
                         "value",
                         0.0,
                         meritval,
@@ -70,18 +74,18 @@ class MeritTestCase(unittest.TestCase):
 
         self.tempd = tempfile.mkdtemp()
         self.mmtempd = tempfile.mkdtemp()
-        self.merit = pro_fit.fittool.Merit(
+        self.merit = atsim.pro_fit.merit.Merit(
             [r1, r2],
             [j1, j2, j3, j4],
             [],
-            pro_fit.fittool.CalculatedVariables([]),
+            atsim.pro_fit.variables.CalculatedVariables([]),
             self.tempd,
         )
-        self.metamerit = pro_fit.fittool.Merit(
+        self.metamerit = atsim.pro_fit.merit.Merit(
             [r1, r2],
             [j1, j2, j3, j4],
             [MockMetaEvaluator()],
-            pro_fit.fittool.CalculatedVariables([]),
+            atsim.pro_fit.variables.CalculatedVariables([]),
             self.mmtempd,
         )
 
@@ -136,7 +140,7 @@ class MeritTestCase(unittest.TestCase):
     def testCreateJobs(self):
         """Test Merit._prepareJobs()"""
 
-        batchpaths, jobs, candidatejoblists = self.merit._prepareJobs(
+        _batchpaths, jobs, _candidatejoblists = self.merit._prepareJobs(
             self.candidates
         )
 
@@ -210,7 +214,7 @@ class MeritTestCase(unittest.TestCase):
 
     def testMeritRunBatches(self):
         """Test Merit._runBatches()"""
-        batchPaths, batchedjobs, candidatejoblists = self.merit._prepareJobs(
+        _batchPaths, batchedjobs, _candidatejoblists = self.merit._prepareJobs(
             self.candidates
         )
         finishedEvents = self.merit._runBatches(batchedjobs)
@@ -247,7 +251,7 @@ class MeritTestCase(unittest.TestCase):
 
     def testApplyEvaluators(self):
         """Test Merit._applyEvaluators()"""
-        batchpaths, batchedjobs, candidatejoblists = self.merit._prepareJobs(
+        _batchpaths, batchedjobs, candidatejoblists = self.merit._prepareJobs(
             self.candidates
         )
         finishedEvents = self.merit._runBatches(batchedjobs)
@@ -256,7 +260,7 @@ class MeritTestCase(unittest.TestCase):
 
         # Convert jobs into a dictionary we can feed to compareCollection
         evaluated = []
-        for v, clist in candidatejoblists:
+        for _v, clist in candidatejoblists:
             cdict = {}
             for job in clist:
                 jlist = []
@@ -290,7 +294,7 @@ class MeritTestCase(unittest.TestCase):
         """Test Merit._applyMetaevaluators"""
 
         # Define a MetaEvaluator that sums the results of Job1 eval 1 and Job3 eval 3
-        batchpaths, batchedjobs, candidatejoblists = self.metamerit._prepareJobs(
+        _batchpaths, batchedjobs, candidatejoblists = self.metamerit._prepareJobs(
             self.candidates
         )
         finishedEvents = self.metamerit._runBatches(batchedjobs)
@@ -328,7 +332,7 @@ class MeritTestCase(unittest.TestCase):
         )
 
     def testDefaultReductionFunction(self):
-        """Test fittool._sumValuesReductionFunction()"""
+        """Test merit._sumValuesReductionFunction()"""
 
         class ER:
             def __init__(self, name, meritValue):
@@ -350,7 +354,7 @@ class MeritTestCase(unittest.TestCase):
             ],
         ]
         expect = [1.0 + 1.0 + 2.0 + 1.0, 2.0 + 3.0 + 2.0 + 1.0]
-        actual = pro_fit.fittool._sumValuesReductionFunction(testd)
+        actual = atsim.pro_fit.merit._sumValuesReductionFunction(testd)
         testutil.compareCollection(self, expect, actual)
 
     def testCalculateMerit(self):
@@ -370,8 +374,8 @@ class MeritTestCase(unittest.TestCase):
         testutil.compareCollection(self, expect, actual)
 
     def testCleanBatches(self):
-        """Test pro_fit.fittool.Merit.cleanBatches()"""
-        batchpaths, batchedjobs, candidatejoblists = self.merit._prepareJobs(
+        """Test atsim.pro_fit.merit.Merit.cleanBatches()"""
+        batchpaths, _batchedjobs, _candidatejoblists = self.merit._prepareJobs(
             self.candidates
         )
         self.assertTrue(len(os.listdir(self.tempd)) == 2)
@@ -379,7 +383,7 @@ class MeritTestCase(unittest.TestCase):
         self.assertTrue(len(os.listdir(self.tempd)) == 0)
 
     def testBeforeRunCallback(self):
-        """Test pro_fit.fittool.Merit.beforeRuncallbacks"""
+        """Test pro_fit.merit.Merit.beforeRuncallbacks"""
         beforeRunDict = {}
 
         def beforeRun(candidateJobPairs):
@@ -433,7 +437,7 @@ class MeritTestCase(unittest.TestCase):
         testutil.compareCollection(self, expect, beforeRunDict)
 
     def testAfterRunCallback(self):
-        """Test pro_fit.fittool.Merit.afterRunCallback"""
+        """Test pro_fit.merit.Merit.afterRunCallback"""
         afterRunDict = {}
 
         outputResProcess = MockEvaluator(lambda v: sorted(v.items()))
@@ -505,7 +509,7 @@ class MeritTestCase(unittest.TestCase):
         testutil.compareCollection(self, expect, afterRunDict)
 
     def testAfterEvaluationCallback(self):
-        """Test pro_fit.fittool.Merit.afterEvaluation callback"""
+        """Test pro_fit.merit.Merit.afterEvaluation callback"""
         afterEvaluationDict = {}
 
         outputResProcess = MockEvaluator(lambda v: sorted(v.items()))
