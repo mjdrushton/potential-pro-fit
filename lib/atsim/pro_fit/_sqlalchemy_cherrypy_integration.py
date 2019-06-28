@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-'''
+"""
 sqlalchemy_tool.py (donated to the public domain by Nando Florestan)
 ================== http://code.google.com/p/webpyte
 
@@ -34,7 +34,7 @@ When you are at the interpreter you can do:
 
     from sqlalchemy_tool import configure_session_for_app
     configure_session_for_app(your_cherrypy_app)
-'''
+"""
 
 
 from sqlalchemy import MetaData, create_engine, __version__ as sa_version
@@ -45,13 +45,15 @@ if sa_version.split(".") < ["0", "5", "0"]:
 
 metadata = MetaData()
 session = scoped_session(sessionmaker(autoflush=True, autocommit=False))
-#mapper = session.mapper
+# mapper = session.mapper
 
 # A dict in which keys are connection strings and values are SA engine objects
 _engines = {}
 
-def configure_session(dburi='sqlite:///database.sqlite',
-                      echo=False, convert_unicode=True):
+
+def configure_session(
+    dburi="sqlite:///database.sqlite", echo=False, convert_unicode=True
+):
     """This function is called on each request.
     Tool configuration is automatically passed to it as arguments.
     It gets a *dburi*,
@@ -63,22 +65,22 @@ def configure_session(dburi='sqlite:///database.sqlite',
     *echo*: whether to print SQL statements, default is False.
     *convert_unicode*: default is True, so you should use unicode strings
     """
-    engine = _engines.get(dburi, None) # Look up the dict.
-    if engine is None:              # If missing engine, create and store it.
-        _engines[dburi] = engine = \
-            create_engine(dburi, echo=echo)
-    session.configure(bind=engine) # Set engine for this thread or request
+    engine = _engines.get(dburi, None)  # Look up the dict.
+    if engine is None:  # If missing engine, create and store it.
+        _engines[dburi] = engine = create_engine(dburi, echo=echo)
+    session.configure(bind=engine)  # Set engine for this thread or request
+
 
 def configure_session_for_app(app, echo=False, convert_unicode=True):
-    '''Useful when you are at the interpreter, or whenever you are outside
+    """Useful when you are at the interpreter, or whenever you are outside
     a request and need to bind the session in the current thread.
     Assuming app is configured with a SQLAlchemy connection string,
     binds the session to the corresponding engine.
-    '''
-    adict = app.config.get('/', {})
-    dburi = adict.get('tools.SATransaction.dburi', '')
+    """
+    adict = app.config.get("/", {})
+    dburi = adict.get("tools.SATransaction.dburi", "")
     if not dburi:
-        raise RuntimeError('This app is not configured for SATransaction.')
+        raise RuntimeError("This app is not configured for SATransaction.")
     configure_session(dburi, echo=echo, convert_unicode=convert_unicode)
 
 
@@ -91,12 +93,15 @@ class SATransaction(cherrypy.Tool):
     """A tool that encloses each request handler in a SQLAlchemy transaction.
     See this module's docstring for more details.
     """
+
     # A list of exceptions that do not cause rollback. Extendable by apps.
-    passable_exceptions=[cherrypy.HTTPRedirect] # KeyboardInterrupt, SystemExit
+    passable_exceptions = [
+        cherrypy.HTTPRedirect
+    ]  # KeyboardInterrupt, SystemExit
 
     def __init__(self):
-        self._name = 'SATransaction'
-        self._point = 'on_start_resource'
+        self._name = "SATransaction"
+        self._point = "on_start_resource"
         self.callable = configure_session
         self._priority = 50
         # If this priority is not appropriate for both hook points, know that
@@ -104,18 +109,19 @@ class SATransaction(cherrypy.Tool):
         # Tool.priority is just a shortcut for that.
 
     def _setup(self):
-        '''This method is called on each request to attach this tool's hooks,
+        """This method is called on each request to attach this tool's hooks,
         unless tools.SATransaction.on = False.
 
         If in a static request (using tools.staticdir or tools.staticfile),
         the transaction is certainly not needed,
         and thus is disabled to (probably) save some CPU time.
-        '''
-        if request.config.get('tools.staticdir.on', False) or \
-            request.config.get('tools.staticfile.on', False):
-                return
+        """
+        if request.config.get(
+            "tools.staticdir.on", False
+        ) or request.config.get("tools.staticfile.on", False):
+            return
         cherrypy.Tool._setup(self)
-        cherrypy.request.hooks.attach('on_end_resource', self.on_end_resource)
+        cherrypy.request.hooks.attach("on_end_resource", self.on_end_resource)
 
     def on_end_resource(self):
         """Method that is called after the CherryPy request handler.
@@ -127,7 +133,7 @@ class SATransaction(cherrypy.Tool):
         # Rollback if exception raised in request handler
         if value is not None and not typ in self.passable_exceptions:
             session.rollback()  # undoes what has been flushed
-            session.expunge_all() # undoes what has not been flushed
+            session.expunge_all()  # undoes what has not been flushed
             # deconfigure (unbind) session so it is ready for next request
             session.remove()
             return
@@ -136,9 +142,9 @@ class SATransaction(cherrypy.Tool):
             session.flush()
             session.commit()
         except:
-            session.rollback()    # undoes what has been flushed
-            session.expunge_all() # undoes what has not been flushed
-            raise                 # let this exception propagate
+            session.rollback()  # undoes what has been flushed
+            session.expunge_all()  # undoes what has not been flushed
+            raise  # let this exception propagate
         finally:
             # deconfigure (unbind) session so it is ready for next request
             session.remove()

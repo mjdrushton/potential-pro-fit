@@ -8,23 +8,36 @@ from ._base_remoterunner import RemoteRunnerCloseThreadBase
 import logging
 import os
 
-class _QueueingSystemRunnerCloseThread(RemoteRunnerCloseThreadBase):
 
-  def closeRunClient(self):
-    self.runner._pbsclient.close(closeChannel = False)
-    evts = self._closeChannel(self.runner._pbsclient.channel, 'closeRunClient')
-    return evts
+class _QueueingSystemRunnerCloseThread(RemoteRunnerCloseThreadBase):
+    def closeRunClient(self):
+        self.runner._pbsclient.close(closeChannel=False)
+        evts = self._closeChannel(
+            self.runner._pbsclient.channel, "closeRunClient"
+        )
+        return evts
+
 
 class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
-  """Generic runner class for batch queueing systems. This is an abstract base class designed to be used as the basis for publicly accesible runners.
+    """Generic runner class for batch queueing systems. This is an abstract base class designed to be used as the basis for publicly accesible runners.
   
   Sub-classes should override this class and provide an implementation of the `makeRunChannel` method."""
 
-  """Suffix appended to uuid to produce channel's ID"""
-  id_suffix = "_qs"
+    """Suffix appended to uuid to produce channel's ID"""
+    id_suffix = "_qs"
 
-  def __init__(self, name, url, header_include,  batch_size, qselect_poll_interval,  identityfile = None, extra_ssh_options = [], do_cleanup = True):
-    """Create runner.
+    def __init__(
+        self,
+        name,
+        url,
+        header_include,
+        batch_size,
+        qselect_poll_interval,
+        identityfile=None,
+        extra_ssh_options=[],
+        do_cleanup=True,
+    ):
+        """Create runner.
 
     Args:
       name (str): Runner name.
@@ -34,64 +47,76 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
       identityfile (str) : Path to ssh private key file used to log into remote host (or None if system defaults are to be used).
       extra_ssh_options (list): List of strings giving any extra ssh configuration options.
       do_cleanup (bool): If True perform file clean-up on queueing system submission host. If False leave temporary files on remote machine (for debugging)."""
-    
-    self.header_include = []
-    if not header_include is None:
-      self.header_include = header_include.split(os.linesep)
 
-    self.qselect_poll_interval = qselect_poll_interval
-    self.batch_size = batch_size
+        self.header_include = []
+        if not header_include is None:
+            self.header_include = header_include.split(os.linesep)
 
-    logger = self._get_logger()
-    logger.debug("Instantiating runner with following values:")
-    logger.debug("  * name = {}".format(name))
-    logger.debug("  * url = {}".format(url))
-    logger.debug("  * header_include = {}".format(header_include))
-    logger.debug("  * batch_size = {}".format(batch_size))
-    logger.debug("  * qselect_poll_interval = {}".format(qselect_poll_interval))
-    logger.debug("  * identityfile = {}".format(identityfile))
-    logger.debug("  * extra_ssh_options = {}".format(extra_ssh_options))
+        self.qselect_poll_interval = qselect_poll_interval
+        self.batch_size = batch_size
 
-    super(QueueingSystemRunnerBaseClass, self).__init__(name, url, identityfile, extra_ssh_options, do_cleanup)
+        logger = self._get_logger()
+        logger.debug("Instantiating runner with following values:")
+        logger.debug("  * name = {}".format(name))
+        logger.debug("  * url = {}".format(url))
+        logger.debug("  * header_include = {}".format(header_include))
+        logger.debug("  * batch_size = {}".format(batch_size))
+        logger.debug(
+            "  * qselect_poll_interval = {}".format(qselect_poll_interval)
+        )
+        logger.debug("  * identityfile = {}".format(identityfile))
+        logger.debug("  * extra_ssh_options = {}".format(extra_ssh_options))
 
-  @property
-  def _logger(self):
-    return self._get_logger()
+        super(QueueingSystemRunnerBaseClass, self).__init__(
+            name, url, identityfile, extra_ssh_options, do_cleanup
+        )
 
-  def _get_logger(self):
-    return logging.getLogger(__name__).getChild("QueueingSystemRunnerBaseClass")
+    @property
+    def _logger(self):
+        return self._get_logger()
 
-  def initialiseRun(self):
-    channel_id = self._uuid + self.id_suffix
-    self._pbschannel = self.makeRunChannel(channel_id)
-    self._pbsclient = QueueingSystemClient(self._pbschannel, pollEvery = self.qselect_poll_interval)
+    def _get_logger(self):
+        return logging.getLogger(__name__).getChild(
+            "QueueingSystemRunnerBaseClass"
+        )
 
-  def makeRunChannel(self, channel_id):
-    """Method which returns an execnet channel suitable for use as argument to atsim.pro_fit.runners._queuing_system_client.QueueingSystemClient constructor.
+    def initialiseRun(self):
+        channel_id = self._uuid + self.id_suffix
+        self._pbschannel = self.makeRunChannel(channel_id)
+        self._pbsclient = QueueingSystemClient(
+            self._pbschannel, pollEvery=self.qselect_poll_interval
+        )
+
+    def makeRunChannel(self, channel_id):
+        """Method which returns an execnet channel suitable for use as argument to atsim.pro_fit.runners._queuing_system_client.QueueingSystemClient constructor.
 
     Args:
       channel_id (str) : String used to identify created channel.
       
     Returns:
       atsim.pro_fit._channel.AbstractChannel : Channel instance that supports the protocol expected by QueueingSystemClient."""
-    raise NotImplementedError("Sub-classes must provide implementation for makeRunChannel.")
+        raise NotImplementedError(
+            "Sub-classes must provide implementation for makeRunChannel."
+        )
 
-  def createBatch(self, batchDir, jobs, batchId):
-    return QueueingSystemRunnerBatch(self, batchDir, jobs, batchId, self._pbsclient, self.header_include)
+    def createBatch(self, batchDir, jobs, batchId):
+        return QueueingSystemRunnerBatch(
+            self, batchDir, jobs, batchId, self._pbsclient, self.header_include
+        )
 
-  def makeCloseThread(self):
-    return _QueueingSystemRunnerCloseThread(self)
+    def makeCloseThread(self):
+        return _QueueingSystemRunnerCloseThread(self)
 
-  @classmethod
-  def allowedConfigKeywords(cls):
-    """Returns list of standard keywords accepted by parseConfig_* class methods"""
-    kws = super(QueueingSystemRunnerBaseClass, cls).allowedConfigKeywords()
-    kws.extend(['header_include', 'arraysize', 'pollinterval'])
-    return kws
+    @classmethod
+    def allowedConfigKeywords(cls):
+        """Returns list of standard keywords accepted by parseConfig_* class methods"""
+        kws = super(QueueingSystemRunnerBaseClass, cls).allowedConfigKeywords()
+        kws.extend(["header_include", "arraysize", "pollinterval"])
+        return kws
 
-  @classmethod
-  def parseConfigItem_header_include(cls, runnerName, fitRootPath, cfgitems):
-    """Convenience method to provide consistent provision of `header_include` option in sub-classes.
+    @classmethod
+    def parseConfigItem_header_include(cls, runnerName, fitRootPath, cfgitems):
+        """Convenience method to provide consistent provision of `header_include` option in sub-classes.
 
     Args:
       runnerName (str) : Label identifying runner.
@@ -104,19 +129,22 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
       
     Raises:
       atsim.pro_fit.fittool.ConfigException: thrown if configuration problem found."""
-    cfgdict = dict(cfgitems)
-    header_include = cfgdict.get('header_include', None)
-    if header_include:
-      try:
-        header_include = open(header_include, 'r').read()
-      except IOError:
-        raise ConfigException("Could not open file specified by 'header_include' directive: %s" % header_include)
+        cfgdict = dict(cfgitems)
+        header_include = cfgdict.get("header_include", None)
+        if header_include:
+            try:
+                header_include = open(header_include, "r").read()
+            except IOError:
+                raise ConfigException(
+                    "Could not open file specified by 'header_include' directive: %s"
+                    % header_include
+                )
 
-    return {'header_include' : header_include}
+        return {"header_include": header_include}
 
-  @classmethod
-  def parseConfigItem_arraysize(cls, runnerName, fitRootPath, cfgitems):
-    """Convenience method to provide consistent provision of `arraysize` option in sub-classes.
+    @classmethod
+    def parseConfigItem_arraysize(cls, runnerName, fitRootPath, cfgitems):
+        """Convenience method to provide consistent provision of `arraysize` option in sub-classes.
 
     Args:
       runnerName (str) : Label identifying runner.
@@ -129,25 +157,32 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
       
     Raises:
       atsim.pro_fit.fittool.ConfigException: thrown if configuration problem found."""
-    cfgdict = dict(cfgitems)
-    arraysize = cfgdict.get('arraysize', None)
-    if arraysize != None and arraysize.strip() == 'None':
-      arraysize = None
+        cfgdict = dict(cfgitems)
+        arraysize = cfgdict.get("arraysize", None)
+        if arraysize != None and arraysize.strip() == "None":
+            arraysize = None
 
-    if not arraysize is None:
+        if not arraysize is None:
 
-      try:
-        arraysize = int(arraysize)
-      except ValueError:
-        raise ConfigException("Invalid numerical value for 'arraysize' configuration option: %s" % arraysize)
+            try:
+                arraysize = int(arraysize)
+            except ValueError:
+                raise ConfigException(
+                    "Invalid numerical value for 'arraysize' configuration option: %s"
+                    % arraysize
+                )
 
-      if not arraysize >= 1:
-        raise ConfigException("Value of 'arraysize' must >= 1. Value was %s" % arraysize)
-    return { 'arraysize' : arraysize }
+            if not arraysize >= 1:
+                raise ConfigException(
+                    "Value of 'arraysize' must >= 1. Value was %s" % arraysize
+                )
+        return {"arraysize": arraysize}
 
-  @classmethod
-  def parseConfigItem_pollinterval(cls, runnerName, fitRootPath, cfgitems, default = 30.0):
-    """Convenience method to provide consistent provision of `pollinterval` option in sub-classes.
+    @classmethod
+    def parseConfigItem_pollinterval(
+        cls, runnerName, fitRootPath, cfgitems, default=30.0
+    ):
+        """Convenience method to provide consistent provision of `pollinterval` option in sub-classes.
 
     Args:
       runnerName (str)  : Label identifyingrunner.
@@ -160,20 +195,26 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
       
     Raises:
       atsim.pro_fit.fittool.ConfigException: thrown if configuration problem found."""
-    cfgdict = dict(cfgitems)
-    pollinterval = cfgdict.get('pollinterval', 30.0)
-    try:
-      pollinterval = float(pollinterval)
-    except ValueError:
-      raise ConfigException("Invalid numerical value for 'pbspollinterval': %s" % pollinterval)
+        cfgdict = dict(cfgitems)
+        pollinterval = cfgdict.get("pollinterval", 30.0)
+        try:
+            pollinterval = float(pollinterval)
+        except ValueError:
+            raise ConfigException(
+                "Invalid numerical value for 'pbspollinterval': %s"
+                % pollinterval
+            )
 
-    if not pollinterval > 0.0:
-      raise ConfigException("Value of 'pbspollinterval' must > 0.0. Value was %s" % pollinterval)
-    return {'pollinterval' : pollinterval}
+        if not pollinterval > 0.0:
+            raise ConfigException(
+                "Value of 'pbspollinterval' must > 0.0. Value was %s"
+                % pollinterval
+            )
+        return {"pollinterval": pollinterval}
 
-  @classmethod
-  def parseConfig(cls, runnerName, fitRootPath, cfgitems):
-    """Convenience function to help sub-classes implement their `createFromConfig()` methods.
+    @classmethod
+    def parseConfig(cls, runnerName, fitRootPath, cfgitems):
+        """Convenience function to help sub-classes implement their `createFromConfig()` methods.
 
     This parses the standard options into a dictionary with the keys:
 
@@ -193,8 +234,18 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
 
     Raises:
       atsim.pro_fit.fittool.ConfigException : Thrown if invalide configuration values found"""
-    option_dict = super(QueueingSystemRunnerBaseClass, cls).parseConfig(runnerName, fitRootPath, cfgitems)
-    option_dict.update(cls.parseConfigItem_header_include(runnerName, fitRootPath, cfgitems))
-    option_dict.update(cls.parseConfigItem_arraysize(runnerName, fitRootPath, cfgitems))
-    option_dict.update(cls.parseConfigItem_pollinterval(runnerName, fitRootPath, cfgitems))
-    return option_dict
+        option_dict = super(QueueingSystemRunnerBaseClass, cls).parseConfig(
+            runnerName, fitRootPath, cfgitems
+        )
+        option_dict.update(
+            cls.parseConfigItem_header_include(
+                runnerName, fitRootPath, cfgitems
+            )
+        )
+        option_dict.update(
+            cls.parseConfigItem_arraysize(runnerName, fitRootPath, cfgitems)
+        )
+        option_dict.update(
+            cls.parseConfigItem_pollinterval(runnerName, fitRootPath, cfgitems)
+        )
+        return option_dict

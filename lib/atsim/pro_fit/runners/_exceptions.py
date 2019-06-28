@@ -1,17 +1,22 @@
 class RunnerClosedException(Exception):
-  pass
+    pass
+
 
 class JobKilledException(Exception):
-  pass
+    pass
+
 
 class NonZeroExitStatus(Exception):
-  pass
+    pass
+
 
 class BatchAlreadyFinishedException(Exception):
-  pass
+    pass
+
 
 class BatchKilledException(Exception):
-  pass
+    pass
+
 
 class BatchDirectoryLockException(Exception):
-  pass
+    pass

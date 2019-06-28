@@ -5,191 +5,183 @@ from atsim import pro_fit
 
 import configparser
 
+
 class VariablesTestCase(unittest.TestCase):
-  """Tests pro_fit.fittool._Variables class"""
+    """Tests pro_fit.fittool._Variables class"""
 
-  def testFlaggedVariablePairs(self):
-    """Test flaggedVariablePairs property of Variables class"""
-    expect = [
-      ('A', 1.0, False),
-      ('B', 2.0, True),
-      ('C', 3.0, False),
-      ('D', 4.0, True),
-      ('E', 5.0, True) ]
+    def testFlaggedVariablePairs(self):
+        """Test flaggedVariablePairs property of Variables class"""
+        expect = [
+            ("A", 1.0, False),
+            ("B", 2.0, True),
+            ("C", 3.0, False),
+            ("D", 4.0, True),
+            ("E", 5.0, True),
+        ]
 
-    v = pro_fit.fittool.Variables(expect)
-    actual = v.flaggedVariablePairs
-    testutil.compareCollection(self, expect, actual)
+        v = pro_fit.fittool.Variables(expect)
+        actual = v.flaggedVariablePairs
+        testutil.compareCollection(self, expect, actual)
 
-  def testCreateUpdated(self):
-    """Ensure correct behaviour of pro_fit.fittool._Variables.createUpdated()"""
-    initialVariables = pro_fit.fittool.Variables(
-        [ ('A', 1.0, False),
-          ('B', 2.0, True),
-          ('C', 3.0, True) ])
+    def testCreateUpdated(self):
+        """Ensure correct behaviour of pro_fit.fittool._Variables.createUpdated()"""
+        initialVariables = pro_fit.fittool.Variables(
+            [("A", 1.0, False), ("B", 2.0, True), ("C", 3.0, True)]
+        )
 
-    candidate1 = initialVariables.createUpdated()
-    candidate2 = initialVariables.createUpdated([5.0, 6.0])
+        candidate1 = initialVariables.createUpdated()
+        candidate2 = initialVariables.createUpdated([5.0, 6.0])
 
-    testutil.compareCollection(self,
-        [ ('A', 1.0),
-          ('B', 2.0),
-          ('C', 3.0) ],
-        initialVariables.variablePairs)
-    self.assertEqual( ['B', 'C'],  initialVariables.fitKeys)
-    self.assertEqual( [2.0, 3.0],  initialVariables.fitValues)
+        testutil.compareCollection(
+            self,
+            [("A", 1.0), ("B", 2.0), ("C", 3.0)],
+            initialVariables.variablePairs,
+        )
+        self.assertEqual(["B", "C"], initialVariables.fitKeys)
+        self.assertEqual([2.0, 3.0], initialVariables.fitValues)
 
-    testutil.compareCollection(self,
-        [ ('A', 1.0),
-          ('B', 2.0),
-          ('C', 3.0) ],
-        candidate1.variablePairs)
-    self.assertEqual( ['B', 'C'],  candidate1.fitKeys)
-    self.assertEqual( [2.0, 3.0],  candidate1.fitValues)
+        testutil.compareCollection(
+            self, [("A", 1.0), ("B", 2.0), ("C", 3.0)], candidate1.variablePairs
+        )
+        self.assertEqual(["B", "C"], candidate1.fitKeys)
+        self.assertEqual([2.0, 3.0], candidate1.fitValues)
 
-    testutil.compareCollection(self,
-        [ ('A', 1.0),
-          ('B', 2.0),
-          ('C', 3.0) ],
-        candidate1.variablePairs)
-    self.assertEqual( ['B', 'C'],  candidate1.fitKeys)
-    self.assertEqual( [2.0, 3.0],  candidate1.fitValues)
+        testutil.compareCollection(
+            self, [("A", 1.0), ("B", 2.0), ("C", 3.0)], candidate1.variablePairs
+        )
+        self.assertEqual(["B", "C"], candidate1.fitKeys)
+        self.assertEqual([2.0, 3.0], candidate1.fitValues)
 
-    testutil.compareCollection(self,
-        [ ('A', 1.0),
-          ('B', 5.0),
-          ('C', 6.0) ],
-        candidate2.variablePairs)
-    self.assertEqual( ['B', 'C'],  candidate2.fitKeys)
-    self.assertEqual( [5.0, 6.0],  candidate2.fitValues)
+        testutil.compareCollection(
+            self, [("A", 1.0), ("B", 5.0), ("C", 6.0)], candidate2.variablePairs
+        )
+        self.assertEqual(["B", "C"], candidate2.fitKeys)
+        self.assertEqual([5.0, 6.0], candidate2.fitValues)
 
 
 class CalculatedVariables(unittest.TestCase):
-  """Tests for synthetic variables"""
+    """Tests for synthetic variables"""
 
-  def testNoExpressions(self):
-    """Test that variables pass through CalculatedVariables unchanged when no expressions specified"""
-    variables = pro_fit.fittool.Variables(
-      [("A", 1.23, False),
-      ("B", 4.56, False),
-      ("electroneg", 0.4, True)],
-      bounds = [None, None, (0,1)] )
+    def testNoExpressions(self):
+        """Test that variables pass through CalculatedVariables unchanged when no expressions specified"""
+        variables = pro_fit.fittool.Variables(
+            [("A", 1.23, False), ("B", 4.56, False), ("electroneg", 0.4, True)],
+            bounds=[None, None, (0, 1)],
+        )
 
-    calculatedVariables = pro_fit.fittool.CalculatedVariables([])
-    outVars = calculatedVariables(variables)
+        calculatedVariables = pro_fit.fittool.CalculatedVariables([])
+        outVars = calculatedVariables(variables)
 
-    expect = [
-      ("A", 1.23, False),
-      ("B", 4.56, False),
-      ("electroneg", 0.4, True)]
+        expect = [
+            ("A", 1.23, False),
+            ("B", 4.56, False),
+            ("electroneg", 0.4, True),
+        ]
 
-    testutil.compareCollection(self,
-        expect, outVars.flaggedVariablePairs)
+        testutil.compareCollection(self, expect, outVars.flaggedVariablePairs)
 
-  def testCalculatedVariables(self):
-    """Test the creation and calculation of synthetic variables"""
-    # import pudb;pudb.set_trace()
-    expression1 = "5 + 6 + 8"
-    expression2 = "-electroneg * 2"
-    expression3 = "electroneg * 4"
+    def testCalculatedVariables(self):
+        """Test the creation and calculation of synthetic variables"""
+        # import pudb;pudb.set_trace()
+        expression1 = "5 + 6 + 8"
+        expression2 = "-electroneg * 2"
+        expression3 = "electroneg * 4"
 
+        variables = pro_fit.fittool.Variables(
+            [("A", 1.23, False), ("B", 4.56, False), ("electroneg", 0.4, True)],
+            bounds=[None, None, (0, 1)],
+        )
 
-    variables = pro_fit.fittool.Variables(
-      [("A", 1.23, False),
-      ("B", 4.56, False),
-      ("electroneg", 0.4, True)],
-      bounds = [None, None, (0,1)] )
+        calculatedVariables = pro_fit.fittool.CalculatedVariables(
+            [
+                ("sum", expression1),
+                ("Ocharge", expression2),
+                ("Ucharge", expression3),
+            ]
+        )
 
-    calculatedVariables = pro_fit.fittool.CalculatedVariables(
-      [("sum", expression1),
-      ("Ocharge", expression2),
-      ("Ucharge", expression3)] )
+        outVars = calculatedVariables(variables)
 
-    outVars = calculatedVariables(variables)
+        expect = [
+            ("A", 1.23, False),
+            ("B", 4.56, False),
+            ("electroneg", 0.4, True),
+            ("sum", 19, False),
+            ("Ocharge", -0.4 * 2, False),
+            ("Ucharge", 0.4 * 4, False),
+        ]
 
-    expect = [
-      ("A", 1.23, False),
-      ("B", 4.56, False),
-      ("electroneg", 0.4, True),
-      ("sum", 19, False),
-      ("Ocharge", -0.4*2, False),
-      ("Ucharge", 0.4*4, False) ]
+        testutil.compareCollection(self, expect, outVars.flaggedVariablePairs)
 
-    testutil.compareCollection(self,
-      expect, outVars.flaggedVariablePairs)
+        # Check bounds
+        expect = [None, None, (0, 1), None, None, None]
 
-    # Check bounds
-    expect = [None, None, (0,1), None, None, None]
+        testutil.compareCollection(self, expect, outVars.bounds)
 
-    testutil.compareCollection(self, expect, outVars.bounds)
+    def testCreateFromConfig(self):
+        """Test creation of CalculatedVariables from [CalculatedVariables] configuration directives"""
 
-
-  def testCreateFromConfig(self):
-    """Test creation of CalculatedVariables from [CalculatedVariables] configuration directives"""
-
-    config = """[CalculatedVariables]
+        config = """[CalculatedVariables]
 sum : 5+6+8
 Ocharge : -electroneg * 2
 Ucharge : electroneg * 4
 """
 
-    import io
+        import io
 
-    cfg = configparser.ConfigParser()
-    cfg.optionxform = str
-    cfg.read_file(io.StringIO(config))
-    configitems = cfg.items('CalculatedVariables')
+        cfg = configparser.ConfigParser()
+        cfg.optionxform = str
+        cfg.read_file(io.StringIO(config))
+        configitems = cfg.items("CalculatedVariables")
 
-    variables = pro_fit.fittool.Variables(
-      [("A", 1.23, False),
-      ("B", 4.56, False),
-      ("electroneg", 0.4, True)],
-      bounds = [None, None, (0,1)] )
+        variables = pro_fit.fittool.Variables(
+            [("A", 1.23, False), ("B", 4.56, False), ("electroneg", 0.4, True)],
+            bounds=[None, None, (0, 1)],
+        )
 
-    calculatedVariables = pro_fit.fittool.CalculatedVariables.createFromConfig(cfg.items("CalculatedVariables"))
-    outVars = calculatedVariables(variables)
+        calculatedVariables = pro_fit.fittool.CalculatedVariables.createFromConfig(
+            cfg.items("CalculatedVariables")
+        )
+        outVars = calculatedVariables(variables)
 
-    expect = [
-      ("A", 1.23, False),
-      ("B", 4.56, False),
-      ("electroneg", 0.4, True),
-      ("sum", 19, False),
-      ("Ocharge", -0.4*2, False),
-      ("Ucharge", 0.4*4, False) ]
+        expect = [
+            ("A", 1.23, False),
+            ("B", 4.56, False),
+            ("electroneg", 0.4, True),
+            ("sum", 19, False),
+            ("Ocharge", -0.4 * 2, False),
+            ("Ucharge", 0.4 * 4, False),
+        ]
 
-    testutil.compareCollection(self,
-      expect, outVars.flaggedVariablePairs)
+        testutil.compareCollection(self, expect, outVars.flaggedVariablePairs)
 
-
-    # Now check that an exception is thrown if a bad expression is used.
-    config = """[CalculatedVariables]
+        # Now check that an exception is thrown if a bad expression is used.
+        config = """[CalculatedVariables]
 sum : abs(5+6+8
 Ocharge : -electroneg * 2
 Ucharge : electroneg * 4
 """
 
-    cfg = configparser.ConfigParser()
-    cfg.optionxform = str
-    cfg.read_file(io.StringIO(config))
-    configitems = cfg.items('CalculatedVariables')
+        cfg = configparser.ConfigParser()
+        cfg.optionxform = str
+        cfg.read_file(io.StringIO(config))
+        configitems = cfg.items("CalculatedVariables")
 
-    with self.assertRaises(pro_fit.fittool.ConfigException):
-      pro_fit.fittool.CalculatedVariables.createFromConfig(cfg.items("CalculatedVariables"))
+        with self.assertRaises(pro_fit.fittool.ConfigException):
+            pro_fit.fittool.CalculatedVariables.createFromConfig(
+                cfg.items("CalculatedVariables")
+            )
 
-  def testInBounds(self):
-    """Test Variables.inBounds method"""
+    def testInBounds(self):
+        """Test Variables.inBounds method"""
 
-    variables = pro_fit.fittool.Variables(
-      [("A", 1.23, False),
-       ("B", 4.56, False),
-       ("electroneg", 0.4, True)],
-      bounds = [None, (float("-inf"), 4.0), (2.0 , 3.0) ] )
+        variables = pro_fit.fittool.Variables(
+            [("A", 1.23, False), ("B", 4.56, False), ("electroneg", 0.4, True)],
+            bounds=[None, (float("-inf"), 4.0), (2.0, 3.0)],
+        )
 
-    self.assertTrue(variables.inBounds('A', 100))
-    self.assertTrue(variables.inBounds('B', -10.0))
-    self.assertFalse(variables.inBounds('B', 10.0))
-    self.assertTrue(variables.inBounds('electroneg', 2.1))
-    self.assertFalse(variables.inBounds('electroneg', 3.1))
-
-
-
+        self.assertTrue(variables.inBounds("A", 100))
+        self.assertTrue(variables.inBounds("B", -10.0))
+        self.assertFalse(variables.inBounds("B", 10.0))
+        self.assertTrue(variables.inBounds("electroneg", 2.1))
+        self.assertFalse(variables.inBounds("electroneg", 3.1))

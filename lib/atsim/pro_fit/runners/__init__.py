@@ -27,41 +27,41 @@ in the fit.cfg file.
 
 """
 
-from ._localrunner import LocalRunner # noqa
-from ._remoterunner import RemoteRunner # noqa
+from ._localrunner import LocalRunner  # noqa
+from ._remoterunner import RemoteRunner  # noqa
 from ._base_remoterunner import BaseRemoteRunnerObserverAdapter
 from ._runner_job import RunnerJobObserverAdapter
-from ._exceptions import RunnerClosedException #noqa
+from ._exceptions import RunnerClosedException  # noqa
 from ._pbsrunner import PBSRunner
 from ._slurmrunner import SlurmRunner
 from ._sgerunner import SGERunner
 
 from gevent.event import Event
 
-class NullFuture:
 
-  def __init__(self):
-    evt = Event()
-    evt.set()
-    self.finishedEvent = evt
+class NullFuture:
+    def __init__(self):
+        evt = Event()
+        evt.set()
+        self.finishedEvent = evt
 
 
 class NullRunner(object):
-  """Runner that does not run jobs. Used in conjunction with the SingleStepMinimizer
+    """Runner that does not run jobs. Used in conjunction with the SingleStepMinimizer
      to support the --create-files command line option"""
 
-  def __init__(self, name):
-    self.name = name
-    self.observers = []
+    def __init__(self, name):
+        self.name = name
+        self.observers = []
 
-  def runBatch(self, jobs):
-    return NullFuture()
+    def runBatch(self, jobs):
+        return NullFuture()
 
-  @staticmethod
-  def createFromConfig(runnerName, fitRootPath, cfgitems):
-    return NullRunner(runnerName)
+    @staticmethod
+    def createFromConfig(runnerName, fitRootPath, cfgitems):
+        return NullRunner(runnerName)
 
-  def close(self):
-    evt = Event()
-    evt.set()
-    return evt
+    def close(self):
+        evt = Event()
+        evt.set()
+        return evt

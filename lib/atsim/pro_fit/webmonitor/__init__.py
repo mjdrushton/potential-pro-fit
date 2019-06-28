@@ -12,67 +12,74 @@ import sqlalchemy as sa
 
 from atsim.pro_fit import reporters, db
 
-from atsim.pro_fit._sqlalchemy_cherrypy_integration import session, configure_session
-from . import  _jinja_cherrypy_integration # noqa
+from atsim.pro_fit._sqlalchemy_cherrypy_integration import (
+    session,
+    configure_session,
+)
+from . import _jinja_cherrypy_integration  # noqa
+
 
 class Root:
-  extensionToResponseHeader = {
-    '.js' : 'text/javascript',
-    '.css' : 'text/css',
-    '.html' : 'text/html',
-    '.png' : 'image/png',
-    '.svg' : 'image/svg+xml'
-  }
+    extensionToResponseHeader = {
+        ".js": "text/javascript",
+        ".css": "text/css",
+        ".html": "text/html",
+        ".png": "image/png",
+        ".svg": "image/svg+xml",
+    }
 
-  @cherrypy.expose
-  @cherrypy.tools.jinja(template='index.html')
-  def index(self):
-    """Serve index.html performing jinja template substitution"""
-    return {}
+    @cherrypy.expose
+    @cherrypy.tools.jinja(template="index.html")
+    def index(self):
+        """Serve index.html performing jinja template substitution"""
+        return {}
 
-  def _serveFromPkg(self, *args):
-    resourceurl = ['webresources','static']
-    resourceurl.extend(args)
-    resourceurl = "/".join(resourceurl)
-    junk, extension = os.path.splitext(resourceurl)
-    try:
-      data = pkgutil.get_data(__package__, resourceurl)
-    except IOError:
-      raise cherrypy.NotFound
-    return extension, data
+    def _serveFromPkg(self, *args):
+        resourceurl = ["webresources", "static"]
+        resourceurl.extend(args)
+        resourceurl = "/".join(resourceurl)
+        junk, extension = os.path.splitext(resourceurl)
+        try:
+            data = pkgutil.get_data(__package__, resourceurl)
+        except IOError:
+            raise cherrypy.NotFound
+        return extension, data
 
-  def _serveFromFile(self, *args):
-    staticpath = cherrypy.request.config.get('static_path', None)
-    filepath = os.path.join(staticpath, *args)
-    try:
-      with open(filepath) as infile:
-        data = infile.read()
-    except IOError:
-      raise cherrypy.NotFound
-    junk, extension = os.path.splitext(filepath)
-    return extension, data
+    def _serveFromFile(self, *args):
+        staticpath = cherrypy.request.config.get("static_path", None)
+        filepath = os.path.join(staticpath, *args)
+        try:
+            with open(filepath) as infile:
+                data = infile.read()
+        except IOError:
+            raise cherrypy.NotFound
+        junk, extension = os.path.splitext(filepath)
+        return extension, data
 
+    @cherrypy.expose
+    def resources(self, *args):
+        """Serve static resources from files stored in pkg_resources"""
+        staticpath = cherrypy.request.config.get("static_path", None)
+        if not staticpath:
+            extension, data = self._serveFromPkg(*args)
+        else:
+            extension, data = self._serveFromFile(*args)
 
-  @cherrypy.expose
-  def resources(self, *args):
-    """Serve static resources from files stored in pkg_resources"""
-    staticpath = cherrypy.request.config.get('static_path', None)
-    if not staticpath:
-      extension,data = self._serveFromPkg(*args)
-    else:
-      extension,data = self._serveFromFile(*args)
+        # Set response headers based on extension
+        cherrypy.response.headers[
+            "Content-Type"
+        ] = self.extensionToResponseHeader.get(extension, "text/html")
+        return data
 
-    # Set response headers based on extension
-    cherrypy.response.headers['Content-Type']= self.extensionToResponseHeader.get(extension, 'text/html')
-    return data
 
 metadata = reporters.SQLiteReporter.getMetaData()
-class Fitting:
 
-  @cherrypy.expose
-  @tools.json_out(on=True)
-  def current_iteration(self):
-    """Returns JSON containing current generation (i.e. the largest iteration found in the ``candidates`` table of the :ref:`extending_fitting_rundb`).
+
+class Fitting:
+    @cherrypy.expose
+    @tools.json_out(on=True)
+    def current_iteration(self):
+        """Returns JSON containing current generation (i.e. the largest iteration found in the ``candidates`` table of the :ref:`extending_fitting_rundb`).
     Resulting JSON is of form:
 
     .. code-block:: javascript
@@ -82,14 +89,14 @@ class Fitting:
       }
 
     '"""
-    configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
-    f = db.Fitting(session)
-    return {'current_iteration' : f.current_iteration()}
+        configure_session(cherrypy.request.config["tools.SATransaction.dburi"])
+        f = db.Fitting(session)
+        return {"current_iteration": f.current_iteration()}
 
-  @cherrypy.expose
-  @tools.json_out(on=True)
-  def best_candidate(self):
-    """Returns JSON containing identity of best candidate within database.
+    @cherrypy.expose
+    @tools.json_out(on=True)
+    def best_candidate(self):
+        """Returns JSON containing identity of best candidate within database.
 
     Returned JSON record has following format:
 
@@ -104,16 +111,15 @@ class Fitting:
 
 
       """
-    configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
-    f = db.Fitting(session)
-    row = f.best_candidate()
-    return row
+        configure_session(cherrypy.request.config["tools.SATransaction.dburi"])
+        f = db.Fitting(session)
+        row = f.best_candidate()
+        return row
 
-
-  @cherrypy.expose
-  @tools.json_out(on=True)
-  def run_status(self):
-    """Returns json containing status of run.
+    @cherrypy.expose
+    @tools.json_out(on=True)
+    def run_status(self):
+        """Returns json containing status of run.
 
     Resulting JSON contains a single key: 'run_status'
 
@@ -125,15 +131,15 @@ class Fitting:
     ``run_status`` can have values of ``Running``, ``Finished`` or ``Error``.
 
     """
-    configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
-    f = db.Fitting(session)
-    row = f.run_status()
-    return row
+        configure_session(cherrypy.request.config["tools.SATransaction.dburi"])
+        f = db.Fitting(session)
+        row = f.run_status()
+        return row
 
-  @cherrypy.expose
-  @tools.json_out(on=True)
-  def iteration_overview(self, iterationNumber):
-    """Returns overview and statistics for a given iteration.
+    @cherrypy.expose
+    @tools.json_out(on=True)
+    def iteration_overview(self, iterationNumber):
+        """Returns overview and statistics for a given iteration.
 
     :parameter int iterationNumber: iteration for which statistics should be returned.
 
@@ -163,14 +169,14 @@ class Fitting:
       }
 
       """
-    configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
-    f = db.Fitting(session)
-    return f.iteration_overview(iterationNumber)
+        configure_session(cherrypy.request.config["tools.SATransaction.dburi"])
+        f = db.Fitting(session)
+        return f.iteration_overview(iterationNumber)
 
-  @cherrypy.expose
-  @tools.json_out(on=True)
-  def variables(self, iterationNumber, candidateNumber):
-    """Returns json representing variables for given iterationNumber and candidateNumber within that iteration.
+    @cherrypy.expose
+    @tools.json_out(on=True)
+    def variables(self, iterationNumber, candidateNumber):
+        """Returns json representing variables for given iterationNumber and candidateNumber within that iteration.
 
     :parameter int iterationNumber: Number of the iteration for which information is returned.
     :parameter int candidateNumber: Index of candidate within population of parameter sets for given iteration.
@@ -190,15 +196,15 @@ class Fitting:
       }
 
     """
-    configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
-    f = db.Fitting(session)
-    output = f.variables(iterationNumber, candidateNumber)
-    return output
+        configure_session(cherrypy.request.config["tools.SATransaction.dburi"])
+        f = db.Fitting(session)
+        output = f.variables(iterationNumber, candidateNumber)
+        return output
 
-  @cherrypy.expose
-  @tools.json_out(on=True)
-  def evaluated(self, iterationNumber, candidateNumber):
-    """Returns json representing evaluator fields for given iterationNumber and candidateNumber within that iteration.
+    @cherrypy.expose
+    @tools.json_out(on=True)
+    def evaluated(self, iterationNumber, candidateNumber):
+        """Returns json representing evaluator fields for given iterationNumber and candidateNumber within that iteration.
 
     :parameter int iterationNumber: Number of the iteration for which information is returned.
     :parameter int candidateNumber: Index of candidate within population of parameter sets for given iteration.
@@ -220,38 +226,39 @@ class Fitting:
       }
 
     """
-    configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
-    f= db.Fitting(session)
-    output = f.evaluated(iterationNumber, candidateNumber)
-    return output
+        configure_session(cherrypy.request.config["tools.SATransaction.dburi"])
+        f = db.Fitting(session)
+        output = f.evaluated(iterationNumber, candidateNumber)
+        return output
 
 
 class _FilterWrapper(object):
-  """Wraps results and filters for particular key"""
+    """Wraps results and filters for particular key"""
 
-  def __init__(self, results, columnName, columnFilter):
-    self.results = results
-    self.columns = list(results.keys())
-    self.columnName = columnName
-    self.columnFilter = columnFilter
+    def __init__(self, results, columnName, columnFilter):
+        self.results = results
+        self.columns = list(results.keys())
+        self.columnName = columnName
+        self.columnFilter = columnFilter
 
-  def __iter__(self):
-    whichcol = [ i for (i, c) in enumerate(self.columns) if c == self.columnName][0]
-    for row in self.results:
-      v = row[whichcol]
-      if self.columnFilter(v):
-        yield row
+    def __iter__(self):
+        whichcol = [
+            i for (i, c) in enumerate(self.columns) if c == self.columnName
+        ][0]
+        for row in self.results:
+            v = row[whichcol]
+            if self.columnFilter(v):
+                yield row
 
-  def keys(self):
-    return list(self.results.keys())
+    def keys(self):
+        return list(self.results.keys())
 
 
 class IterationSeries:
-
-  @cherrypy.expose
-  @tools.json_out(on=True)
-  def merit_value(self, iterationFilter, candidateFilter, columns=None):
-    """Returns a data table where each row represents an iteration within the fitting run. The primary data column returned by this JSON call is candidate merit value. 
+    @cherrypy.expose
+    @tools.json_out(on=True)
+    def merit_value(self, iterationFilter, candidateFilter, columns=None):
+        """Returns a data table where each row represents an iteration within the fitting run. The primary data column returned by this JSON call is candidate merit value. 
     **Filtering**
 
     * The candidates chosen for inclusion in the data table are controlled using the ``candidateFilter`` parameter:
@@ -365,78 +372,103 @@ class IterationSeries:
 
 
     """
-    configure_session(cherrypy.request.config['tools.SATransaction.dburi'])
+        configure_session(cherrypy.request.config["tools.SATransaction.dburi"])
 
-    if columns:
-      columns = columns.split(',')
+        if columns:
+            columns = columns.split(",")
 
-    t = db.IterationSeriesTable(session.get_bind(),
-      primaryColumnKey = 'merit_value',
-      iterationFilter = iterationFilter,
-      candidateFilter = candidateFilter,
-      columns = columns)
+        t = db.IterationSeriesTable(
+            session.get_bind(),
+            primaryColumnKey="merit_value",
+            iterationFilter=iterationFilter,
+            candidateFilter=candidateFilter,
+            columns=columns,
+        )
 
-    colheads = next(t)
+        colheads = next(t)
 
-    j = { 'columns' : colheads,
-          'values'  : list(t)}
+        j = {"columns": colheads, "values": list(t)}
 
-    return j
-
+        return j
 
 
 def _setPort(portNumber):
-  """Sets the port on which the web monitor runs.
+    """Sets the port on which the web monitor runs.
 
   :param portNumber: Port number"""
-  cherrypy.config.update({'server.socket_port': portNumber})
+    cherrypy.config.update({"server.socket_port": portNumber})
+
 
 def _setStaticPath(staticPath):
-  """Set the path from which static files should be served.
+    """Set the path from which static files should be served.
 
   :param str staticPath: Path to static files. If not specified serve files from egg"""
-  cherrypy.config.update({'static_path' : staticPath})
+    cherrypy.config.update({"static_path": staticPath})
 
 
 def _processCommandLineOptions():
-  parser = optparse.OptionParser()
-  parser.add_option("-p", "--port", dest="port", metavar = "PORT",
-    help = "Set the port on which fitting monitor runs",
-    default = 8080,
-    type="int",
-    action = "store")
+    parser = optparse.OptionParser()
+    parser.add_option(
+        "-p",
+        "--port",
+        dest="port",
+        metavar="PORT",
+        help="Set the port on which fitting monitor runs",
+        default=8080,
+        type="int",
+        action="store",
+    )
 
-  developgroup = optparse.OptionGroup(parser, "Developer Options",
-    description = "Options useful for developers of pprofitmon")
-  developgroup.add_option("-s", "--static-files", dest="static_files", metavar = "PATH",
-    help = "Serve statice files (css/javascript/images) from PATH rather than pprofit egg file.")
+    developgroup = optparse.OptionGroup(
+        parser,
+        "Developer Options",
+        description="Options useful for developers of pprofitmon",
+    )
+    developgroup.add_option(
+        "-s",
+        "--static-files",
+        dest="static_files",
+        metavar="PATH",
+        help="Serve statice files (css/javascript/images) from PATH rather than pprofit egg file.",
+    )
 
-  parser.add_option_group(developgroup)
+    parser.add_option_group(developgroup)
 
-  if not os.path.exists('fit.cfg'):
-    parser.error("pprofitmon must be run from same directory as fitting run.")
+    if not os.path.exists("fit.cfg"):
+        parser.error(
+            "pprofitmon must be run from same directory as fitting run."
+        )
 
-  options, args = parser.parse_args()
-  _setPort(options.port)
-  _setStaticPath(options.static_files)
+    options, args = parser.parse_args()
+    _setPort(options.port)
+    _setStaticPath(options.static_files)
+
 
 def _setupCherryPy(sqliteURL):
-  root = Root()
-  root.fitting = Fitting()
-  root.fitting.iteration_series = IterationSeries()
-  cherrypy.tree.mount(root, '', {'/': {
-    'tools.SATransaction.on' : True,
-    'tools.SATransaction.dburi' : sqliteURL,
-    'tools.SATransaction.echo' : True,
-    'tools.encode.encoding':'utf8',
-    }})
-  return root
+    root = Root()
+    root.fitting = Fitting()
+    root.fitting.iteration_series = IterationSeries()
+    cherrypy.tree.mount(
+        root,
+        "",
+        {
+            "/": {
+                "tools.SATransaction.on": True,
+                "tools.SATransaction.dburi": sqliteURL,
+                "tools.SATransaction.echo": True,
+                "tools.encode.encoding": "utf8",
+            }
+        },
+    )
+    return root
+
 
 def main():
-  _processCommandLineOptions()
-  # Build cherrypy tree
-  _setupCherryPy('sqlite:///fitting_run.db')
-  cherrypy.engine.start()
+    _processCommandLineOptions()
+    # Build cherrypy tree
+    _setupCherryPy("sqlite:///fitting_run.db")
+    cherrypy.engine.start()
+
 
 if __name__ == "__main__":
-  main()
+    main()

@@ -22,7 +22,6 @@ import signal
 
 
 class GeventLoop(object):
-
     def __init__(self):
         super().__init__()
         self._completed_greenlets = deque()
@@ -86,7 +85,6 @@ class GeventLoop(object):
                     self._idle_event.clear()
         except ExitMainLoop:
             pass
-
 
     def set_signal_handler(self, signum, handler):
         """

@@ -10,96 +10,128 @@ import sys
 
 import gevent
 
+
 class CleanupChannel(AbstractChannel):
-  """Channel type for use with CleanupClient"""
+    """Channel type for use with CleanupClient"""
 
-  _logger = logging.getLogger('atsim.pro_fit.filetransfer.CleanupChannel')
+    _logger = logging.getLogger("atsim.pro_fit.filetransfer.CleanupChannel")
 
-  def __init__(self, execnet_gw, remote_path,  channel_id = None, connection_timeout = 60):
-    self._remote_path = remote_path
-    super(CleanupChannel, self).__init__(execnet_gw, file_cleanup_remote_exec, channel_id, connection_timeout)
+    def __init__(
+        self, execnet_gw, remote_path, channel_id=None, connection_timeout=60
+    ):
+        self._remote_path = remote_path
+        super(CleanupChannel, self).__init__(
+            execnet_gw, file_cleanup_remote_exec, channel_id, connection_timeout
+        )
 
-  def make_start_message(self):
-    return {'msg' : 'START_CLEANUP_CHANNEL', 'channel_id' : self.channel_id, 'remote_path' : self.remote_path }
+    def make_start_message(self):
+        return {
+            "msg": "START_CLEANUP_CHANNEL",
+            "channel_id": self.channel_id,
+            "remote_path": self.remote_path,
+        }
 
-  def ready(self, msg):
-    self._channel_id = msg.get('channel_id', self.channel_id)
-    self._remote_path = msg.get('remote_path', self.remote_path)
+    def ready(self, msg):
+        self._channel_id = msg.get("channel_id", self.channel_id)
+        self._remote_path = msg.get("remote_path", self.remote_path)
 
-  @property
-  def remote_path(self):
-    return self._remote_path
+    @property
+    def remote_path(self):
+        return self._remote_path
 
-  @property
-  def channel_id(self):
-    return self._channel_id
+    @property
+    def channel_id(self):
+        return self._channel_id
+
 
 class CleanupChannelException(Exception):
-  pass
+    pass
+
 
 class CleanupAgentCallback(object):
-  """Callback for use with CallbackRegister.
+    """Callback for use with CallbackRegister.
 
   Responds to messages with matching channel and transaction ID."""
 
-  _logger = logging.getLogger("atsim.pro_fit.filetransfer.CleanupAgentCallback")
+    _logger = logging.getLogger(
+        "atsim.pro_fit.filetransfer.CleanupAgentCallback"
+    )
 
-  def __init__(self, callback, expected_msg, channel_id, trans_id):
-    self.callback  = callback
-    self.channel_id = channel_id
-    self.trans_id = trans_id
-    self.exception = None
-    self.expected_msg = expected_msg
-    self.active = True
-    self.event = NamedEvent("CleanupAgentCallback")
-    self.should_raise = False
+    def __init__(self, callback, expected_msg, channel_id, trans_id):
+        self.callback = callback
+        self.channel_id = channel_id
+        self.trans_id = trans_id
+        self.exception = None
+        self.expected_msg = expected_msg
+        self.active = True
+        self.event = NamedEvent("CleanupAgentCallback")
+        self.should_raise = False
 
-  def __call__(self, msg):
-    self._logger.debug("Callback called trans_id=%s, msg = %s", self.trans_id, msg)
-    try:
-      transid = msg['id']
-      channel_id = msg['channel_id']
+    def __call__(self, msg):
+        self._logger.debug(
+            "Callback called trans_id=%s, msg = %s", self.trans_id, msg
+        )
+        try:
+            transid = msg["id"]
+            channel_id = msg["channel_id"]
 
-      if not (transid == self.trans_id and channel_id == self.channel_id):
-        self._logger.debug("Message not relevant to callback trans_id=%s, msg = %s", self.trans_id, msg)
-        return False
+            if not (transid == self.trans_id and channel_id == self.channel_id):
+                self._logger.debug(
+                    "Message not relevant to callback trans_id=%s, msg = %s",
+                    self.trans_id,
+                    msg,
+                )
+                return False
 
-      mtype = msg['msg']
-      if mtype == 'ERROR':
-        self.error(msg)
+            mtype = msg["msg"]
+            if mtype == "ERROR":
+                self.error(msg)
+                return True
+
+            if mtype != self.expected_msg:
+                raise CleanupChannelException(
+                    "Was expecting '%s' message but received '%s': %s",
+                    self.expected_msg,
+                    mtype,
+                    msg,
+                )
+
+            return self.finish()
+
+        except Exception:
+            self.exception = sys.exc_info()
+            self.finish()
+
+    def error(self, msg):
+        self._logger.warning(
+            "Callback trans_id=%s, received ERROR message. msg = %s",
+            self.trans_id,
+            msg,
+        )
+        reason = msg.get("reason", "")
+        raise CleanupChannelException(
+            "Error, received error: %s. Msg: %s", reason, msg
+        )
+
+    def finish(self):
+        self.callback(self.exception)
+        self.active = False
+        self.event.set()
         return True
 
-      if mtype != self.expected_msg:
-        raise CleanupChannelException("Was expecting '%s' message but received '%s': %s", self.expected_msg, mtype, msg)
+    def raise_exception(self):
+        if self.should_raise:
+            if self.exception:
+                et, ei, tb = self.exception
+                raise ei.with_traceback(tb)
 
-      return self.finish()
-
-    except Exception:
-      self.exception = sys.exc_info()
-      self.finish()
-
-  def error(self, msg):
-    self._logger.warning("Callback trans_id=%s, received ERROR message. msg = %s", self.trans_id, msg)
-    reason = msg.get('reason', '')
-    raise CleanupChannelException("Error, received error: %s. Msg: %s", reason, msg)
-
-  def finish(self):
-    self.callback(self.exception)
-    self.active = False
-    self.event.set()
-    return True
-
-  def raise_exception(self):
-    if self.should_raise:
-      if self.exception:
-        et, ei, tb = self.exception
-        raise ei.with_traceback(tb)
 
 def _NullCallback(*args, **kwargs):
-  pass
+    pass
+
 
 class CleanupClient(object):
-  """Object oriented interface to the `file_cleanup_remote_exec`.
+    """Object oriented interface to the `file_cleanup_remote_exec`.
 
   Directories and files registered through `lock()` are protected from deletion.
   When the files are unlocked, through `unlock()`, the files become eligible for
@@ -107,21 +139,21 @@ class CleanupClient(object):
   no files beneath it in the directory hierarchy. All registered files are
   deleted when the cleanup agent terminates."""
 
-  def __init__(self, cleanup_channel):
-    """Create `CleanupAgent`
+    def __init__(self, cleanup_channel):
+        """Create `CleanupAgent`
 
     Args:
         cleanup_channel (atsim.pro_fit.filetransfer.CleanupChannel): Cleanup channel.
     """
-    self.channel = cleanup_channel
-    self._cbregister = CallbackRegister()
-    self._base_transid = uuid.uuid4()
-    self._id_count = itertools.count()
-    self._init_channel()
-    self.block_timeout = 60
+        self.channel = cleanup_channel
+        self._cbregister = CallbackRegister()
+        self._base_transid = uuid.uuid4()
+        self._id_count = itertools.count()
+        self._init_channel()
+        self.block_timeout = 60
 
-  def lock(self, *paths, **kwargs):
-    """Lock specified paths.
+    def lock(self, *paths, **kwargs):
+        """Lock specified paths.
 
     If callback is specified, `lock()` will act asynchronously, with callback
     being called on completion of the lock request.
@@ -134,16 +166,16 @@ class CleanupClient(object):
           argument. If an error is encountered during locking then the resultant
           exception is passed into the callback.
     """
-    callback = kwargs.get('callback', None)
-    cbobj = self._registerCallback(callback, "LOCKED")
-    msg = {'msg' : 'LOCK', 'remote_path' : paths, 'id' : cbobj.trans_id}
-    self.channel.send(msg)
-    gevent.sleep(0)
-    cbobj.event.wait(self.block_timeout)
-    cbobj.raise_exception()
+        callback = kwargs.get("callback", None)
+        cbobj = self._registerCallback(callback, "LOCKED")
+        msg = {"msg": "LOCK", "remote_path": paths, "id": cbobj.trans_id}
+        self.channel.send(msg)
+        gevent.sleep(0)
+        cbobj.event.wait(self.block_timeout)
+        cbobj.raise_exception()
 
-  def unlock(self, *paths, **kwargs):
-    """Unlock specified paths.
+    def unlock(self, *paths, **kwargs):
+        """Unlock specified paths.
 
     If callback is specified, `unlock()` will act asynchronously, with callback
     being called on completion of the unlock request.
@@ -156,16 +188,16 @@ class CleanupClient(object):
           argument. If an error is encountered during locking then the resultant
           exception is passed into the callback.
     """
-    callback = kwargs.get('callback', None)
-    cbobj = self._registerCallback(callback, "UNLOCKED")
-    msg = {'msg' : 'UNLOCK', 'remote_path' : paths, 'id' : cbobj.trans_id}
-    self.channel.send(msg)
-    gevent.sleep(0)
-    cbobj.event.wait(self.block_timeout)
-    cbobj.raise_exception()
+        callback = kwargs.get("callback", None)
+        cbobj = self._registerCallback(callback, "UNLOCKED")
+        msg = {"msg": "UNLOCK", "remote_path": paths, "id": cbobj.trans_id}
+        self.channel.send(msg)
+        gevent.sleep(0)
+        cbobj.event.wait(self.block_timeout)
+        cbobj.raise_exception()
 
-  def flush(self, callback = None):
-    """Force any outstanding file deletions to be processed.
+    def flush(self, callback=None):
+        """Force any outstanding file deletions to be processed.
 
     If callback is specified, `flush()` will act asynchronously, with callback
     being called on completion of the flush request.
@@ -177,49 +209,60 @@ class CleanupClient(object):
           argument. If an error is encountered during locking then the resultant
           exception is passed into the callback.
     """
-    cbobj = self._registerCallback(callback, "FLUSHED")
-    msg = {'msg' : 'FLUSH', 'id' : cbobj.trans_id}
-    self.channel.send(msg)
+        cbobj = self._registerCallback(callback, "FLUSHED")
+        msg = {"msg": "FLUSH", "id": cbobj.trans_id}
+        self.channel.send(msg)
 
-    if callback is None:
-      cbobj.event.wait(self.block_timeout)
-      if cbobj.should_raise:
-        cbobj.raise_exception()
-      return None
-    else:
-      return cbobj.event
+        if callback is None:
+            cbobj.event.wait(self.block_timeout)
+            if cbobj.should_raise:
+                cbobj.raise_exception()
+            return None
+        else:
+            return cbobj.event
 
-  def _registerCallback(self, callback, expectedMessage):
-    if callback is None:
-      cbobj = CleanupAgentCallback(_NullCallback, expectedMessage, self.channel.channel_id, self._transid)
-      cbobj.should_raise = True
-    else:
-      cbobj = CleanupAgentCallback(callback, expectedMessage, self.channel.channel_id, self._transid)
-    self._cbregister.append(cbobj)
-    return cbobj
+    def _registerCallback(self, callback, expectedMessage):
+        if callback is None:
+            cbobj = CleanupAgentCallback(
+                _NullCallback,
+                expectedMessage,
+                self.channel.channel_id,
+                self._transid,
+            )
+            cbobj.should_raise = True
+        else:
+            cbobj = CleanupAgentCallback(
+                callback,
+                expectedMessage,
+                self.channel.channel_id,
+                self._transid,
+            )
+        self._cbregister.append(cbobj)
+        return cbobj
 
-  def _init_channel(self):
-    self.channel.setcallback(self._cbregister)
+    def _init_channel(self):
+        self.channel.setcallback(self._cbregister)
 
-  @property
-  def _transid(self):
-    return "%s-%d" % (self._base_transid, next(self._id_count))
+    @property
+    def _transid(self):
+        return "%s-%d" % (self._base_transid, next(self._id_count))
+
 
 class NullCleanupClient(object):
-  """Class that implements the CleanupClient interface but does nothing.
+    """Class that implements the CleanupClient interface but does nothing.
 
   This is used to disable file cleanup for debugging purposes."""
 
-  def _nullop(self, *paths, **kwargs):
-    cb = kwargs.get("callback", None)
-    if cb:
-      cb(None)
-  
-  def lock(self, *paths, **kwargs):
-    return self._nullop(*paths, **kwargs)
+    def _nullop(self, *paths, **kwargs):
+        cb = kwargs.get("callback", None)
+        if cb:
+            cb(None)
 
-  def unlock(self, *paths, **kwargs):
-    return self._nullop(*paths, **kwargs)
+    def lock(self, *paths, **kwargs):
+        return self._nullop(*paths, **kwargs)
 
-  def flush(self, callback = None):
-    return self._nullop(callback = callback)
+    def unlock(self, *paths, **kwargs):
+        return self._nullop(*paths, **kwargs)
+
+    def flush(self, callback=None):
+        return self._nullop(callback=callback)

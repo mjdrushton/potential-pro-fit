@@ -10,160 +10,165 @@ from atsim.pro_fit.tools import csvbuild
 def _getResourceDirectory():
     """Returns path to resources used by this test module (currently assumed to be sub-directory
     of test module called resources)"""
-    return os.path.join(os.path.dirname(__file__), 'resources')
+    return os.path.join(os.path.dirname(__file__), "resources")
+
 
 class CSVBuildTestCase(unittest.TestCase):
-  """TestCase for csvbuild tool"""
+    """TestCase for csvbuild tool"""
 
-  def setUp(self):
-    self.tempdir = tempfile.mkdtemp()
-    self.oldDir = os.getcwd()
-    os.chdir(self.tempdir)
+    def setUp(self):
+        self.tempdir = tempfile.mkdtemp()
+        self.oldDir = os.getcwd()
+        os.chdir(self.tempdir)
 
-  def tearDown(self):
-    os.chdir(self.oldDir)
-    shutil.rmtree(self.tempdir, ignore_errors = True)
+    def tearDown(self):
+        os.chdir(self.oldDir)
+        shutil.rmtree(self.tempdir, ignore_errors=True)
 
-  def testTemplateSubstitution(self):
-    """Test substitution of placeholder with column values"""
-    s = "@blah@_@blah@ Moo bar. Ding dong @clang@"
-    d = { "blah" : "Moop",
-          "clang" : "blibble" }
-    expect = "Moop_Moop Moo bar. Ding dong blibble"
-    actual = csvbuild._templateSubstitution(s, d, None)
-    self.assertEqual(expect, actual)
+    def testTemplateSubstitution(self):
+        """Test substitution of placeholder with column values"""
+        s = "@blah@_@blah@ Moo bar. Ding dong @clang@"
+        d = {"blah": "Moop", "clang": "blibble"}
+        expect = "Moop_Moop Moo bar. Ding dong blibble"
+        actual = csvbuild._templateSubstitution(s, d, None)
+        self.assertEqual(expect, actual)
 
-    # Test escaping of @
-    s = r'@blah@ \@blah\@'
-    d = { 'blah' : "Moop" }
-    expect = "Moop @blah@"
-    actual = csvbuild._templateSubstitution(s,d, None)
-    self.assertEqual(expect, actual)
+        # Test escaping of @
+        s = r"@blah@ \@blah\@"
+        d = {"blah": "Moop"}
+        expect = "Moop @blah@"
+        actual = csvbuild._templateSubstitution(s, d, None)
+        self.assertEqual(expect, actual)
 
-    # Test for no placeholders
-    s = 'blah blah'
-    actual = csvbuild._templateSubstitution(s,{'blah' : 'Moop'}, None)
-    self.assertEqual(s, actual)
+        # Test for no placeholders
+        s = "blah blah"
+        actual = csvbuild._templateSubstitution(s, {"blah": "Moop"}, None)
+        self.assertEqual(s, actual)
 
-  def testTemplateSubstitutionFloatingPointNumbers(self):
-    """Test template substitution when floating point formatting options are specified"""
-    s = "@label@_@fnum:.3f@ is a filename. @fnum:04.3f@."
+    def testTemplateSubstitutionFloatingPointNumbers(self):
+        """Test template substitution when floating point formatting options are specified"""
+        s = "@label@_@fnum:.3f@ is a filename. @fnum:04.3f@."
 
-    d = {'label' : "Label",
-         'fnum' : 1.2345}
+        d = {"label": "Label", "fnum": 1.2345}
 
-    expect = "{label}_{fnum:.3f} is a filename. {fnum:04.3f}.".format(**d)
-    actual = csvbuild._templateSubstitution(s,d, None)
-    self.assertEqual(expect, actual)
+        expect = "{label}_{fnum:.3f} is a filename. {fnum:04.3f}.".format(**d)
+        actual = csvbuild._templateSubstitution(s, d, None)
+        self.assertEqual(expect, actual)
 
-    # Now do the same test for when fnum is passed in as a string
-    d = {'label' : "Label",
-         'fnum' : "1.2345"}
-    actual = csvbuild._templateSubstitution(s,d, None)
-    self.assertEqual(expect, actual)
+        # Now do the same test for when fnum is passed in as a string
+        d = {"label": "Label", "fnum": "1.2345"}
+        actual = csvbuild._templateSubstitution(s, d, None)
+        self.assertEqual(expect, actual)
 
-    # Now do the same test for when fnum is passed in as an int
-    d = {'label' : "Label",
-         'fnum' : int(1),
-         'enum' : "1.2e-5"}
-    expect = "{label}_{fnum:.3f} is a filename. {fnum:04.3f}. {enum:.6f}".format(fnum = 1, enum = 1.2e-5, label = "Label")
-    s = s+" @enum:.6f@"
-    actual = csvbuild._templateSubstitution(s,d, None)
-    self.assertEqual(expect, actual)
-    
-    # Now test with a string that can't be converted to a float
-    
-    with self.assertRaises(ValueError):
-      csvbuild._templateSubstitution("@bad_float:.f@", {'bad_float': 'bad'}, None)
+        # Now do the same test for when fnum is passed in as an int
+        d = {"label": "Label", "fnum": int(1), "enum": "1.2e-5"}
+        expect = "{label}_{fnum:.3f} is a filename. {fnum:04.3f}. {enum:.6f}".format(
+            fnum=1, enum=1.2e-5, label="Label"
+        )
+        s = s + " @enum:.6f@"
+        actual = csvbuild._templateSubstitution(s, d, None)
+        self.assertEqual(expect, actual)
 
-  def testTemplateSubstitutionDecimalNumbers(self):
-    """Test template substitution when floating point formatting options are specified"""
-    s = "@label@_@dnum:06d@ is a filename."
+        # Now test with a string that can't be converted to a float
 
-    d = {'label' : "Label",
-         'dnum' : int(12)}
+        with self.assertRaises(ValueError):
+            csvbuild._templateSubstitution(
+                "@bad_float:.f@", {"bad_float": "bad"}, None
+            )
 
-    expect = "{label}_{dnum:06d} is a filename.".format(**d)
-    actual = csvbuild._templateSubstitution(s,d, None)
-    self.assertEqual(expect, actual)
+    def testTemplateSubstitutionDecimalNumbers(self):
+        """Test template substitution when floating point formatting options are specified"""
+        s = "@label@_@dnum:06d@ is a filename."
 
-    # Now do the same test for when fnum is passed in as a string
-    d = {'label' : "Label",
-         'dnum' : "12"}
-    actual = csvbuild._templateSubstitution(s,d, None)
-    self.assertEqual(expect, actual)
-    
-    with self.assertRaises(ValueError):
-      csvbuild._templateSubstitution("@bad_num:.d@", {'bad_num': 'bad'}, None)
+        d = {"label": "Label", "dnum": int(12)}
 
-  def testTemplateSubstitutionAllNumberTypes(self):
+        expect = "{label}_{dnum:06d} is a filename.".format(**d)
+        actual = csvbuild._templateSubstitution(s, d, None)
+        self.assertEqual(expect, actual)
 
-    s = "@fnum:e@ @fnum:E@ @fnum:f@ @fnum:F@ @fnum:g@ @fnum:G@ @fnum:n@ @fnum:%@"
-    sf = "{fnum:e} {fnum:E} {fnum:f} {fnum:F} {fnum:g} {fnum:G} {fnum:n} {fnum:%}"
+        # Now do the same test for when fnum is passed in as a string
+        d = {"label": "Label", "dnum": "12"}
+        actual = csvbuild._templateSubstitution(s, d, None)
+        self.assertEqual(expect, actual)
 
-    s1 = "@dnum:b@ @dnum:c@ @dnum:d@ @dnum:o@ @dnum:x@ @dnum:X@"
-    s1f = "{dnum:b} {dnum:c} {dnum:d} {dnum:o} {dnum:x} {dnum:X}"
+        with self.assertRaises(ValueError):
+            csvbuild._templateSubstitution(
+                "@bad_num:.d@", {"bad_num": "bad"}, None
+            )
 
-    d = {"fnum" : "1.234",
-         "dnum" : "12"}
-    
-    df = {"fnum": 1.234,
-          "dnum" : 12}
+    def testTemplateSubstitutionAllNumberTypes(self):
 
-    self.assertEqual(sf.format(**df),
-      csvbuild._templateSubstitution(s, df, None))
+        s = "@fnum:e@ @fnum:E@ @fnum:f@ @fnum:F@ @fnum:g@ @fnum:G@ @fnum:n@ @fnum:%@"
+        sf = "{fnum:e} {fnum:E} {fnum:f} {fnum:F} {fnum:g} {fnum:G} {fnum:n} {fnum:%}"
 
-    self.assertEqual(sf.format(**df),
-      csvbuild._templateSubstitution(s, d, None))
+        s1 = "@dnum:b@ @dnum:c@ @dnum:d@ @dnum:o@ @dnum:x@ @dnum:X@"
+        s1f = "{dnum:b} {dnum:c} {dnum:d} {dnum:o} {dnum:x} {dnum:X}"
 
-    self.assertEqual(s1f.format(**df),
-      csvbuild._templateSubstitution(s1, df, None))
+        d = {"fnum": "1.234", "dnum": "12"}
 
-    self.assertEqual(s1f.format(**df),
-      csvbuild._templateSubstitution(s1, d, None))
+        df = {"fnum": 1.234, "dnum": 12}
 
+        self.assertEqual(
+            sf.format(**df), csvbuild._templateSubstitution(s, df, None)
+        )
 
-  def testSimpleFiles(self):
-    """Test copy to flat file system"""
+        self.assertEqual(
+            sf.format(**df), csvbuild._templateSubstitution(s, d, None)
+        )
 
-    rows = [{ 'species' : 'Gd', 'run' : 1},
-            {'species' : 'Y', 'run' : 2}]
+        self.assertEqual(
+            s1f.format(**df), csvbuild._templateSubstitution(s1, df, None)
+        )
 
-    os.mkdir('dest')
-    os.mkdir('skel')
+        self.assertEqual(
+            s1f.format(**df), csvbuild._templateSubstitution(s1, d, None)
+        )
 
-    j = os.path.join
+    def testSimpleFiles(self):
+        """Test copy to flat file system"""
 
-    open(j('skel', '@species@_@run@.gp3.in'), 'w').close()
+        rows = [{"species": "Gd", "run": 1}, {"species": "Y", "run": 2}]
 
-    csvbuild.buildDirs(rows, 'skel', 'dest')
+        os.mkdir("dest")
+        os.mkdir("skel")
 
-    expect = sorted([ j('dest', 'Gd_1.gp3'), j('dest', 'Y_2.gp3') ])
-    actual = glob.glob(j('dest', '*'))
-    actual.sort()
+        j = os.path.join
 
-    self.assertEqual(expect, actual)
+        open(j("skel", "@species@_@run@.gp3.in"), "w").close()
 
+        csvbuild.buildDirs(rows, "skel", "dest")
 
-  def testInclude(self):
-    """Test @INCLUDE:token@ placeholder"""
-    os.mkdir('skel')
-    os.mkdir('dest')
+        expect = sorted([j("dest", "Gd_1.gp3"), j("dest", "Y_2.gp3")])
+        actual = glob.glob(j("dest", "*"))
+        actual.sort()
 
-    with open('include_me', 'w') as outfile:
-      print("Hello", file=outfile)
-      print("Goodbye", file=outfile)
+        self.assertEqual(expect, actual)
 
-    with open(os.path.join('skel', 'boom.in'), 'w') as outfile:
-      print("@INCLUDE:rel_filename@", file=outfile)
-      print("@INCLUDE:abs_filename@", file=outfile)
+    def testInclude(self):
+        """Test @INCLUDE:token@ placeholder"""
+        os.mkdir("skel")
+        os.mkdir("dest")
 
-    d = [{'rel_filename' : os.path.join(os.path.pardir, 'include_me'),
-         'abs_filename' : os.path.abspath(os.path.join(self.tempdir, 'include_me'))}]
+        with open("include_me", "w") as outfile:
+            print("Hello", file=outfile)
+            print("Goodbye", file=outfile)
 
-    csvbuild.buildDirs(d, 'skel', 'dest')
+        with open(os.path.join("skel", "boom.in"), "w") as outfile:
+            print("@INCLUDE:rel_filename@", file=outfile)
+            print("@INCLUDE:abs_filename@", file=outfile)
 
-    expect = """Hello
+        d = [
+            {
+                "rel_filename": os.path.join(os.path.pardir, "include_me"),
+                "abs_filename": os.path.abspath(
+                    os.path.join(self.tempdir, "include_me")
+                ),
+            }
+        ]
+
+        csvbuild.buildDirs(d, "skel", "dest")
+
+        expect = """Hello
 Goodbye
 
 Hello
@@ -171,63 +176,67 @@ Goodbye
 
 """
 
-    actual = open(os.path.join('dest', 'boom'), 'r').read()
-    self.assertEqual(expect, actual)
+        actual = open(os.path.join("dest", "boom"), "r").read()
+        self.assertEqual(expect, actual)
 
+    def testFileHierarchy(self):
+        """Test creation of directory hierarchy"""
+        import tarfile
 
-  def testFileHierarchy(self):
-    """Test creation of directory hierarchy"""
-    import tarfile
-    tf = tarfile.TarFile(os.path.join(_getResourceDirectory(), 'csvbuild_skel.tar'))
-    tf.extractall()
+        tf = tarfile.TarFile(
+            os.path.join(_getResourceDirectory(), "csvbuild_skel.tar")
+        )
+        tf.extractall()
 
-    os.mkdir('dest')
+        os.mkdir("dest")
 
-    self.assertTrue(os.path.isdir('skel'))
+        self.assertTrue(os.path.isdir("skel"))
 
-    rows = [ dict(run=1),
-             dict(run=2),
-             dict(run=3) ]
+        rows = [dict(run=1), dict(run=2), dict(run=3)]
 
-    expect = [
-        ('dest', '1'),
-        ('dest', 'DL_POLY_1'),
-        ('dest', 'DL_POLY_1', 'CONFIG'),
-        ('dest', 'DL_POLY_1', 'output'),
-        ('dest', 'DL_POLY_1', 'support_1'),
-        ('dest', 'DL_POLY_1', 'support_1', 'file1_1'),
-        ('dest', 'DL_POLY_1', 'support_1', 'file2'),
+        expect = [
+            ("dest", "1"),
+            ("dest", "DL_POLY_1"),
+            ("dest", "DL_POLY_1", "CONFIG"),
+            ("dest", "DL_POLY_1", "output"),
+            ("dest", "DL_POLY_1", "support_1"),
+            ("dest", "DL_POLY_1", "support_1", "file1_1"),
+            ("dest", "DL_POLY_1", "support_1", "file2"),
+            ("dest", "2"),
+            ("dest", "DL_POLY_2"),
+            ("dest", "DL_POLY_2", "CONFIG"),
+            ("dest", "DL_POLY_2", "output"),
+            ("dest", "DL_POLY_2", "support_2"),
+            ("dest", "DL_POLY_2", "support_2", "file1_2"),
+            ("dest", "DL_POLY_2", "support_2", "file2"),
+            ("dest", "3"),
+            ("dest", "DL_POLY_3"),
+            ("dest", "DL_POLY_3", "CONFIG"),
+            ("dest", "DL_POLY_3", "output"),
+            ("dest", "DL_POLY_3", "support_3"),
+            ("dest", "DL_POLY_3", "support_3", "file1_3"),
+            ("dest", "DL_POLY_3", "support_3", "file2"),
+        ]
 
-        ('dest', '2'),
-        ('dest', 'DL_POLY_2'),
-        ('dest', 'DL_POLY_2', 'CONFIG'),
-        ('dest', 'DL_POLY_2', 'output'),
-        ('dest', 'DL_POLY_2', 'support_2'),
-        ('dest', 'DL_POLY_2', 'support_2', 'file1_2'),
-        ('dest', 'DL_POLY_2', 'support_2', 'file2'),
+        expect = [os.path.join(*p) for p in expect]
+        expect.sort()
 
-        ('dest', '3'),
-        ('dest', 'DL_POLY_3'),
-        ('dest', 'DL_POLY_3', 'CONFIG'),
-        ('dest', 'DL_POLY_3', 'output'),
-        ('dest', 'DL_POLY_3', 'support_3'),
-        ('dest', 'DL_POLY_3', 'support_3', 'file1_3'),
-        ('dest', 'DL_POLY_3', 'support_3', 'file2')]
+        csvbuild.buildDirs(rows, "skel", "dest")
+        actual = []
 
-    expect = [ os.path.join(*p) for p in expect]
-    expect.sort()
+        for dirname, dirnames, names in os.walk("dest"):
+            for dn in dirnames:
+                actual.append(os.path.join(dirname, dn))
+            for n in names:
+                ln = os.path.join(dirname, n)
+                actual.append(ln)
 
-    csvbuild.buildDirs(rows, 'skel', 'dest')
-    actual = []
+        actual.sort()
+        self.assertEqual(expect, actual)
 
-    for dirname, dirnames , names in os.walk('dest'):
-      for dn in dirnames:
-        actual.append(os.path.join(dirname, dn))
-      for n in names:
-        ln = os.path.join(dirname, n)
-        actual.append(ln)
-
-    actual.sort()
-    self.assertEqual(expect, actual)
-
-    self.assertEqual('1', open(os.path.join('dest', 'DL_POLY_1', 'support_1', 'file2'), 'r').readline()[:-1])
+        self.assertEqual(
+            "1",
+            open(
+                os.path.join("dest", "DL_POLY_1", "support_1", "file2"), "r"
+            ).readline()[:-1],
+        )

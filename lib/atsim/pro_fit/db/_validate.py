@@ -1,4 +1,3 @@
-
 from ._metadata import getMetadata
 
 from sqlalchemy import inspect
@@ -22,10 +21,10 @@ def validate(engine):
     actual_table_names = [name for (name, fk) in actual_table_names]
 
     if actual_table_names == [None]:
-      return False
+        return False
 
     for tn in actual_table_names:
-      if tn and not tn in tablenames:
-        print(tn)
-        return False
+        if tn and not tn in tablenames:
+            print(tn)
+            return False
     return True
