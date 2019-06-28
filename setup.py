@@ -16,8 +16,7 @@ def preprocess(infilename):
   # In C pre-procssor style, the required functions are #INCLUDed into the generated modules.
   # This is performed by this function which is called during the setup.py build stage by the custom
   # build_py subclass below.
-
-  include_regex = re.compile(r'^#INCLUDE "(.*)"')
+  include_regex = re.compile(r'^#\s?INCLUDE "(.*)"')
   oldir = os.getcwd()
   outfile, outfilename = tempfile.mkstemp(suffix=".py")
   outfile = os.fdopen(outfile,'w')
@@ -59,7 +58,7 @@ def package_files(directory):
   os.chdir(directory)
   paths = []
   dirname = os.path.basename(directory)
-  for (path, directories, filenames) in os.walk('.'):
+  for (path, _directories, filenames) in os.walk('.'):
     for filename in filenames:
       p = os.path.join(dirname, path, filename)
       p = os.path.normpath(p)
@@ -116,7 +115,7 @@ setup(name="potential-pro-fit",
 
   entry_points = {
     'console_scripts' : [
-      'pprofit = atsim.pro_fit.tools.fittingTool:main',
+      'pprofit = atsim.pro_fit.tools.pprofit:main',
       'pprofitmon = atsim.pro_fit.webmonitor:main',
       'csvbuild = atsim.pro_fit.tools.csvbuild:main',
       'ppgrid = atsim.pro_fit.tools.ppgrid:main',
