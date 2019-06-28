@@ -386,7 +386,7 @@ This gives name of runner (defined in fit.cfg) to be associated with created JOB
     )
     parser.add_option_group(optgroup)
 
-    options, args = parser.parse_args()
+    options, _args = parser.parse_args()
 
     # Validate option choice.
     if options.single_step and (
@@ -425,7 +425,7 @@ def _getfitcfg(jobdir, cls=atsim.pro_fit.fittool.FitConfig, pluginmodules=[]):
         import atsim.pro_fit.plugins
         import importlib
 
-        for finder, name, ispkg in iter_namespace(atsim.pro_fit.plugins):
+        for _finder, name, _ispkg in iter_namespace(atsim.pro_fit.plugins):
             m = importlib.import_module(name)
             ns_pluginsmodules.append(m)
     except ImportError:
@@ -588,7 +588,7 @@ def _processPlugins(pathList):
     import imp
 
     def loadmod(path):
-        modname, junk = os.path.splitext(path)
+        modname, _ext = os.path.splitext(path)
         return imp.load_source(modname, path)
 
     retlist = []
