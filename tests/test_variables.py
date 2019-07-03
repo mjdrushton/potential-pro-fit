@@ -59,6 +59,33 @@ class VariablesTestCase(unittest.TestCase):
         self.assertEqual(["B", "C"], candidate2.fitKeys)
         self.assertEqual([5.0, 6.0], candidate2.fitValues)
 
+    def testFitVariableBounds(self):
+        """Test that Variables class will return a filtered list of bounds for fitting variables"""
+
+        varlist = [
+            ("A", 1.0, False),
+            ("B", 2.0, True),
+            ("C", 3.0, False),
+            ("D", 4.0, True),
+            ("E", 5.0, True),
+        ]
+
+        bounds = [ None, (1.0, 3.0), (2.0, 4.0), None, (5.0, 6.0)]
+
+        v = atsim.pro_fit.variables.Variables(varlist, bounds)
+        # unbound = (float("-inf"), float("inf"))
+        unbound = None
+        expect_bounds = [ unbound, (1.0, 3.0), (2.0, 4.0), unbound, (5.0, 6.0)]
+
+        assert expect_bounds == v.bounds
+
+        expect_bounds = [ (1.0, 3.0), None, (5.0, 6.0) ]
+
+        assert expect_bounds == v.fitBounds
+
+        
+
+
 
 class CalculatedVariables(unittest.TestCase):
     """Tests for synthetic variables"""

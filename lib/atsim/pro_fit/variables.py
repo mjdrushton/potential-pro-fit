@@ -55,10 +55,19 @@ class Variables(object):
 
     def bounds(self):
         return list(self._bounds)
-
+        
     bounds = property(
         fget=bounds,
         doc="""Return list of (lowerbound, upperbound) tuples indicating box bounds for each variable returned by variablePairs""",
+    )
+    
+    def fitBounds(self):
+        fk = self.fitKeys
+        return [b for (b, (k,_v)) in zip(self.bounds, self.variablePairs) if k in fk]
+
+    fitBounds = property(
+        fget=fitBounds,
+        doc="""Return list of (lowerbound, upperbound) tuples indicating box bounds for each fitting variable.""",
     )
 
     def inBounds(self, varKey, value):

@@ -16,7 +16,7 @@ class MinimizerResults(object):
 
     def __init__(self, meritValues, candidateJobList):
         """@param meritValues List of merit values in candidate order
-    @param candidateJobList List of (Variable,Job list) tuples in candidate order"""
+    @param candidateJobList List of (Variables,Job list) tuples in candidate order"""
         self.meritValues = meritValues
         self.candidateJobList = candidateJobList
 

@@ -59,6 +59,8 @@ class RMSEvaluatorRecord(EvaluatorRecord):
     """As EvaluatorRecord but with additional rmsDifference (root mean squared difference),
   whose weighted value is used as meritValue"""
 
+    _typename = "RMSEvaluatorRecord"
+    
     def __init__(
         self,
         name,
@@ -83,8 +85,8 @@ class RMSEvaluatorRecord(EvaluatorRecord):
 
     def __repr__(self):
         return (
-            "RMSEvaluatorRecord(name=%s, expectedValue=%f, extractedValue=%f, weight=%f, evaluatorName=%s, rmsDiff=%f)"
-            % (
+            "{}(name={}, expectedValue={}, extractedValue={}, weight={}, evaluatorName={}, rmsDiff={})".format(
+                self._typename,
                 self.name,
                 self.expectedValue,
                 self.extractedValue,
@@ -97,6 +99,8 @@ class RMSEvaluatorRecord(EvaluatorRecord):
 
 class FractionalDifferenceEvaluatorRecord(RMSEvaluatorRecord):
     """EvaluatorRecord that additionally provides fractionalDifference properties"""
+
+    _typename = "FractionalDifferenceEvaluatorRecord"
 
     def __init__(self, name, expectedValue, extractedValue, weight=1.0):
         RMSEvaluatorRecord.__init__(
