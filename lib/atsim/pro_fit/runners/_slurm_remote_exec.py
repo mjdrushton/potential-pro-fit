@@ -230,7 +230,9 @@ class NoSlurmException(Exception):
 def checkSlurm():
     # Attempt to run qstat
     try:
-        p = subprocess.Popen(["squeue"], stdout=subprocess.PIPE, close_fds=True)
+        p = subprocess.Popen(
+            ["squeue"], stdout=subprocess.PIPE, close_fds=True
+        )
         output, err = p.communicate()
     except OSError:
         raise NoSlurmException("Could not run 'squeue'")

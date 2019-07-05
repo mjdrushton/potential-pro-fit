@@ -2,8 +2,8 @@ import logging
 
 import math
 
-from ._inspyred_common import _BoundedVariableBaseClass
-from ._inspyred_common import VariableException
+from atsim.pro_fit.variables import BoundedVariableBaseClass
+from atsim.pro_fit.variables import VariableException
 from ._inspyred_common import _IntConvert
 from ._inspyred_common import _FloatConvert
 from ._inspyred_common import _RandomSeed
@@ -37,7 +37,7 @@ class _TemperatureVariableReporter(object):
 
             for (variables, joblist) in jobLists:
                 fvp = variables.flaggedVariablePairs
-                n, v, flag = fvp[idx]
+                n, _v, flag = fvp[idx]
                 fvp[idx] = (n, temp, flag)
                 variables = Variables(fvp)
                 updatedCandidateJobList.append((variables, joblist))
@@ -185,7 +185,7 @@ class Simulated_AnnealingMinimizer(object):
 
         # Check bounds are defined
         try:
-            _BoundedVariableBaseClass(variables)
+            BoundedVariableBaseClass(variables)
         except VariableException as e:
             raise ConfigException("Simulated_Annealing Minimizer:" + str(e))
 
@@ -213,12 +213,16 @@ class Simulated_AnnealingMinimizer(object):
             mutation_rate=(
                 0.1,
                 _FloatConvert(
-                    "Simulated_Annealing minimizer", "mutation_rate", (0.0, 1.0)
+                    "Simulated_Annealing minimizer",
+                    "mutation_rate",
+                    (0.0, 1.0),
                 ),
             ),
             gaussian_mean=(
                 0,
-                _FloatConvert("Simulated_Annealing minimizer", "gaussian_mean"),
+                _FloatConvert(
+                    "Simulated_Annealing minimizer", "gaussian_mean"
+                ),
             ),
             gaussian_stdev=(
                 1,

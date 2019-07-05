@@ -220,7 +220,9 @@ def _extractSpeciesNames(config):
 def _extraFieldDictIterator(statisIterator, speciesNames, nptFlag):
     extrafieldkeys = []
     if speciesNames != None:
-        extrafieldkeys = ["msd_%s" % (label.strip(),) for label in speciesNames]
+        extrafieldkeys = [
+            "msd_%s" % (label.strip(),) for label in speciesNames
+        ]
 
     extrafieldkeys.extend(
         [

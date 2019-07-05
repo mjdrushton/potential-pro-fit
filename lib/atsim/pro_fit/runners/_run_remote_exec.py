@@ -107,7 +107,9 @@ class RunCmd(threading.Thread):
                 returncode = None
 
             try:
-                with open(os.path.join(self.path, "STATUS"), "w") as statusfile:
+                with open(
+                    os.path.join(self.path, "STATUS"), "w"
+                ) as statusfile:
                     statusfile.write("%s\n" % returncode)
             except IOError:
                 pass

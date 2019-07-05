@@ -1,4 +1,7 @@
-from atsim.pro_fit.exceptions import ConfigException, MultipleSectionConfigException
+from atsim.pro_fit.exceptions import (
+    ConfigException,
+    MultipleSectionConfigException,
+)
 from atsim.pro_fit.variables import Variables, CalculatedVariables
 from atsim.pro_fit.merit import Merit
 
@@ -228,7 +231,9 @@ class FitConfig(object):
     def _createVariables(self):
         """Create Variables object from parsed configuration"""
         if not self._cfg.has_section("Variables"):
-            raise ConfigException("fit.cfg does not contain [Variables] section")
+            raise ConfigException(
+                "fit.cfg does not contain [Variables] section"
+            )
         import re
 
         regex = r"^(.*?)(\(.*\))?(\*)?$"
@@ -241,7 +246,9 @@ class FitConfig(object):
             v = re.sub(r"\s", "", v)
             m = regex.match(v)
             if not m:
-                raise ConfigException("Variable '%s' has an invalid format" % k)
+                raise ConfigException(
+                    "Variable '%s' has an invalid format" % k
+                )
             groups = m.groups()
 
             isFitParameter = groups[-1] == "*"
@@ -249,7 +256,8 @@ class FitConfig(object):
                 v = float(groups[0])
             except ValueError:
                 raise ConfigException(
-                    "Variable '%s' value cannot be converted to float: %s" % (k, v)
+                    "Variable '%s' value cannot be converted to float: %s"
+                    % (k, v)
                 )
 
             if groups[1] != None:
@@ -298,7 +306,9 @@ class FitConfig(object):
 
         def runnerMaker(cls, runnerkey, cfgitems):
             def f():
-                return cls.createFromConfig(runnerkey, self._fitRootPath, cfgitems)
+                return cls.createFromConfig(
+                    runnerkey, self._fitRootPath, cfgitems
+                )
 
             return f
 
@@ -322,7 +332,9 @@ class FitConfig(object):
                 # To allow only instantiating runners we need (i.e. those with jobs)
                 # defer creation by placing a no-arg callable in the dictionary responsible
                 # for runner creation.
-                runners[runnerkey] = runnerMaker(rcls, runnerkey, self._cfg.items(s))
+                runners[runnerkey] = runnerMaker(
+                    rcls, runnerkey, self._cfg.items(s)
+                )
                 # self._logger.info('Configured runner: %s' % runnerkey)
         return runners
 
@@ -363,7 +375,8 @@ class FitConfig(object):
                     evalcls = evaldict[evaltype]
                 except KeyError:
                     raise ConfigException(
-                        "Could not find MetaEvaluator for config section: %s" % s
+                        "Could not find MetaEvaluator for config section: %s"
+                        % s
                     )
                 metaEvaluators.append(
                     evalcls.createFromConfig(
@@ -398,7 +411,9 @@ class FitConfig(object):
 
         # Walk fit_files directory
         fitfilespath = os.path.join(self._fitRootPath, "fit_files")
-        self._logger.debug('Creating jobs from directories in "%s"' % fitfilespath)
+        self._logger.debug(
+            'Creating jobs from directories in "%s"' % fitfilespath
+        )
 
         jobfs = []
         for f in sorted(os.listdir(fitfilespath)):
@@ -432,13 +447,15 @@ class FitConfig(object):
             jfcls = jobfdict[jfclsname]
         except KeyError:
             raise ConfigException(
-                'Unknown job type: "%s" for job named: "%s"' % (jfclsname, jobname)
+                'Unknown job type: "%s" for job named: "%s"'
+                % (jfclsname, jobname)
             )
 
         runnername = fitcfg.get("Job", "runner")
         if runnername not in self.runners:
             raise ConfigException(
-                'Unknown runner: "%s" for job named: "%s"' % (runnername, jobname)
+                'Unknown runner: "%s" for job named: "%s"'
+                % (runnername, jobname)
             )
         return jfcls.createFromConfig(
             path,
@@ -470,13 +487,17 @@ class FitConfig(object):
                 evaluators.append(evaluator)
         # Throw configuration exception if job does not define any evaluators
         if not evaluators:
-            raise ConfigException("Job does not define any evaluators: '%s'" % jobname)
+            raise ConfigException(
+                "Job does not define any evaluators: '%s'" % jobname
+            )
         return evaluators
 
     def _createMinimizer(self, minimizermodules):
         minclasses = self._findClasses(minimizermodules, "Minimizer")
         if not self._cfg.has_section("Minimizer"):
-            raise ConfigException("fit.cfg does not contain a [Minimizer] section")
+            raise ConfigException(
+                "fit.cfg does not contain a [Minimizer] section"
+            )
 
         try:
             clsname = self._cfg.get("Minimizer", "type")
@@ -538,5 +559,6 @@ class FitConfig(object):
                 evaluatorsFound = True
                 break
         if not evaluatorsFound:
-            raise ConfigException("No Evaluators have been defined for any Job.")
-
+            raise ConfigException(
+                "No Evaluators have been defined for any Job."
+            )

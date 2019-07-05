@@ -162,7 +162,8 @@ class RemoteRunnerCloseThreadBase(gevent.Greenlet):
                     allEvents.extend(self.closeCleanupEvents)
             except:
                 self._logger.warning(
-                    "Error closing cleanup channels: %s", traceback.format_exc()
+                    "Error closing cleanup channels: %s",
+                    traceback.format_exc(),
                 )
 
             gevent.wait(objects=allEvents, timeout=120)
@@ -306,7 +307,9 @@ class BaseRemoteRunner(object):
 
         self._do_cleanup = do_cleanup
 
-        self._gw = self.makeExecnetGateway(url, identityfile, extra_ssh_options)
+        self._gw = self.makeExecnetGateway(
+            url, identityfile, extra_ssh_options
+        )
 
         self.initialiseTemporaryRemoteDirectory()
 

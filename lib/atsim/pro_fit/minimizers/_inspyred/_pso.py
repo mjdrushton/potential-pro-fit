@@ -1,8 +1,9 @@
 import logging
 
 
-from ._inspyred_common import VariableException
-from ._inspyred_common import _BoundedVariableBaseClass
+from atsim.pro_fit.variables import VariableException
+from atsim.pro_fit.variables import BoundedVariableBaseClass
+from atsim.pro_fit.minimizers.population_generators import UniformGenerator
 
 from ._inspyred_common import _IntConvert
 from ._inspyred_common import _FloatConvert
@@ -39,7 +40,7 @@ class Particle_SwarmMinimizer(object):
         pso.topology = topology
 
         self._minimizer = _EvolutionaryComputationMinimizerBaseClass(
-            initialVariables,
+            UniformGenerator(initialVariables),
             pso,
             args["population_size"],
             inertia=args["inertia"],
@@ -72,7 +73,7 @@ class Particle_SwarmMinimizer(object):
 
         # Check bounds are defined
         try:
-            _BoundedVariableBaseClass(variables)
+            BoundedVariableBaseClass(variables)
         except VariableException as e:
             raise ConfigException("Particle_Swarm Minimizer:" + str(e))
 
@@ -86,7 +87,10 @@ class Particle_SwarmMinimizer(object):
                 _ChoiceConvert(clsname, "topology", ["star", "ring"]),
             ),
             neighbourhood_size=(3, _IntConvert(clsname, "neighbourhood_size")),
-            inertia=(0.5, _FloatConvert(clsname, "inertia", (0, float("inf")))),
+            inertia=(
+                0.5,
+                _FloatConvert(clsname, "inertia", (0, float("inf"))),
+            ),
             cognitive_rate=(
                 2.1,
                 _FloatConvert(clsname, "cognitive_rate", (0, float("inf"))),

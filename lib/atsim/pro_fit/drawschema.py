@@ -29,10 +29,13 @@ def _mk_label(
         return colstr
 
     if show_attributes:
-        html += '<TR><TD ALIGN="LEFT">%s</TD></TR>' % '<BR ALIGN="LEFT"/>'.join(
-            format_col(col)
-            for col in sorted(
-                mapper.columns, key=lambda col: not col.primary_key
+        html += (
+            '<TR><TD ALIGN="LEFT">%s</TD></TR>'
+            % '<BR ALIGN="LEFT"/>'.join(
+                format_col(col)
+                for col in sorted(
+                    mapper.columns, key=lambda col: not col.primary_key
+                )
             )
         )
     else:
@@ -43,31 +46,34 @@ def _mk_label(
             )
         ]
     if show_operations:
-        html += '<TR><TD ALIGN="LEFT">%s</TD></TR>' % '<BR ALIGN="LEFT"/>'.join(
-            "%s(%s)"
-            % (
-                name,
-                ", ".join(
-                    default is _mk_label
-                    and ("%s") % arg
-                    or ("%s=%s" % (arg, repr(default)))
-                    for default, arg in zip(
-                        (
-                            func.__defaults__
-                            and len(func.__code__.co_varnames)
-                            - 1
-                            - (len(func.__defaults__) or 0)
-                            or func.__code__.co_argcount - 1
+        html += (
+            '<TR><TD ALIGN="LEFT">%s</TD></TR>'
+            % '<BR ALIGN="LEFT"/>'.join(
+                "%s(%s)"
+                % (
+                    name,
+                    ", ".join(
+                        default is _mk_label
+                        and ("%s") % arg
+                        or ("%s=%s" % (arg, repr(default)))
+                        for default, arg in zip(
+                            (
+                                func.__defaults__
+                                and len(func.__code__.co_varnames)
+                                - 1
+                                - (len(func.__defaults__) or 0)
+                                or func.__code__.co_argcount - 1
+                            )
+                            * [_mk_label]
+                            + list(func.__defaults__ or []),
+                            func.__code__.co_varnames[1:],
                         )
-                        * [_mk_label]
-                        + list(func.__defaults__ or []),
-                        func.__code__.co_varnames[1:],
-                    )
-                ),
+                    ),
+                )
+                for name, func in list(mapper.class_.__dict__.items())
+                if isinstance(func, types.FunctionType)
+                and func.__module__ == mapper.class_.__module__
             )
-            for name, func in list(mapper.class_.__dict__.items())
-            if isinstance(func, types.FunctionType)
-            and func.__module__ == mapper.class_.__module__
         )
     html += "</TABLE>>"
     return html

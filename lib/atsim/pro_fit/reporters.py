@@ -9,7 +9,9 @@ import logging
 import os
 from io import StringIO
 
-_retryLogger = logging.getLogger("atsim.pro_fit.reporters.SQLiteReporter.retry")
+_retryLogger = logging.getLogger(
+    "atsim.pro_fit.reporters.SQLiteReporter.retry"
+)
 
 
 class SQLiteReporter(object):

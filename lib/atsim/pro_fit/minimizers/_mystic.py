@@ -151,7 +151,9 @@ class _NelderMeadInner(object):
         self._logger.info("Starting minimisation.")
         optifunc = self._meritWrapper(merit)
         initargs = self._initialArgs()
-        minimizer = mystic.scipy_optimize.NelderMeadSimplexSolver(len(initargs))
+        minimizer = mystic.scipy_optimize.NelderMeadSimplexSolver(
+            len(initargs)
+        )
         minimizer.SetInitialPoints(initargs)
         minimizer.SetEvaluationLimits(maxiter=self._maxIter)
         bounds = self._getBounds()

@@ -171,7 +171,8 @@ class _VariableUpdateHandler(object):
                 self._consoleModel.best_iteration.variables.flaggedVariablePairs
             ):
                 table.setdefault(
-                    k, {"name": mkname(k, isfit), "current": None, "best": None}
+                    k,
+                    {"name": mkname(k, isfit), "current": None, "best": None},
                 )["best"] = v
 
         # Convert to tuples
@@ -233,10 +234,14 @@ class _RunnerOverviewUpdateHandler(object):
     def _register_runner_handlers(self):
         runners = list(self.model.runners)
         self._registerHandlers = [
-            _SumRunnerValues("total_jobs", runners, self.model.runner_overview),
+            _SumRunnerValues(
+                "total_jobs", runners, self.model.runner_overview
+            ),
             _SumRunnerValues("uploaded", runners, self.model.runner_overview),
             _SumRunnerValues("running", runners, self.model.runner_overview),
-            _SumRunnerValues("downloaded", runners, self.model.runner_overview),
+            _SumRunnerValues(
+                "downloaded", runners, self.model.runner_overview
+            ),
         ]
 
 

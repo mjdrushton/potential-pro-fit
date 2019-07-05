@@ -268,7 +268,9 @@ def serializeTableForR(
     outfile.write("x=%s," % _serializeRArray(x_range))
     outfile.write("y=%s," % _serializeRArray(y_range))
 
-    outfile.write("z=%s" % _serializeRMatrix(len(x_range), len(y_range), zvals))
+    outfile.write(
+        "z=%s" % _serializeRMatrix(len(x_range), len(y_range), zvals)
+    )
     outfile.write("))")
 
 

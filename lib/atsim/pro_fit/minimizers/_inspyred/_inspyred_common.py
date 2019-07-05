@@ -9,59 +9,15 @@ from atsim.pro_fit._util import MultiCallback
 
 from atsim.pro_fit.exceptions import ConfigException
 
-
-class VariableException(Exception):
-    """Exception raised by inspyred related classes when a problem is found with
-  input atsim.pro_fit.variables.Variables instances"""
-
-    pass
+from atsim.pro_fit.variables import BoundedVariableBaseClass
 
 
-class _BoundedVariableBaseClass(object):
-    """Abstract base for objects that should throw if a Variables instance passed to constructor
-  does not have definite bounds for all fit parameters.
-
-  Stores variables in _variables property. Bounds are stored in inspyred two list form, in _bounds"""
-
-    def __init__(self, variables):
-        """@param variables Variables instance whose bounds are used to generate
-              bounder and generator. Note: all fitted parameters must
-              have definite upper and lower bounds inf/-inf bounds are
-              not supported"""
-        self._initialVariables = variables
-        self._bounds = self._populateBounds()
-
-    def _populateBounds(self):
-        lower = []
-        upper = []
-        for ((n, v, isFit), (lb, ub)) in zip(
-            self._initialVariables.flaggedVariablePairs,
-            self._initialVariables.bounds,
-        ):
-            if not isFit:
-                continue
-            elif lb == None or lb == float("-inf"):
-                raise VariableException(
-                    "Lower bound for variable: %s cannot be infinite." % n
-                )
-            elif ub == None or ub == float("inf"):
-                raise VariableException(
-                    "Upper bound for variable: %s cannot be infinite." % n
-                )
-            else:
-                lower.append(lb)
-                upper.append(ub)
-        if not lower:
-            raise VariableException("Not parameters enabled for fitting")
-        return [lower, upper]
-
-
-class Bounder(_BoundedVariableBaseClass):
+class Bounder(BoundedVariableBaseClass):
     """Inspyred bounder populated from Variables instance"""
 
     def __init__(self, variables):
         """@param variables Variables instance defining bounds"""
-        _BoundedVariableBaseClass.__init__(self, variables)
+        BoundedVariableBaseClass.__init__(self, variables)
         self._bounder = inspyred.ec.Bounder(*self._bounds)
 
     def __call__(self, candidate, args):
@@ -69,22 +25,6 @@ class Bounder(_BoundedVariableBaseClass):
        @param args Args dictionary
        @return Bounded candidate"""
         return self._bounder(candidate, args)
-
-
-class Generator(_BoundedVariableBaseClass):
-    """Inspyred generator that generates bounded candidates from bounds stored in a Variables instance"""
-
-    def __call__(self, random, args):
-        """Inspyred generator.
-
-    @param random random.Random instance passed in by Inspyred
-    @param args Args dictionary (not used here)
-    @return Candidate with length == adjustable parameters in self.initialVariables sitting within
-      limits defined by variable bounds."""
-        candidate = []
-        for (l, h) in zip(self._bounds[0], self._bounds[1]):
-            candidate.append(random.uniform(l, h))
-        return candidate
 
 
 class Evaluator(object):
@@ -177,16 +117,21 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
     maximumEvaluations = 30000
 
     def __init__(
-        self, initialVariables, evolutionaryComputation, populationSize, **args
+        self,
+        generator,
+        initialVariables,
+        evolutionaryComputation,
+        populationSize,
+        **args
     ):
-        """@param initialVariables atsim.pro_fit.variables.Variables instance providing bounds for generator and bounder applied to
-                population used within evolutionaryComputation.
+        """@param generator UniformGenerator object from atsim.pro_fit.minimizers.population_generators.
        @param evolutionaryComputation Instance of inspyred.ec.EvolutionaryComputation.
                 Note: the evaluator, bounder and generator of the evolutionaryComputation are overwritten by this class.
        @param populationSize Size of population used for evolutionary computation.
        @param args Dictionary containing optional keyword arguments that should be passed to the evolutionaryComputation.evolve method"""
 
-        self._initialVariables = initialVariables
+        self._generator = generator
+        self._initialVariables = generator.initialVariables
         self._ec = evolutionaryComputation
         self._args = args
         self._populationSize = populationSize
@@ -209,7 +154,7 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
     @return MinimizerResults for candidate solution population containing best merit value."""
 
         bounder = Bounder(self._initialVariables)
-        generator = Generator(self._initialVariables)
+        # generator = UniformGenerator(self._initialVariables)
         evaluator = Evaluator(self._initialVariables, merit)
         observer = Observer(self.stepCallback)
         origobserver = observer
@@ -219,8 +164,8 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
             bounder = MultiCallback([self._ec.bounder, bounder], retLast=True)
 
         if self._ec.generator:
-            generator = MultiCallback(
-                [self._ec.generator, generator], retLast=True
+            self._generator = MultiCallback(
+                [self._ec.generator, self._generator], retLast=True
             )
 
         if self._ec.evaluator:
@@ -236,7 +181,7 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
         self._ec.observer = observer
 
         self._ec.evolve(
-            generator,
+            self._generator,
             evaluator,
             bounder=bounder,
             pop_size=self._populationSize,

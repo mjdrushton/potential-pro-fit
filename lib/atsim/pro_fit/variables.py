@@ -4,6 +4,7 @@ import cexprtk
 
 from atsim.pro_fit.exceptions import ConfigException
 
+
 class Variables(object):
     """Class for handling fitting variables"""
 
@@ -55,15 +56,19 @@ class Variables(object):
 
     def bounds(self):
         return list(self._bounds)
-        
+
     bounds = property(
         fget=bounds,
         doc="""Return list of (lowerbound, upperbound) tuples indicating box bounds for each variable returned by variablePairs""",
     )
-    
+
     def fitBounds(self):
         fk = self.fitKeys
-        return [b for (b, (k,_v)) in zip(self.bounds, self.variablePairs) if k in fk]
+        return [
+            b
+            for (b, (k, _v)) in zip(self.bounds, self.variablePairs)
+            if k in fk
+        ]
 
     fitBounds = property(
         fget=fitBounds,
@@ -104,7 +109,9 @@ class Variables(object):
         s = re.sub(r"\s", "", s)
         m = re.match(r"\((.*?),(.*?)\)", s)
         if not m:
-            raise ConfigException("Variable bound does not have correct format")
+            raise ConfigException(
+                "Variable bound does not have correct format"
+            )
 
         l, h = m.groups()
 
@@ -222,7 +229,54 @@ class CalculatedVariables(object):
             except cexprtk.ParseException as e:
                 raise ConfigException(
                     "Could not parse expression when processing [CalculatedVariables]: {} : {}".format(
-                    expression, e)
+                        expression, e
+                    )
                 )
 
         return CalculatedVariables(cfgitems)
+
+
+class VariableException(Exception):
+    """Exception raised by inspyred related classes when a problem is found with
+  input atsim.pro_fit.variables.Variables instances"""
+
+    pass
+
+
+class BoundedVariableBaseClass(object):
+    """Abstract base for objects that should throw if a Variables instance passed to constructor
+  does not have definite bounds for all fit parameters.
+
+  Stores variables in _variables property. Bounds are stored in inspyred two list form, in _bounds"""
+
+    def __init__(self, variables):
+        """@param variables Variables instance whose bounds are used to generate
+              bounder and generator. Note: all fitted parameters must
+              have definite upper and lower bounds inf/-inf bounds are
+              not supported"""
+        self._initialVariables = variables
+        self._bounds = self._populateBounds()
+
+    def _populateBounds(self):
+        lower = []
+        upper = []
+        for ((n, _v, isFit), (lb, ub)) in zip(
+            self._initialVariables.flaggedVariablePairs,
+            self._initialVariables.bounds,
+        ):
+            if not isFit:
+                continue
+            elif lb == None or lb == float("-inf"):
+                raise VariableException(
+                    "Lower bound for variable: %s cannot be infinite." % n
+                )
+            elif ub == None or ub == float("inf"):
+                raise VariableException(
+                    "Upper bound for variable: %s cannot be infinite." % n
+                )
+            else:
+                lower.append(lb)
+                upper.append(ub)
+        if not lower:
+            raise VariableException("Not parameters enabled for fitting")
+        return [lower, upper]

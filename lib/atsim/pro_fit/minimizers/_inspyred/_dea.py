@@ -2,8 +2,10 @@ import logging
 
 import math
 
-from ._inspyred_common import VariableException
-from ._inspyred_common import _BoundedVariableBaseClass
+from atsim.pro_fit.minimizers.population_generators import UniformGenerator
+
+from atsim.pro_fit.variables import BoundedVariableBaseClass
+from atsim.pro_fit.variables import VariableException
 from ._inspyred_common import _IntConvert
 from ._inspyred_common import _FloatConvert
 from ._inspyred_common import _RandomSeed
@@ -37,7 +39,7 @@ class DEAMinimizer(object):
         dea.terminator = terminator
 
         self._minimizer = _EvolutionaryComputationMinimizerBaseClass(
-            initialVariables,
+            UniformGenerator(initialVariables),
             dea,
             args["population_size"],
             num_selected=args["num_selected"],
@@ -73,7 +75,7 @@ class DEAMinimizer(object):
 
         # Check bounds are defined
         try:
-            _BoundedVariableBaseClass(variables)
+            BoundedVariableBaseClass(variables)
         except VariableException as e:
             raise ConfigException("DEA Minimizer:" + str(e))
 
@@ -83,7 +85,9 @@ class DEAMinimizer(object):
         defaults = dict(
             num_selected=(
                 2,
-                _IntConvert("DEA minimizer", "num_selected", (2, float("inf"))),
+                _IntConvert(
+                    "DEA minimizer", "num_selected", (2, float("inf"))
+                ),
             ),
             tournament_size=(
                 2,
@@ -125,7 +129,8 @@ class DEAMinimizer(object):
         for k in cfgdict.keys():
             if k not in defaults:
                 raise ConfigException(
-                    "Unknown configuration option '%s' for DEA minimizer" % (k,)
+                    "Unknown configuration option '%s' for DEA minimizer"
+                    % (k,)
                 )
 
         # Override any values specified in cfgdict.

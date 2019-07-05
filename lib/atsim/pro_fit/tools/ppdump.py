@@ -188,7 +188,9 @@ def parseCommandLine():
 
     options = parser.parse_args()
 
-    if options.grid and not (options.gridx and options.gridy and options.gridz):
+    if options.grid and not (
+        options.gridx and options.gridy and options.gridz
+    ):
         parser.error(
             "--grid cannot be specified without also providing --gridx, --gridy and --gridz options."
         )
@@ -310,7 +312,8 @@ def main():
     if not db.validate(engine):
         parser.exit(
             EXIT_STATUS_DB_CANNOT_OPEN,
-            "Database does not have valid structure: '%s'" % options.dbfilename,
+            "Database does not have valid structure: '%s'"
+            % options.dbfilename,
         )
 
     if options.list_columns:

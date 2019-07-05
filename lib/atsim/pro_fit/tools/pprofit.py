@@ -398,7 +398,9 @@ This gives name of runner (defined in fit.cfg) to be associated with created JOB
     if options.create_files and (
         options.init or options.initjob or options.single_step
     ):
-        parser.error("-c/--create-files cannot be specified with other options")
+        parser.error(
+            "-c/--create-files cannot be specified with other options"
+        )
 
     if options.init and options.initjob:
         parser.error("-i/--init cannot be specified with -j/--init-job")
@@ -406,7 +408,9 @@ This gives name of runner (defined in fit.cfg) to be associated with created JOB
     return options
 
 
-def _getfitcfg(jobdir, cls=atsim.pro_fit.fitconfig.FitConfig, pluginmodules=[]):
+def _getfitcfg(
+    jobdir, cls=atsim.pro_fit.fitconfig.FitConfig, pluginmodules=[]
+):
     """Creates atsim.pro_fit.fitconfig.FitConfig from configuration files.
      @param jobdir Directory in which temporary job files should be created.
      @param cls FitConfig class
@@ -693,7 +697,9 @@ def main():
             _console_log(
                 console, logger, logging.INFO, "Performing Single-step run"
             )
-            cfg = _getSingleStepCfg(tempdir, options.single_step, pluginmodules)
+            cfg = _getSingleStepCfg(
+                tempdir, options.single_step, pluginmodules
+            )
         elif options.create_files:
             _console_log(
                 console,

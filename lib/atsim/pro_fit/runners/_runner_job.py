@@ -505,7 +505,9 @@ class RunnerJob(object):
         return finishEvent, uploadDirectory
 
     def _startJobRun(self):
-        self._logger.debug("Starting job execution (startJobRun) for %s" % self)
+        self._logger.debug(
+            "Starting job execution (startJobRun) for %s" % self
+        )
         handler = RunnerJobRunClientJob(self)
         jobRun = self.parentBatch.startJobRun(self, handler)
         self._jobRun = jobRun

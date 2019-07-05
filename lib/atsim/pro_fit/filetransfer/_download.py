@@ -185,11 +185,14 @@ class DownloadDirectory(object):
 
         if not os.path.exists(self.dest_path):
             raise IOError(
-                "Download destination path doesn't exist: '%s'" % self.dest_path
+                "Download destination path doesn't exist: '%s'"
+                % self.dest_path
             )
 
         if download_handler is None:
-            download_handler = DownloadHandler(self.remote_path, self.dest_path)
+            download_handler = DownloadHandler(
+                self.remote_path, self.dest_path
+            )
 
         self.download_handler = download_handler
 
@@ -324,7 +327,9 @@ class _DownloadCallback(object):
             self._error("Received malformed message: %s" % msg)
             return
         if mtype == None:
-            self._error("Couldn't extract 'msg' field from message: '%s'" % msg)
+            self._error(
+                "Couldn't extract 'msg' field from message: '%s'" % msg
+            )
             return
 
         if not self._is_msg_relevant(msg):
@@ -512,7 +517,8 @@ class _DownloadCallback(object):
         transid = msg.get("id", None)
         if not transid in self.file_q_wait:
             raise DirectoryDownloadException(
-                "Unexpected 'DOWNLOAD_FILE' response received for '%s'", transid
+                "Unexpected 'DOWNLOAD_FILE' response received for '%s'",
+                transid,
             )
 
         # Write the file to disc.

@@ -35,7 +35,9 @@ class GridGenerator(object):
         return [name for (name, l, s, ns) in self._parameterRanges]
 
     def __iter__(self):
-        iterables = [self._makeAxis(prange) for prange in self._parameterRanges]
+        iterables = [
+            self._makeAxis(prange) for prange in self._parameterRanges
+        ]
         iterable = itertools.product(*iterables)
         for i, v in enumerate(iterable):
             self.rows = i + 1

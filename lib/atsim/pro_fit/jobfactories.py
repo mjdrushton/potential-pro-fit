@@ -105,7 +105,9 @@ from atsim.pro_fit.tools import csvbuild
 class TemplateJobFactory(object):
     """Performs csvbuild style template substitution to create job directories from Variables"""
 
-    _logger = logging.getLogger("atsim.pro_fit.jobfactories.TemplateJobFactory")
+    _logger = logging.getLogger(
+        "atsim.pro_fit.jobfactories.TemplateJobFactory"
+    )
 
     def __init__(
         self, templatePath, runnerFilesPath, runnerName, jobName, evaluators
@@ -182,7 +184,9 @@ class TemplateJobFactory(object):
     """
 
         log = TemplateJobFactory._logger.getChild("createFromConfig")
-        log.debug("Configuring TemplateJobFactory using the following options:")
+        log.debug(
+            "Configuring TemplateJobFactory using the following options:"
+        )
         log.debug("jobpath = '%s'", jobpath)
         log.debug("fitRootPath = '%s'", fitRootPath)
         log.debug("runnername = '%s'", runnername)

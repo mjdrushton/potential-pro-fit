@@ -75,7 +75,9 @@ class QueueingSystemRunnerJobRecord(object):
         )
         self._qs_client_record = qs_client_record
 
-        linkevent_spawn(self._qs_client_record.qsubEvent, self._qs_submit_event)
+        linkevent_spawn(
+            self._qs_client_record.qsubEvent, self._qs_submit_event
+        )
 
     def _handler_wrap(self, handler):
         # The handlers passed into append expect two arguments, QueueingSystemClient expects a single argument
@@ -171,7 +173,9 @@ class QueueingSystemRunnerBatch(RunnerBatch):
     def createUploadDirectory(self, job):
         # Add runjob to root of jobdirectory
         self._addAdditionalFilesToJobDir(job)
-        return super(QueueingSystemRunnerBatch, self).createUploadDirectory(job)
+        return super(QueueingSystemRunnerBatch, self).createUploadDirectory(
+            job
+        )
 
     def createDownloadDirectory(self, job):
         # The output directory is created in the root of the job directory
@@ -190,7 +194,9 @@ class QueueingSystemRunnerBatch(RunnerBatch):
         runjobpath = os.path.join(job.sourcePath, "runjob")
         from . import templates
 
-        dat = importlib.resources.read_text(templates, "queueing_system_jobrun")
+        dat = importlib.resources.read_text(
+            templates, "queueing_system_jobrun"
+        )
         with open(runjobpath, "w") as runjob:
             runjob.write(dat)
 

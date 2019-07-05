@@ -70,7 +70,9 @@ class DLPOLY_STATISEvaluator(object):
         records = []
         for k, e, w in self._keyExpectTriples:
             try:
-                r = RMSEvaluatorRecord(k, e, self._calculateAverage(k, rows), w)
+                r = RMSEvaluatorRecord(
+                    k, e, self._calculateAverage(k, rows), w
+                )
             except Exception as exc:
                 r = ErrorEvaluatorRecord(k, e, exc, w)
             r.evaluatorName = self.name
@@ -134,7 +136,8 @@ class DLPOLY_STATISEvaluator(object):
             startTime = float(startTime)
         except ValueError:
             raise ConfigException(
-                "'start_time' value not a valid float for evaluator '%s'" % name
+                "'start_time' value not a valid float for evaluator '%s'"
+                % name
             )
 
         del cfgdict["type"]

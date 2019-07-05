@@ -97,7 +97,9 @@ class _BatchMonitorThread(object):
     def killJobs(self):
         self.killedEvent.set()
         runningJobs = [j for j in self.extantJobs if j.jobRunEvent.is_set()]
-        waitingJobs = [j for j in self.extantJobs if not j.jobRunEvent.is_set()]
+        waitingJobs = [
+            j for j in self.extantJobs if not j.jobRunEvent.is_set()
+        ]
         killJobs = itertools.chain(waitingJobs, runningJobs)
         killEvents = [job.kill() for job in killJobs]
         gevent.wait(objects=killEvents)

@@ -60,7 +60,7 @@ class RMSEvaluatorRecord(EvaluatorRecord):
   whose weighted value is used as meritValue"""
 
     _typename = "RMSEvaluatorRecord"
-    
+
     def __init__(
         self,
         name,
@@ -84,16 +84,14 @@ class RMSEvaluatorRecord(EvaluatorRecord):
         return math.sqrt((self.extractedValue - self.expectedValue) ** 2.0)
 
     def __repr__(self):
-        return (
-            "{}(name={}, expectedValue={}, extractedValue={}, weight={}, evaluatorName={}, rmsDiff={})".format(
-                self._typename,
-                self.name,
-                self.expectedValue,
-                self.extractedValue,
-                self.weight,
-                self.evaluatorName,
-                self.rmsDifference,
-            )
+        return "{}(name={}, expectedValue={}, extractedValue={}, weight={}, evaluatorName={}, rmsDiff={})".format(
+            self._typename,
+            self.name,
+            self.expectedValue,
+            self.extractedValue,
+            self.weight,
+            self.evaluatorName,
+            self.rmsDifference,
         )
 
 
@@ -143,9 +141,9 @@ class ErrorEvaluatorRecord(EvaluatorRecord):
         )
 
     def __str__(self):
-        s = "evaluator field '%s' from evaluator '%s' has following error: " % (
-            self.name,
-            self.evaluatorName,
+        s = (
+            "evaluator field '%s' from evaluator '%s' has following error: "
+            % (self.name, self.evaluatorName)
         )
         s += os.linesep
         s += "    " + str(self.exception) + os.linesep

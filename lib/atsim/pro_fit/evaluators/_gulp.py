@@ -110,7 +110,9 @@ class Gulp_DRVEvaluator(object):
                     )
                 else:
                     # SHouldn't get here but ...
-                    raise KeyError("Unknown value name: %s" % (configitem.name))
+                    raise KeyError(
+                        "Unknown value name: %s" % (configitem.name)
+                    )
 
                 er = RMSEvaluatorRecord(
                     configitem.name,
@@ -282,7 +284,11 @@ class _GulpShearModulusSubEvaluator(_GulpSubEvaluatorBase):
 
     @staticmethod
     def getAllowedFields():
-        return ["shearmodulus_reuss", "shearmodulus_voigt", "shearmodulus_hill"]
+        return [
+            "shearmodulus_reuss",
+            "shearmodulus_voigt",
+            "shearmodulus_hill",
+        ]
 
 
 class _GulpCellSubEvaluator(_GulpSubEvaluatorBase):

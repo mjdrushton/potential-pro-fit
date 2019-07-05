@@ -246,7 +246,11 @@ class _EvaluatorColumnProvider(object):
         valueName = groupdict["valueName"]
         valueType = groupdict["valueType"]
 
-        allowedValues = ["merit_value", "extracted_value", "percent_difference"]
+        allowedValues = [
+            "merit_value",
+            "extracted_value",
+            "percent_difference",
+        ]
         if not (valueType in allowedValues):
             raise KeyError(
                 "Requested value should be one of %s for column label: %s",

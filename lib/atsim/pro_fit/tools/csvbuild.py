@@ -99,7 +99,9 @@ def _templateSubstitution(template, substitutionDict, skelpath):
         token = tokens.pop(0)
         if token.startswith("@"):
             placeholder = tokens.pop(0)
-            token = _placeholderHandler(placeholder, substitutionDict, skelpath)
+            token = _placeholderHandler(
+                placeholder, substitutionDict, skelpath
+            )
 
         # Remove escape characters from @ signs.
         token = re.sub(r"\\@", "@", token)
@@ -110,7 +112,9 @@ def _templateSubstitution(template, substitutionDict, skelpath):
 class _DirectoryWalker(object):
     _logger = logging.getLogger("csvbuild._DirectoryWalker")
 
-    def __init__(self, skeletonDirectory, destinationDirectory, templateSuffix):
+    def __init__(
+        self, skeletonDirectory, destinationDirectory, templateSuffix
+    ):
         self.skeletonDirectory = skeletonDirectory
         self.destinationDirectory = destinationDirectory
         self.templateSuffix = templateSuffix

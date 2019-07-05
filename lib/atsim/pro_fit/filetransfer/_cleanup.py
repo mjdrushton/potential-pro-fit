@@ -21,7 +21,10 @@ class CleanupChannel(AbstractChannel):
     ):
         self._remote_path = remote_path
         super(CleanupChannel, self).__init__(
-            execnet_gw, file_cleanup_remote_exec, channel_id, connection_timeout
+            execnet_gw,
+            file_cleanup_remote_exec,
+            channel_id,
+            connection_timeout,
         )
 
     def make_start_message(self):
@@ -75,7 +78,9 @@ class CleanupAgentCallback(object):
             transid = msg["id"]
             channel_id = msg["channel_id"]
 
-            if not (transid == self.trans_id and channel_id == self.channel_id):
+            if not (
+                transid == self.trans_id and channel_id == self.channel_id
+            ):
                 self._logger.debug(
                     "Message not relevant to callback trans_id=%s, msg = %s",
                     self.trans_id,

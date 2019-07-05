@@ -140,7 +140,9 @@ class SingleStepMinimizer(object):
             merit.calculate([self._initialArgs])
 
             if self.stepCallback:
-                self.stepCallback(cb.minimizerResults) # pylint: disable=not-callable
+                self.stepCallback(
+                    cb.minimizerResults
+                )  # pylint: disable=not-callable
 
             return cb.minimizerResults
         finally:

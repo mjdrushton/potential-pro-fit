@@ -38,7 +38,9 @@ class FormulaMetaEvaluator(object):
 
     If VALUE not specified then 'merit_value' is used."""
 
-    _logger = logging.getLogger("atsim.pro_fit.metaevaluators.FormulaMetaEvaluator")
+    _logger = logging.getLogger(
+        "atsim.pro_fit.metaevaluators.FormulaMetaEvaluator"
+    )
 
     def __init__(self, name, expressionList, variables):
         """@param name Meta evaluator name.
@@ -81,7 +83,9 @@ class FormulaMetaEvaluator(object):
             found = False
             for evalrecords in job.evaluatorRecords:
                 for evalrecord in evalrecords:
-                    evaluatorName = evalrecord.evaluatorName[len(job.name) + 1 :]
+                    evaluatorName = evalrecord.evaluatorName[
+                        len(job.name) + 1 :
+                    ]
                     self._logger.debug("evaluatorName: %s " % evaluatorName)
                     if (
                         evaluatorName == splitkey.evaluator
@@ -170,9 +174,13 @@ class FormulaMetaEvaluator(object):
                     % (variable.name, attr, variable.key)
                 )
 
-            splitvariable = SplitVariableKey(tokens[0], tokens[1], tokens[2], attr)
+            splitvariable = SplitVariableKey(
+                tokens[0], tokens[1], tokens[2], attr
+            )
 
-            splitvariables.append(FormulaVariable(variable.name, splitvariable))
+            splitvariables.append(
+                FormulaVariable(variable.name, splitvariable)
+            )
         return splitvariables
 
     @staticmethod
@@ -250,10 +258,16 @@ class FormulaMetaEvaluator(object):
                 )
         variables = FormulaMetaEvaluator._splitVariables(variables)
 
-        FormulaMetaEvaluator._logger.info("Creating Formula meta-evaluator: %s" % name)
+        FormulaMetaEvaluator._logger.info(
+            "Creating Formula meta-evaluator: %s" % name
+        )
         FormulaMetaEvaluator._logger.debug("MetaEvaluator name=%s" % name)
-        FormulaMetaEvaluator._logger.debug("MetaEvaluator expressions=%s" % expressions)
-        FormulaMetaEvaluator._logger.debug("MetaEvaluator variables=%s" % variables)
+        FormulaMetaEvaluator._logger.debug(
+            "MetaEvaluator expressions=%s" % expressions
+        )
+        FormulaMetaEvaluator._logger.debug(
+            "MetaEvaluator variables=%s" % variables
+        )
 
         # Create the MetaEvaluator
         return FormulaMetaEvaluator(name, expressions, variables)

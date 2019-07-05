@@ -56,7 +56,9 @@ class _RegexSubEvaluator(object):
 
                         if foundinstance == self.fileInstance:
                             v = m.groups()[self.groupNum]
-                            _logger.debug("Converting value to float: '%s'" % v)
+                            _logger.debug(
+                                "Converting value to float: '%s'" % v
+                            )
                             v = float(v)
                             return RMSEvaluatorRecord(
                                 self.name, self.expectedValue, v, self.weight

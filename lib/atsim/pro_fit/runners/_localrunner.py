@@ -30,7 +30,9 @@ class _CopyDirectory(object):
     def doCopy(self, non_blocking=False):
         logger = self._logger.getChild("doCopy")
         logger.debug(
-            "Copying files from '%s' to '%s'.", self.source_path, self.dest_path
+            "Copying files from '%s' to '%s'.",
+            self.source_path,
+            self.dest_path,
         )
 
         self.finishEvent.clear()

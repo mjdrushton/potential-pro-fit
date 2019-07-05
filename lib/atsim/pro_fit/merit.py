@@ -1,4 +1,3 @@
-
 import tempfile
 import os
 import shutil
@@ -53,7 +52,12 @@ class Merit(object):
                 per candidate. """
 
     def __init__(
-        self, runners, jobfactories, metaevaluators, calculatedVariables, jobdir
+        self,
+        runners,
+        jobfactories,
+        metaevaluators,
+        calculatedVariables,
+        jobdir,
     ):
         """@param runners List of job runners (see atsim.pro_fit.runners module for examples).
        @param jobfactories List of jobfactories (see atsim.pro_fit.jobfactories module for examples).
@@ -97,7 +101,7 @@ class Merit(object):
 
             # Call the afterRun callback
             if self.afterRun:
-                self.afterRun(candidate_job_lists) #pylint: disable=E1102
+                self.afterRun(candidate_job_lists)  # pylint: disable=E1102
 
             # Apply evaluators
             self._applyEvaluators(batchedJobs)
@@ -107,7 +111,9 @@ class Merit(object):
 
             # Call the afterEvaluation callback (first zip evaluated lists with their jobs)
             if self.afterEvaluation:
-                self.afterEvaluation(candidate_job_lists) #pylint: disable=E1102
+                self.afterEvaluation(
+                    candidate_job_lists
+                )  # pylint: disable=E1102
 
             # Reduce evaluated dictionary into single values
             meritvals = self._reductionFunction(
@@ -115,7 +121,9 @@ class Merit(object):
             )
 
             if self.afterMerit:
-                self.afterMerit(meritvals, candidate_job_lists) #pylint: disable=E1102
+                self.afterMerit(
+                    meritvals, candidate_job_lists
+                )  # pylint: disable=E1102
 
             if returnCandidateJobPairs:
                 return (meritvals, candidate_job_lists)
@@ -154,7 +162,7 @@ class Merit(object):
 
         # Call the beforeRun callback
         if self.beforeRun:
-            self.beforeRun(candidate_job_lists) #pylint: disable=E1102
+            self.beforeRun(candidate_job_lists)  # pylint: disable=E1102
 
         # Convert runnerBatches into list of lists
         return (

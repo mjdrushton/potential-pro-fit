@@ -373,7 +373,8 @@ class TableEvaluator(object):
         for k, v in cfgdict.items():
             if not k in supportedFields:
                 raise ConfigException(
-                    "unknown configuration option for Table evaluator: '%s'" % k
+                    "unknown configuration option for Table evaluator: '%s'"
+                    % k
                 )
 
         # Get the required fields
@@ -387,7 +388,9 @@ class TableEvaluator(object):
         try:
             expect_filename = cfgdict["expect_filename"]
         except KeyError as e:
-            raise ConfigException("required field not found: 'expect_filename'")
+            raise ConfigException(
+                "required field not found: 'expect_filename'"
+            )
 
         try:
             row_compare = cfgdict["row_compare"]

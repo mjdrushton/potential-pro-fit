@@ -40,7 +40,7 @@ class FileDeleter(object):
     def __init__(self, root_path):
         self._deletion_thread = FileDeleter._DeletionThread(root_path)
         self._deletion_thread.daemon = False
-        self._locktree = LockTree(root_path) #pylint: disable=E0602
+        self._locktree = LockTree(root_path)  # pylint: disable=E0602
         self._deletion_thread.start()
 
     def lock(self, remote_path):
@@ -74,13 +74,13 @@ class FileDeleter(object):
 def _getpath(msg, channel, channel_id):
     path = msg.get("remote_path", None)
     if path is None:
-        error( #pylint: disable=E0602
+        error(  # pylint: disable=E0602
             channel,
             channel_id,
             "Could not find 'remote_path' argument in request'",
             ("MSGERROR", "KEYERROR"),
             key="remote_path",
-        ) 
+        )
         return
     return path
 
@@ -88,7 +88,7 @@ def _getpath(msg, channel, channel_id):
 def _getmsgid(msg, channel, channel_id):
     transid = msg.get("id", None)
     if transid is None:
-        error( #pylint: disable=E0602
+        error(  # pylint: disable=E0602
             channel,
             channel_id,
             "Could not find 'id' argument in request'",
@@ -99,7 +99,9 @@ def _getmsgid(msg, channel, channel_id):
     return transid
 
 
-def _deleter_action(msg, channel, channel_id, remote_root, action, confirm_msg):
+def _deleter_action(
+    msg, channel, channel_id, remote_root, action, confirm_msg
+):
     transid = _getmsgid(msg, channel, channel_id)
 
     def error_action(p):
@@ -107,7 +109,7 @@ def _deleter_action(msg, channel, channel_id, remote_root, action, confirm_msg):
             action(p)
             return True
         except KeyError as e:
-            error( #pylint: disable=E0602
+            error(  # pylint: disable=E0602
                 channel,
                 channel_id,
                 "path not registerd with cleanup agent",
@@ -127,7 +129,7 @@ def _deleter_action(msg, channel, channel_id, remote_root, action, confirm_msg):
 
     if type(path) is list or type(path) is tuple:
         for p in path:
-            p = normalize_path_with_error( #pylint: disable=E0602
+            p = normalize_path_with_error(  # pylint: disable=E0602
                 channel, channel_id, remote_root, p, trans_id=transid
             )
             if p is None:
@@ -135,7 +137,7 @@ def _deleter_action(msg, channel, channel_id, remote_root, action, confirm_msg):
             if error_action(p) is None:
                 return
     else:
-        path = normalize_path_with_error( #pylint: disable=E0602
+        path = normalize_path_with_error(  # pylint: disable=E0602
             channel, channel_id, remote_root, path, trans_id=transid
         )
         if path is None:
@@ -169,13 +171,15 @@ def flush(msg, channel, channel_id, deleter):
 
 
 def cleanup_remote_exec(channel, channel_id, remote_root):
-    ready(channel, channel_id, remote_root) #pylint: disable=E0602
+    ready(channel, channel_id, remote_root)  # pylint: disable=E0602
     deleter = FileDeleter(remote_root)
     try:
         for msg in channel:
             if msg is None:
                 break
-            mtype = extract_mtype(msg, channel, channel_id) #pylint: disable=E0602
+            mtype = extract_mtype(
+                msg, channel, channel_id
+            )  # pylint: disable=E0602
             if mtype is None:
                 continue
             elif mtype == "LOCK":
@@ -185,7 +189,7 @@ def cleanup_remote_exec(channel, channel_id, remote_root):
             elif mtype == "FLUSH":
                 flush(msg, channel, channel_id, deleter)
             else:
-                error( #pylint: disable=E0602
+                error(  # pylint: disable=E0602
                     channel,
                     channel_id,
                     "Unknown 'msg' type: '%s'" % (mtype,),
@@ -201,7 +205,7 @@ def process_path(channel, channel_id, remote_path):
     remote_path = os.path.realpath(remote_path)
 
     if not os.path.exists(remote_path):
-        error( #pylint: disable=E0602
+        error(  # pylint: disable=E0602
             channel,
             channel_id,
             "path does not exist: '%s'" % remote_path,
@@ -214,7 +218,7 @@ def process_path(channel, channel_id, remote_path):
         return True, remote_path
 
     if os.path.exists(remote_path):
-        error( #pylint: disable=E0602
+        error(  # pylint: disable=E0602
             channel,
             channel_id,
             "'remote_path' exists but is not a directory '%s'" % remote_path,
@@ -222,7 +226,7 @@ def process_path(channel, channel_id, remote_path):
         )
         return False, remote_path
 
-    error( #pylint: disable=E0602
+    error(  # pylint: disable=E0602
         channel,
         channel_id,
         "'remote_path' is not valid '%s'" % remote_path,
@@ -233,13 +237,14 @@ def process_path(channel, channel_id, remote_path):
 
 def start_channel(channel):
     msg = channel.receive()
-    mtype = extract_mtype(msg, channel, None) #pylint: disable=E0602
+    mtype = extract_mtype(msg, channel, None)  # pylint: disable=E0602
 
     if not mtype == "START_CLEANUP_CHANNEL":
-        error( #pylint: disable=E0602
+        error(  # pylint: disable=E0602
             channel,
             None,
-            'was expecting "START_CLEANUP_CHANNEL" got "%s" instead' % (mtype,),
+            'was expecting "START_CLEANUP_CHANNEL" got "%s" instead'
+            % (mtype,),
             ("MSGERROR", "UNEXPECTED_MSG"),
         )
         return
@@ -247,7 +252,7 @@ def start_channel(channel):
     channel_id = msg.get("channel_id", str(uuid.uuid4()))
     remote_path = msg.get("remote_path", None)
     if "remote_path" not in msg:
-        error( #pylint: disable=E0602
+        error(  # pylint: disable=E0602
             channel,
             channel_id,
             "UPLOAD message does not contain 'remote_path' argument for msg id = '%s'"
@@ -264,4 +269,4 @@ def start_channel(channel):
 
 
 if __name__ == "__channelexec__":
-    start_channel(channel) #pylint: disable=E0602
+    start_channel(channel)  # pylint: disable=E0602

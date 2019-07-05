@@ -8,7 +8,9 @@ class SpreadsheetMinimizer(object):
     """Minimizer that iteratively steps through rows of a spreadsheet, evaluating Merit function for each row.
   With each column of the spreadsheet representing a variable within pprofit. """
 
-    _logger = logging.getLogger("atsim.pro_fit.minimizers.SpreadsheetMinimizer")
+    _logger = logging.getLogger(
+        "atsim.pro_fit.minimizers.SpreadsheetMinimizer"
+    )
 
     def __init__(self, spreadsheetRowIterator, batchSize):
         """Create SpreadsheetMinimizer.
@@ -61,7 +63,9 @@ class SpreadsheetMinimizer(object):
                 )
 
             if self.stepCallback:
-                self.stepCallback(currentMinimizerResults) # pylint: disable=not-callable
+                self.stepCallback(
+                    currentMinimizerResults
+                )  # pylint: disable=not-callable
         return minimizerResults
 
     def _batchIt(self):
@@ -137,7 +141,9 @@ class SpreadsheetMinimizer(object):
         try:
             rowIncrement = int(cfgdict.get("row_step", 1))
         except ValueError:
-            raise ConfigException("Could not convert 'row_step' into an intger")
+            raise ConfigException(
+                "Could not convert 'row_step' into an intger"
+            )
 
         if not rowIncrement > 0:
             raise ConfigException(
