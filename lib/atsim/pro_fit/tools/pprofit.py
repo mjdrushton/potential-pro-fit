@@ -713,12 +713,8 @@ def main():
             cfg = _getfitcfg(tempdir, pluginmodules=pluginmodules)
 
         _invokeMinimizer(cfg, logger, logsql, console)
-    except (
-        _FittingToolException,
-        atsim.pro_fit.exceptions.ConfigException,
-        atsim.pro_fit.minimizers.MinimizerException,
-    ) as e:
-        logger.error(str(e))
+    except Exception as e:
+        logger.exception(e)
 
         if console and console.started:
             evt = console.terminalError(str(e))
