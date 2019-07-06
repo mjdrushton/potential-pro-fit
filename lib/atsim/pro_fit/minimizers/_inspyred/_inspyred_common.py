@@ -18,7 +18,7 @@ class Bounder(BoundedVariableBaseClass):
     def __init__(self, variables):
         """@param variables Variables instance defining bounds"""
         BoundedVariableBaseClass.__init__(self, variables)
-        self._bounder = inspyred.ec.Bounder(*self._bounds)
+        self._bounder = inspyred.ec.Bounder(*self.bounds)
 
     def __call__(self, candidate, args):
         """@param candidate candidate solution

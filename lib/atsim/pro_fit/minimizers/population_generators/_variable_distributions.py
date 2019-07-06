@@ -131,3 +131,20 @@ class Variable_Distributions(object):
     def variable_distribution_dict(self):
         """Dictionary linking variable label to instances of Variable_Distribution"""
         return self._distn_dict
+
+
+class Uniform_Variable_Distributions(Variable_Distributions):
+    """Convenience class that intialises Variable_Distribution objects
+    to uniform distribution between upper and lower bounds of each fitting
+    variable"""
+
+    def __init__(self, initial_variables):
+        vds = self._init_variable_distributions(initial_variables)
+        super().__init__(initial_variables, vds)
+
+    def _init_variable_distributions(self, initial_variables):
+        vd = [
+            Uniform_Variable_Distribution(fk, initial_variables)
+            for fk in initial_variables.fitKeys
+        ]
+        return vd

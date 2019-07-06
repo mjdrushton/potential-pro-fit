@@ -10,6 +10,7 @@ from atsim.pro_fit.minimizers.population_generators import (
     Variable_Distribution,
     Variable_Distributions,
     Latin_Hypercube_InitialPopulation,
+    Uniform_Random_Initial_Population,
     Uniform_Variable_Distribution,
 )
 
@@ -123,3 +124,16 @@ def test_latin_hyper_cube_initial_population():
 
     with pytest.raises(VariableException):
         Latin_Hypercube_InitialPopulation(v, 4)
+
+
+def test_uniform_random_initial_population():
+    v = Variables(
+        ([("a", 1.0, True), ("b", 2.0, False), ("c", 3.0, True)]),
+        bounds=[(0, 10), (1, 10), (2, 10)],
+    )
+
+    ip = Uniform_Random_Initial_Population(v, 4)
+
+    cd = ip.generate_candidates()
+    assert type(cd) == np.ndarray
+    assert (4, 2) == cd.shape

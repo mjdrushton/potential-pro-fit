@@ -91,7 +91,7 @@ class InspyredSupportTestCase(unittest.TestCase):
         bounder = _inspyred.Bounder(variables)
 
         expect = [[-10.0, -20.0], [10.0, 20.0]]
-        actual = bounder._bounds
+        actual = bounder.bounds
         self.assertEqual(expect, actual)
 
         import inspyred

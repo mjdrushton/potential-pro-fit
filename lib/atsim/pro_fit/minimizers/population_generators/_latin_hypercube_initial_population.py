@@ -5,13 +5,19 @@ import pyDOE2
 
 from ._variable_distributions import (
     Uniform_Variable_Distribution,
+    Uniform_Variable_Distributions,
     Variable_Distributions,
 )
 
 from ._candidate_generator import Candidate_Generator
+from ._bounded_variable_initialpopulation_base import (
+    Bounded_Variable_InitialPopulation_Base,
+)
 
 
-class Latin_Hypercube_InitialPopulation(object):
+class Latin_Hypercube_InitialPopulation(
+    Bounded_Variable_InitialPopulation_Base
+):
     """Generates initial populations using the Latin Hypercube method.
 
     This class makes use of the functionality provided by the pyDOE2
@@ -49,32 +55,19 @@ class Latin_Hypercube_InitialPopulation(object):
                 values from fractional values into coordinate space. If this is None, then an object using Variable_Distribution
                 based around a uniform distribution between each variable's upper and lower bounds will be used.
         """
-        self.initial_variables = initial_variables
-        self.population_size = population_size
+        super().__init__(
+            initial_variables, population_size, candidate_generator
+        )
         self.criterion = criterion
 
-        if candidate_generator is not None:
-            self.candidate_generator = candidate_generator
-        else:
-            self.candidate_generator = self._init_default_candidate_generator()
+    def _init_variable_distributions(self):
+        return Uniform_Variable_Distributions(self.initialVariables)
 
-    def _init_default_candidate_generator(self):
-        vd = [
-            Uniform_Variable_Distribution(fk, self.initial_variables)
-            for fk in self.initial_variables.fitKeys
-        ]
-        vd_obj = Variable_Distributions(self.initial_variables, vd)
-        cg = Candidate_Generator(vd_obj)
-        return cg
-
-    def generate_candidates(self):
-        n_factors = len(self.initial_variables.fitKeys)
+    def _generate_norm_candidates(self):
+        n_factors = len(self.initialVariables.fitKeys)
         norm_candidates = pyDOE2.lhs(
             n_factors,
             samples=self.population_size,
             criterion=self.criterion.value,
         )
-        candidates = self.candidate_generator.generate_candidates(
-            norm_candidates
-        )
-        return candidates
+        return norm_candidates

@@ -17,6 +17,10 @@ from ._latin_hypercube_initial_population import (
     Latin_Hypercube_InitialPopulation,
 )
 
+from ._uniform_random_initial_population import (
+    Uniform_Random_Initial_Population,
+)
+
 
 class UniformGenerator(BoundedVariableBaseClass):
     """Inspyred generator that generates bounded candidates from bounds stored in a Variables instance.
@@ -30,6 +34,6 @@ class UniformGenerator(BoundedVariableBaseClass):
     @return Candidate with length == adjustable parameters in self.initialVariables sitting within
       limits defined by variable bounds."""
         candidate = []
-        for (l, h) in zip(self._bounds[0], self._bounds[1]):
+        for (l, h) in zip(self.bounds[0], self.bounds[1]):
             candidate.append(random.uniform(l, h))
         return candidate

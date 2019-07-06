@@ -75,6 +75,12 @@ class Variables(object):
         doc="""Return list of (lowerbound, upperbound) tuples indicating box bounds for each fitting variable.""",
     )
 
+    @property
+    def numFitVariables(self):
+        """Return the number of variables flagged for fitting"""
+        l = len(self.fitKeys)
+        return l
+
     def inBounds(self, varKey, value):
         """Used to check if ``value`` is within the bounds of the variable named ``varKey``.
 
@@ -254,15 +260,15 @@ class BoundedVariableBaseClass(object):
               bounder and generator. Note: all fitted parameters must
               have definite upper and lower bounds inf/-inf bounds are
               not supported"""
-        self._initialVariables = variables
-        self._bounds = self._populateBounds()
+        self.initialVariables = variables
+        self.bounds = self._populateBounds()
 
     def _populateBounds(self):
         lower = []
         upper = []
         for ((n, _v, isFit), (lb, ub)) in zip(
-            self._initialVariables.flaggedVariablePairs,
-            self._initialVariables.bounds,
+            self.initialVariables.flaggedVariablePairs,
+            self.initialVariables.bounds,
         ):
             if not isFit:
                 continue
