@@ -21,19 +21,29 @@ from ._uniform_random_initial_population import (
     Uniform_Random_Initial_Population,
 )
 
+import numpy as np
 
-class UniformGenerator(BoundedVariableBaseClass):
-    """Inspyred generator that generates bounded candidates from bounds stored in a Variables instance.
-    Candidates are selected from a random uniform distribution."""
 
-    def __call__(self, random, args):
-        """Inspyred generator.
+class Null_Initial_Population(object):
+    def __init__(self):
+        self.population_size = 0
 
-    @param random random.Random instance passed in by Inspyred
-    @param args Args dictionary (not used here)
-    @return Candidate with length == adjustable parameters in self.initialVariables sitting within
-      limits defined by variable bounds."""
-        candidate = []
-        for (l, h) in zip(self.bounds[0], self.bounds[1]):
-            candidate.append(random.uniform(l, h))
-        return candidate
+    def generate_candidates(self):
+        return np.array([])
+
+
+# class UniformGenerator(BoundedVariableBaseClass):
+#     """Inspyred generator that generates bounded candidates from bounds stored in a Variables instance.
+#     Candidates are selected from a random uniform distribution."""
+
+#     def __call__(self, random, args):
+#         """Inspyred generator.
+
+#     @param random random.Random instance passed in by Inspyred
+#     @param args Args dictionary (not used here)
+#     @return Candidate with length == adjustable parameters in self.initialVariables sitting within
+#       limits defined by variable bounds."""
+#         candidate = []
+#         for (l, h) in zip(self.bounds[0], self.bounds[1]):
+#             candidate.append(random.uniform(l, h))
+#         return candidate

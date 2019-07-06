@@ -4,4 +4,3 @@ from ._pso import Particle_SwarmMinimizer
 
 from atsim.pro_fit.variables import VariableException
 from ._inspyred_common import Bounder
-from atsim.pro_fit.minimizers.population_generators import UniformGenerator

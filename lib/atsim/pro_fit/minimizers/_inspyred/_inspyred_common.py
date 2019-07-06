@@ -27,6 +27,30 @@ class Bounder(BoundedVariableBaseClass):
         return self._bounder(candidate, args)
 
 
+class Population_To_Generator_Adapter(object):
+    """Class the adapts initial population classes from
+    atsim.pro_fit.minimizers.population_generators for use
+    as generators for use with the inspyred minimizers.
+
+    This class must be instantiated with an Initial_Population
+    object that has a population size of 1. """
+
+    def __init__(self, initial_variables, population):
+        assert population.population_size == 1
+        self.initialVariables = initial_variables
+        self.population = population
+
+    def __call__(self, random, args):
+        """Inspyred generator.
+
+    @param random random.Random instance passed in by Inspyred
+    @param args Args dictionary (not used here)
+    @return Candidate."""
+        candidates = self.population.generate_candidates()
+        candidate = candidates[0]
+        return candidate
+
+
 class Evaluator(object):
     """Class that wraps Merit function and adapts it for the inspyred EvolutionaryComputation minimizers.
 
@@ -119,22 +143,24 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
     def __init__(
         self,
         generator,
-        initialVariables,
         evolutionaryComputation,
         populationSize,
+        initial_population,
         **args
     ):
         """@param generator UniformGenerator object from atsim.pro_fit.minimizers.population_generators.
        @param evolutionaryComputation Instance of inspyred.ec.EvolutionaryComputation.
                 Note: the evaluator, bounder and generator of the evolutionaryComputation are overwritten by this class.
        @param populationSize Size of population used for evolutionary computation.
+       @param initial_population Seed the minimizer with initial population (from atsim.pro_fit.minimizers.population_generators)
        @param args Dictionary containing optional keyword arguments that should be passed to the evolutionaryComputation.evolve method"""
-
+        assert initial_population.population_size <= populationSize
         self._generator = generator
         self._initialVariables = generator.initialVariables
         self._ec = evolutionaryComputation
         self._args = args
         self._populationSize = populationSize
+        self._initial_population = initial_population
         self.stepCallback = None
         self._greenlet = gevent.Greenlet()
 
@@ -180,12 +206,15 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
 
         self._ec.observer = observer
 
+        seeds = self._initial_population.generate_candidates()
+
         self._ec.evolve(
             self._generator,
             evaluator,
             bounder=bounder,
             pop_size=self._populationSize,
             maximize=False,
+            seeds=seeds,
             **self._args
         )
         return origobserver.bestMinimizerResults

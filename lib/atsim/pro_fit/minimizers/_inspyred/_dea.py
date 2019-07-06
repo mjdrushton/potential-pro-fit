@@ -2,17 +2,22 @@ import logging
 
 import math
 
-from atsim.pro_fit.minimizers.population_generators import UniformGenerator
-
 from atsim.pro_fit.variables import BoundedVariableBaseClass
 from atsim.pro_fit.variables import VariableException
-from ._inspyred_common import _IntConvert
-from ._inspyred_common import _FloatConvert
-from ._inspyred_common import _RandomSeed
-from ._inspyred_common import _EvolutionaryComputationMinimizerBaseClass
+from ._inspyred_common import (
+    _IntConvert,
+    _FloatConvert,
+    _RandomSeed,
+    _EvolutionaryComputationMinimizerBaseClass,
+    Population_To_Generator_Adapter,
+)
+
+from atsim.pro_fit.minimizers.population_generators import (
+    Null_Initial_Population,
+    Uniform_Random_Initial_Population,
+)
 
 from atsim.pro_fit.exceptions import ConfigException
-
 
 import inspyred
 
@@ -38,10 +43,19 @@ class DEAMinimizer(object):
         dea = inspyred.ec.DEA(r)
         dea.terminator = terminator
 
+        # TODO: Create initial population from Latin Hyper Cube
+        initial_population = Null_Initial_Population()
+
+        generator = Population_To_Generator_Adapter(
+            initialVariables,
+            Uniform_Random_Initial_Population(initialVariables, 1),
+        )
+
         self._minimizer = _EvolutionaryComputationMinimizerBaseClass(
-            UniformGenerator(initialVariables),
+            generator,
             dea,
             args["population_size"],
+            initial_population,
             num_selected=args["num_selected"],
             tournament_size=args["tournament_size"],
             crossover_rate=args["crossover_rate"],

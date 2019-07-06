@@ -3,13 +3,21 @@ import logging
 
 from atsim.pro_fit.variables import VariableException
 from atsim.pro_fit.variables import BoundedVariableBaseClass
-from atsim.pro_fit.minimizers.population_generators import UniformGenerator
 
-from ._inspyred_common import _IntConvert
-from ._inspyred_common import _FloatConvert
-from ._inspyred_common import _RandomSeed
-from ._inspyred_common import _ChoiceConvert
-from ._inspyred_common import _EvolutionaryComputationMinimizerBaseClass
+from ._inspyred_common import (
+    _IntConvert,
+    _FloatConvert,
+    _RandomSeed,
+    _ChoiceConvert,
+    _EvolutionaryComputationMinimizerBaseClass,
+    Population_To_Generator_Adapter,
+)
+
+from atsim.pro_fit.minimizers.population_generators import (
+    Null_Initial_Population,
+    Uniform_Random_Initial_Population,
+)
+
 
 import inspyred
 
@@ -39,10 +47,19 @@ class Particle_SwarmMinimizer(object):
         pso.terminator = terminator
         pso.topology = topology
 
+        # TODO: Create initial population from Latin Hyper Cube
+        initial_population = Null_Initial_Population()
+
+        generator = Population_To_Generator_Adapter(
+            initialVariables,
+            Uniform_Random_Initial_Population(initialVariables, 1),
+        )
+
         self._minimizer = _EvolutionaryComputationMinimizerBaseClass(
-            UniformGenerator(initialVariables),
+            generator,
             pso,
             args["population_size"],
+            initial_population,
             inertia=args["inertia"],
             cognitive_rate=args["cognitive_rate"],
             social_rate=args["social_rate"],

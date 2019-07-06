@@ -4,10 +4,18 @@ import math
 
 from atsim.pro_fit.variables import BoundedVariableBaseClass
 from atsim.pro_fit.variables import VariableException
-from ._inspyred_common import _IntConvert
-from ._inspyred_common import _FloatConvert
-from ._inspyred_common import _RandomSeed
-from ._inspyred_common import _EvolutionaryComputationMinimizerBaseClass
+from ._inspyred_common import (
+    _IntConvert,
+    _FloatConvert,
+    _RandomSeed,
+    _EvolutionaryComputationMinimizerBaseClass,
+    Population_To_Generator_Adapter,
+)
+
+from atsim.pro_fit.minimizers.population_generators import (
+    Null_Initial_Population,
+    Uniform_Random_Initial_Population,
+)
 
 import inspyred
 
@@ -147,10 +155,19 @@ class Simulated_AnnealingMinimizer(object):
             sa.bounder = temperatureVariableBounder
             sa.bounder.minimizerTemperature = args["temperature"]
 
-        self._minimizer = _EvolutionaryComputationMinimizerBaseClass(
+        # TODO: Create initial population from Latin Hyper Cube
+        initial_population = Null_Initial_Population()
+
+        generator = Population_To_Generator_Adapter(
             initialVariables,
+            Uniform_Random_Initial_Population(initialVariables, 1),
+        )
+
+        self._minimizer = _EvolutionaryComputationMinimizerBaseClass(
+            generator,
             sa,
             1,
+            initial_population,
             temperature=args["temperature"],
             cooling_rate=args["cooling_rate"],
             mutation_rate=args["mutation_rate"],
