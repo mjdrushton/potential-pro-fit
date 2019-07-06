@@ -79,7 +79,10 @@ def testDownloadChannel_BadStart_nonexistent_directory(execnet_gw, channel_id):
     try:
         try:
             ch = DownloadChannel(
-                execnet_gw, badpath, channel_id=channel_id, keepAlive=KEEP_ALIVE
+                execnet_gw,
+                badpath,
+                channel_id=channel_id,
+                keepAlive=KEEP_ALIVE,
             )
             assert False, "ChannelException should have been raised."
         except ChannelException as e:
@@ -287,7 +290,9 @@ def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
         dest_path = tmpdir.join("dest")
 
         dlh = DLH(remote_path.strpath, dest_path.strpath)
-        dl = DownloadDirectory(ch1, remote_path.strpath, dest_path.strpath, dlh)
+        dl = DownloadDirectory(
+            ch1, remote_path.strpath, dest_path.strpath, dlh
+        )
 
         do_dl(tmpdir, ch1, dl)
         assert dlh.complete_called == True
@@ -306,11 +311,15 @@ def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
         dest_path.remove(rec=True)
         dest_path.ensure_dir()
         dlh = ThrowHandler(remote_path.strpath, dest_path.strpath)
-        dl = DownloadDirectory(ch1, remote_path.strpath, dest_path.strpath, dlh)
+        dl = DownloadDirectory(
+            ch1, remote_path.strpath, dest_path.strpath, dlh
+        )
 
         try:
             do_dl(tmpdir, ch1, dl, False)
-            assert False, "ThrowMe exception should have been raised but wasn't"
+            assert (
+                False
+            ), "ThrowMe exception should have been raised but wasn't"
         except ThrowMe:
             pass
         assert dlh.complete_called == True

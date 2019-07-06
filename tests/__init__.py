@@ -161,7 +161,9 @@ class FitConfigTestCase(unittest.TestCase):
         from . import mockeval2
         from . import mockfactories
 
-        with self.assertRaises(pro_fit.exceptions.MultipleSectionConfigException):
+        with self.assertRaises(
+            pro_fit.exceptions.MultipleSectionConfigException
+        ):
             cfgobject = pro_fit.fitconfig.FitConfig(
                 cfgFilename,
                 runnermodules=[mockrunners],
@@ -205,7 +207,9 @@ class FitConfigTestCase(unittest.TestCase):
 
         self.assertEqual(mockrunners.MockRunner1Runner, r.__class__)
         self.assertEqual("Short", r.name)
-        self.assertEqual("mjdr@login.cx1.hpc.ic.ac.uk:/work/mjdr/jobs", r.remote_dir)
+        self.assertEqual(
+            "mjdr@login.cx1.hpc.ic.ac.uk:/work/mjdr/jobs", r.remote_dir
+        )
         self.assertEqual("short.pbs", r.header_filename)
         self.assertEqual(_getResourceDir(), r.fitpath)
 
@@ -213,19 +217,24 @@ class FitConfigTestCase(unittest.TestCase):
         r = runners["EightCPU"]
         self.assertEqual(mockrunners.MockRunner2Runner, r.__class__)
         self.assertEqual("EightCPU", r.name)
-        self.assertEqual("mjdr@login.cx1.hpc.ic.ac.uk:/work/mjdr/jobs", r.remote_dir)
+        self.assertEqual(
+            "mjdr@login.cx1.hpc.ic.ac.uk:/work/mjdr/jobs", r.remote_dir
+        )
         self.assertEqual(int(5), r.ncpus)
 
     def testMinimizer(self):
         minimizer = self.cfgobject.minimizer
-        self.assertEqual(pro_fit.minimizers.NelderMeadMinimizer, type(minimizer))
+        self.assertEqual(
+            pro_fit.minimizers.NelderMeadMinimizer, type(minimizer)
+        )
         self.assertEqual(self.cfgobject.variables, minimizer._initialVariables)
 
     def testMetaEvaluators(self):
         metaevaluators = self.cfgobject.metaEvaluators
         self.assertEqual(1, len(metaevaluators))
         self.assertEqual(
-            pro_fit.metaevaluators.FormulaMetaEvaluator, type(metaevaluators[0])
+            pro_fit.metaevaluators.FormulaMetaEvaluator,
+            type(metaevaluators[0]),
         )
         self.assertEqual("SumThing", metaevaluators[0].name)
 

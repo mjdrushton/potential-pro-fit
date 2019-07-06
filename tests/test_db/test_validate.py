@@ -7,7 +7,9 @@ from atsim.pro_fit.db import validate
 
 
 def _getResourceDir():
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), "resources"))
+    return os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "resources")
+    )
 
 
 def test_validategood():

@@ -33,7 +33,9 @@ class SQLiteReporterTestCase(unittest.TestCase):
 
     @staticmethod
     def getCalculatedVariables():
-        return atsim.pro_fit.variables.CalculatedVariables([("E", "A - C"), ("sum", "A+rho+C")])
+        return atsim.pro_fit.variables.CalculatedVariables(
+            [("E", "A - C"), ("sum", "A+rho+C")]
+        )
 
     @staticmethod
     def getVariables():
@@ -193,7 +195,11 @@ class SQLiteReporterTestCase(unittest.TestCase):
             ),
         ]
 
-        return [atsim.pro_fit.minimizers.MinimizerResults([mval], [(vinstances[0], jobs)])]
+        return [
+            atsim.pro_fit.minimizers.MinimizerResults(
+                [mval], [(vinstances[0], jobs)]
+            )
+        ]
 
     def setUp(self):
         # Create some MinimizerResults to feed to
@@ -511,7 +517,10 @@ class SQLiteReporterTestCase(unittest.TestCase):
     def testStatus(self):
         """Test population of the 'status' table"""
         reporter = atsim.pro_fit.reporters.SQLiteReporter(
-            None, self.initialVariables, self.calculatedVariables, "fitting_run"
+            None,
+            self.initialVariables,
+            self.calculatedVariables,
+            "fitting_run",
         )
         # reporter = SQLiteReporter('/Users/mr498/Desktop/db.sqlite', self.initialVariables)
         engine = reporter._saengine
@@ -529,7 +538,9 @@ class SQLiteReporterTestCase(unittest.TestCase):
             actual = []
             for row in results:
                 actual.append(dict(list(zip(list(row.keys()), row))))
-            expect = [{"id": 1, "runstatus": "Running", "title": "fitting_run"}]
+            expect = [
+                {"id": 1, "runstatus": "Running", "title": "fitting_run"}
+            ]
             testutil.compareCollection(self, expect, actual)
             results.close()
 

@@ -162,7 +162,9 @@ class GulpEvaluatorTestCase(unittest.TestCase):
 
         job = pro_fit.jobfactories.Job(None, _getResourceDir(), None)
         evalvalues = evaluator(job)
-        extractedvalues = dict([(v.name, v.extractedValue) for v in evalvalues])
+        extractedvalues = dict(
+            [(v.name, v.extractedValue) for v in evalvalues]
+        )
         fractionaldiffs = dict(
             [(v.name, v.fractionalDifference) for v in evalvalues]
         )
@@ -259,7 +261,9 @@ class GulpEvaluatorTestCase(unittest.TestCase):
             elastic_c65=0,
             elastic_c66=162.8714,
         )
-        testutil.compareCollection(self, expectextractedvalues, extractedvalues)
+        testutil.compareCollection(
+            self, expectextractedvalues, extractedvalues
+        )
 
         nan = float("NaN")
         fractionalextractedvalues = dict(
@@ -360,7 +364,9 @@ class GulpEvaluatorTestCase(unittest.TestCase):
 
         job = pro_fit.jobfactories.Job(None, _getResourceDir(), None)
         subevalled = evaluator(job)
-        extractedvalues = dict([(v.name, v.extractedValue) for v in subevalled])
+        extractedvalues = dict(
+            [(v.name, v.extractedValue) for v in subevalled]
+        )
         fractionaldiffs = dict(
             [(v.name, v.fractionalDifference) for v in subevalled]
         )
@@ -401,7 +407,9 @@ class GulpEvaluatorTestCase(unittest.TestCase):
 
         job = pro_fit.jobfactories.Job(None, _getResourceDir(), None)
         subevalled = evaluator(job)
-        extractedvalues = dict([(v.name, v.extractedValue) for v in subevalled])
+        extractedvalues = dict(
+            [(v.name, v.extractedValue) for v in subevalled]
+        )
 
         testutil.compareCollection(
             self,
@@ -426,7 +434,9 @@ class GulpEvaluatorTestCase(unittest.TestCase):
         job = pro_fit.jobfactories.Job(None, _getResourceDir(), None)
         # import pudb;pudb.set_trace()
         subevalled = evaluator(job)
-        extractedvalues = dict([(v.name, v.extractedValue) for v in subevalled])
+        extractedvalues = dict(
+            [(v.name, v.extractedValue) for v in subevalled]
+        )
         fractionaldiffs = dict(
             [(v.name, v.fractionalDifference) for v in subevalled]
         )

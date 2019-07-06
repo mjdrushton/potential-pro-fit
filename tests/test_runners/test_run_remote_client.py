@@ -133,7 +133,9 @@ def test_run_remote_client_kill_job(tmpdir, execnet_gw, channel_id):
         channel.waitclose(5)
 
 
-def test_run_remote_client_kill_not_started_job(tmpdir, execnet_gw, channel_id):
+def test_run_remote_client_kill_not_started_job(
+    tmpdir, execnet_gw, channel_id
+):
     channel = RunChannel(execnet_gw, channel_id, nprocesses=1)
     try:
         runclient = RunClient(channel)

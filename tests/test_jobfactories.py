@@ -160,7 +160,9 @@ runner : runner_name
             jf.runnerFilesPath,
         )
 
-        shutil.rmtree(os.path.join(self.rootDir, "runner_files", "runner_name"))
+        shutil.rmtree(
+            os.path.join(self.rootDir, "runner_files", "runner_name")
+        )
         jf = pro_fit.jobfactories.TemplateJobFactory.createFromConfig(
             "path/to/sourcedir",
             self.rootDir,

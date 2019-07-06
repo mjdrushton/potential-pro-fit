@@ -6,6 +6,7 @@ import atsim.pro_fit.minimizers
 import atsim.pro_fit.variables
 from atsim.pro_fit.minimizers.population_generators import UniformGenerator
 
+
 class InspyredSupportTestCase(unittest.TestCase):
     """Tests for adapters contained in fitting.minimizers._inspyred"""
 
@@ -16,19 +17,27 @@ class InspyredSupportTestCase(unittest.TestCase):
         # Test BounderGenerator
         # ... first check it throws when unbounded variables used for instantiation
         with self.assertRaises(_inspyred.VariableException):
-            _inspyred.Bounder(atsim.pro_fit.variables.Variables([("A", 1.0, True)]))
-
-        with self.assertRaises(_inspyred.VariableException):
-            UniformGenerator(atsim.pro_fit.variables.Variables([("A", 1.0, True)]))
-
-        with self.assertRaises(_inspyred.VariableException):
             _inspyred.Bounder(
-                atsim.pro_fit.variables.Variables([("A", 1.0, True)], [(None, 10.0)])
+                atsim.pro_fit.variables.Variables([("A", 1.0, True)])
             )
 
         with self.assertRaises(_inspyred.VariableException):
             UniformGenerator(
-                atsim.pro_fit.variables.Variables([("A", 1.0, True)], [(None, 10.0)])
+                atsim.pro_fit.variables.Variables([("A", 1.0, True)])
+            )
+
+        with self.assertRaises(_inspyred.VariableException):
+            _inspyred.Bounder(
+                atsim.pro_fit.variables.Variables(
+                    [("A", 1.0, True)], [(None, 10.0)]
+                )
+            )
+
+        with self.assertRaises(_inspyred.VariableException):
+            UniformGenerator(
+                atsim.pro_fit.variables.Variables(
+                    [("A", 1.0, True)], [(None, 10.0)]
+                )
             )
 
         with self.assertRaises(_inspyred.VariableException):

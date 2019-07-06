@@ -11,7 +11,9 @@ from .. import testutil
 
 
 def _getResourceDir():
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), "resources"))
+    return os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "resources")
+    )
 
 
 class CherryPyDBTestCaseBase(unittest.TestCase):

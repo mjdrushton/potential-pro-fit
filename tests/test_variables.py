@@ -42,19 +42,25 @@ class VariablesTestCase(unittest.TestCase):
         self.assertEqual([2.0, 3.0], initialVariables.fitValues)
 
         testutil.compareCollection(
-            self, [("A", 1.0), ("B", 2.0), ("C", 3.0)], candidate1.variablePairs
+            self,
+            [("A", 1.0), ("B", 2.0), ("C", 3.0)],
+            candidate1.variablePairs,
         )
         self.assertEqual(["B", "C"], candidate1.fitKeys)
         self.assertEqual([2.0, 3.0], candidate1.fitValues)
 
         testutil.compareCollection(
-            self, [("A", 1.0), ("B", 2.0), ("C", 3.0)], candidate1.variablePairs
+            self,
+            [("A", 1.0), ("B", 2.0), ("C", 3.0)],
+            candidate1.variablePairs,
         )
         self.assertEqual(["B", "C"], candidate1.fitKeys)
         self.assertEqual([2.0, 3.0], candidate1.fitValues)
 
         testutil.compareCollection(
-            self, [("A", 1.0), ("B", 5.0), ("C", 6.0)], candidate2.variablePairs
+            self,
+            [("A", 1.0), ("B", 5.0), ("C", 6.0)],
+            candidate2.variablePairs,
         )
         self.assertEqual(["B", "C"], candidate2.fitKeys)
         self.assertEqual([5.0, 6.0], candidate2.fitValues)
@@ -70,21 +76,18 @@ class VariablesTestCase(unittest.TestCase):
             ("E", 5.0, True),
         ]
 
-        bounds = [ None, (1.0, 3.0), (2.0, 4.0), None, (5.0, 6.0)]
+        bounds = [None, (1.0, 3.0), (2.0, 4.0), None, (5.0, 6.0)]
 
         v = atsim.pro_fit.variables.Variables(varlist, bounds)
         # unbound = (float("-inf"), float("inf"))
         unbound = None
-        expect_bounds = [ unbound, (1.0, 3.0), (2.0, 4.0), unbound, (5.0, 6.0)]
+        expect_bounds = [unbound, (1.0, 3.0), (2.0, 4.0), unbound, (5.0, 6.0)]
 
         assert expect_bounds == v.bounds
 
-        expect_bounds = [ (1.0, 3.0), None, (5.0, 6.0) ]
+        expect_bounds = [(1.0, 3.0), None, (5.0, 6.0)]
 
         assert expect_bounds == v.fitBounds
-
-        
-
 
 
 class CalculatedVariables(unittest.TestCase):
@@ -93,7 +96,11 @@ class CalculatedVariables(unittest.TestCase):
     def testNoExpressions(self):
         """Test that variables pass through CalculatedVariables unchanged when no expressions specified"""
         variables = atsim.pro_fit.variables.Variables(
-            [("A", 1.23, False), ("B", 4.56, False), ("electroneg", 0.4, True)],
+            [
+                ("A", 1.23, False),
+                ("B", 4.56, False),
+                ("electroneg", 0.4, True),
+            ],
             bounds=[None, None, (0, 1)],
         )
 
@@ -116,7 +123,11 @@ class CalculatedVariables(unittest.TestCase):
         expression3 = "electroneg * 4"
 
         variables = atsim.pro_fit.variables.Variables(
-            [("A", 1.23, False), ("B", 4.56, False), ("electroneg", 0.4, True)],
+            [
+                ("A", 1.23, False),
+                ("B", 4.56, False),
+                ("electroneg", 0.4, True),
+            ],
             bounds=[None, None, (0, 1)],
         )
 
@@ -163,7 +174,11 @@ Ucharge : electroneg * 4
         configitems = cfg.items("CalculatedVariables")
 
         variables = atsim.pro_fit.variables.Variables(
-            [("A", 1.23, False), ("B", 4.56, False), ("electroneg", 0.4, True)],
+            [
+                ("A", 1.23, False),
+                ("B", 4.56, False),
+                ("electroneg", 0.4, True),
+            ],
             bounds=[None, None, (0, 1)],
         )
 
@@ -204,7 +219,11 @@ Ucharge : electroneg * 4
         """Test Variables.inBounds method"""
 
         variables = atsim.pro_fit.variables.Variables(
-            [("A", 1.23, False), ("B", 4.56, False), ("electroneg", 0.4, True)],
+            [
+                ("A", 1.23, False),
+                ("B", 4.56, False),
+                ("electroneg", 0.4, True),
+            ],
             bounds=[None, (float("-inf"), 4.0), (2.0, 3.0)],
         )
 

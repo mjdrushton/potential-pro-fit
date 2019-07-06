@@ -1,6 +1,12 @@
 import unittest
 
-from atsim.pro_fit import metaevaluators, jobfactories, evaluators, exceptions, variables
+from atsim.pro_fit import (
+    metaevaluators,
+    jobfactories,
+    evaluators,
+    exceptions,
+    variables,
+)
 from . import testutil
 
 
@@ -102,7 +108,9 @@ class FormulaMetaEvaluator(unittest.TestCase):
         variables = metaevaluators.FormulaMetaEvaluator._splitVariables(
             variables
         )
-        metaeval = metaevaluators.FormulaMetaEvaluator("Meta", "A+B", variables)
+        metaeval = metaevaluators.FormulaMetaEvaluator(
+            "Meta", "A+B", variables
+        )
         variabledict = metaeval._makeVariableDict([mgojob, caojob])
 
         expect = {
@@ -199,7 +207,9 @@ class FormulaMetaEvaluator(unittest.TestCase):
 
         # Check RMS evaluation
         rmsexpression = metaevaluators.Expression("rmsvalue", "A+B", 1.0, 22.0)
-        rmsexpression2 = metaevaluators.Expression("rmsvalue", "A+B", 0.5, 22.0)
+        rmsexpression2 = metaevaluators.Expression(
+            "rmsvalue", "A+B", 0.5, 22.0
+        )
 
         metaeval = metaevaluators.FormulaMetaEvaluator(
             "Meta", [rmsexpression, rmsexpression2], variables

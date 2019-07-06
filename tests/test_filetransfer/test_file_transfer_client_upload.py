@@ -178,7 +178,9 @@ def testUploadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
 
         try:
             do_ul(tmpdir, ch1, ul, False)
-            assert False, "ThrowMe exception should have been raised but wasn't"
+            assert (
+                False
+            ), "ThrowMe exception should have been raised but wasn't"
         except ThrowMe:
             pass
         assert ulh.complete_called == True
@@ -230,7 +232,9 @@ def testUploadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
         ch1.waitclose(2)
 
 
-def testDirectoryUpload_create_multiple_uploads(tmpdir, execnet_gw, channel_id):
+def testDirectoryUpload_create_multiple_uploads(
+    tmpdir, execnet_gw, channel_id
+):
     source1 = tmpdir.join("source_1")
     source2 = tmpdir.join("source_2")
 

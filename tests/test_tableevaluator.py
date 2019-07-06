@@ -513,11 +513,13 @@ class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
         )
         optionDict["sum_only"] = "true"
         self.assertEqual(
-            True, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict)
+            True,
+            pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict),
         )
         optionDict["sum_only"] = "True"
         self.assertEqual(
-            True, pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict)
+            True,
+            pro_fit.evaluators.TableEvaluator._validateSumOnly(optionDict),
         )
 
         with self.assertRaises(

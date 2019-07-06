@@ -23,7 +23,9 @@ def testGoodStart(tmpdir, execnet_gw, channel_id):
         )
         msg = ch1.receive(10.0)
         assert (
-            dict(msg="READY", channel_id=channel_id, remote_path=tmpdir.strpath)
+            dict(
+                msg="READY", channel_id=channel_id, remote_path=tmpdir.strpath
+            )
             == msg
         )
     finally:
@@ -71,7 +73,9 @@ def testKeepAlive(tmpdir, execnet_gw, channel_id):
         )
         msg = ch1.receive(10.0)
         assert (
-            dict(msg="READY", channel_id=channel_id, remote_path=tmpdir.strpath)
+            dict(
+                msg="READY", channel_id=channel_id, remote_path=tmpdir.strpath
+            )
             == msg
         )
 

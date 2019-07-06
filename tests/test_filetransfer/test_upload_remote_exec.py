@@ -328,7 +328,9 @@ def testMkdirs(tmpdir, execnet_gw, channel_id):
             == 0o700
         )
 
-        ch1.send(dict(msg="MKDIRS", remote_path=three_deep.strpath, id=transid))
+        ch1.send(
+            dict(msg="MKDIRS", remote_path=three_deep.strpath, id=transid)
+        )
         msg = ch1.receive(10.0)
         assert msg == dict(
             msg="MKDIRS",

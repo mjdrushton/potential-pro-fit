@@ -79,13 +79,21 @@ def test_file_cleanup_end_to_end(tmpdir, execnet_gw, channel_id):
             {"msg": "LOCK", "id": transid, "remote_path": "two/three/four"}
         )
         msg = ch1.receive(10)
-        assert msg == {"msg": "LOCKED", "channel_id": channel_id, "id": transid}
+        assert msg == {
+            "msg": "LOCKED",
+            "channel_id": channel_id,
+            "id": transid,
+        }
 
         ch1.send(
             {"msg": "LOCK", "id": transid, "remote_path": ["two", "two/three"]}
         )
         msg = ch1.receive(10)
-        assert msg == {"msg": "LOCKED", "channel_id": channel_id, "id": transid}
+        assert msg == {
+            "msg": "LOCKED",
+            "channel_id": channel_id,
+            "id": transid,
+        }
 
         ch1.send(
             {
@@ -95,7 +103,11 @@ def test_file_cleanup_end_to_end(tmpdir, execnet_gw, channel_id):
             }
         )
         msg = ch1.receive(10)
-        assert msg == {"msg": "LOCKED", "channel_id": channel_id, "id": transid}
+        assert msg == {
+            "msg": "LOCKED",
+            "channel_id": channel_id,
+            "id": transid,
+        }
 
         # Unlock 'one/two/three/four' - four deleted
         ch1.send(
@@ -393,7 +405,11 @@ def test_file_cleanup_unlock_path_normalize(tmpdir, execnet_gw, channel_id):
             }
         )
         msg = ch1.receive(10)
-        assert msg == {"msg": "LOCKED", "channel_id": channel_id, "id": transid}
+        assert msg == {
+            "msg": "LOCKED",
+            "channel_id": channel_id,
+            "id": transid,
+        }
 
         ch1.send(
             {"msg": "UNLOCK", "id": transid, "remote_path": ["a/b/c/d/../../"]}

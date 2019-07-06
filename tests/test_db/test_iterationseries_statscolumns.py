@@ -185,7 +185,8 @@ class IterationSeries_StatsColumns_TestCase(DBTestCase):
 
         # baserequest = 'merit_value/all/min?columns=stat:quartile'
         for q, e in zip(
-            ["1", "2", "3"], [quartile1expect, quartile2expect, quartile3expect]
+            ["1", "2", "3"],
+            [quartile1expect, quartile2expect, quartile3expect],
         ):
             t = db.IterationSeriesTable(
                 self.engine, columns=["stat:quartile" + q]

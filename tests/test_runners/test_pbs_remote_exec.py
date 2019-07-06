@@ -309,7 +309,11 @@ def testQDel(clearqueue, channel_id):
             msg = ch.receive(2)
             assert expect == msg, msg
 
-            expect = {"msg": "QSELECT", "channel_id": channel_id, "job_ids": []}
+            expect = {
+                "msg": "QSELECT",
+                "channel_id": channel_id,
+                "job_ids": [],
+            }
             send_and_compare(ch, {"msg": "QSELECT"}, expect)
 
         finally:

@@ -37,7 +37,11 @@ def checkVector(tc, expect, actual, msg=None, tolerance=0.0025):
   @param msg Test fail message
   @param tolerance Acceptable distance between expected and actual vectors"""
     tc.assertEqual(len(expect), len(actual), msg=msg)
-    diff = (expect[0] - actual[0], expect[1] - actual[1], expect[2] - actual[2])
+    diff = (
+        expect[0] - actual[0],
+        expect[1] - actual[1],
+        expect[2] - actual[2],
+    )
     dist = math.sqrt(diff[0] ** 2 + diff[1] ** 2 + diff[2] ** 2)
     if msg == None:
         msg = "%s != %s" % (expect, actual)
@@ -105,7 +109,9 @@ def compareCollection(
 ):
     """Check two collections are the same"""
     path = "collection"
-    _compareCollection(path, testCase, expect, actual, places, percenttolerance)
+    _compareCollection(
+        path, testCase, expect, actual, places, percenttolerance
+    )
 
 
 def _getVagrantDir():

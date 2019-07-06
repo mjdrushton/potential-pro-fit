@@ -80,13 +80,17 @@ def testGetColumnList():
     engine = sa.create_engine("sqlite:///" + _getdbpath())
     from atsim.pro_fit.tools import ppdump
 
-    columns = ppdump._getColumnList(engine, None, [ppdump._VARIABLE_COLUMN_SET])
+    columns = ppdump._getColumnList(
+        engine, None, [ppdump._VARIABLE_COLUMN_SET]
+    )
     assert_that(columns).is_equal_to(ColumnKeysTestCase.variableExpect())
 
     columns = ppdump._getColumnList(
         engine, None, [ppdump._FIT_VARIABLE_COLUMN_SET]
     )
-    assert_that(columns).is_equal_to(ColumnKeysTestCase.fittingVariableExpect())
+    assert_that(columns).is_equal_to(
+        ColumnKeysTestCase.fittingVariableExpect()
+    )
 
     columns = ppdump._getColumnList(
         engine, None, [ppdump._EVALUATOR_COLUMN_SET]
