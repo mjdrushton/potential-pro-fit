@@ -1,6 +1,7 @@
+import inspyred
+import numpy as np
 import pytest
 import unittest
-import inspyred
 
 from atsim import pro_fit
 
@@ -10,6 +11,11 @@ import atsim.pro_fit.variables
 from atsim.pro_fit.minimizers._inspyred._inspyred_common import (
     Population_To_Generator_Adapter,
 )
+
+from atsim.pro_fit.minimizers._inspyred._config import (
+    Initial_Population_Config_Helper,
+)
+
 from atsim.pro_fit.minimizers.population_generators import (
     Uniform_Random_Initial_Population,
 )
@@ -129,6 +135,8 @@ def test_pso_instantiation():
         [(0, 10), (0, 20), (0, 30)],
     )
 
+    cfg_opts = Initial_Population_Config_Helper("Helper").parse(v, {})
+
     topology = inspyred.swarm.topologies.star_topology
 
     atsim.pro_fit.minimizers.Particle_SwarmMinimizer(
@@ -140,6 +148,8 @@ def test_pso_instantiation():
         social_rate=1.0,
         max_iterations=500,
         random_seed=8908,
+        generator=cfg_opts["generator"],
+        initial_population=cfg_opts["initial_population"],
     )
     # pytest.fail()
 
@@ -149,6 +159,8 @@ def test_dea_instantiation():
         [("a", 1.0, True), ("b", 2.1, False), ("c", 3.0, True)],
         [(0, 10), (0, 20), (0, 30)],
     )
+
+    cfg_opts = Initial_Population_Config_Helper("Helper").parse(v, {})
 
     atsim.pro_fit.minimizers.DEAMinimizer(
         v,
@@ -161,6 +173,8 @@ def test_dea_instantiation():
         gaussian_stdev=0.1,
         max_iterations=500,
         num_selected=16,
+        generator=cfg_opts["generator"],
+        initial_population=cfg_opts["initial_population"],
     )
 
 
@@ -184,3 +198,51 @@ def test_sa_instantiation():
         max_iterations=500,
         random_seed=907097,
     )
+
+
+def test_initial_population_config_helper():
+    config_helper = Initial_Population_Config_Helper(
+        "Helper", population_size=128
+    )
+    assert config_helper.default_keys == sorted(
+        [
+            "population_size",
+            "population_include_orig_vars",
+            "random_seed",
+            "max_iterations",
+        ]
+    )
+
+    # Get defaults
+    v = atsim.pro_fit.variables.Variables(
+        [("a", 1.0, True), ("b", 2.1, False), ("c", 3.0, True)],
+        [(0, 10), (0, 20), (0, 30)],
+    )
+
+    popn_dict = config_helper.parse(v, {})
+
+    assert "initial_population" in popn_dict
+    assert "generator" in popn_dict
+
+    init_population = popn_dict["initial_population"]
+    generator = popn_dict["generator"]
+
+    del popn_dict["initial_population"]
+    del popn_dict["generator"]
+
+    assert "random_seed" in popn_dict
+    del popn_dict["random_seed"]
+
+    expect_defaults = {
+        "population_size": 128,
+        "population_include_orig_vars": True,
+        "max_iterations": 1000,
+    }
+    assert expect_defaults == popn_dict
+
+    assert init_population.population_size == 128
+    assert np.allclose([[1.0, 3.0]], init_population.generate_candidates()[0])
+
+    # TODO: Need test for when population_include_orig_vars is False
+
+    # TODO: Need test for generator

@@ -92,6 +92,13 @@ Optional Fields
 
 \
 
+:Name: population_include_orig_vars
+:Arg-type: bool
+:Default: True
+:Description: If True include the variable values given in fit.cfg in the minimizer's initial population. If False population will be initialised completely from scratch.
+
+\
+
 :Name: population_size
 :Arg-type: int
 :Default: 64
@@ -111,3 +118,4 @@ Optional Fields
 :Arg-type: int
 :Default: >=2
 :Description: Number of candidates randomly selected from population during tournament selection of parents before crossover.
+

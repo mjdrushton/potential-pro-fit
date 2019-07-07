@@ -13,7 +13,7 @@ from atsim.pro_fit.minimizers.population_generators import (
     Uniform_Random_Initial_Population,
     Uniform_Variable_Distribution,
     Predefined_Initial_Population,
-    Combine_Initial_Population
+    Combine_Initial_Population,
 )
 
 from atsim.pro_fit.variables import Variables, VariableException

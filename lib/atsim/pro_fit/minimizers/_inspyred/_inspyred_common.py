@@ -283,3 +283,17 @@ def _ChoiceConvert(clsname, key, choices):
         return v
 
     return f
+
+
+def _BooleanConvert(clsname, key):
+    sconv = _ChoiceConvert(clsname, key, ["True", "False"])
+
+    def f(v):
+        v = sconv(v)
+
+        if v == "True":
+            return True
+        else:
+            return False
+
+    return f

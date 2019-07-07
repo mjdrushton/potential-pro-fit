@@ -1,6 +1,8 @@
 import logging
-
+import itertools
 import math
+
+import inspyred
 
 from atsim.pro_fit.variables import BoundedVariableBaseClass
 from atsim.pro_fit.variables import VariableException
@@ -9,17 +11,14 @@ from ._inspyred_common import (
     _FloatConvert,
     _RandomSeed,
     _EvolutionaryComputationMinimizerBaseClass,
-    Population_To_Generator_Adapter,
 )
 
-from atsim.pro_fit.minimizers.population_generators import (
-    Latin_Hypercube_InitialPopulation,
-    Uniform_Random_Initial_Population,
+
+from atsim.pro_fit.minimizers._inspyred._config import (
+    Initial_Population_Config_Helper,
 )
 
 from atsim.pro_fit.exceptions import ConfigException
-
-import inspyred
 
 
 class DEAMinimizer(object):
@@ -44,16 +43,9 @@ class DEAMinimizer(object):
         dea.terminator = terminator
 
         # Create initial population from Latin Hyper Cube
-        initial_population = Latin_Hypercube_InitialPopulation(
-            initialVariables,
-            args["population_size"],
-            criterion=Latin_Hypercube_InitialPopulation.Criterion.center,
-        )
+        initial_population = args["initial_population"]
 
-        generator = Population_To_Generator_Adapter(
-            initialVariables,
-            Uniform_Random_Initial_Population(initialVariables, 1),
-        )
+        generator = args["generator"]
 
         self._minimizer = _EvolutionaryComputationMinimizerBaseClass(
             generator,
@@ -99,60 +91,45 @@ class DEAMinimizer(object):
 
         cfgdict = dict(configitems)
         del cfgdict["type"]
-
+        clsname = "DEA minimizer"
         defaults = dict(
             num_selected=(
                 2,
-                _IntConvert(
-                    "DEA minimizer", "num_selected", (2, float("inf"))
-                ),
+                _IntConvert(clsname, "num_selected", (2, float("inf"))),
             ),
             tournament_size=(
                 2,
-                _IntConvert(
-                    "DEA minimizer", "tournament_size", (2, float("inf"))
-                ),
+                _IntConvert(clsname, "tournament_size", (2, float("inf"))),
             ),
             crossover_rate=(
                 1.0,
-                _FloatConvert("DEA minimizer", "crossover_rate", (0.0, 1.0)),
+                _FloatConvert(clsname, "crossover_rate", (0.0, 1.0)),
             ),
             mutation_rate=(
                 0.1,
-                _FloatConvert("DEA minimizer", "mutation_rate", (0.0, 1.0)),
+                _FloatConvert(clsname, "mutation_rate", (0.0, 1.0)),
             ),
-            gaussian_mean=(0, _FloatConvert("DEA minimizer", "gaussian_mean")),
+            gaussian_mean=(0, _FloatConvert(clsname, "gaussian_mean")),
             gaussian_stdev=(
                 1,
-                _FloatConvert(
-                    "DEA minimizer", "gaussian_stdev", (1e-3, float("inf"))
-                ),
+                _FloatConvert(clsname, "gaussian_stdev", (1e-3, float("inf"))),
             ),
-            max_iterations=(
-                1000,
-                _IntConvert(
-                    "DEA minimizer", "max_iterations", (1, float("inf"))
-                ),
-            ),
-            population_size=(
-                64,
-                _IntConvert(
-                    "DEA minimizer", "population_size", (2, float("inf"))
-                ),
-            ),
-            random_seed=(None, _RandomSeed("DEA minimizer", "random_seed")),
         )
 
+        cfg_helper = Initial_Population_Config_Helper(clsname)
+
         # Throw if cfgdict has any keys not in defaults
-        for k in cfgdict.keys():
-            if k not in defaults:
+        relevant_keys = set(itertools.chain(defaults.keys(), cfg_helper.default_keys))
+        for k in relevant_keys:
+            if k not in relevant_keys:
                 raise ConfigException(
-                    "Unknown configuration option '%s' for DEA minimizer"
-                    % (k,)
+                    "Unknown configuration option '{}' for DEA minimizer".format(
+                        k
+                    )
                 )
 
         # Override any values specified in cfgdict.
-        optiondict = {}
+        optiondict = cfg_helper.parse(variables, cfgdict)
         for k, (default, converter) in defaults.items():
             optiondict[k] = converter(cfgdict.get(k, converter(default)))
 

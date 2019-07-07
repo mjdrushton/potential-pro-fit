@@ -1,5 +1,5 @@
 import logging
-
+import itertools
 
 from atsim.pro_fit.variables import VariableException
 from atsim.pro_fit.variables import BoundedVariableBaseClass
@@ -12,6 +12,8 @@ from ._inspyred_common import (
     _EvolutionaryComputationMinimizerBaseClass,
     Population_To_Generator_Adapter,
 )
+
+from ._config import Initial_Population_Config_Helper
 
 from atsim.pro_fit.minimizers.population_generators import (
     Latin_Hypercube_InitialPopulation,
@@ -48,16 +50,9 @@ class Particle_SwarmMinimizer(object):
         pso.topology = topology
 
         # Create initial population from Latin Hyper Cube
-        initial_population = Latin_Hypercube_InitialPopulation(
-            initialVariables,
-            args["population_size"],
-            criterion=Latin_Hypercube_InitialPopulation.Criterion.center,
-        )
+        initial_population = args["initial_population"]
 
-        generator = Population_To_Generator_Adapter(
-            initialVariables,
-            Uniform_Random_Initial_Population(initialVariables, 1),
-        )
+        generator = args["generator"]
 
         self._minimizer = _EvolutionaryComputationMinimizerBaseClass(
             generator,
@@ -120,27 +115,20 @@ class Particle_SwarmMinimizer(object):
                 2.1,
                 _FloatConvert(clsname, "social_rate", (0, float("inf"))),
             ),
-            max_iterations=(
-                1000,
-                _IntConvert(clsname, "max_iterations", (1, float("inf"))),
-            ),
-            population_size=(
-                64,
-                _IntConvert(clsname, "population_size", (2, float("inf"))),
-            ),
-            random_seed=(None, _RandomSeed(clsname, "random_seed")),
         )
 
+        cfg_helper = Initial_Population_Config_Helper(clsname)
+
         # Throw if cfgdict has any keys not in defaults
+        relevant_keys = set(itertools.chain(defaults.keys(), cfg_helper.default_keys))
         for k in cfgdict.keys():
-            if k not in defaults:
+            if k not in relevant_keys:
                 raise ConfigException(
-                    "Unknown configuration option '%s' for Particle_Swarm minimizer"
-                    % (k,)
+                    "Unknown configuration option '{}' for Particle_Swarm minimizer".format(k)
                 )
 
-        # Override any values specified in cfgdict.
-        optiondict = {}
+        # Override any values specified in cfgdict
+        optiondict = cfg_helper.parse(variables, cfgdict)
         for k, (default, converter) in defaults.items():
             optiondict[k] = converter(cfgdict.get(k, converter(default)))
 

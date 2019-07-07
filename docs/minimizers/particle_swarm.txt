@@ -49,6 +49,14 @@ Optional Fields
 :Bounds: >2 and < population_size - 1
 :Description: Number of neighbours for each particle when ``topology`` is set to ``ring``.
 
+
+\
+
+:Name: population_include_orig_vars
+:Arg-type: bool
+:Default: True
+:Description: If True include the variable values given in fit.cfg in the minimizer's initial population. If False population will be initialised completely from scratch.
+
 \
 
 :Name: population_size
