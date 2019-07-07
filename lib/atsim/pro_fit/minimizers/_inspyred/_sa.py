@@ -202,7 +202,7 @@ class Simulated_AnnealingMinimizer(object):
     @param configitems List of key,value pairs extracted from [Minimizer] section of config file.
     @return Instance of Simulated_AnnealingMinimizer"""
 
-        Check bounds are defined
+        # Check bounds are defined
         try:
             BoundedVariableBaseClass(variables)
         except VariableException as e:

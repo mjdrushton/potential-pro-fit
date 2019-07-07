@@ -2,6 +2,9 @@
 
 ## [0.9.1] - Unreleased
 ### Changed
+
+### Fixed
+- actually made the Simulated_Annealing minimizer useful by initialising the minimizer with original variable values.
     
 
 ## [0.9.0] - 2019-6-27

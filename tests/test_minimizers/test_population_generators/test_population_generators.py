@@ -13,6 +13,7 @@ from atsim.pro_fit.minimizers.population_generators import (
     Uniform_Random_Initial_Population,
     Uniform_Variable_Distribution,
     Predefined_Initial_Population,
+    Combine_Initial_Population
 )
 
 from atsim.pro_fit.variables import Variables, VariableException
@@ -217,3 +218,66 @@ def test_predefined_initial_population():
 
     with pytest.raises(ValueError):
         Predefined_Initial_Population(v, from_dict=None, from_array=None)
+
+
+def test_combine_initial_population():
+    v_a = Variables([("a", 1.0, True)])
+
+    popn_a = Predefined_Initial_Population(v_a, from_array=[[0], [1], [2]])
+    popn_b = Predefined_Initial_Population(v_a, from_array=[[3], [4], [5]])
+
+    combined = Combine_Initial_Population(popn_a, popn_b)
+    assert 6 == combined.population_size
+
+    expect = np.arange(6, dtype=np.double).reshape(6, 1)
+    actual = combined.generate_candidates()
+
+    assert np.allclose(expect, actual)
+
+    # Fit keys and bounds must be the same
+
+    v_b = Variables([("b", 2.0, True)])
+
+    popn_a = Predefined_Initial_Population(v_a, from_array=[[0], [1], [2]])
+    popn_b = Predefined_Initial_Population(v_b, from_array=[[3], [4], [5]])
+
+    # Different variables
+    with pytest.raises(VariableException):
+        Combine_Initial_Population(popn_a, popn_b)
+
+    v_a = Variables([("b", 2.0, True), ("a", 1.0, True)])
+    v_b = Variables([("a", 1.0, True), ("b", 2.0, True)])
+    popn_a = Predefined_Initial_Population(
+        v_a, from_array=[[0, 1], [1, 2], [2, 3]]
+    )
+    popn_b = Predefined_Initial_Population(
+        v_b, from_array=[[3, 4], [4, 5], [5, 6]]
+    )
+
+    with pytest.raises(VariableException):
+        Combine_Initial_Population(popn_a, popn_b)
+
+    # This should be fine (different value but some fit key order)
+    v_a = Variables([("a", 2.0, True), ("b", 1.0, True)])
+    v_b = Variables([("a", 1.0, True), ("b", 2.0, True)])
+    popn_a = Predefined_Initial_Population(
+        v_a, from_array=[[0, 1], [1, 2], [2, 3]]
+    )
+    popn_b = Predefined_Initial_Population(
+        v_b, from_array=[[3, 4], [4, 5], [5, 6]]
+    )
+
+    Combine_Initial_Population(popn_a, popn_b)
+
+    # Different bounds
+    v_a = Variables([("b", 2.0, True), ("a", 4.0, True)], [(1, 3), (4, 5)])
+    v_b = Variables([("b", 2.0, True), ("a", 1.0, True)])
+    popn_a = Predefined_Initial_Population(
+        v_a, from_array=[[2, 4.5], [2.5, 4.1], [2, 4.2]]
+    )
+    popn_b = Predefined_Initial_Population(
+        v_b, from_array=[[3, 4], [4, 5], [5, 6]]
+    )
+
+    with pytest.raises(VariableException):
+        Combine_Initial_Population(popn_a, popn_b)
