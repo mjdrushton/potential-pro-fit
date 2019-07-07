@@ -12,6 +12,7 @@ from atsim.pro_fit.minimizers.population_generators import (
     Latin_Hypercube_InitialPopulation,
     Uniform_Random_Initial_Population,
     Uniform_Variable_Distribution,
+    Predefined_Initial_Population,
 )
 
 from atsim.pro_fit.variables import Variables, VariableException
@@ -137,3 +138,82 @@ def test_uniform_random_initial_population():
     cd = ip.generate_candidates()
     assert type(cd) == np.ndarray
     assert (4, 2) == cd.shape
+
+
+def test_predefined_initial_population():
+    # Test with good variables
+    v = Variables(
+        ([("b", 2.0, False), ("c", 3.0, True), ("a", 1.0, True)]),
+        bounds=[(2, 10), (1, 10), (0, 10)],
+    )
+
+    # .. initialise from dictionary
+    candidates = [
+        {"a": 1.0, "b": 2.0, "c": 3.0},
+        {"a": 4.0, "b": 5.0, "c": 6.0},
+        {"a": 8.0, "b": 5.0, "c": 4.0},
+    ]
+
+    expect = np.array([[3, 1], [6, 4], [4, 8]], dtype=np.double)
+
+    ip = Predefined_Initial_Population(v, from_dict=candidates)
+    actual = ip.generate_candidates()
+
+    assert np.allclose(expect, actual)
+    assert 3 == ip.population_size
+
+    # Test with unbounded variables
+    v = Variables(([("b", 2.0, False), ("c", 3.0, True), ("a", 1.0, True)]))
+    ip = Predefined_Initial_Population(v, from_dict=candidates)
+    actual = ip.generate_candidates()
+
+    assert np.allclose(expect, actual)
+    assert 3 == ip.population_size
+
+    v = Variables(
+        ([("b", 2.0, False), ("c", 3.0, True), ("a", 1.0, True)]),
+        bounds=[(2, 10), (1, 10), (0, 10)],
+    )
+
+    # ... check that exception is thrown if variables are out of bounds
+    with pytest.raises(VariableException):
+        Predefined_Initial_Population(v, from_dict=[{"a": 1.0, "c": 20.0}])
+
+    with pytest.raises(VariableException):
+        Predefined_Initial_Population(v, from_dict=[{"a": float("nan")}])
+
+    with pytest.raises(VariableException):
+        Predefined_Initial_Population(v, from_dict=[{"a": None, "c": 3.0}])
+
+    with pytest.raises(VariableException):
+        Predefined_Initial_Population(
+            v, from_dict=[{"a": float("inf"), "c": 3.0}]
+        )
+
+    # ... check that exception is thrown if a key is missing
+    with pytest.raises(VariableException):
+        Predefined_Initial_Population(v, from_dict=[{"a": 1.0}])
+
+    # Same tests but with arrays
+    candidates = [[3.0, 1.0], [6.0, 4.0]]
+
+    ip = Predefined_Initial_Population(v, from_array=candidates)
+    actual = ip.generate_candidates()
+
+    assert np.allclose(np.array(candidates, dtype=np.double), actual)
+    assert 2 == ip.population_size
+
+    # ... check that exception is thrown if shape is wrong
+    with pytest.raises(VariableException):
+        Predefined_Initial_Population(v, from_array=[[1.0]])
+
+    # check that an exception is raised if from_array and from_dict specified at same time
+    with pytest.raises(ValueError):
+        Predefined_Initial_Population(
+            v,
+            from_dict=[{"a": 1.0, "b": 2.0, "c": 3.0}],
+            from_array=[[3.0, 1.0]],
+        )
+
+    with pytest.raises(ValueError):
+        Predefined_Initial_Population(v, from_dict=None, from_array=None)

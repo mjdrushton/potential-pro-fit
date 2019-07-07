@@ -53,7 +53,7 @@ class Candidate_Generator(object):
         """
 
         try:
-            norm_values = np.array(norm_values, dtype=np.float)
+            norm_values = np.array(norm_values, dtype=np.double)
         except ValueError as e:
             raise Candidate_Length_Exception(str(e))
 

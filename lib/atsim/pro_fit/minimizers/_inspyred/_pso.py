@@ -14,7 +14,7 @@ from ._inspyred_common import (
 )
 
 from atsim.pro_fit.minimizers.population_generators import (
-    Null_Initial_Population,
+    Latin_Hypercube_InitialPopulation,
     Uniform_Random_Initial_Population,
 )
 
@@ -47,8 +47,12 @@ class Particle_SwarmMinimizer(object):
         pso.terminator = terminator
         pso.topology = topology
 
-        # TODO: Create initial population from Latin Hyper Cube
-        initial_population = Null_Initial_Population()
+        # Create initial population from Latin Hyper Cube
+        initial_population = Latin_Hypercube_InitialPopulation(
+            initialVariables,
+            args["population_size"],
+            criterion=Latin_Hypercube_InitialPopulation.Criterion.center,
+        )
 
         generator = Population_To_Generator_Adapter(
             initialVariables,

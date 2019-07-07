@@ -13,7 +13,7 @@ from ._inspyred_common import (
 )
 
 from atsim.pro_fit.minimizers.population_generators import (
-    Null_Initial_Population,
+    Predefined_Initial_Population,
     Uniform_Random_Initial_Population,
 )
 
@@ -155,8 +155,10 @@ class Simulated_AnnealingMinimizer(object):
             sa.bounder = temperatureVariableBounder
             sa.bounder.minimizerTemperature = args["temperature"]
 
-        # TODO: Create initial population from Latin Hyper Cube
-        initial_population = Null_Initial_Population()
+        # Create initial population from variables
+        initial_population = Predefined_Initial_Population(
+            initialVariables, from_array=[initialVariables.fitValues]
+        )
 
         generator = Population_To_Generator_Adapter(
             initialVariables,
@@ -200,7 +202,7 @@ class Simulated_AnnealingMinimizer(object):
     @param configitems List of key,value pairs extracted from [Minimizer] section of config file.
     @return Instance of Simulated_AnnealingMinimizer"""
 
-        # Check bounds are defined
+        Check bounds are defined
         try:
             BoundedVariableBaseClass(variables)
         except VariableException as e:

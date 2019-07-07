@@ -47,7 +47,7 @@ class Population_To_Generator_Adapter(object):
     @param args Args dictionary (not used here)
     @return Candidate."""
         candidates = self.population.generate_candidates()
-        candidate = candidates[0]
+        candidate = candidates[0].tolist()
         return candidate
 
 
@@ -207,6 +207,7 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
         self._ec.observer = observer
 
         seeds = self._initial_population.generate_candidates()
+        seeds = seeds.tolist()
 
         self._ec.evolve(
             self._generator,
