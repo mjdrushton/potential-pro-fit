@@ -141,6 +141,21 @@ def parseCommandLine():
         help="Add the columns listed by --list-evaluator-columns to the column selection.",
     )
 
+    iterationSelectionGroup = parser.add_argument_group(
+        "Iteration selection",
+        description="Choose the minimization steps for which data will be dumped",
+    )
+
+    iterationSelectionGroup.add_argument(
+        "-i",
+        "--iteration",
+        nargs="?",
+        dest="iteration_filter",
+        metavar="ITERATION",
+        default = 'best',
+        help="Choose minimizer steps to dump. ITERATION can be or 'last', 'best', 'all', 'running_min', 'running_max' or an integer giving step number (indexed from zero).",
+    )
+
     gridGroup = parser.add_argument_group(
         "Grid extraction",
         description="Options that allow grid/matrix data-formats to be output. Typically these options are used with fitting_run.db files obtained from runs that make use of ppgrid and the Spreadsheet minimizer",
@@ -261,9 +276,12 @@ def outputNumIterations(engine):
     print(f.current_iteration())
 
 
-def outputTable(engine, columns, candidate_filter, outfile):
+def outputTable(engine, columns, iteration_filter, candidate_filter, outfile):
+            
+    
+
     iterationSeriesTable = db.IterationSeriesTable(
-        engine, candidateFilter=candidate_filter, columns=columns
+        engine, iterationFilter = iteration_filter, candidateFilter=candidate_filter, columns=columns
     )
 
     for row in iterationSeriesTable:
@@ -332,8 +350,20 @@ def main():
         )
     else:
         columns = _getColumnList(engine, options.columns, options.column_sets)
+
+        iteration_filter = options.iteration_filter
+
+        if iteration_filter == 'best':
+            iteration_filter = 'global_min'
+    
+        if not iteration_filter in ['global_min', 'last', 'running_min', 'running_max', 'all']:
+            try:
+                v = int(iteration_filter)
+                iteration_filter = 'n({}'.format(v)
+            except ValueError:
+                parser.error(" --iteration argument '{}' must be an integer representing a step number or 'best', 'last', 'running_min', 'running_max' or 'all'.".format(iteration_filter))
         outputTable(
-            engine, columns, options.candidate_filter, options.output_file
+            engine, columns, iteration_filter, options.candidate_filter, options.output_file
         )
 
 

@@ -119,7 +119,9 @@ class DEAMinimizer(object):
         cfg_helper = Initial_Population_Config_Helper(clsname)
 
         # Throw if cfgdict has any keys not in defaults
-        relevant_keys = set(itertools.chain(defaults.keys(), cfg_helper.default_keys))
+        relevant_keys = set(
+            itertools.chain(defaults.keys(), cfg_helper.default_keys)
+        )
         for k in relevant_keys:
             if k not in relevant_keys:
                 raise ConfigException(

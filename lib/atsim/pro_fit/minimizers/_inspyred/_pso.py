@@ -120,11 +120,15 @@ class Particle_SwarmMinimizer(object):
         cfg_helper = Initial_Population_Config_Helper(clsname)
 
         # Throw if cfgdict has any keys not in defaults
-        relevant_keys = set(itertools.chain(defaults.keys(), cfg_helper.default_keys))
+        relevant_keys = set(
+            itertools.chain(defaults.keys(), cfg_helper.default_keys)
+        )
         for k in cfgdict.keys():
             if k not in relevant_keys:
                 raise ConfigException(
-                    "Unknown configuration option '{}' for Particle_Swarm minimizer".format(k)
+                    "Unknown configuration option '{}' for Particle_Swarm minimizer".format(
+                        k
+                    )
                 )
 
         # Override any values specified in cfgdict

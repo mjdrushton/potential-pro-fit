@@ -16,7 +16,24 @@ from ._columnproviders import (
 from ._util import calculatePercentageDifference
 from . import _metadata
 
+from ._fitting import Fitting
+
 metadata = _metadata.getMetadata()
+
+
+class _BestIteration(object):
+    def __call__(self, engine):
+        f = Fitting(engine)
+        result = f.best_candidate()
+        retval = result["iteration_number"]
+        return retval
+
+
+class _LastIteration(object):
+    def __call__(self, engine):
+        f = Fitting(engine)
+        retval = f.current_iteration()
+        return retval
 
 
 class BadFilterCombinationException(Exception):
@@ -179,9 +196,11 @@ class IterationSeriesTable(object):
     :param candidateFilter: Determines the candidate selected from each iteration.
       The value of this parameter can be one of ``min`` and ``max``.
     :param columns: List of additional column keys to include in the returned table."""
-        if candidateFilter == "all" and iterationFilter != "all":
+
+        # Why was this in place?
+        if candidateFilter == "all" and iterationFilter in ["running_min", "running_max"]:
             raise BadFilterCombinationException(
-                "the 'all' candidate filter can only be used with 'all' iteration filter."
+                "the 'all' candidate filter can not be used with the '{}' iteration filter.".format(iterationFilter)
             )
 
         self.engine = engine
@@ -316,12 +335,6 @@ class IterationSeriesTable(object):
 
         candidates = metadata.tables["candidates"]
 
-        iterationFilterFunc = {
-            "all": _NullFilter,
-            "running_min": _RunningMinFilter,
-            "running_max": _RunningMaxFilter,
-        }[iterationFilter]
-
         candidateFilterFunc, groupby = {
             "all": (lambda c: c, False),
             "min": (sa.func.min, True),
@@ -341,6 +354,34 @@ class IterationSeriesTable(object):
 
         if groupby:
             query = query.group_by(candidates.c.iteration_number)
+
+        specific_iteration_filters = {
+            "global_min": _BestIteration,
+            "last": _LastIteration,
+        }
+
+        if (
+            iterationFilter.startswith("n(")
+            or iterationFilter in specific_iteration_filters
+        ):
+            iterationFilterFunc = _NullFilter
+
+            if iterationFilter in specific_iteration_filters:
+                itnum_callable = specific_iteration_filters[iterationFilter]
+                chosen_it = itnum_callable()(self.engine)
+            else:
+                iterationFilter = iterationFilter[2:].strip()
+                iterationFilter = iterationFilter[:-1]
+                chosen_it = int(iterationFilter)
+                
+            query = query.where(candidates.c.iteration_number == chosen_it)
+
+        else:
+            iterationFilterFunc = {
+                "all": _NullFilter,
+                "running_min": _RunningMinFilter,
+                "running_max": _RunningMaxFilter,
+            }[iterationFilter]
 
         results = self.engine.execute(query)
         results = _FilterWrapper(
