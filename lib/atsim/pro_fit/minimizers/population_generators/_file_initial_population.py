@@ -44,6 +44,10 @@ class Ppdump_File_Initial_Population(File_Initial_Population):
             ]
 
             if len(items) == 0:
-                raise VariableException("No variables (columns starting in 'variable:' found in data: {}".format(row))
+                raise VariableException(
+                    "No variables (columns starting in 'variable:' found in data: {}".format(
+                        row
+                    )
+                )
 
             yield dict(items)

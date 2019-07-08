@@ -88,7 +88,11 @@ class Initial_Population_Config_Helper(object):
         except ConfigException as e:
             raise ConfigException("{} for {}".format(str(e), self.clsname))
         except VariableException as ve:
-            raise ConfigException("Problem with variables {} for {}".format(str(ve), self.clsname))
+            raise ConfigException(
+                "Problem with variables {} for {}".format(
+                    str(ve), self.clsname
+                )
+            )
 
         optiondict["initial_population"] = population_factory.population
 
@@ -158,30 +162,29 @@ class _Initial_Population_Factory(object):
     def _init_population(self):
         population_size = self.population_size
 
-        if self.population_loader:
-            populate_rest = self.population_loader
-        else:
-            populate_rest = self._create_latin_hypercube
+        popn_init_callables = []
 
         if self.population_include_orig_vars:
-            orig_vars = Predefined_Initial_Population(
-                self.initialVariables,
-                from_array=[self.initialVariables.fitValues],
-            )
-            population_size -= 1
-            if population_size == 0:
-                return orig_vars
+            popn_init_callables.append(self._create_init_variables)
 
-            rest_of_population = populate_rest(population_size)
+        if self.population_loader:
+            popn_init_callables.append(self.population_loader)
 
-            # Combine the two
-            population = Combine_Initial_Population(
-                orig_vars, rest_of_population
-            )
-            return population
+        popn_init_callables.append(self._create_latin_hypercube)
+
+        popns= []
+        for c in popn_init_callables:
+            p = c(population_size)
+            popns.append(p)
+            population_size -= p.population_size
+            if population_size < 1:
+                break
+
+        if len(popns) == 1:
+            return popns[0]
         else:
-            population = populate_rest(population_size)
-            return population
+            popn = Combine_Initial_Population(*popns)
+            return popn
 
     def _create_latin_hypercube(self, population_size):
         popn = Latin_Hypercube_InitialPopulation(
@@ -190,3 +193,10 @@ class _Initial_Population_Factory(object):
             Latin_Hypercube_InitialPopulation.Criterion.correlation,
         )
         return popn
+
+    def _create_init_variables(self, population_size):
+        orig_vars = Predefined_Initial_Population(
+                self.initialVariables,
+                from_array=[self.initialVariables.fitValues],
+            )
+        return orig_vars
