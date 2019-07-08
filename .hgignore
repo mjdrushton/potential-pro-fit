@@ -23,3 +23,4 @@ wheelhouse
 pro_fit.sublime-workspace
 html
 .tox/*
+docs/_build

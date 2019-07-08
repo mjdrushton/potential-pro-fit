@@ -152,7 +152,7 @@ def parseCommandLine():
         nargs="?",
         dest="iteration_filter",
         metavar="ITERATION",
-        default = 'best',
+        default="best",
         help="Choose minimizer steps to dump. ITERATION can be or 'last', 'best', 'all', 'running_min', 'running_max' or an integer giving step number (indexed from zero).",
     )
 
@@ -277,11 +277,12 @@ def outputNumIterations(engine):
 
 
 def outputTable(engine, columns, iteration_filter, candidate_filter, outfile):
-            
-    
 
     iterationSeriesTable = db.IterationSeriesTable(
-        engine, iterationFilter = iteration_filter, candidateFilter=candidate_filter, columns=columns
+        engine,
+        iterationFilter=iteration_filter,
+        candidateFilter=candidate_filter,
+        columns=columns,
     )
 
     for row in iterationSeriesTable:
@@ -353,17 +354,31 @@ def main():
 
         iteration_filter = options.iteration_filter
 
-        if iteration_filter == 'best':
-            iteration_filter = 'global_min'
-    
-        if not iteration_filter in ['global_min', 'last', 'running_min', 'running_max', 'all']:
+        if iteration_filter == "best":
+            iteration_filter = "global_min"
+
+        if not iteration_filter in [
+            "global_min",
+            "last",
+            "running_min",
+            "running_max",
+            "all",
+        ]:
             try:
                 v = int(iteration_filter)
-                iteration_filter = 'n({}'.format(v)
+                iteration_filter = "n({})".format(v)
             except ValueError:
-                parser.error(" --iteration argument '{}' must be an integer representing a step number or 'best', 'last', 'running_min', 'running_max' or 'all'.".format(iteration_filter))
+                parser.error(
+                    " --iteration argument '{}' must be an integer representing a step number or 'best', 'last', 'running_min', 'running_max' or 'all'.".format(
+                        iteration_filter
+                    )
+                )
         outputTable(
-            engine, columns, iteration_filter, options.candidate_filter, options.output_file
+            engine,
+            columns,
+            iteration_filter,
+            options.candidate_filter,
+            options.output_file,
         )
 
 

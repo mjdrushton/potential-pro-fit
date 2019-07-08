@@ -198,9 +198,14 @@ class IterationSeriesTable(object):
     :param columns: List of additional column keys to include in the returned table."""
 
         # Why was this in place?
-        if candidateFilter == "all" and iterationFilter in ["running_min", "running_max"]:
+        if candidateFilter == "all" and iterationFilter in [
+            "running_min",
+            "running_max",
+        ]:
             raise BadFilterCombinationException(
-                "the 'all' candidate filter can not be used with the '{}' iteration filter.".format(iterationFilter)
+                "the 'all' candidate filter can not be used with the '{}' iteration filter.".format(
+                    iterationFilter
+                )
             )
 
         self.engine = engine
@@ -373,7 +378,7 @@ class IterationSeriesTable(object):
                 iterationFilter = iterationFilter[2:].strip()
                 iterationFilter = iterationFilter[:-1]
                 chosen_it = int(iterationFilter)
-                
+
             query = query.where(candidates.c.iteration_number == chosen_it)
 
         else:

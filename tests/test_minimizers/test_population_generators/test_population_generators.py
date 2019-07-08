@@ -14,6 +14,8 @@ from atsim.pro_fit.minimizers.population_generators import (
     Uniform_Variable_Distribution,
     Predefined_Initial_Population,
     Combine_Initial_Population,
+    File_Initial_Population,
+    Ppdump_File_Initial_Population,
 )
 
 from atsim.pro_fit.variables import Variables, VariableException
@@ -163,6 +165,14 @@ def test_predefined_initial_population():
     assert np.allclose(expect, actual)
     assert 3 == ip.population_size
 
+    # Test with a limited population_size
+    ip = Predefined_Initial_Population(
+        v, from_dict=candidates, max_population_size=2
+    )
+    actual = ip.generate_candidates()
+    assert np.allclose(expect[:2, :], actual)
+    assert 2 == ip.population_size
+
     # Test with unbounded variables
     v = Variables(([("b", 2.0, False), ("c", 3.0, True), ("a", 1.0, True)]))
     ip = Predefined_Initial_Population(v, from_dict=candidates)
@@ -281,3 +291,57 @@ def test_combine_initial_population():
 
     with pytest.raises(VariableException):
         Combine_Initial_Population(popn_a, popn_b)
+
+
+def test_file_initial_population():
+    # Test with good variables
+    v = Variables(
+        ([("b", 2.0, False), ("c", 3.0, True), ("a", 1.0, True)]),
+        bounds=[(2, 10), (1, 10), (0, 10)],
+    )
+
+    from io import StringIO
+
+    infile = StringIO(
+        """a,b,c
+1,2,3
+4,5,6
+8,5,4
+"""
+    )
+    expect = np.array([[3, 1], [6, 4], [4, 8]], dtype=np.double)
+
+    ip = File_Initial_Population(v, infile)
+    actual = ip.generate_candidates()
+
+    assert np.allclose(expect, actual)
+
+
+def test_ppdump_file_initial_population():
+    # Test with good variables
+    v = Variables(
+        ([("b", 2.0, False), ("c", 3.0, True), ("a", 1.0, True)]),
+        bounds=[(2, 10), (1, 10), (0, 10)],
+    )
+
+    from io import StringIO
+
+    infile = StringIO(
+        """a,b,c,variable:a,variable:b,variable:c
+2,4,6,1,2,3
+8,10,12,4,5,6
+16,10,8,8,5,4
+"""
+    )
+    expect = np.array([[3, 1], [6, 4], [4, 8]], dtype=np.double)
+
+    ip = Ppdump_File_Initial_Population(v, infile)
+    actual = ip.generate_candidates()
+    assert np.allclose(expect, actual)
+
+    infile.seek(0)
+    expect = np.array([[3, 1]], dtype=np.double)
+
+    ip = Ppdump_File_Initial_Population(v, infile, max_population_size=1)
+    actual = ip.generate_candidates()
+    assert np.allclose(expect, actual)

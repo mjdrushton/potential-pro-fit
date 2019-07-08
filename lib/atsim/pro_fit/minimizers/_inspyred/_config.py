@@ -5,6 +5,7 @@ from ._inspyred_common import (
     _ChoiceConvert,
     _RandomSeed,
     _BooleanConvert,
+    _InfileConvert,
     Population_To_Generator_Adapter,
 )
 
@@ -13,7 +14,12 @@ from atsim.pro_fit.minimizers.population_generators import (
     Latin_Hypercube_InitialPopulation,
     Combine_Initial_Population,
     Uniform_Random_Initial_Population,
+    File_Initial_Population,
+    Ppdump_File_Initial_Population,
 )
+
+from atsim.pro_fit.exceptions import ConfigException
+from atsim.pro_fit.variables import VariableException
 
 
 class Initial_Population_Config_Helper(object):
@@ -22,15 +28,19 @@ class Initial_Population_Config_Helper(object):
     This class will parse the following keys from 
     the configuration dict used in the minimizer's createFromConfig()
     method:
-        * population_size
-        * population_include_orig_vars
-        * random_seed
         * max_iterations
+        * population_include_orig_vars
+        * population_load_from_csv
+        * population_load_from_ppdump
+        * population_size
+        * random_seed
+
 
     It also acts as a factory class for the generator and 
     initial_population objects required by these minimizers."""
 
     def __init__(self, clsname, **defaults):
+        self.clsname = clsname
         self.defaults_dict = self._init_defaults(clsname, defaults)
 
     def _init_defaults(self, clsname, update_defaults):
@@ -51,6 +61,14 @@ class Initial_Population_Config_Helper(object):
                 update_defaults.get("population_include_orig_vars", "True"),
                 _BooleanConvert(clsname, "population_include_orig_vars"),
             ),
+            population_load_from_csv=(
+                update_defaults.get("population_load_from_csv", None),
+                _InfileConvert(clsname, "population_load_from_csv"),
+            ),
+            population_load_from_ppdump=(
+                update_defaults.get("population_load_from_ppdump", None),
+                _InfileConvert(clsname, "population_load_from_ppdump"),
+            ),
         )
         return defaults
 
@@ -63,11 +81,15 @@ class Initial_Population_Config_Helper(object):
         for k, (default, converter) in self.defaults_dict.items():
             optiondict[k] = converter(cfgdict.get(k, default))
 
-        population_factory = _Initial_Population_Factory(
-            variables,
-            optiondict["population_size"],
-            optiondict["population_include_orig_vars"],
-        )
+        try:
+            population_factory = _Initial_Population_Factory(
+                variables, optiondict
+            )
+        except ConfigException as e:
+            raise ConfigException("{} for {}".format(str(e), self.clsname))
+        except VariableException as ve:
+            raise ConfigException("Problem with variables {} for {}".format(str(ve), self.clsname))
+
         optiondict["initial_population"] = population_factory.population
 
         generator = Population_To_Generator_Adapter(
@@ -80,17 +102,67 @@ class Initial_Population_Config_Helper(object):
 
 
 class _Initial_Population_Factory(object):
-    def __init__(
-        self, initialVariables, population_size, population_include_orig_vars
-    ):
+    def __init__(self, initialVariables, optiondict):
         self.initialVariables = initialVariables
-        self.population_size = population_size
-        self.population_include_orig_vars = population_include_orig_vars
 
+        self.population_size = optiondict["population_size"]
+        self.population_include_orig_vars = optiondict[
+            "population_include_orig_vars"
+        ]
+
+        self.population_loader = self._init_population_loader(optiondict)
         self.population = self._init_population()
+
+    def _init_population_loader(self, optiondict):
+        relevant = {
+            "population_load_from_csv": File_Initial_Population,
+            "population_load_from_ppdump": Ppdump_File_Initial_Population,
+        }
+
+        relevant_keys = list(relevant.keys())
+        relevant_keys_found = [
+            k
+            for k, v in optiondict.items()
+            if k in relevant_keys and v is not None
+        ]
+
+        if len(relevant_keys_found) == 0:
+            return None
+
+        if len(relevant_keys_found) > 1:
+            raise ConfigException(
+                "only one of {} can be specified at once".format(
+                    ",".join(
+                        ["'{}'".format(opt) for opt in relevant_keys_found]
+                    )
+                )
+            )
+
+        k = relevant_keys_found[0]
+        v = optiondict[k]
+        cls = relevant[k]
+        filename = v
+
+        def f(max_population_size):
+            infile = open(filename)
+            popn = cls(
+                self.initialVariables,
+                infile,
+                max_population_size=max_population_size,
+            )
+
+            return popn
+
+        return f
 
     def _init_population(self):
         population_size = self.population_size
+
+        if self.population_loader:
+            populate_rest = self.population_loader
+        else:
+            populate_rest = self._create_latin_hypercube
+
         if self.population_include_orig_vars:
             orig_vars = Predefined_Initial_Population(
                 self.initialVariables,
@@ -100,7 +172,7 @@ class _Initial_Population_Factory(object):
             if population_size == 0:
                 return orig_vars
 
-            rest_of_population = self._create_latin_hypercube(population_size)
+            rest_of_population = populate_rest(population_size)
 
             # Combine the two
             population = Combine_Initial_Population(
@@ -108,7 +180,7 @@ class _Initial_Population_Factory(object):
             )
             return population
         else:
-            population = self._create_latin_hypercube(population_size)
+            population = populate_rest(population_size)
             return population
 
     def _create_latin_hypercube(self, population_size):

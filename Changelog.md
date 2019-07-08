@@ -1,6 +1,12 @@
 # Changelog
 
 ## [0.9.1] - Unreleased
+### Added
+- Added the --iteration/-i option to the ppdump tool. This allows the last, best or numbered steps from a fitting run to be dumped.
+- Population minimizers:
+    + Population based minimizers now include initial variable values in their initial populations, this behaviour can be controlled using the `population_include_orig_vars` fit.cfg option.
+    + Initial populations can be loaded from a CSV file using the new `population_load_from_csv` fit.cfg option or from a `ppdump` formatted CSV file using the `population_load_from_ppdump` option.
+
 ### Changed
 
 ### Fixed

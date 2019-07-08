@@ -297,3 +297,22 @@ def _BooleanConvert(clsname, key):
             return False
 
     return f
+
+
+def _InfileConvert(clsname, key):
+    """Config converter that checks for existence of input file"""
+
+    import os
+
+    def f(v):
+        if v is None:
+            return None
+        if not os.path.isfile(v):
+            raise ConfigException(
+                "File specified for {} option {} does not exist: '{}'".format(
+                    clsname, key, v
+                )
+            )
+        return v
+
+    return f

@@ -25,6 +25,11 @@ from ._predefined_initial_population import Predefined_Initial_Population
 
 from ._combine_initial_population import Combine_Initial_Population
 
+from ._file_initial_population import (
+    File_Initial_Population,
+    Ppdump_File_Initial_Population,
+)
+
 import numpy as np
 
 

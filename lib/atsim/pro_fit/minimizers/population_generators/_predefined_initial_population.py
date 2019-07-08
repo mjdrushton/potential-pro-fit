@@ -1,5 +1,7 @@
 import numpy as np
 
+import itertools
+
 from atsim.pro_fit.variables import VariableException
 
 
@@ -7,7 +9,13 @@ class Predefined_Initial_Population(object):
     """Allow populations to be defined using a list of dictionaries or from
     arrays."""
 
-    def __init__(self, initialVariables, from_dict=None, from_array=None):
+    def __init__(
+        self,
+        initialVariables,
+        from_dict=None,
+        from_array=None,
+        max_population_size=None,
+    ):
         """Generate a predefined population from nested lists (from_array) or 
         using dictionaries.
 
@@ -47,6 +55,7 @@ class Predefined_Initial_Population(object):
         Keyword Arguments:
             from_dict {list} -- See above for format. (default: {None})
             from_array {list} -- See above for format. (default: {None})
+            max_population_size {int} -- If specified limit the maximum size of the population to this value. (default: {None})
         """
 
         if from_dict is None and from_array is None:
@@ -65,6 +74,9 @@ class Predefined_Initial_Population(object):
             data = self._dict_to_list(from_dict)
         else:
             data = from_array
+
+        if max_population_size is not None:
+            data = itertools.islice(data, max_population_size)
 
         self.candidates = self._check_data(data)
         self.population_size = self.candidates.shape[0]
@@ -88,7 +100,7 @@ class Predefined_Initial_Population(object):
 
     def _check_data(self, data):
         try:
-            data = np.array(data, dtype=np.double)
+            data = np.array(list(data), dtype=np.double)
         except ValueError as e:
             raise VariableException(str(e))
 
