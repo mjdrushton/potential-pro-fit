@@ -93,13 +93,28 @@ class _RunningFilter(object):
             self.lastv = v
         return retval
 
+def _lt(a,b):
+    if a is None:
+        a = float('nan')
+    if b is None:
+        b = float('nan')
+    return a < b
+
+def _gt(a,b):
+    if a is None:
+        a = float('nan')
+    if b is None:
+        b = float('nan')
+    return a > b
+
+
 
 def _RunningMinFilter():
-    return _RunningFilter(operator.lt)
+    return _RunningFilter(_lt)
 
 
 def _RunningMaxFilter():
-    return _RunningFilter(operator.gt)
+    return _RunningFilter(_gt)
 
 
 def _NullFilter():
