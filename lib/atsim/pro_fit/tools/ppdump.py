@@ -101,6 +101,7 @@ def parseCommandLine():
     )
 
     dumpGroup.add_argument(
+        "-c",
         "--candidate-filter",
         nargs="?",
         choices=["all", "min", "max"],
@@ -110,7 +111,7 @@ def parseCommandLine():
 
     columnSelectionGroup = parser.add_argument_group("Column Selection")
     columnSelectionGroup.add_argument(
-        "-c",
+        "-C",
         "--columns",
         nargs="*",
         metavar="COLUMN_LABEL",
