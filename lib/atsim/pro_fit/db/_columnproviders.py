@@ -93,20 +93,21 @@ class _RunningFilter(object):
             self.lastv = v
         return retval
 
-def _lt(a,b):
+
+def _lt(a, b):
     if a is None:
-        a = float('nan')
+        a = float("nan")
     if b is None:
-        b = float('nan')
+        b = float("nan")
     return a < b
 
-def _gt(a,b):
-    if a is None:
-        a = float('nan')
-    if b is None:
-        b = float('nan')
-    return a > b
 
+def _gt(a, b):
+    if a is None:
+        a = float("nan")
+    if b is None:
+        b = float("nan")
+    return a > b
 
 
 def _RunningMinFilter():

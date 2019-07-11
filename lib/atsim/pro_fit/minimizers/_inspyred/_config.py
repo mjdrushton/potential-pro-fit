@@ -172,7 +172,7 @@ class _Initial_Population_Factory(object):
 
         popn_init_callables.append(self._create_latin_hypercube)
 
-        popns= []
+        popns = []
         for c in popn_init_callables:
             p = c(population_size)
             popns.append(p)
@@ -196,7 +196,6 @@ class _Initial_Population_Factory(object):
 
     def _create_init_variables(self, population_size):
         orig_vars = Predefined_Initial_Population(
-                self.initialVariables,
-                from_array=[self.initialVariables.fitValues],
-            )
+            self.initialVariables, from_array=[self.initialVariables.fitValues]
+        )
         return orig_vars

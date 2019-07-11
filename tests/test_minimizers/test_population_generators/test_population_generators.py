@@ -12,6 +12,7 @@ from atsim.pro_fit.minimizers.population_generators import (
     Latin_Hypercube_InitialPopulation,
     Uniform_Random_Initial_Population,
     Uniform_Variable_Distribution,
+    PERT_Variable_Distribution,
     Predefined_Initial_Population,
     Combine_Initial_Population,
     File_Initial_Population,
@@ -82,6 +83,21 @@ def test_variable_distributions_missing_distribution():
 
     with pytest.raises(Missing_Distribution_Exception):
         Variable_Distributions(v, [vd_a])
+
+def test_PERT_variable_distribution():
+
+    v = Variables(
+        [("a", 4.0, True)],
+        bounds = [(2,10)]
+    )
+
+    pert = PERT_Variable_Distribution("a", v, shape = 6.0)
+
+    expect = np.array([2.0, 10.0, 4.369944725903435])
+    input_vals = np.array([0, 1, 0.5])
+    actual = pert.apply(input_vals)
+
+    assert np.allclose(expect, actual)
 
 
 def test_latin_hyper_cube_initial_population():
