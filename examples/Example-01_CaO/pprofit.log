@@ -1,0 +1,1209 @@
+2019-06-28 15:40:13,710:atsim.pro_fit.tools.pprofit.main:INFO __init__:155:  Performing Minimization run
+2019-06-28 15:40:13,712:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Runner: Local in module <module 'atsim.pro_fit.runners' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/runners/__init__.py'>
+2019-06-28 15:40:13,712:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Runner: Null in module <module 'atsim.pro_fit.runners' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/runners/__init__.py'>
+2019-06-28 15:40:13,712:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Runner: PBS in module <module 'atsim.pro_fit.runners' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/runners/__init__.py'>
+2019-06-28 15:40:13,712:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Runner: Remote in module <module 'atsim.pro_fit.runners' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/runners/__init__.py'>
+2019-06-28 15:40:13,712:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Runner: SGE in module <module 'atsim.pro_fit.runners' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/runners/__init__.py'>
+2019-06-28 15:40:13,712:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Runner: Slurm in module <module 'atsim.pro_fit.runners' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/runners/__init__.py'>
+2019-06-28 15:40:13,712:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found MetaEvaluator: Formula in module <module 'atsim.pro_fit.metaevaluators' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/metaevaluators.py'>
+2019-06-28 15:40:13,713:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Evaluator: DLPOLY_STATIS in module <module 'atsim.pro_fit.evaluators' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/evaluators/__init__.py'>
+2019-06-28 15:40:13,713:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Evaluator: Gulp in module <module 'atsim.pro_fit.evaluators' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/evaluators/__init__.py'>
+2019-06-28 15:40:13,713:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Evaluator: Gulp_DRV in module <module 'atsim.pro_fit.evaluators' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/evaluators/__init__.py'>
+2019-06-28 15:40:13,713:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Evaluator: Regex in module <module 'atsim.pro_fit.evaluators' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/evaluators/__init__.py'>
+2019-06-28 15:40:13,713:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Evaluator: Table in module <module 'atsim.pro_fit.evaluators' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/evaluators/__init__.py'>
+2019-06-28 15:40:13,713:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found JobFactory: Template in module <module 'atsim.pro_fit.jobfactories' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/jobfactories.py'>
+2019-06-28 15:40:13,713:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:408:  Processing job directory: "/Users/mr498/Documents/Development/potential-pro-fit-0.9/examples/Example-01_CaO/fit_files/CaO"
+2019-06-28 15:40:13,714:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:348:  Creating runner: 'Local'
+2019-06-28 15:40:13,788:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Minimizer: DEA in module <module 'atsim.pro_fit.minimizers' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/minimizers/__init__.py'>
+2019-06-28 15:40:13,788:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Minimizer: NelderMead in module <module 'atsim.pro_fit.minimizers' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/minimizers/__init__.py'>
+2019-06-28 15:40:13,788:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Minimizer: Particle_Swarm in module <module 'atsim.pro_fit.minimizers' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/minimizers/__init__.py'>
+2019-06-28 15:40:13,788:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Minimizer: Simulated_Annealing in module <module 'atsim.pro_fit.minimizers' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/minimizers/__init__.py'>
+2019-06-28 15:40:13,788:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Minimizer: SingleStep in module <module 'atsim.pro_fit.minimizers' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/minimizers/__init__.py'>
+2019-06-28 15:40:13,788:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:515:  Found Minimizer: Spreadsheet in module <module 'atsim.pro_fit.minimizers' from '/Users/mr498/Documents/Development/potential-pro-fit-0.9/venv/lib/python3.7/site-packages/atsim/pro_fit/minimizers/__init__.py'>
+2019-06-28 15:40:13,788:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:493:  Creating minimizer: <class 'atsim.pro_fit.minimizers._mystic.NelderMeadMinimizer'>
+2019-06-28 15:40:13,789:atsim.pro_fit.tools.pprofit._invokeMinimizer:INFO __init__:155:  Temporary job files will be created in '/var/folders/t6/11n0g15d5hz5cwz83wt4zgm80000gn/T/tmpi6f8rxe_'
+2019-06-28 15:40:13,830:atsim.pro_fit.minimizers._mystic.NelderMeadMinimizer:INFO _mystic:151:  Starting minimisation.
+2019-06-28 15:40:13,835:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-1
+2019-06-28 15:40:13,836:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-1.
+2019-06-28 15:40:14,081:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-1
+2019-06-28 15:40:14,094:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-1, finished.
+2019-06-28 15:40:14,096:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-1
+2019-06-28 15:40:14,101:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 0
+
+Variables and Merit Values:
+                  First (it=0)        Previous    Current (it=0)      Best (i=0)
+----------------  ------------------  ----------  ------------------  ------------------
+Variables
+morse_Ca_O_A *    0.030211                        0.030211            0.030211
+morse_Ca_O_B *    2.241334                        2.241334            2.241334
+morse_Ca_O_C *    2.923245                        2.923245            2.923245
+lennard_Ca_O_A *  5.0                             5.0                 5.0
+morse_O_O_A       0.042395                        0.042395            0.042395
+morse_O_O_B       1.379316                        1.379316            1.379316
+morse_O_O_C       3.618701                        3.618701            3.618701
+lennard_O_O_A     22.0                            22.0                22.0
+
+Merit =           259.83689200000003  NA          259.83689200000003  259.83689200000003
+
+
+2019-06-28 15:40:14,118:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-2
+2019-06-28 15:40:14,119:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-2.
+2019-06-28 15:40:14,199:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-2
+2019-06-28 15:40:14,212:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-2, finished.
+2019-06-28 15:40:14,214:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-2
+2019-06-28 15:40:14,220:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-3
+2019-06-28 15:40:14,221:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-3.
+2019-06-28 15:40:14,299:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-3
+2019-06-28 15:40:14,312:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-3, finished.
+2019-06-28 15:40:14,314:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-3
+2019-06-28 15:40:14,319:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-4
+2019-06-28 15:40:14,320:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-4.
+2019-06-28 15:40:14,389:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-4
+2019-06-28 15:40:14,402:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-4, finished.
+2019-06-28 15:40:14,404:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-4
+2019-06-28 15:40:14,409:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-5
+2019-06-28 15:40:14,410:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-5.
+2019-06-28 15:40:14,488:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-5
+2019-06-28 15:40:14,500:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-5, finished.
+2019-06-28 15:40:14,502:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-5
+2019-06-28 15:40:14,506:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 1
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=0)     Current (it=1)      Best (i=1)
+----------------  ------------------  ------------------  ------------------  ------------------
+Variables
+morse_Ca_O_A *    0.030211            0.030211            0.030211            0.030211
+morse_Ca_O_B *    2.241334            2.241334            2.241334            2.241334
+morse_Ca_O_C *    2.923245            2.923245            3.0694072500000003  3.0694072500000003
+lennard_Ca_O_A *  5.0                 5.0                 5.0                 5.0
+morse_O_O_A       0.042395            0.042395            0.042395            0.042395
+morse_O_O_B       1.379316            1.379316            1.379316            1.379316
+morse_O_O_C       3.618701            3.618701            3.618701            3.618701
+lennard_O_O_A     22.0                22.0                22.0                22.0
+
+Merit =           259.83689200000003  259.83689200000003  193.31817600000002  193.31817600000002
+
+
+2019-06-28 15:40:14,523:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-6
+2019-06-28 15:40:14,524:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-6.
+2019-06-28 15:40:14,598:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-6
+2019-06-28 15:40:14,611:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-6, finished.
+2019-06-28 15:40:14,613:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-6
+2019-06-28 15:40:14,617:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 2
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=1)     Current (it=2)        Best (i=1)
+----------------  ------------------  ------------------  --------------------  ------------------
+Variables
+morse_Ca_O_A *    0.030211            0.030211            0.030966275000000005  0.030211
+morse_Ca_O_B *    2.241334            2.241334            2.29736735            2.241334
+morse_Ca_O_C *    2.923245            3.0694072500000003  2.996326125           3.0694072500000003
+lennard_Ca_O_A *  5.0                 5.0                 4.75                  5.0
+morse_O_O_A       0.042395            0.042395            0.042395              0.042395
+morse_O_O_B       1.379316            1.379316            1.379316              1.379316
+morse_O_O_C       3.618701            3.618701            3.618701              3.618701
+lennard_O_O_A     22.0                22.0                22.0                  22.0
+
+Merit =           259.83689200000003  193.31817600000002  222.484335            193.31817600000002
+
+
+2019-06-28 15:40:14,634:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-7
+2019-06-28 15:40:14,635:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-7.
+2019-06-28 15:40:14,705:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-7
+2019-06-28 15:40:14,718:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-7, finished.
+2019-06-28 15:40:14,720:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-7
+2019-06-28 15:40:14,724:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 3
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=2)       Current (it=3)      Best (i=1)
+----------------  ------------------  --------------------  ------------------  ------------------
+Variables
+morse_Ca_O_A *    0.030211            0.030966275000000005  0.0313439125        0.030211
+morse_Ca_O_B *    2.241334            2.29736735            2.325384025         2.241334
+morse_Ca_O_C *    2.923245            2.996326125           3.0328666875        3.0694072500000003
+lennard_Ca_O_A *  5.0                 4.75                  4.875               5.0
+morse_O_O_A       0.042395            0.042395              0.042395            0.042395
+morse_O_O_B       1.379316            1.379316              1.379316            1.379316
+morse_O_O_C       3.618701            3.618701              3.618701            3.618701
+lennard_O_O_A     22.0                22.0                  22.0                22.0
+
+Merit =           259.83689200000003  222.484335            205.81304400000002  193.31817600000002
+
+
+2019-06-28 15:40:14,754:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-8
+2019-06-28 15:40:14,755:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-8.
+2019-06-28 15:40:14,826:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-8
+2019-06-28 15:40:14,840:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-8, finished.
+2019-06-28 15:40:14,842:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-8
+2019-06-28 15:40:14,848:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-9
+2019-06-28 15:40:14,848:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-9.
+2019-06-28 15:40:14,905:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-9
+2019-06-28 15:40:14,918:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-9, finished.
+2019-06-28 15:40:14,920:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-9
+2019-06-28 15:40:14,924:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 4
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=3)     Current (it=4)      Best (i=4)
+----------------  ------------------  ------------------  ------------------  ------------------
+Variables
+morse_Ca_O_A *    0.030211            0.0313439125        0.032760053125      0.032760053125
+morse_Ca_O_B *    2.241334            2.325384025         2.1222631312499995  2.1222631312499995
+morse_Ca_O_C *    2.923245            3.0328666875        3.169893796874999   3.169893796874999
+lennard_Ca_O_A *  5.0                 4.875               4.71875             4.71875
+morse_O_O_A       0.042395            0.042395            0.042395            0.042395
+morse_O_O_B       1.379316            1.379316            1.379316            1.379316
+morse_O_O_C       3.618701            3.618701            3.618701            3.618701
+lennard_O_O_A     22.0                22.0                22.0                22.0
+
+Merit =           259.83689200000003  205.81304400000002  151.776856          151.776856
+
+
+2019-06-28 15:40:14,941:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-10
+2019-06-28 15:40:14,941:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-10.
+2019-06-28 15:40:15,002:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-10
+2019-06-28 15:40:15,015:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-10, finished.
+2019-06-28 15:40:15,017:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-10
+2019-06-28 15:40:15,022:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-11
+2019-06-28 15:40:15,023:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-11.
+2019-06-28 15:40:15,085:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-11
+2019-06-28 15:40:15,098:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-11, finished.
+2019-06-28 15:40:15,100:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-11
+2019-06-28 15:40:15,104:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 5
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=4)     Current (it=5)        Best (i=5)
+----------------  ------------------  ------------------  --------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.032760053125      0.030517830468750007  0.030517830468750007
+morse_Ca_O_B *    2.241334            2.1222631312499995  2.2570933796874995    2.2570933796874995
+morse_Ca_O_C *    2.923245            3.169893796874999   3.354880394531249     3.354880394531249
+lennard_Ca_O_A *  5.0                 4.71875             4.5078125             4.5078125
+morse_O_O_A       0.042395            0.042395            0.042395              0.042395
+morse_O_O_B       1.379316            1.379316            1.379316              1.379316
+morse_O_O_C       3.618701            3.618701            3.618701              3.618701
+lennard_O_O_A     22.0                22.0                22.0                  22.0
+
+Merit =           259.83689200000003  151.776856          101.330231            101.330231
+
+
+2019-06-28 15:40:15,123:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-12
+2019-06-28 15:40:15,124:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-12.
+2019-06-28 15:40:15,183:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-12
+2019-06-28 15:40:15,196:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-12, finished.
+2019-06-28 15:40:15,198:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-12
+2019-06-28 15:40:15,202:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 6
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=5)       Current (it=6)      Best (i=5)
+----------------  ------------------  --------------------  ------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.030517830468750007  0.031450123046875   0.030517830468750007
+morse_Ca_O_B *    2.241334            2.2570933796874995    2.175669917968749   2.2570933796874995
+morse_Ca_O_C *    2.923245            3.354880394531249     3.317197939453125   3.354880394531249
+lennard_Ca_O_A *  5.0                 4.5078125             4.80078125          4.5078125
+morse_O_O_A       0.042395            0.042395              0.042395            0.042395
+morse_O_O_B       1.379316            1.379316              1.379316            1.379316
+morse_O_O_C       3.618701            3.618701              3.618701            3.618701
+lennard_O_O_A     22.0                22.0                  22.0                22.0
+
+Merit =           259.83689200000003  101.330231            108.86233700000001  101.330231
+
+
+2019-06-28 15:40:15,218:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-13
+2019-06-28 15:40:15,219:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-13.
+2019-06-28 15:40:15,282:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-13
+2019-06-28 15:40:15,295:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-13, finished.
+2019-06-28 15:40:15,297:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-13
+2019-06-28 15:40:15,303:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-14
+2019-06-28 15:40:15,303:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-14.
+2019-06-28 15:40:15,364:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-14
+2019-06-28 15:40:15,377:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-14, finished.
+2019-06-28 15:40:15,379:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-14
+2019-06-28 15:40:15,383:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 7
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=6)     Current (it=7)        Best (i=7)
+----------------  ------------------  ------------------  --------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.031450123046875   0.031016429980468746  0.031016429980468746
+morse_Ca_O_B *    2.241334            2.175669917968749   1.9465022716796856    1.9465022716796856
+morse_Ca_O_C *    2.923245            3.317197939453125   3.6178011606445297    3.6178011606445297
+lennard_Ca_O_A *  5.0                 4.80078125          4.5205078125          4.5205078125
+morse_O_O_A       0.042395            0.042395            0.042395              0.042395
+morse_O_O_B       1.379316            1.379316            1.379316              1.379316
+morse_O_O_C       3.618701            3.618701            3.618701              3.618701
+lennard_O_O_A     22.0                22.0                22.0                  22.0
+
+Merit =           259.83689200000003  108.86233700000001  42.36676200000001     42.36676200000001
+
+
+2019-06-28 15:40:15,399:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-15
+2019-06-28 15:40:15,400:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-15.
+2019-06-28 15:40:15,460:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-15
+2019-06-28 15:40:15,473:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-15, finished.
+2019-06-28 15:40:15,475:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-15
+2019-06-28 15:40:15,481:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-16
+2019-06-28 15:40:15,481:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-16.
+2019-06-28 15:40:15,543:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-16
+2019-06-28 15:40:15,556:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-16, finished.
+2019-06-28 15:40:15,559:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-16
+2019-06-28 15:40:15,563:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 8
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=7)       Current (it=8)        Best (i=8)
+----------------  ------------------  --------------------  --------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.031016429980468746  0.033886327465820314  0.033886327465820314
+morse_Ca_O_B *    2.241334            1.9465022716796856    1.8934785254394493    1.8934785254394493
+morse_Ca_O_C *    2.923245            3.6178011606445297    3.9560154686279265    3.9560154686279265
+lennard_Ca_O_A *  5.0                 4.5205078125          3.910888671875        3.910888671875
+morse_O_O_A       0.042395            0.042395              0.042395              0.042395
+morse_O_O_B       1.379316            1.379316              1.379316              1.379316
+morse_O_O_C       3.618701            3.618701              3.618701              3.618701
+lennard_O_O_A     22.0                22.0                  22.0                  22.0
+
+Merit =           259.83689200000003  42.36676200000001     13.992777             13.992777
+
+
+2019-06-28 15:40:15,579:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-17
+2019-06-28 15:40:15,580:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-17.
+2019-06-28 15:40:15,640:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-17
+2019-06-28 15:40:15,656:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-17, finished.
+2019-06-28 15:40:15,658:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-17
+2019-06-28 15:40:15,663:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-18
+2019-06-28 15:40:15,664:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-18.
+2019-06-28 15:40:15,724:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-18
+2019-06-28 15:40:15,737:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-18, finished.
+2019-06-28 15:40:15,739:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-18
+2019-06-28 15:40:15,743:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 9
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=8)       Current (it=9)        Best (i=9)
+----------------  ------------------  --------------------  --------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.033886327465820314  0.030675302355957036  0.030675302355957036
+morse_Ca_O_B *    2.241334            1.8934785254394493    2.014108916137692     2.014108916137692
+morse_Ca_O_C *    2.923245            3.9560154686279265    3.9530536847534163    3.9530536847534163
+lennard_Ca_O_A *  5.0                 3.910888671875        4.1512451171875       4.1512451171875
+morse_O_O_A       0.042395            0.042395              0.042395              0.042395
+morse_O_O_B       1.379316            1.379316              1.379316              1.379316
+morse_O_O_C       3.618701            3.618701              3.618701              3.618701
+lennard_O_O_A     22.0                22.0                  22.0                  22.0
+
+Merit =           259.83689200000003  13.992777             10.633525999999996    10.633525999999996
+
+
+2019-06-28 15:40:15,767:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-19
+2019-06-28 15:40:15,767:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-19.
+2019-06-28 15:40:15,828:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-19
+2019-06-28 15:40:15,841:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-19, finished.
+2019-06-28 15:40:15,843:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-19
+2019-06-28 15:40:15,847:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 10
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=9)       Current (it=10)      Best (i=9)
+----------------  ------------------  --------------------  -------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.030675302355957036  0.03159782208862305  0.030675302355957036
+morse_Ca_O_B *    2.241334            2.014108916137692     1.8799216285034142   2.014108916137692
+morse_Ca_O_C *    2.923245            3.9530536847534163    4.123677414825435    3.9530536847534163
+lennard_Ca_O_A *  5.0                 4.1512451171875       3.74444580078125     4.1512451171875
+morse_O_O_A       0.042395            0.042395              0.042395             0.042395
+morse_O_O_B       1.379316            1.379316              1.379316             1.379316
+morse_O_O_C       3.618701            3.618701              3.618701             3.618701
+lennard_O_O_A     22.0                22.0                  22.0                 22.0
+
+Merit =           259.83689200000003  10.633525999999996    30.146184999999996   10.633525999999996
+
+
+2019-06-28 15:40:15,863:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-20
+2019-06-28 15:40:15,864:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-20.
+2019-06-28 15:40:15,919:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-20
+2019-06-28 15:40:15,932:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-20, finished.
+2019-06-28 15:40:15,934:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-20
+2019-06-28 15:40:15,939:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-21
+2019-06-28 15:40:15,940:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-21.
+2019-06-28 15:40:15,997:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-21
+2019-06-28 15:40:16,010:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-21, finished.
+2019-06-28 15:40:16,012:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-21
+2019-06-28 15:40:16,016:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 11
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=10)     Current (it=11)      Best (i=9)
+----------------  ------------------  -------------------  -------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03159782208862305  0.03243204047470093  0.030675302355957036
+morse_Ca_O_B *    2.241334            1.8799216285034142   1.7717075633163408   2.014108916137692
+morse_Ca_O_C *    2.923245            4.123677414825435    4.191515201053615    3.9530536847534163
+lennard_Ca_O_A *  5.0                 3.74444580078125     3.8687515258789062   4.1512451171875
+morse_O_O_A       0.042395            0.042395             0.042395             0.042395
+morse_O_O_B       1.379316            1.379316             1.379316             1.379316
+morse_O_O_C       3.618701            3.618701             3.618701             3.618701
+lennard_O_O_A     22.0                22.0                 22.0                 22.0
+
+Merit =           259.83689200000003  30.146184999999996   37.493851            10.633525999999996
+
+
+2019-06-28 15:40:16,036:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-22
+2019-06-28 15:40:16,036:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-22.
+2019-06-28 15:40:16,095:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-22
+2019-06-28 15:40:16,108:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-22, finished.
+2019-06-28 15:40:16,110:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-22
+2019-06-28 15:40:16,115:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-23
+2019-06-28 15:40:16,116:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-23.
+2019-06-28 15:40:16,174:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-23
+2019-06-28 15:40:16,188:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-23, finished.
+2019-06-28 15:40:16,190:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-23
+2019-06-28 15:40:16,194:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 12
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=11)     Current (it=12)      Best (i=12)
+----------------  ------------------  -------------------  -------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03243204047470093  0.03158215153837204  0.03158215153837204
+morse_Ca_O_B *    2.241334            1.7717075633163408   1.918153215014455    1.918153215014455
+morse_Ca_O_C *    2.923245            4.191515201053615    3.836933301479814    3.836933301479814
+lennard_Ca_O_A *  5.0                 3.8687515258789062   4.219670295715332    4.219670295715332
+morse_O_O_A       0.042395            0.042395             0.042395             0.042395
+morse_O_O_B       1.379316            1.379316             1.379316             1.379316
+morse_O_O_C       3.618701            3.618701             3.618701             3.618701
+lennard_O_O_A     22.0                22.0                 22.0                 22.0
+
+Merit =           259.83689200000003  37.493851            9.927487000000003    9.927487000000003
+
+
+2019-06-28 15:40:16,211:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-24
+2019-06-28 15:40:16,212:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-24.
+2019-06-28 15:40:16,274:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-24
+2019-06-28 15:40:16,288:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-24, finished.
+2019-06-28 15:40:16,290:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-24
+2019-06-28 15:40:16,293:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 13
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=12)     Current (it=13)       Best (i=12)
+----------------  ------------------  -------------------  --------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03158215153837204  0.031438761249685296  0.03158215153837204
+morse_Ca_O_B *    2.241334            1.918153215014455    2.0811235792311646    1.918153215014455
+morse_Ca_O_C *    2.923245            3.836933301479814    3.743324733789681     3.836933301479814
+lennard_Ca_O_A *  5.0                 4.219670295715332    4.144373416900635     4.219670295715332
+morse_O_O_A       0.042395            0.042395             0.042395              0.042395
+morse_O_O_B       1.379316            1.379316             1.379316              1.379316
+morse_O_O_C       3.618701            3.618701             3.618701              3.618701
+lennard_O_O_A     22.0                22.0                 22.0                  22.0
+
+Merit =           259.83689200000003  9.927487000000003    24.852047999999996    9.927487000000003
+
+
+2019-06-28 15:40:16,309:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-25
+2019-06-28 15:40:16,310:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-25.
+2019-06-28 15:40:16,370:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-25
+2019-06-28 15:40:16,383:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-25, finished.
+2019-06-28 15:40:16,385:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-25
+2019-06-28 15:40:16,390:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-26
+2019-06-28 15:40:16,391:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-26.
+2019-06-28 15:40:16,450:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-26
+2019-06-28 15:40:16,463:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-26, finished.
+2019-06-28 15:40:16,465:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-26
+2019-06-28 15:40:16,469:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 14
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=13)      Current (it=14)      Best (i=12)
+----------------  ------------------  --------------------  -------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.031438761249685296  0.03174672887054086  0.03158215153837204
+morse_Ca_O_B *    2.241334            2.0811235792311646    1.9283188437295522   1.918153215014455
+morse_Ca_O_C *    2.923245            3.743324733789681     3.9980046059940726   3.836933301479814
+lennard_Ca_O_A *  5.0                 4.144373416900635     3.9254950881004333   4.219670295715332
+morse_O_O_A       0.042395            0.042395              0.042395             0.042395
+morse_O_O_B       1.379316            1.379316              1.379316             1.379316
+morse_O_O_C       3.618701            3.618701              3.618701             3.618701
+lennard_O_O_A     22.0                22.0                  22.0                 22.0
+
+Merit =           259.83689200000003  24.852047999999996    17.207321            9.927487000000003
+
+
+2019-06-28 15:40:16,485:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-27
+2019-06-28 15:40:16,486:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-27.
+2019-06-28 15:40:16,544:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-27
+2019-06-28 15:40:16,557:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-27, finished.
+2019-06-28 15:40:16,559:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-27
+2019-06-28 15:40:16,565:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-28
+2019-06-28 15:40:16,566:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-28.
+2019-06-28 15:40:16,627:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-28
+2019-06-28 15:40:16,640:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-28, finished.
+2019-06-28 15:40:16,642:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-28
+2019-06-28 15:40:16,646:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 15
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=14)     Current (it=15)      Best (i=12)
+----------------  ------------------  -------------------  -------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03174672887054086  0.03170569440367893  0.03158215153837204
+morse_Ca_O_B *    2.241334            1.9283188437295522   2.009819227155726    1.918153215014455
+morse_Ca_O_C *    2.923245            3.9980046059940726   3.8396632495017444   3.836933301479814
+lennard_Ca_O_A *  5.0                 3.9254950881004333   4.0980991050601006   4.219670295715332
+morse_O_O_A       0.042395            0.042395             0.042395             0.042395
+morse_O_O_B       1.379316            1.379316             1.379316             1.379316
+morse_O_O_C       3.618701            3.618701             3.618701             3.618701
+lennard_O_O_A     22.0                22.0                 22.0                 22.0
+
+Merit =           259.83689200000003  17.207321            11.128639            9.927487000000003
+
+
+2019-06-28 15:40:16,662:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-29
+2019-06-28 15:40:16,663:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-29.
+2019-06-28 15:40:16,724:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-29
+2019-06-28 15:40:16,737:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-29, finished.
+2019-06-28 15:40:16,740:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-29
+2019-06-28 15:40:16,748:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-30
+2019-06-28 15:40:16,749:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-30.
+2019-06-28 15:40:16,828:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-30
+2019-06-28 15:40:16,834:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-30, finished.
+2019-06-28 15:40:16,836:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-30
+2019-06-28 15:40:16,841:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 16
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=15)     Current (it=16)      Best (i=16)
+----------------  ------------------  -------------------  -------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03170569440367893  0.03207018897616519  0.03207018897616519
+morse_Ca_O_B *    2.241334            2.009819227155726    1.97417553454047     1.97417553454047
+morse_Ca_O_C *    2.923245            3.8396632495017444   3.8456223361390514   3.8456223361390514
+lennard_Ca_O_A *  5.0                 4.0980991050601006   4.179716152139008    4.179716152139008
+morse_O_O_A       0.042395            0.042395             0.042395             0.042395
+morse_O_O_B       1.379316            1.379316             1.379316             1.379316
+morse_O_O_C       3.618701            3.618701             3.618701             3.618701
+lennard_O_O_A     22.0                22.0                 22.0                 22.0
+
+Merit =           259.83689200000003  11.128639            9.585642999999994    9.585642999999994
+
+
+2019-06-28 15:40:16,847:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-31
+2019-06-28 15:40:16,848:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-31.
+2019-06-28 15:40:16,902:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-31
+2019-06-28 15:40:16,905:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-31, finished.
+2019-06-28 15:40:16,907:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-31
+2019-06-28 15:40:16,913:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-32
+2019-06-28 15:40:16,914:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-32.
+2019-06-28 15:40:16,976:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-32
+2019-06-28 15:40:16,978:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-32, finished.
+2019-06-28 15:40:16,980:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-32
+2019-06-28 15:40:16,984:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 17
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=16)     Current (it=17)       Best (i=17)
+----------------  ------------------  -------------------  --------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03207018897616519  0.032697330892181804  0.032697330892181804
+morse_Ca_O_B *    2.241334            1.97417553454047     1.9362713743257676    1.9362713743257676
+morse_Ca_O_C *    2.923245            3.8456223361390514   3.9124168057982165    3.9124168057982165
+lennard_Ca_O_A *  5.0                 4.179716152139008    4.036535669700243     4.036535669700243
+morse_O_O_A       0.042395            0.042395             0.042395              0.042395
+morse_O_O_B       1.379316            1.379316             1.379316              1.379316
+morse_O_O_C       3.618701            3.618701             3.618701              3.618701
+lennard_O_O_A     22.0                22.0                 22.0                  22.0
+
+Merit =           259.83689200000003  9.585642999999994    7.90697               7.90697
+
+
+2019-06-28 15:40:16,991:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-33
+2019-06-28 15:40:16,992:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-33.
+2019-06-28 15:40:17,041:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-33
+2019-06-28 15:40:17,044:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-33, finished.
+2019-06-28 15:40:17,046:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-33
+2019-06-28 15:40:17,050:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 18
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=17)      Current (it=18)      Best (i=17)
+----------------  ------------------  --------------------  -------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.032697330892181804  0.03180679247765911  0.032697330892181804
+morse_Ca_O_B *    2.241334            1.9362713743257676    1.9115352928534661   1.9362713743257676
+morse_Ca_O_C *    2.923245            3.9124168057982165    3.9343498145835047   3.9124168057982165
+lennard_Ca_O_A *  5.0                 4.036535669700243     4.195484512310941    4.036535669700243
+morse_O_O_A       0.042395            0.042395              0.042395             0.042395
+morse_O_O_B       1.379316            1.379316              1.379316             1.379316
+morse_O_O_C       3.618701            3.618701              3.618701             3.618701
+lennard_O_O_A     22.0                22.0                  22.0                 22.0
+
+Merit =           259.83689200000003  7.90697               10.297864            7.90697
+
+
+2019-06-28 15:40:17,055:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-34
+2019-06-28 15:40:17,056:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-34.
+2019-06-28 15:40:17,107:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-34
+2019-06-28 15:40:17,120:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-34, finished.
+2019-06-28 15:40:17,122:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-34
+2019-06-28 15:40:17,127:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-35
+2019-06-28 15:40:17,128:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-35.
+2019-06-28 15:40:17,187:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-35
+2019-06-28 15:40:17,200:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-35, finished.
+2019-06-28 15:40:17,202:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-35
+2019-06-28 15:40:17,205:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 19
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=18)     Current (it=19)      Best (i=19)
+----------------  ------------------  -------------------  -------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03180679247765911  0.03135720916352579  0.03135720916352579
+morse_Ca_O_B *    2.241334            1.9115352928534661   1.974571385160616    1.974571385160616
+morse_Ca_O_C *    2.923245            3.9343498145835047   3.9176921246267815   3.9176921246267815
+lennard_Ca_O_A *  5.0                 4.195484512310941    4.15454838732694     4.15454838732694
+morse_O_O_A       0.042395            0.042395             0.042395             0.042395
+morse_O_O_B       1.379316            1.379316             1.379316             1.379316
+morse_O_O_C       3.618701            3.618701             3.618701             3.618701
+lennard_O_O_A     22.0                22.0                 22.0                 22.0
+
+Merit =           259.83689200000003  10.297864            7.398381000000006    7.398381000000006
+
+
+2019-06-28 15:40:17,222:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-36
+2019-06-28 15:40:17,223:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-36.
+2019-06-28 15:40:17,286:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-36
+2019-06-28 15:40:17,300:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-36, finished.
+2019-06-28 15:40:17,302:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-36
+2019-06-28 15:40:17,308:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-37
+2019-06-28 15:40:17,308:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-37.
+2019-06-28 15:40:17,369:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-37
+2019-06-28 15:40:17,382:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-37, finished.
+2019-06-28 15:40:17,384:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-37
+2019-06-28 15:40:17,388:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 20
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=19)     Current (it=20)       Best (i=20)
+----------------  ------------------  -------------------  --------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03135720916352579  0.031866756310110156  0.031866756310110156
+morse_Ca_O_B *    2.241334            1.974571385160616    1.9311640850568965    1.9311640850568965
+morse_Ca_O_C *    2.923245            3.9176921246267815   3.9062579782972353    3.9062579782972353
+lennard_Ca_O_A *  5.0                 4.15454838732694     4.171551069265661     4.171551069265661
+morse_O_O_A       0.042395            0.042395             0.042395              0.042395
+morse_O_O_B       1.379316            1.379316             1.379316              1.379316
+morse_O_O_C       3.618701            3.618701             3.618701              3.618701
+lennard_O_O_A     22.0                22.0                 22.0                  22.0
+
+Merit =           259.83689200000003  7.398381000000006    6.789002000000005     6.789002000000005
+
+
+2019-06-28 15:40:17,406:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-38
+2019-06-28 15:40:17,407:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-38.
+2019-06-28 15:40:17,466:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-38
+2019-06-28 15:40:17,479:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-38, finished.
+2019-06-28 15:40:17,481:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-38
+2019-06-28 15:40:17,486:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-39
+2019-06-28 15:40:17,487:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-39.
+2019-06-28 15:40:17,548:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-39
+2019-06-28 15:40:17,561:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-39, finished.
+2019-06-28 15:40:17,563:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-39
+2019-06-28 15:40:17,567:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 21
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=20)      Current (it=21)       Best (i=21)
+----------------  ------------------  --------------------  --------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.031866756310110156  0.031790011436933885  0.031790011436933885
+morse_Ca_O_B *    2.241334            1.9311640850568965    1.9360994048926963    1.9360994048926963
+morse_Ca_O_C *    2.923245            3.9062579782972353    3.8662153063475677    3.8662153063475677
+lennard_Ca_O_A *  5.0                 4.171551069265661     4.1776290576616475    4.1776290576616475
+morse_O_O_A       0.042395            0.042395              0.042395              0.042395
+morse_O_O_B       1.379316            1.379316              1.379316              1.379316
+morse_O_O_C       3.618701            3.618701              3.618701              3.618701
+lennard_O_O_A     22.0                22.0                  22.0                  22.0
+
+Merit =           259.83689200000003  6.789002000000005     6.675298000000007     6.675298000000007
+
+
+2019-06-28 15:40:17,584:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-40
+2019-06-28 15:40:17,585:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-40.
+2019-06-28 15:40:17,644:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-40
+2019-06-28 15:40:17,658:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-40, finished.
+2019-06-28 15:40:17,660:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-40
+2019-06-28 15:40:17,666:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-41
+2019-06-28 15:40:17,666:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-41.
+2019-06-28 15:40:17,726:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-41
+2019-06-28 15:40:17,739:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-41, finished.
+2019-06-28 15:40:17,742:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-41
+2019-06-28 15:40:17,746:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 22
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=21)      Current (it=22)      Best (i=22)
+----------------  ------------------  --------------------  -------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.031790011436933885  0.03199900796342655  0.03199900796342655
+morse_Ca_O_B *    2.241334            1.9360994048926963    1.959351048449732    1.959351048449732
+morse_Ca_O_C *    2.923245            3.8662153063475677    3.873133944953251    3.873133944953251
+lennard_Ca_O_A *  5.0                 4.1776290576616475    4.157391099063815    4.157391099063815
+morse_O_O_A       0.042395            0.042395              0.042395             0.042395
+morse_O_O_B       1.379316            1.379316              1.379316             1.379316
+morse_O_O_C       3.618701            3.618701              3.618701             3.618701
+lennard_O_O_A     22.0                22.0                  22.0                 22.0
+
+Merit =           259.83689200000003  6.675298000000007     6.202670000000006    6.202670000000006
+
+
+2019-06-28 15:40:17,762:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-42
+2019-06-28 15:40:17,763:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-42.
+2019-06-28 15:40:17,826:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-42
+2019-06-28 15:40:17,838:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-42, finished.
+2019-06-28 15:40:17,841:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-42
+2019-06-28 15:40:17,844:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 23
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=22)     Current (it=23)      Best (i=22)
+----------------  ------------------  -------------------  -------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03199900796342655  0.03080916154481638  0.03199900796342655
+morse_Ca_O_B *    2.241334            1.959351048449732    1.9643215874542024   1.959351048449732
+morse_Ca_O_C *    2.923245            3.873133944953251    3.869232871314201    3.873133944953251
+lennard_Ca_O_A *  5.0                 4.157391099063815    4.2940241369587895   4.157391099063815
+morse_O_O_A       0.042395            0.042395             0.042395             0.042395
+morse_O_O_B       1.379316            1.379316             1.379316             1.379316
+morse_O_O_C       3.618701            3.618701             3.618701             3.618701
+lennard_O_O_A     22.0                22.0                 22.0                 22.0
+
+Merit =           259.83689200000003  6.202670000000006    7.2883130000000085   6.202670000000006
+
+
+2019-06-28 15:40:17,861:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-43
+2019-06-28 15:40:17,861:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-43.
+2019-06-28 15:40:17,920:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-43
+2019-06-28 15:40:17,933:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-43, finished.
+2019-06-28 15:40:17,935:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-43
+2019-06-28 15:40:17,940:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-44
+2019-06-28 15:40:17,941:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-44.
+2019-06-28 15:40:18,000:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-44
+2019-06-28 15:40:18,014:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-44, finished.
+2019-06-28 15:40:18,016:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-44
+2019-06-28 15:40:18,020:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 24
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=23)     Current (it=24)      Best (i=24)
+----------------  ------------------  -------------------  -------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03080916154481638  0.03148672173867377  0.03148672173867377
+morse_Ca_O_B *    2.241334            1.9643215874542024   1.9611527083119988   1.9611527083119988
+morse_Ca_O_C *    2.923245            3.869232871314201    3.8982010749274227   3.8982010749274227
+lennard_Ca_O_A *  5.0                 4.2940241369587895   4.177348614032209    4.177348614032209
+morse_O_O_A       0.042395            0.042395             0.042395             0.042395
+morse_O_O_B       1.379316            1.379316             1.379316             1.379316
+morse_O_O_C       3.618701            3.618701             3.618701             3.618701
+lennard_O_O_A     22.0                22.0                 22.0                 22.0
+
+Merit =           259.83689200000003  7.2883130000000085   5.278093999999996    5.278093999999996
+
+
+2019-06-28 15:40:18,036:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-45
+2019-06-28 15:40:18,037:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-45.
+2019-06-28 15:40:18,097:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-45
+2019-06-28 15:40:18,110:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-45, finished.
+2019-06-28 15:40:18,112:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-45
+2019-06-28 15:40:18,117:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-46
+2019-06-28 15:40:18,118:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-46.
+2019-06-28 15:40:18,178:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-46
+2019-06-28 15:40:18,191:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-46, finished.
+2019-06-28 15:40:18,193:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-46
+2019-06-28 15:40:18,197:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 25
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=24)     Current (it=25)       Best (i=24)
+----------------  ------------------  -------------------  --------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03148672173867377  0.032273855771020946  0.03148672173867377
+morse_Ca_O_B *    2.241334            1.9611527083119988   1.938251923789645     1.9611527083119988
+morse_Ca_O_C *    2.923245            3.8982010749274227   3.894311678539953     3.8982010749274227
+lennard_Ca_O_A *  5.0                 4.177348614032209    4.109457871529354     4.177348614032209
+morse_O_O_A       0.042395            0.042395             0.042395              0.042395
+morse_O_O_B       1.379316            1.379316             1.379316              1.379316
+morse_O_O_C       3.618701            3.618701             3.618701              3.618701
+lennard_O_O_A     22.0                22.0                 22.0                  22.0
+
+Merit =           259.83689200000003  5.278093999999996    5.477040000000006     5.278093999999996
+
+
+2019-06-28 15:40:18,213:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-47
+2019-06-28 15:40:18,214:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-47.
+2019-06-28 15:40:18,276:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-47
+2019-06-28 15:40:18,290:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-47, finished.
+2019-06-28 15:40:18,292:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-47
+2019-06-28 15:40:18,299:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-48
+2019-06-28 15:40:18,300:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-48.
+2019-06-28 15:40:18,359:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-48
+2019-06-28 15:40:18,372:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-48, finished.
+2019-06-28 15:40:18,374:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-48
+2019-06-28 15:40:18,378:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 26
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=25)      Current (it=26)       Best (i=24)
+----------------  ------------------  --------------------  --------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.032273855771020946  0.031877077768811976  0.03148672173867377
+morse_Ca_O_B *    2.241334            1.938251923789645     1.9399389282089572    1.9611527083119988
+morse_Ca_O_C *    2.923245            3.894311678539953     3.894611739744642     3.8982010749274227
+lennard_Ca_O_A *  5.0                 4.109457871529354     4.163503864918709     4.177348614032209
+morse_O_O_A       0.042395            0.042395              0.042395              0.042395
+morse_O_O_B       1.379316            1.379316              1.379316              1.379316
+morse_O_O_C       3.618701            3.618701              3.618701              3.618701
+lennard_O_O_A     22.0                22.0                  22.0                  22.0
+
+Merit =           259.83689200000003  5.477040000000006     5.282270999999994     5.278093999999996
+
+
+2019-06-28 15:40:18,394:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-49
+2019-06-28 15:40:18,395:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-49.
+2019-06-28 15:40:18,455:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-49
+2019-06-28 15:40:18,468:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-49, finished.
+2019-06-28 15:40:18,470:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-49
+2019-06-28 15:40:18,475:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-50
+2019-06-28 15:40:18,476:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-50.
+2019-06-28 15:40:18,537:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-50
+2019-06-28 15:40:18,550:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-50, finished.
+2019-06-28 15:40:18,552:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-50
+2019-06-28 15:40:18,556:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 27
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=26)      Current (it=27)     Best (i=24)
+----------------  ------------------  --------------------  ------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.031877077768811976  0.0318495886237086  0.03148672173867377
+morse_Ca_O_B *    2.241334            1.9399389282089572    1.9428865285413899  1.9611527083119988
+morse_Ca_O_C *    2.923245            3.894611739744642     3.8781399579444424  3.8982010749274227
+lennard_Ca_O_A *  5.0                 4.163503864918709     4.164777210023835   4.177348614032209
+morse_O_O_A       0.042395            0.042395              0.042395            0.042395
+morse_O_O_B       1.379316            1.379316              1.379316            1.379316
+morse_O_O_C       3.618701            3.618701              3.618701            3.618701
+lennard_O_O_A     22.0                22.0                  22.0                22.0
+
+Merit =           259.83689200000003  5.282270999999994     5.417560999999998   5.278093999999996
+
+
+2019-06-28 15:40:18,572:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-51
+2019-06-28 15:40:18,573:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-51.
+2019-06-28 15:40:18,633:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-51
+2019-06-28 15:40:18,646:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-51, finished.
+2019-06-28 15:40:18,648:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-51
+2019-06-28 15:40:18,654:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-52
+2019-06-28 15:40:18,654:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-52.
+2019-06-28 15:40:18,715:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-52
+2019-06-28 15:40:18,728:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-52, finished.
+2019-06-28 15:40:18,730:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-52
+2019-06-28 15:40:18,734:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 28
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=27)    Current (it=28)      Best (i=28)
+----------------  ------------------  ------------------  -------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.0318495886237086  0.03193540946949018  0.03193540946949018
+morse_Ca_O_B *    2.241334            1.9428865285413899  1.952454285331365    1.952454285331365
+morse_Ca_O_C *    2.923245            3.8781399579444424  3.882225028871183    3.882225028871183
+lennard_Ca_O_A *  5.0                 4.164777210023835   4.155581494594921    4.155581494594921
+morse_O_O_A       0.042395            0.042395            0.042395             0.042395
+morse_O_O_B       1.379316            1.379316            1.379316             1.379316
+morse_O_O_C       3.618701            3.618701            3.618701             3.618701
+lennard_O_O_A     22.0                22.0                22.0                 22.0
+
+Merit =           259.83689200000003  5.417560999999998   5.094117000000006    5.094117000000006
+
+
+2019-06-28 15:40:18,753:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-53
+2019-06-28 15:40:18,754:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-53.
+2019-06-28 15:40:18,816:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-53
+2019-06-28 15:40:18,829:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-53, finished.
+2019-06-28 15:40:18,831:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-53
+2019-06-28 15:40:18,836:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-54
+2019-06-28 15:40:18,837:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-54.
+2019-06-28 15:40:18,898:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-54
+2019-06-28 15:40:18,911:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-54, finished.
+2019-06-28 15:40:18,913:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-54
+2019-06-28 15:40:18,917:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 29
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=28)     Current (it=29)      Best (i=29)
+----------------  ------------------  -------------------  -------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03193540946949018  0.03203052758559604  0.03203052758559604
+morse_Ca_O_B *    2.241334            1.952454285331365    1.9436800181940364   1.9436800181940364
+morse_Ca_O_C *    2.923245            3.882225028871183    3.891303064455938    3.891303064455938
+lennard_Ca_O_A *  5.0                 4.155581494594921    4.137380333710887    4.137380333710887
+morse_O_O_A       0.042395            0.042395             0.042395             0.042395
+morse_O_O_B       1.379316            1.379316             1.379316             1.379316
+morse_O_O_C       3.618701            3.618701             3.618701             3.618701
+lennard_O_O_A     22.0                22.0                 22.0                 22.0
+
+Merit =           259.83689200000003  5.094117000000006    4.918352999999996    4.918352999999996
+
+
+2019-06-28 15:40:18,934:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-55
+2019-06-28 15:40:18,934:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-55.
+2019-06-28 15:40:18,994:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-55
+2019-06-28 15:40:19,008:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-55, finished.
+2019-06-28 15:40:19,011:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-55
+2019-06-28 15:40:19,016:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-56
+2019-06-28 15:40:19,017:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-56.
+2019-06-28 15:40:19,077:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-56
+2019-06-28 15:40:19,090:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-56, finished.
+2019-06-28 15:40:19,092:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-56
+2019-06-28 15:40:19,096:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 30
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=29)     Current (it=30)      Best (i=30)
+----------------  ------------------  -------------------  -------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03203052758559604  0.03184101138217579  0.03184101138217579
+morse_Ca_O_B *    2.241334            1.9436800181940364   1.9460965067764895   1.9460965067764895
+morse_Ca_O_C *    2.923245            3.891303064455938    3.8848625924721194   3.8848625924721194
+lennard_Ca_O_A *  5.0                 4.137380333710887    4.161615393419009    4.161615393419009
+morse_O_O_A       0.042395            0.042395             0.042395             0.042395
+morse_O_O_B       1.379316            1.379316             1.379316             1.379316
+morse_O_O_C       3.618701            3.618701             3.618701             3.618701
+lennard_O_O_A     22.0                22.0                 22.0                 22.0
+
+Merit =           259.83689200000003  4.918352999999996    4.731402999999995    4.731402999999995
+
+
+2019-06-28 15:40:19,112:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-57
+2019-06-28 15:40:19,113:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-57.
+2019-06-28 15:40:19,173:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-57
+2019-06-28 15:40:19,186:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-57, finished.
+2019-06-28 15:40:19,188:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-57
+2019-06-28 15:40:19,192:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 31
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=30)     Current (it=31)      Best (i=30)
+----------------  ------------------  -------------------  -------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03184101138217579  0.03176975731915592  0.03184101138217579
+morse_Ca_O_B *    2.241334            1.9460965067764895   1.9617528310979877   1.9460965067764895
+morse_Ca_O_C *    2.923245            3.8848625924721194   3.8836841406186897   3.8848625924721194
+lennard_Ca_O_A *  5.0                 4.161615393419009    4.152459052959805    4.161615393419009
+morse_O_O_A       0.042395            0.042395             0.042395             0.042395
+morse_O_O_B       1.379316            1.379316             1.379316             1.379316
+morse_O_O_C       3.618701            3.618701             3.618701             3.618701
+lennard_O_O_A     22.0                22.0                 22.0                 22.0
+
+Merit =           259.83689200000003  4.731402999999995    5.175996000000001    4.731402999999995
+
+
+2019-06-28 15:40:19,209:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-58
+2019-06-28 15:40:19,209:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-58.
+2019-06-28 15:40:19,271:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-58
+2019-06-28 15:40:19,284:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-58, finished.
+2019-06-28 15:40:19,286:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-58
+2019-06-28 15:40:19,291:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-59
+2019-06-28 15:40:19,292:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-59.
+2019-06-28 15:40:19,354:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-59
+2019-06-28 15:40:19,367:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-59, finished.
+2019-06-28 15:40:19,369:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-59
+2019-06-28 15:40:19,373:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 32
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=31)     Current (it=32)      Best (i=32)
+----------------  ------------------  -------------------  -------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03176975731915592  0.03169044908888913  0.03169044908888913
+morse_Ca_O_B *    2.241334            1.9617528310979877   1.9560743093309843   1.9560743093309843
+morse_Ca_O_C *    2.923245            3.8836841406186897   3.8918598907659527   3.8918598907659527
+lennard_Ca_O_A *  5.0                 4.152459052959805    4.164553841351682    4.164553841351682
+morse_O_O_A       0.042395            0.042395             0.042395             0.042395
+morse_O_O_B       1.379316            1.379316             1.379316             1.379316
+morse_O_O_C       3.618701            3.618701             3.618701             3.618701
+lennard_O_O_A     22.0                22.0                 22.0                 22.0
+
+Merit =           259.83689200000003  5.175996000000001    4.667135999999996    4.667135999999996
+
+
+2019-06-28 15:40:19,389:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-60
+2019-06-28 15:40:19,390:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-60.
+2019-06-28 15:40:19,451:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-60
+2019-06-28 15:40:19,464:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-60, finished.
+2019-06-28 15:40:19,466:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-60
+2019-06-28 15:40:19,470:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 33
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=32)     Current (it=33)      Best (i=32)
+----------------  ------------------  -------------------  -------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03169044908888913  0.03197894144391965  0.03169044908888913
+morse_Ca_O_B *    2.241334            1.9560743093309843   1.93739972871845     1.9560743093309843
+morse_Ca_O_C *    2.923245            3.8918598907659527   3.8914411476639073   3.8918598907659527
+lennard_Ca_O_A *  5.0                 4.164553841351682    4.157106478578446    4.164553841351682
+morse_O_O_A       0.042395            0.042395             0.042395             0.042395
+morse_O_O_B       1.379316            1.379316             1.379316             1.379316
+morse_O_O_C       3.618701            3.618701             3.618701             3.618701
+lennard_O_O_A     22.0                22.0                 22.0                 22.0
+
+Merit =           259.83689200000003  4.667135999999996    4.973774000000003    4.667135999999996
+
+
+2019-06-28 15:40:19,486:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-61
+2019-06-28 15:40:19,487:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-61.
+2019-06-28 15:40:19,547:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-61
+2019-06-28 15:40:19,560:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-61, finished.
+2019-06-28 15:40:19,562:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-61
+2019-06-28 15:40:19,568:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-62
+2019-06-28 15:40:19,568:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-62.
+2019-06-28 15:40:19,629:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-62
+2019-06-28 15:40:19,643:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-62, finished.
+2019-06-28 15:40:19,645:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-62
+2019-06-28 15:40:19,649:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 34
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=33)     Current (it=34)       Best (i=34)
+----------------  ------------------  -------------------  --------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03197894144391965  0.031910320922317666  0.031910320922317666
+morse_Ca_O_B *    2.241334            1.93739972871845     1.9491334630431774    1.9491334630431774
+morse_Ca_O_C *    2.923245            3.8914411476639073   3.8860458513553313    3.8860458513553313
+lennard_Ca_O_A *  5.0                 4.157106478578446    4.155372753179964     4.155372753179964
+morse_O_O_A       0.042395            0.042395             0.042395              0.042395
+morse_O_O_B       1.379316            1.379316             1.379316              1.379316
+morse_O_O_C       3.618701            3.618701             3.618701              3.618701
+lennard_O_O_A     22.0                22.0                 22.0                  22.0
+
+Merit =           259.83689200000003  4.973774000000003    4.623947000000001     4.623947000000001
+
+
+2019-06-28 15:40:19,656:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-63
+2019-06-28 15:40:19,657:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-63.
+2019-06-28 15:40:19,717:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-63
+2019-06-28 15:40:19,731:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-63, finished.
+2019-06-28 15:40:19,733:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-63
+2019-06-28 15:40:19,738:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-64
+2019-06-28 15:40:19,739:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-64.
+2019-06-28 15:40:19,803:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-64
+2019-06-28 15:40:19,816:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-64, finished.
+2019-06-28 15:40:19,818:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-64
+2019-06-28 15:40:19,822:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 35
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=34)      Current (it=35)      Best (i=34)
+----------------  ------------------  --------------------  -------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.031910320922317666  0.03181264514515716  0.031910320922317666
+morse_Ca_O_B *    2.241334            1.9491334630431774    1.954419247145033    1.9491334630431774
+morse_Ca_O_C *    2.923245            3.8860458513553313    3.8870562008115495   3.8860458513553313
+lennard_Ca_O_A *  5.0                 4.155372753179964     4.153542631333856    4.155372753179964
+morse_O_O_A       0.042395            0.042395              0.042395             0.042395
+morse_O_O_B       1.379316            1.379316              1.379316             1.379316
+morse_O_O_C       3.618701            3.618701              3.618701             3.618701
+lennard_O_O_A     22.0                22.0                  22.0                 22.0
+
+Merit =           259.83689200000003  4.623947000000001     4.651710999999999    4.623947000000001
+
+
+2019-06-28 15:40:19,838:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-65
+2019-06-28 15:40:19,838:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-65.
+2019-06-28 15:40:19,898:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-65
+2019-06-28 15:40:19,911:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-65, finished.
+2019-06-28 15:40:19,913:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-65
+2019-06-28 15:40:19,919:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-66
+2019-06-28 15:40:19,919:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-66.
+2019-06-28 15:40:19,980:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-66
+2019-06-28 15:40:19,993:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-66, finished.
+2019-06-28 15:40:19,995:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-66
+2019-06-28 15:40:19,999:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 36
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=35)     Current (it=36)       Best (i=36)
+----------------  ------------------  -------------------  --------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03181264514515716  0.031922067110115485  0.031922067110115485
+morse_Ca_O_B *    2.241334            1.954419247145033    1.9475554498839789    1.9475554498839789
+morse_Ca_O_C *    2.923245            3.8870562008115495   3.889379599153588     3.889379599153588
+lennard_Ca_O_A *  5.0                 4.153542631333856    4.1480757442660074    4.1480757442660074
+morse_O_O_A       0.042395            0.042395             0.042395              0.042395
+morse_O_O_B       1.379316            1.379316             1.379316              1.379316
+morse_O_O_C       3.618701            3.618701             3.618701              3.618701
+lennard_O_O_A     22.0                22.0                 22.0                  22.0
+
+Merit =           259.83689200000003  4.651710999999999    4.580396000000001     4.580396000000001
+
+
+2019-06-28 15:40:20,015:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-67
+2019-06-28 15:40:20,016:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-67.
+2019-06-28 15:40:20,076:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-67
+2019-06-28 15:40:20,089:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-67, finished.
+2019-06-28 15:40:20,091:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-67
+2019-06-28 15:40:20,096:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-68
+2019-06-28 15:40:20,097:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-68.
+2019-06-28 15:40:20,157:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-68
+2019-06-28 15:40:20,170:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-68, finished.
+2019-06-28 15:40:20,172:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-68
+2019-06-28 15:40:20,176:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 37
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=36)      Current (it=37)      Best (i=37)
+----------------  ------------------  --------------------  -------------------  -------------------
+Variables
+morse_Ca_O_A *    0.030211            0.031922067110115485  0.03183744097439783  0.03183744097439783
+morse_Ca_O_B *    2.241334            1.9475554498839789    1.9489460620636414   1.9489460620636414
+morse_Ca_O_C *    2.923245            3.889379599153588     3.8867239889968626   3.8867239889968626
+lennard_Ca_O_A *  5.0                 4.1480757442660074    4.158500817975943    4.158500817975943
+morse_O_O_A       0.042395            0.042395              0.042395             0.042395
+morse_O_O_B       1.379316            1.379316              1.379316             1.379316
+morse_O_O_C       3.618701            3.618701              3.618701             3.618701
+lennard_O_O_A     22.0                22.0                  22.0                 22.0
+
+Merit =           259.83689200000003  4.580396000000001     4.578573000000005    4.578573000000005
+
+
+2019-06-28 15:40:20,182:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-69
+2019-06-28 15:40:20,183:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-69.
+2019-06-28 15:40:20,243:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-69
+2019-06-28 15:40:20,256:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-69, finished.
+2019-06-28 15:40:20,258:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-69
+2019-06-28 15:40:20,263:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-70
+2019-06-28 15:40:20,264:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-70.
+2019-06-28 15:40:20,324:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-70
+2019-06-28 15:40:20,337:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-70, finished.
+2019-06-28 15:40:20,339:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-70
+2019-06-28 15:40:20,343:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 38
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=37)     Current (it=38)       Best (i=38)
+----------------  ------------------  -------------------  --------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03183744097439783  0.031780533813443076  0.031780533813443076
+morse_Ca_O_B *    2.241334            1.9489460620636414   1.9530439324324709    1.9530439324324709
+morse_Ca_O_C *    2.923245            3.8867239889968626   3.889580650422643     3.889580650422643
+lennard_Ca_O_A *  5.0                 4.158500817975943    4.1592134140203125    4.1592134140203125
+morse_O_O_A       0.042395            0.042395             0.042395              0.042395
+morse_O_O_B       1.379316            1.379316             1.379316              1.379316
+morse_O_O_C       3.618701            3.618701             3.618701              3.618701
+lennard_O_O_A     22.0                22.0                 22.0                  22.0
+
+Merit =           259.83689200000003  4.578573000000005    4.468366000000003     4.468366000000003
+
+
+2019-06-28 15:40:20,360:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-71
+2019-06-28 15:40:20,361:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-71.
+2019-06-28 15:40:20,421:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-71
+2019-06-28 15:40:20,434:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-71, finished.
+2019-06-28 15:40:20,437:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-71
+2019-06-28 15:40:20,440:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 39
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=38)      Current (it=39)      Best (i=38)
+----------------  ------------------  --------------------  -------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.031780533813443076  0.03191253626497987  0.031780533813443076
+morse_Ca_O_B *    2.241334            1.9530439324324709    1.944920206566601    1.9530439324324709
+morse_Ca_O_C *    2.923245            3.889580650422643     3.888808844152662    3.889580650422643
+lennard_Ca_O_A *  5.0                 4.1592134140203125    4.157038733387257    4.1592134140203125
+morse_O_O_A       0.042395            0.042395              0.042395             0.042395
+morse_O_O_B       1.379316            1.379316              1.379316             1.379316
+morse_O_O_C       3.618701            3.618701              3.618701             3.618701
+lennard_O_O_A     22.0                22.0                  22.0                 22.0
+
+Merit =           259.83689200000003  4.468366000000003     4.533025999999998    4.468366000000003
+
+
+2019-06-28 15:40:20,457:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-72
+2019-06-28 15:40:20,457:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-72.
+2019-06-28 15:40:20,517:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-72
+2019-06-28 15:40:20,530:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-72, finished.
+2019-06-28 15:40:20,532:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-72
+2019-06-28 15:40:20,537:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-73
+2019-06-28 15:40:20,538:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-73.
+2019-06-28 15:40:20,598:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-73
+2019-06-28 15:40:20,611:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-73, finished.
+2019-06-28 15:40:20,613:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-73
+2019-06-28 15:40:20,617:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 40
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=39)     Current (it=40)      Best (i=38)
+----------------  ------------------  -------------------  -------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03191253626497987  0.03188673273152587  0.031780533813443076
+morse_Ca_O_B *    2.241334            1.944920206566601    1.9488749378899253   1.9530439324324709
+morse_Ca_O_C *    2.923245            3.888808844152662    3.887334561018385    3.889580650422643
+lennard_Ca_O_A *  5.0                 4.157038733387257    4.155539965296171    4.1592134140203125
+morse_O_O_A       0.042395            0.042395             0.042395             0.042395
+morse_O_O_B       1.379316            1.379316             1.379316             1.379316
+morse_O_O_C       3.618701            3.618701             3.618701             3.618701
+lennard_O_O_A     22.0                22.0                 22.0                 22.0
+
+Merit =           259.83689200000003  4.533025999999998    4.488121999999999    4.468366000000003
+
+
+2019-06-28 15:40:20,634:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-74
+2019-06-28 15:40:20,634:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-74.
+2019-06-28 15:40:20,695:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-74
+2019-06-28 15:40:20,708:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-74, finished.
+2019-06-28 15:40:20,711:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-74
+2019-06-28 15:40:20,716:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-75
+2019-06-28 15:40:20,717:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-75.
+2019-06-28 15:40:20,776:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-75
+2019-06-28 15:40:20,790:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-75, finished.
+2019-06-28 15:40:20,792:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-75
+2019-06-28 15:40:20,796:atsim.pro_fit.reporters.LogReporter:INFO reporters:380:  
+Results at iteration: 41
+
+Variables and Merit Values:
+                  First (it=0)        Previous (it=40)     Current (it=41)       Best (i=38)
+----------------  ------------------  -------------------  --------------------  --------------------
+Variables
+morse_Ca_O_A *    0.030211            0.03188673273152587  0.031888189028101074  0.031780533813443076
+morse_Ca_O_B *    2.241334            1.9488749378899253   1.9482508673110694    1.9530439324324709
+morse_Ca_O_C *    2.923245            3.887334561018385    3.888745805150613     3.889580650422643
+lennard_Ca_O_A *  5.0                 4.155539965296171    4.152824488467964     4.1592134140203125
+morse_O_O_A       0.042395            0.042395             0.042395              0.042395
+morse_O_O_B       1.379316            1.379316             1.379316              1.379316
+morse_O_O_C       3.618701            3.618701             3.618701              3.618701
+lennard_O_O_A     22.0                22.0                 22.0                  22.0
+
+Merit =           259.83689200000003  4.488121999999999    4.476089              4.468366000000003
+
+
+2019-06-28 15:40:20,818:atsim.pro_fit.runners._runner_job.RunnerJob:INFO _runner_job:468:  Starting job CaO-0 from batch Batch-76
+2019-06-28 15:40:20,819:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:148:  Directory locked for job CaO-0 from batch Batch-76.
+2019-06-28 15:40:20,834:root:INFO fitconfig:92:  Shutting down 'pprofit'
+2019-06-28 15:40:20,834:root:INFO fitconfig:93:  Shutting down minimizer.
+2019-06-28 15:40:20,835:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:101:  Closing runner: 'Local'
+2019-06-28 15:40:20,883:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:243:  Job execution finished successfully (finishJobRun) for job CaO-0 from batch Batch-76
+2019-06-28 15:40:20,897:atsim.pro_fit.runners._runner_job.RunnerJob._RunnerJobThread:INFO _runner_job:310:  job CaO-0 from batch Batch-76, finished.
+2019-06-28 15:40:20,899:atsim.pro_fit.runners._localrunner.InnerLocalRunner:INFO _base_remoterunner:496:  Batch finished successfully: Batch-76
+2019-06-28 15:40:20,900:atsim.pro_fit.runners._base_remoterunner.RemoteRunnerCloseThreadBase:INFO _base_remoterunner:70:  Runner (Local) closeRunClient channels closed.
+2019-06-28 15:40:20,901:atsim.pro_fit.runners._base_remoterunner.RemoteRunnerCloseThreadBase:INFO _base_remoterunner:70:  Runner (Local) cleanup channels closed.
+2019-06-28 15:40:20,901:atsim.pro_fit.fitconfig.FitConfig:INFO fitconfig:106:  Runner 'Local' now closed.
