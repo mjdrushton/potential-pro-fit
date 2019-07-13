@@ -102,9 +102,7 @@ class Initial_Population_Config_Helper(object):
 
         optiondict["initial_population"] = population_factory.population
 
-        generator = Population_To_Generator_Adapter(
-            variables, Uniform_Random_Initial_Population(variables, 1)
-        )
+        generator = population_factory.generator
 
         optiondict["generator"] = generator
 
@@ -180,8 +178,10 @@ class _Initial_Population_Factory(object):
         if self.population_loader:
             popn_init_callables.append(self.population_loader)
 
-        popn_init_callables.append(
-            self._create_default_distribution
+        popn_init_callables.append(self._create_default_distribution)
+
+        self.generator = Population_To_Generator_Adapter(
+            self.initialVariables, self._create_default_distribution(1)
         )
 
         popns = []
@@ -208,6 +208,7 @@ class _Initial_Population_Factory(object):
             Latin_Hypercube_InitialPopulation.Criterion.correlation,
             candidate_generator=candidate_generator,
         )
+
         return popn
 
     def _create_init_variables(self, population_size):
