@@ -51,6 +51,20 @@ Optional Fields
 
 \
 
+:Name: population_distribution
+:Arg-type: str
+:Default: uniform
+:Description: Defines the probability distribution from which initial population is initialised. By default candidats are chosen using fitting variable bounds using a uniform distribution (chosen by setting ``population_distribution : uniform``). 
+
+  If ``population_distribution : bias`` is used then the selection of candidate solutions will be biased towards the initial value of fitting variables (as set in the ``[Variables]`` section). Variables are chosen from a PERT distribution with bounds set according to each variable's bounds and a distribution mode set to the variable's initial value. The ``bias`` distribution accepts an optional value determining the distribution's shape (by default this is 10.0). If the shape parameter is 0.0 the uniform distribution is obtained. Higher values bias the distribution more and more narrowly around each variable's initial value. 
+:Example: To define a bias distribution with shape parameter of 20.0 the following would be used:
+  
+  .. code ::
+  
+    population_distribution : bias 20.0
+
+\
+
 :Name: population_include_orig_vars
 :Arg-type: bool
 :Default: True

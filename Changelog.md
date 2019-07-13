@@ -8,6 +8,8 @@
 - Population minimizers:
     + Population based minimizers now include initial variable values in their initial populations, this behaviour can be controlled using the `population_include_orig_vars` fit.cfg option.
     + Initial populations can be loaded from a CSV file using the new `population_load_from_csv` fit.cfg option or from a `ppdump` formatted CSV file using the `population_load_from_ppdump` option.
+    + Initial population selection is performed using the Latin Hypercube Method
+    + Initial population selection can be biased to initial variable values using the ``population_distribution : bias`` configuration option.
 
 
 ### Fixed
