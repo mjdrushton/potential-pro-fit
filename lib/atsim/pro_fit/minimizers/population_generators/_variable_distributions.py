@@ -35,6 +35,7 @@ class Variable_Distribution(object):
         out_array = self._distn_function(norm_array)
         return out_array
 
+
 class _Bounded_Variable_Distribution(Variable_Distribution):
     """Base class that ensures variable has bounds.
 
@@ -110,10 +111,7 @@ class Uniform_Variable_Distribution(_Bounded_Variable_Distribution):
         return distn_func
 
 
-
 class PERT_Variable_Distribution(_Bounded_Variable_Distribution):
-
-
     def __init__(self, variable_label, initial_variables, shape=10):
 
         """Create norm to variable transformation for a given variable.
@@ -144,7 +142,7 @@ class PERT_Variable_Distribution(_Bounded_Variable_Distribution):
         upper_bound = self.upper_bound
         shape = self.shape
 
-        mu = (lower_bound + shape * mode + upper_bound)/(shape+2)
+        mu = (lower_bound + shape * mode + upper_bound) / (shape + 2)
         return mu
 
     def _beta_distribution_params(self, mu):
@@ -154,26 +152,27 @@ class PERT_Variable_Distribution(_Bounded_Variable_Distribution):
         upper_bound = self.upper_bound
 
         if mu == mode:
-            alpha_1 = 1.0+shape/2.0
+            alpha_1 = 1.0 + shape / 2.0
         else:
-            alpha_1 = ((mu - lower_bound)*(2*mode-lower_bound-upper_bound))/((mode-mu)*(upper_bound-lower_bound))
-            alpha_2 = (alpha_1 * (upper_bound-mu))/(mu - lower_bound)
+            alpha_1 = (
+                (mu - lower_bound) * (2 * mode - lower_bound - upper_bound)
+            ) / ((mode - mu) * (upper_bound - lower_bound))
+            alpha_2 = (alpha_1 * (upper_bound - mu)) / (mu - lower_bound)
 
         return alpha_1, alpha_2
-
 
     def _init_distn_function(self):
         mu = self._mean()
         alpha_1, alpha_2 = self._beta_distribution_params(mu)
 
-        distn_func = scipy.stats.beta(alpha_1,alpha_2, loc = self.lower_bound, scale = self.upper_bound-self.lower_bound).ppf
+        distn_func = scipy.stats.beta(
+            alpha_1,
+            alpha_2,
+            loc=self.lower_bound,
+            scale=self.upper_bound - self.lower_bound,
+        ).ppf
 
         return distn_func
-
-
-
-
-
 
 
 class Variable_Distributions(object):
@@ -235,6 +234,24 @@ class Uniform_Variable_Distributions(Variable_Distributions):
     def _init_variable_distributions(self, initial_variables):
         vd = [
             Uniform_Variable_Distribution(fk, initial_variables)
+            for fk in initial_variables.fitKeys
+        ]
+        return vd
+
+
+class PERT_Variable_Distributions(Variable_Distributions):
+    """Convenience class that intialises Variable_Distribution objects
+    to PERT distribution between upper and lower bounds of each fitting
+    variable"""
+
+    def __init__(self, initial_variables, shape=10.0):
+        self.shape = shape
+        vds = self._init_variable_distributions(initial_variables)
+        super().__init__(initial_variables, vds)
+
+    def _init_variable_distributions(self, initial_variables):
+        vd = [
+            PERT_Variable_Distribution(fk, initial_variables, self.shape)
             for fk in initial_variables.fitKeys
         ]
         return vd

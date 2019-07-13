@@ -275,7 +275,8 @@ def _ChoiceConvert(clsname, key, choices):
 
     def f(v):
         v = v.strip()
-        if not v in choices:
+        vt = v.split()[0]
+        if not vt in choices:
             raise ConfigException(
                 "Could not parse option '%s' for %s. Value '%s' should be one of %s. "
                 % (key, clsname, v, choicestring)

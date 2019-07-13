@@ -11,7 +11,9 @@ from ._variable_distributions import (
     Variable_Distribution,
     Variable_Distributions,
     Uniform_Variable_Distribution,
-    PERT_Variable_Distribution
+    PERT_Variable_Distribution,
+    Uniform_Variable_Distributions,
+    PERT_Variable_Distributions,
 )
 
 from ._latin_hypercube_initial_population import (

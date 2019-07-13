@@ -84,14 +84,12 @@ def test_variable_distributions_missing_distribution():
     with pytest.raises(Missing_Distribution_Exception):
         Variable_Distributions(v, [vd_a])
 
+
 def test_PERT_variable_distribution():
 
-    v = Variables(
-        [("a", 4.0, True)],
-        bounds = [(2,10)]
-    )
+    v = Variables([("a", 4.0, True)], bounds=[(2, 10)])
 
-    pert = PERT_Variable_Distribution("a", v, shape = 6.0)
+    pert = PERT_Variable_Distribution("a", v, shape=6.0)
 
     expect = np.array([2.0, 10.0, 4.369944725903435])
     input_vals = np.array([0, 1, 0.5])

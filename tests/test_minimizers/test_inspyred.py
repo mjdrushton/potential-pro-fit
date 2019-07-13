@@ -8,6 +8,8 @@ from atsim import pro_fit
 import atsim.pro_fit.minimizers
 import atsim.pro_fit.variables
 
+from atsim.pro_fit.exceptions import ConfigException
+
 from atsim.pro_fit.minimizers._inspyred._inspyred_common import (
     Population_To_Generator_Adapter,
 )
@@ -15,6 +17,7 @@ from atsim.pro_fit.minimizers._inspyred._inspyred_common import (
 from atsim.pro_fit.minimizers._inspyred._config import (
     Initial_Population_Config_Helper,
     _Initial_Population_Factory,
+    _Distribution_Factory,
 )
 
 from atsim.pro_fit.minimizers.population_generators import (
@@ -23,6 +26,11 @@ from atsim.pro_fit.minimizers.population_generators import (
     Combine_Initial_Population,
     File_Initial_Population,
     Latin_Hypercube_InitialPopulation,
+)
+
+from atsim.pro_fit.minimizers.population_generators import (
+    PERT_Variable_Distributions,
+    Uniform_Variable_Distributions,
 )
 
 
@@ -271,7 +279,7 @@ def test_initial_population_factory(tmpdir):
 4.0,5.0,6.0"""
     )
 
-    popn_factory = _Initial_Population_Factory(
+    popn_factory = Initial_Population_Config_Helper(
         v,
         {
             "population_size": 6,
@@ -296,7 +304,7 @@ def test_initial_population_factory(tmpdir):
     assert popn.populations[2].population_size == 3
 
     # Don't include original variables
-    popn_factory = _Initial_Population_Factory(
+    popn_factory = Initial_Population_Config_Helper(
         v,
         {
             "population_size": 6,
@@ -318,7 +326,7 @@ def test_initial_population_factory(tmpdir):
     assert popn.populations[1].population_size == 4
 
     # Don't include file
-    popn_factory = _Initial_Population_Factory(
+    popn_factory = Initial_Population_Config_Helper(
         v, {"population_size": 6, "population_include_orig_vars": True}
     )
 
@@ -335,7 +343,7 @@ def test_initial_population_factory(tmpdir):
     assert popn.populations[1].population_size == 5
 
     # Don't include file or original value
-    popn_factory = _Initial_Population_Factory(
+    popn_factory = Initial_Population_Config_Helper(
         v, {"population_size": 6, "population_include_orig_vars": False}
     )
 
@@ -358,3 +366,121 @@ def test_initial_population_factory(tmpdir):
     assert popn.population_size == 2
 
     assert type(popn) == File_Initial_Population
+
+
+def test_distribution_factory():
+    assert ["uniform", "bias"] == _Distribution_Factory.available_choices
+
+    v = atsim.pro_fit.variables.Variables(
+        [("a", 1.0, True), ("b", 2.1, False), ("c", 3.0, True)],
+        [(0, 10), (0, 20), (0, 30)],
+    )
+
+    popn_factory = Initial_Population_Config_Helper("TestClass")
+    with pytest.raises(ConfigException):
+        popn_factory.parse(
+            v,
+            {
+                "population_size": 6,
+                "population_distribution": "blah",
+                "population_include_orig_vars": "False",
+            },
+        )
+
+    # Uniform distribution
+
+    optiondict = popn_factory.parse(
+        v,
+        {
+            "population_size": 6,
+            "population_distribution": "uniform",
+            "population_include_orig_vars": "False",
+        },
+    )
+
+    assert Uniform_Variable_Distributions == type(
+        optiondict[
+            "initial_population"
+        ].candidate_generator.variable_distributions
+    )
+
+    assert np.allclose(
+        np.array([[0, 0]]),
+        optiondict[
+            "initial_population"
+        ].candidate_generator.variable_distributions.apply(np.array([[0, 0]])),
+    )
+    assert np.allclose(
+        np.array([[10, 30]]),
+        optiondict[
+            "initial_population"
+        ].candidate_generator.variable_distributions.apply(np.array([[1, 1]])),
+    )
+
+    # Bias distribution
+
+    optiondict = popn_factory.parse(
+        v,
+        {
+            "population_size": 6,
+            "population_distribution": "bias",
+            "population_include_orig_vars": "False",
+        },
+    )
+
+    assert PERT_Variable_Distributions == type(
+        optiondict[
+            "initial_population"
+        ].candidate_generator.variable_distributions
+    )
+    assert (
+        10.0
+        == optiondict[
+            "initial_population"
+        ].candidate_generator.variable_distributions.shape
+    )
+
+    optiondict = popn_factory.parse(
+        v,
+        {
+            "population_size": 6,
+            "population_distribution": "bias 6.0",
+            "population_include_orig_vars": "False",
+        },
+    )
+
+    assert PERT_Variable_Distributions == type(
+        optiondict[
+            "initial_population"
+        ].candidate_generator.variable_distributions
+    )
+    assert (
+        6.0
+        == optiondict[
+            "initial_population"
+        ].candidate_generator.variable_distributions.shape
+    )
+
+    assert np.allclose(
+        np.array([[0, 0]]),
+        optiondict[
+            "initial_population"
+        ].candidate_generator.variable_distributions.apply(np.array([[0, 0]])),
+    )
+    assert np.allclose(
+        np.array([[10, 30]]),
+        optiondict[
+            "initial_population"
+        ].candidate_generator.variable_distributions.apply(np.array([[1, 1]])),
+    )
+    assert np.allclose(
+        np.array([[1.7446787883800605, 5.234036365140168]]),
+        optiondict[
+            "initial_population"
+        ].candidate_generator.variable_distributions.apply(
+            np.array([[0.5, 0.5]]),
+        ),
+            rtol=1e-4
+    )
+
+    # TODO: Tests for a bias generator
