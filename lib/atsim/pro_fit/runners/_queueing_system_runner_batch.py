@@ -76,7 +76,9 @@ class QueueingSystemRunnerJobRecord(object):
         self._qs_client_record = qs_client_record
 
         linkevent_spawn(
-            self._qs_client_record.qsubEvent, self._qs_submit_event
+            self._qs_client_record.qsubEvent,
+            self._qs_submit_event,
+            greenlet_name="QueueingSystemRunnerJobRecord-submit",
         )
 
     def _handler_wrap(self, handler):

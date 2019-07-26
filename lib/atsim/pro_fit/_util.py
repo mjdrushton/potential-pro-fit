@@ -270,8 +270,10 @@ def linkevent(evt, depend):
     depend.set()
 
 
-def linkevent_spawn(evt, depend):
-    return gevent.spawn(linkevent, evt, depend)
+def linkevent_spawn(evt, depend, greenlet_name="linkevent"):
+    greenlet = gevent.spawn(linkevent, evt, depend)
+    greenlet.name = "{}-{}".format(greenlet_name, greenlet.name)
+    return greenlet
 
 
 def cmp(x, y):

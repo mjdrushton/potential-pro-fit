@@ -82,6 +82,9 @@ class FitConfig(object):
         self._endEvent = gevent.event.Event()
 
         self._closeGreenlet = gevent.spawn(self._close)
+        self._closeGreenlet.name = "FitConfig_closedGreenlet-{}".format(
+            self._closeGreenlet.name
+        )
         self._closedEvent = gevent.event.Event()
 
         def closedevtset(grn):
@@ -108,12 +111,14 @@ class FitConfig(object):
                 evt.wait()
                 self._logger.info("Runner '%s' now closed.", name)
 
-            gevent.spawn(repclose, e, name)
+            grn = gevent.spawn(repclose, e, name)
+            grn.name = "FitConfig__closeRunners-{}-{}".format(name, grn.name)
+
             evts.append(e)
         return evts
 
     def close(self):
-        """Used to terminate pprofit. This is equivalent to self.killEvent.set()"""
+        """Used to terminate pprofit. This is equivalent to self.endEvent.set()"""
         self.endEvent.set()
         self._closedEvent.wait()
 

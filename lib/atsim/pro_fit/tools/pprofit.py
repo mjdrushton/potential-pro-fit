@@ -27,6 +27,7 @@ import tempfile
 import contextlib
 import pkgutil
 import importlib.resources
+import curses
 
 import jinja2
 import gevent
@@ -683,12 +684,22 @@ def main():
         sys.exit(1)
     _makeLockFile()
 
+    # Start the minimizer
     if console:
         console.start()
+        perform_minimization(options, pluginmodules, console)
+    else:
+        perform_minimization(options, pluginmodules, console)
 
+
+def perform_minimization(options, pluginmodules, console):
     tempdir = tempfile.mkdtemp()
+
+    # if console:
+    #     console.start()
+
+    exit_code = 0
     try:
-        exit_code = 0
         cfg = None
         logsql = True
         logger = logging.getLogger(__name__).getChild("main")
@@ -719,6 +730,12 @@ def main():
             cfg = _getfitcfg(tempdir, pluginmodules=pluginmodules)
 
         _invokeMinimizer(cfg, logger, logsql, console)
+        # import pdb;pdb.set_trace()
+        # gevent.sleep(0)
+        # import gc
+        # greenlets = [obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)]
+        # gevent.wait(greenlets, timeout=10)
+        # gevent.killall(greenlets, timeout=10)
     except Exception as e:
         logger.exception(e)
 
@@ -728,7 +745,18 @@ def main():
         exit_code = 1
     finally:
         if cfg:
-            cfg.close()
+            cfg.endEvent.set()
+            cfg_closed_event = cfg.closedEvent
+        else:
+            cfg_closed_event = gevent.event.Event()
+            cfg_closed_event.set()
+
+        gevent.wait([cfg_closed_event])
+
+        if console and console.started:
+            console_close_event = console.close()
+            gevent.wait([console_close_event])
+
         _removeLockFile()
         shutil.rmtree(tempdir, ignore_errors=True)
         sys.exit(exit_code)

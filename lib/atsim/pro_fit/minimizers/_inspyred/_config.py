@@ -180,9 +180,7 @@ class _Initial_Population_Factory(object):
         if self.population_loader:
             popn_init_callables.append(self.population_loader)
 
-        popn_init_callables.append(
-            self._create_default_distribution
-        )
+        popn_init_callables.append(self._create_default_distribution)
 
         popns = []
         for c in popn_init_callables:

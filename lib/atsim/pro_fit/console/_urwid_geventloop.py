@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+
+import urwid
+
 """
     urwid_geventloop
     ~~~~~~~~~~~~~~~~
@@ -10,18 +13,19 @@
     ::
 
        main_loop = urwid.MainLoop(widget, event_loop=GeventLoop())
-       gevent.spawn(background_loop)
+       gevent.  spawn(background_loop)
        main_loop.run()
 
 """
 import gevent
 from gevent import select
 from urwid import ExitMainLoop
+from urwid.main_loop import EventLoop
 from collections import deque
 import signal
 
 
-class GeventLoop(object):
+class GeventLoop(EventLoop):
     def __init__(self):
         super().__init__()
         self._completed_greenlets = deque()
@@ -36,6 +40,7 @@ class GeventLoop(object):
 
     def alarm(self, seconds, callback):
         greenlet = gevent.spawn_later(seconds, callback)
+        greenlet.name = "GeventLoop_alarm-{}".format(greenlet.name)
         greenlet.link(self._greenlet_completed)
         return greenlet
 
@@ -50,10 +55,13 @@ class GeventLoop(object):
     def _watch_file(self, fd, callback):
         while True:
             select.select([fd], [], [])
-            gevent.spawn(callback).link(self._greenlet_completed)
+            grn = gevent.spawn(callback)
+            grn.name = "GeventLoop__watch_file-{}".format(grn.name)
+            grn.link(self._greenlet_completed)
 
     def watch_file(self, fd, callback):
         greenlet = gevent.spawn(self._watch_file, fd, callback)
+        greenlet.name = "GeventLoop_watch_file-{}".format(greenlet.name)
         greenlet.link(self._greenlet_completed)
         return greenlet
 

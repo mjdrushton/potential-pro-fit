@@ -170,6 +170,9 @@ class _EvolutionaryComputationMinimizerBaseClass(object):
     @param merit atsim.pro_fit.merit.Merit instance used to calculate merit value.
     @return MinimizerResults for candidate solution population containing best merit value."""
         self._greenlet = gevent.spawn(self._minimize, merit)
+        self._greenlet.name = "_EvolutionaryComputationMinimizerBaseClass_minmize-{}".format(
+            self._greenlet.name
+        )
         self._greenlet.start()
         return self._greenlet.get()
 

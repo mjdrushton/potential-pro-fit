@@ -135,7 +135,8 @@ class _BatchMonitorThread(object):
             self.batch.parentRunner.batchFinished(self.batch, self.exception)
             finishedEvent.set()
 
-        gevent.Greenlet.spawn(after)
+        grn = gevent.Greenlet.spawn(after)
+        grn.name = "_BatchMonitorThread-finishBatch-{}".format(grn.name)
 
 
 class RunnerBatch(object):
@@ -155,7 +156,8 @@ class RunnerBatch(object):
         """Register batch remote path with the cleanup agent and call start() on this batch's
     jobs"""
         self._logger.debug("Starting batch: %s", self.name)
-        gevent.Greenlet.spawn(self._monitorThread.run)
+        grn = gevent.Greenlet.spawn(self._monitorThread.run)
+        grn.name = "_BatchMonitorThread-startBatch-{}".format(grn.name)
 
     @property
     def isFinished(self):

@@ -36,7 +36,7 @@ class RunChannel(AbstractChannel):
 
     Args:
         execnet_gw (execnet.Gateway): Execnet gateway used to create channel managed by this object.
-        channel_id (None, optional): Description
+    channel_id (None, optional): Description
         shell (str, optional): Shell that should be used on remote host to run commands.
         hardkill_timeout (int, optional): When jobs are terminated, an initial attempt is made to kill the job by
           sending the termination signal. If this has failed, after this timeout the SIGKILL signal is sent to hard stop the process.
@@ -56,7 +56,9 @@ class RunChannel(AbstractChannel):
         if not keepAlive > 0:
             self._keepAlive = None
         else:
-            self._keepAlive = KeepAlive(self, keepAlive)
+            self._keepAlive = KeepAlive(
+                self, keepAlive, name=self.__class__.__name__
+            )
             self._keepAlive.start()
 
     def make_start_message(self):

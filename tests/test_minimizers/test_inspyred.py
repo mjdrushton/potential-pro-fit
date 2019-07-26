@@ -478,9 +478,9 @@ def test_distribution_factory():
         optiondict[
             "initial_population"
         ].candidate_generator.variable_distributions.apply(
-            np.array([[0.5, 0.5]]),
+            np.array([[0.5, 0.5]])
         ),
-            rtol=1e-4
+        rtol=1e-4,
     )
 
     # TODO: Tests for a bias generator

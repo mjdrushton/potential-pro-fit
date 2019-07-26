@@ -105,13 +105,11 @@ class InnerLocalRunner(BaseRemoteRunner):
         name (str): Name of this runner.
         nprocesses (int): Number of processes that can be run in parallel by this runner"""
         self._nprocesses = nprocesses
-        super(InnerLocalRunner, self).__init__(name, None)
+        super().__init__(name, None)
 
     def makeExecnetGateway(self, url, identityfile, extra_ssh_options):
         self._remotePath = None
-        group = _execnet.Group()
-        # group.set_execmodel("gevent", "thread")
-        gw = group.makegateway()
+        gw = self._group.makegateway()
         return gw
 
     def initialiseUpload(self):

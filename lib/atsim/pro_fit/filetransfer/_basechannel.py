@@ -45,7 +45,9 @@ class BaseChannel(AbstractChannel):
         if not keepAlive > 0:
             self._keepAlive = None
         else:
-            self._keepAlive = KeepAlive(self, keepAlive)
+            self._keepAlive = KeepAlive(
+                self, keepAlive, name=self.__class__.__name__
+            )
             self._keepAlive.start()
 
     def make_start_message(self):
@@ -64,12 +66,12 @@ class BaseChannel(AbstractChannel):
         return self._remote_path
 
     def close(self, error=None):
-        if not self._keepAlive is None:
+        if self._keepAlive is not None:
             self._keepAlive.kill()
         super(BaseChannel, self).close(error)
 
     def waitclose(self, timeout=None):
-        if not self._keepAlive is None:
+        if self._keepAlive is not None:
             self._keepAlive.kill()
         super(BaseChannel, self).waitclose(timeout)
 

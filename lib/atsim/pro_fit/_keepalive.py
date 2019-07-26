@@ -5,7 +5,7 @@ import itertools
 class KeepAlive(object):
     """Send `KEEP_ALIVE` messages through a `BaseChannel` instance at regular intervals"""
 
-    def __init__(self, channel, interval):
+    def __init__(self, channel, interval, name="KeepAlive"):
         """Create a keep alive loop object.
 
     Args:
@@ -16,6 +16,7 @@ class KeepAlive(object):
         self._counter_prefix = "keepalive_"
         self._counter = itertools.count()
         self._greenlet = None
+        self.name = name
 
         if not self.interval > 0:
             raise ValueError("Interval should be positive number.")
@@ -43,8 +44,10 @@ class KeepAlive(object):
                     return
 
         greenlet = gevent.spawn(loop)
+        greenlet.name = "KeepAlive-{}-{}".format(self.name, greenlet.name)
         self._greenlet = greenlet
 
     def kill(self):
         if self._greenlet:
             self._greenlet.kill()
+            gevent.wait([self._greenlet])

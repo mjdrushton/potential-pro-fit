@@ -6,6 +6,43 @@ import weakref
 
 from urwid import MonitoredList
 
+import gevent
+import gevent.queue
+
+class Queue_To_List(object):
+    """Provides access to a gevent.queue whose items will be appended to
+    provided list (most likely an ObservedList) as items are placed in queue"""
+
+    def __init__(self, output_list):
+        """Create Queue_To_list instance
+        
+        Arguments:
+            output_list {list} -- Items place in queue will be appended to this output_list
+        """
+        self.output_list = output_list
+        self.queue = gevent.queue.Queue()
+        self._greenlet = gevent.spawn(self._monitor)
+        self._greenlet.name = "Queue_To_List-_monitor-{}".format(self._greenlet.name)
+
+    def _kill(self):
+        self._greenlet.kill()
+
+    def _monitor(self):
+        while True:
+            v = self.queue.get()
+            self.output_list.append(v)
+
+    def close(self):
+        self._greenlet.kill()
+        self._greenlet.join()
+        evt = gevent.event.Event()
+        evt.set()
+        return evt
+        
+
+
+
+
 
 class ObservedList(MonitoredList):
     def __init__(self):
@@ -257,8 +294,8 @@ class ConsoleModel(ObservableObject):
         self._normal_setattr = True
         self.current_iteration = IterationModel()
         self.best_iteration = IterationModel()
-        self.endEvent = None
-        self.closedEvent = None
+        
+        self.fit_cfg_end_event = None
 
         # Create VariableUpdateHandler that will keep the variable_table in sync with the variables information in the iteration models.
         _VariableUpdateHandler(self)
@@ -272,4 +309,16 @@ class ConsoleModel(ObservableObject):
         # Create a model for the MessageBox
         self.messages = MessageBoxModel()
 
+        # provide access to the messages box via a queue. This is to enable integration with the 
+        # logging frame work.
+        self._messages_queue = Queue_To_List(self.messages.lines)
+
         self._normal_setattr = False
+
+    @property
+    def messages_queue(self):
+        return self._messages_queue.queue
+
+    def close(self):
+        evt = self._messages_queue.close()
+        return evt

@@ -202,12 +202,13 @@ class _RunnerJobThread(object):
         self.job.status.append("start job run")
         jobRunEvent, jobRun = self.job._startJobRun()
         self.job.observers.notifyJobRunStarted(self.job)
-        gevent.spawn(
+        grn = gevent.spawn(
             self._notifyPidSet,
             jobRun.pidSetEvent,
             jobRunEvent,
             self.killedEvent,
         )
+        grn.name = "_RunnerJobThread-doRun-{}".format(grn.name)
 
         mergedEvent = self._makeEventOrKillEvent(jobRunEvent)
         mergedEvent.wait()
@@ -342,7 +343,10 @@ class _RunnerJobThread(object):
                     self.job._directoryLocked = False
                     self.finishedEvent.set()
 
-                gevent.Greenlet.spawn(after)
+                grn = gevent.Greenlet.spawn(after)
+                grn.name = "_RunnerJobThread-finishJob-after-{}".format(
+                    grn.name
+                )
 
             self.job.parentBatch.jobFinished(self.job)
             self._logger.debug("Finished set")
@@ -366,7 +370,8 @@ class _RunnerJobThread(object):
             gevent.wait(objects=events, count=1)
             mergedEvent.set()
 
-        gevent.Greenlet.spawn(after)
+        grn = gevent.Greenlet.spawn(after)
+        grn.name = "_RunnerJobThread__makeEventOrKillEvent-{}".format(grn.name)
         return mergedEvent
 
 
@@ -436,7 +441,7 @@ class RunnerJob(object):
     @property
     def remotePath(self):
         if self._remotePath is None:
-            junk, job_name = os.path.split(self.sourcePath)
+            _junk, job_name = os.path.split(self.sourcePath)
             # Make the job_name unique (for population minimizer use)
             # by using the jobid as a suffix
             job_name = "_".join([str(job_name), str(self.jobid)])
@@ -477,7 +482,8 @@ class RunnerJob(object):
                 self.outputPath,
             )
         )
-        gevent.Greenlet.spawn(self._jobThread.run)
+        grn = gevent.Greenlet.spawn(self._jobThread.run)
+        grn.name = "RunnerJob-start-{}".format(grn.name)
 
     def _lockDirectory(self):
         self._logger.debug(
@@ -511,8 +517,16 @@ class RunnerJob(object):
         handler = RunnerJobRunClientJob(self)
         jobRun = self.parentBatch.startJobRun(self, handler)
         self._jobRun = jobRun
-        linkevent_spawn(jobRun.jobRunEvent, self.jobRunEvent)
-        linkevent_spawn(jobRun.pidSetEvent, self.pidSetEvent)
+        linkevent_spawn(
+            jobRun.jobRunEvent,
+            self.jobRunEvent,
+            greenlet_name="RunnerJob_startJobRun-jobRunEvent",
+        )
+        linkevent_spawn(
+            jobRun.pidSetEvent,
+            self.pidSetEvent,
+            greenlet_name="RunnerJob_startJobRun-pidSetEvent",
+        )
         return handler.finishEvent, jobRun
 
     def _startDownload(self):

@@ -13,6 +13,7 @@
 
 
 ### Fixed
+- Reset terminal after a run. This should avoid the need for users to type 'reset' after each run.
 - actually made the Simulated_Annealing minimizer useful by initialising the minimizer with original variable values.
     
 

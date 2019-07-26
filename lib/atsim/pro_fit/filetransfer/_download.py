@@ -246,6 +246,7 @@ class DownloadDirectory(object):
 
         # Start the process
         grl = gevent.Greenlet.spawn(self._callback.queue_loop)
+        grl.name = "DownloadDirectory_download-{}".format(grl.name)
         rv = self._callback.event
         if non_blocking:
             return rv

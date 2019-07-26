@@ -325,7 +325,10 @@ class _QueueingSystemStateQSelectCallback(object):
             except IOError:
                 pass
 
-        gevent.spawn_later(self._qsState._pollEvery, qselect_later)
+        grn = gevent.spawn_later(self._qsState._pollEvery, qselect_later)
+        grn.name = "_QueueingSystemStateQSelectCallback-qselect_later-{}".format(
+            grn.name
+        )
 
 
 class QueueingSystemState(object):

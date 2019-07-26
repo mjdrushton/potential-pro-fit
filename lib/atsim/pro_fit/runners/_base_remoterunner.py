@@ -76,7 +76,10 @@ class RemoteRunnerCloseThreadBase(gevent.Greenlet):
         if channel is None:
             evt.set()
         else:
-            gevent.spawn(closechannel, channel, evt)
+            grn = gevent.spawn(closechannel, channel, evt)
+            grn.name = "RemoteRunnerCloseThreadBase__closeChannel-{}-{}".format(
+                self.runner.name, grn.name
+            )
         return [evt]
 
     def closeUpload(self):
@@ -167,6 +170,10 @@ class RemoteRunnerCloseThreadBase(gevent.Greenlet):
                 )
 
             gevent.wait(objects=allEvents, timeout=120)
+
+            self.runner._group.terminate(timeout=10)
+            gevent.sleep(0)
+
             self._logger.debug("Cleanup finished.")
         except:
             exception = sys.exc_info()
@@ -307,6 +314,7 @@ class BaseRemoteRunner(object):
 
         self._do_cleanup = do_cleanup
 
+        self._group = self.makeExecnetGroup()
         self._gw = self.makeExecnetGateway(
             url, identityfile, extra_ssh_options
         )
@@ -329,6 +337,10 @@ class BaseRemoteRunner(object):
         if self._cleanupClient:
             self._cleanupClient.lock(self._remotePath)
 
+    def makeExecnetGroup(self):
+        group = _execnet.Group()
+        return group
+
     def makeExecnetGateway(self, url, identityfile, extra_ssh_options):
         self._gwurl = url
         self._username, self._hostname, self._port, self._remotePath = _execnet.urlParse(
@@ -347,8 +359,7 @@ class BaseRemoteRunner(object):
         if sshcfgfile:
             self._sshcfgfile = sshcfgfile
 
-        group = _execnet.Group()
-        gw = group.makegateway(self._gwurl)
+        gw = self._group.makegateway(self._gwurl)
         return gw
 
     def initialiseTemporaryRemoteDirectory(self):

@@ -12,6 +12,8 @@ import atsim.pro_fit.runners
 import atsim.pro_fit
 import atsim.pro_fit._version
 
+import logging
+
 
 class JobObserver(atsim.pro_fit.runners.RunnerJobObserverAdapter):
     def __init__(self, batchObserver, runnerModel):
@@ -96,9 +98,15 @@ class Console(object):
         cfg (atsim.pro_fit.fitconfig.FitConfig): Config used to initialise the console
 
     """
-        self.model.endEvent = cfg.endEvent
-        self.model.closedEvent = cfg.closedEvent
-        gevent.spawn(self._killMainLoopOnEvent, self.model.closedEvent)
+        self.model.fit_cfg_end_event = cfg.endEvent
+
+        def show_shutdown(evt):
+            gevent.wait([evt])
+            if evt.is_set():
+                self._monitor_shutdown()
+        
+        grn = gevent.spawn(show_shutdown, self.model.fit_cfg_end_event)
+        grn.name = "Console-registerConfig-{}".format(grn.name)
 
         self.model.run_name = cfg.title
         self._initialiseRunnerModel(cfg)
@@ -112,14 +120,15 @@ class Console(object):
         def hidemessages():
             self.model.messages.visible = False
 
-        gevent.spawn_later(1.0, hidemessages)
+        grn = gevent.spawn_later(1.0, hidemessages)
+        grn.name = "Hide_Messages-{}".format(grn.name)
 
     def _initialiseRunnerModel(self, cfg):
         # Create the runners
         for runnername, runner in cfg.runners.items():
             rm = RunnerModel()
             self.model.runners.append(rm)
-            listener = BatchObserver(runnername, runner, rm)
+            _listener = BatchObserver(runnername, runner, rm)
             rm.title = runnername
 
     def stepCallback(self, minimizerResults):
@@ -158,8 +167,8 @@ class Console(object):
     def terminalError(self, message):
         """Show a modal dialog indicating a terminal error.
 
-    When the dialog's exit button is pressed, the console termianted and the
-    event returned by this method is set.
+    When the dialog's exit button is pressed, the event returned
+    by this method is set.
 
     Args:
         message (str): Message to be displayed in the dialog
@@ -171,20 +180,26 @@ class Console(object):
         self.model.messages.visible = False
         evt = gevent.event.Event()
 
-        def exitcallback(loop=None, data=None):
+        def dialogue_close_callback(loop=None, data=None):
             evt.set()
-            self._killMainLoop()
 
-        self.mainframe.showErrorMessage(message, exitcallback)
+        self.mainframe.showErrorMessage(message, dialogue_close_callback)
         return evt
 
     def _run_main_loop(self):
-        self._main_loop.run()
+            self._main_loop.start()
+            self._main_loop.event_loop.run()
 
     def _exit_on_q(self, key):
         if key in ("q", "Q"):
-            if self.model and self.model.endEvent:
-                self.model.endEvent.set()
+            if self.model and self.model.fit_cfg_end_event:
+                self.model.fit_cfg_end_event.set()
+
+    def _monitor_shutdown(self):
+        logger = logging.getLogger("console.shutdown")
+        self.model.messages.visible = True
+        logger.info("Potential Pro-Fit Shutting Down Now")
+
 
     def _killMainLoop(self):
         def term(loop=None, data=None):
@@ -192,9 +207,9 @@ class Console(object):
 
         self._gevent_loop.enter_idle(term)
 
-    def _killMainLoopOnEvent(self, evt):
-        evt.wait()
-        self._killMainLoop()
+    # def _killMainLoopOnEvent(self, evt):
+    #     evt.wait()
+    #     self._killMainLoop()
 
     def start(self):
         self._gevent_loop = GeventLoop()
@@ -205,4 +220,25 @@ class Console(object):
             unhandled_input=self._exit_on_q,
         )
         self._greenlet = gevent.spawn(self._run_main_loop)
+        self._greenlet.name = "Console_Main_Loop-{}".format(
+            self._greenlet.name
+        )
         self.started = True
+
+    def close(self):
+        waitable = []
+        waitable.append(self.model.close())
+        self._killMainLoop()
+        waitable.append(self._greenlet)
+
+        def _close(closed_event, waitable):
+            gevent.wait(waitable)
+            self._main_loop.stop()
+            closed_event.set()
+
+        evt = gevent.event.Event()
+        grn = gevent.spawn(_close, evt, waitable)
+        grn.name= "Console-close-{}".format(grn.name)
+        return evt
+
+        
