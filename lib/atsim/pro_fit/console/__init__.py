@@ -104,7 +104,7 @@ class Console(object):
             gevent.wait([evt])
             if evt.is_set():
                 self._monitor_shutdown()
-        
+
         grn = gevent.spawn(show_shutdown, self.model.fit_cfg_end_event)
         grn.name = "Console-registerConfig-{}".format(grn.name)
 
@@ -187,8 +187,8 @@ class Console(object):
         return evt
 
     def _run_main_loop(self):
-            self._main_loop.start()
-            self._main_loop.event_loop.run()
+        self._main_loop.start()
+        self._main_loop.event_loop.run()
 
     def _exit_on_q(self, key):
         if key in ("q", "Q"):
@@ -199,7 +199,6 @@ class Console(object):
         logger = logging.getLogger("console.shutdown")
         self.model.messages.visible = True
         logger.info("Potential Pro-Fit Shutting Down Now")
-
 
     def _killMainLoop(self):
         def term(loop=None, data=None):
@@ -238,7 +237,5 @@ class Console(object):
 
         evt = gevent.event.Event()
         grn = gevent.spawn(_close, evt, waitable)
-        grn.name= "Console-close-{}".format(grn.name)
+        grn.name = "Console-close-{}".format(grn.name)
         return evt
-
-        

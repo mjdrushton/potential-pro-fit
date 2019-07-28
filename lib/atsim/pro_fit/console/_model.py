@@ -9,6 +9,7 @@ from urwid import MonitoredList
 import gevent
 import gevent.queue
 
+
 class Queue_To_List(object):
     """Provides access to a gevent.queue whose items will be appended to
     provided list (most likely an ObservedList) as items are placed in queue"""
@@ -22,7 +23,9 @@ class Queue_To_List(object):
         self.output_list = output_list
         self.queue = gevent.queue.Queue()
         self._greenlet = gevent.spawn(self._monitor)
-        self._greenlet.name = "Queue_To_List-_monitor-{}".format(self._greenlet.name)
+        self._greenlet.name = "Queue_To_List-_monitor-{}".format(
+            self._greenlet.name
+        )
 
     def _kill(self):
         self._greenlet.kill()
@@ -38,10 +41,6 @@ class Queue_To_List(object):
         evt = gevent.event.Event()
         evt.set()
         return evt
-        
-
-
-
 
 
 class ObservedList(MonitoredList):
@@ -294,7 +293,7 @@ class ConsoleModel(ObservableObject):
         self._normal_setattr = True
         self.current_iteration = IterationModel()
         self.best_iteration = IterationModel()
-        
+
         self.fit_cfg_end_event = None
 
         # Create VariableUpdateHandler that will keep the variable_table in sync with the variables information in the iteration models.
@@ -309,7 +308,7 @@ class ConsoleModel(ObservableObject):
         # Create a model for the MessageBox
         self.messages = MessageBoxModel()
 
-        # provide access to the messages box via a queue. This is to enable integration with the 
+        # provide access to the messages box via a queue. This is to enable integration with the
         # logging frame work.
         self._messages_queue = Queue_To_List(self.messages.lines)
 

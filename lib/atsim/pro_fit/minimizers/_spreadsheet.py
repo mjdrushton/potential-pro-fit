@@ -1,5 +1,6 @@
 from ._common import *
 from atsim.pro_fit.exceptions import ConfigException
+import gevent
 
 import logging
 
@@ -22,13 +23,23 @@ class SpreadsheetMinimizer(object):
         self._rowIterator = spreadsheetRowIterator
         self.stepCallback = None
         self.batchSize = batchSize
+        self._greenlet = None
 
     def minimize(self, merit):
         """Perform minimization.
 
-    :param merit: atsim.pro_fit.merit.Merit instance.
-    :return: MinimizerResults containing values obtained after merit function evaluation"""
+        :param merit: atsim.pro_fit.merit.Merit instance.
+        :return: MinimizerResults containing values obtained after merit function evaluation"""
+        self._greenlet = gevent.spawn(self._minimize, merit)
+        self._greenlet.name = "SpreadSheet-minimizer-{}".format(
+            self._greenlet.name
+        )
+        gevent.wait([self._greenlet])
 
+    def stopMinimizer(self):
+        self._greenlet.kill()
+
+    def _minimize(self, merit):
         minimizerResults = None
         for i, candidates in enumerate(self._batchIt()):
             self._logger.info("Minimizer iteration: %d" % i)
