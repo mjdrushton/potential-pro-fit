@@ -52,7 +52,13 @@ class RemoteRunnerCloseThreadBase(gevent.Greenlet):
 
     def _closeChannel(self, channel, logname):
         def closechannel(channel, evt):
+            logger = logging.getLogger("console.shutdown")
             try:
+                logger.info(
+                    "Runner (%s) Sending shutdown signal to  %s channels",
+                    self.runner.name,
+                    logname,
+                )
                 if hasattr(channel, "broadcast"):
                     channel.broadcast(None)
                 else:
@@ -66,7 +72,7 @@ class RemoteRunnerCloseThreadBase(gevent.Greenlet):
             except EOFError:
                 # Channel already closed
                 pass
-            self._logger.info(
+            logger.info(
                 "Runner (%s) %s channels closed.", self.runner.name, logname
             )
             evt.set()
@@ -98,6 +104,7 @@ class RemoteRunnerCloseThreadBase(gevent.Greenlet):
             return str(len(val))
 
     def _run(self):
+        shutdown_logger = logging.getLogger("console.shutdown")
         try:
 
             try:
@@ -107,11 +114,21 @@ class RemoteRunnerCloseThreadBase(gevent.Greenlet):
                     self._len_or_None(self.batchKillEvents),
                 )
                 if self.batchKillEvents:
+                    shutdown_logger.info(
+                        "Terminating %s batches for runner '%s'",
+                        len(self.batchKillEvents),
+                        self.runner.name,
+                    )
                     gevent.wait(objects=self.batchKillEvents, timeout=120)
-                    self._logger.debug("Terminating batches (Done)")
+                    shutdown_logger.info(
+                        "Terminating batches for runners '%s' (Done)",
+                        self.runner.name,
+                    )
             except:
-                self._logger.warning(
-                    "Error terminating batches: %s", traceback.format_exc()
+                shutdown_logger.warning(
+                    "Error terminating batches for runner '%s': %s",
+                    self.runner.name,
+                    traceback.format_exc(),
                 )
 
             allEvents = []
@@ -122,10 +139,21 @@ class RemoteRunnerCloseThreadBase(gevent.Greenlet):
                     self._len_or_None(self.closeRunClientEvents),
                 )
                 if self.closeRunClientEvents:
+                    shutdown_logger.info(
+                        "Closing run client for '%s', waiting for %s events",
+                        self.runner.name,
+                        self._len_or_None(self.closeRunClientEvents),
+                    )
                     gevent.wait(self.closeRunClientEvents)
+                    shutdown_logger.info(
+                        "Closing run client for '%s' (Done)", self.runner.name
+                    )
+
             except:
-                self._logger.warning(
-                    "Error closing run client: %s", traceback.format_exc()
+                shutdown_logger.warning(
+                    "Error closing run client for runner '%s': %s",
+                    self.runner.name,
+                    traceback.format_exc(),
                 )
 
             try:
@@ -174,12 +202,16 @@ class RemoteRunnerCloseThreadBase(gevent.Greenlet):
             self.runner._group.terminate(timeout=10)
             gevent.sleep(0)
 
-            self._logger.debug("Cleanup finished.")
+            shutdown_logger.info(
+                "Cleanup finished for runner '%s'", self.runner.name
+            )
         except:
             exception = sys.exc_info()
             tbstring = traceback.format_exception(*exception)
-            self._logger.warning(
-                "Exception raised during close(): %s", tbstring
+            shutdown_logger.warning(
+                "Exception raised when closing runner '%s': %s",
+                self.runner.name,
+                tbstring,
             )
 
 

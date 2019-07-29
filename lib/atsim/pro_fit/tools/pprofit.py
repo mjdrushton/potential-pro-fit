@@ -15,7 +15,7 @@ import atsim.pro_fit.exceptions
 
 from atsim.pro_fit._util import MultiCallback, iter_namespace
 from atsim.pro_fit.console import Console
-
+from atsim.pro_fit.exceptions import ConfigException
 
 import optparse
 import sys
@@ -84,29 +84,25 @@ class _FittingToolException(Exception):
 def _isValidDirectory():
     # Check that current working directory has required files and directories.
     # return True if directory is valid, False otherwise.
-    logger = logging.getLogger("console")
 
     if not os.path.isfile("fit.cfg"):
-        logger.error(
+        raise ConfigException(
             "Not a valid pprofit directory. Required file 'fit.cfg' not found."
         )
-        return False
 
     if not os.path.isdir("fit_files"):
-        logger.error(
+        raise ConfigException(
             "Not a valid pprofit directory. Required directory 'fit_files' not found."
         )
-        return False
 
     # Check for existence of a lockfile
     if os.path.isfile("lockfile"):
         with open("lockfile") as infile:
             pidline = next(infile)[:-1]
-            logger.error(
+            raise ConfigException(
                 "Found 'lockfile', this indicates that pprofit is already running with PID=%s"
                 % pidline
             )
-            return False
 
     return True
 
@@ -312,6 +308,17 @@ def _setupLogging(verbose):
     return logger
 
 
+def _setupConsoleLogging(console):
+    """If it is enabled, route messages to curses GUI"""
+    console_handler = logging.handlers.QueueHandler(
+        console.model.messages_queue
+    )
+
+    # Add this handler to the console logger
+    console_logger = logging.getLogger("console")
+    console_logger.addHandler(console_handler)
+
+
 def _parseCommandLine():
     usage = """%prog [OPTIONS]
 
@@ -515,14 +522,12 @@ def _getCreateFilesCfg(jobdir, keepDirectory, pluginmodules):
     return _getfitcfg(jobdir, cls=CustomConfig, pluginmodules=pluginmodules)
 
 
-def _invokeMinimizer(cfg, logger, logsql, console):
+def _invokeMinimizer(cfg, logsql, console):
     logger = logging.getLogger(__name__).getChild("_invokeMinimizer")
+    console_logger = logging.getLogger("console")
 
-    _console_log(
-        console,
-        logger,
-        logging.INFO,
-        "Temporary job files will be created in '%s'" % cfg.jobdir,
+    console_logger.info(
+        "Temporary job files will be created in '%s'", cfg.jobdir
     )
 
     # Perform minimization run
@@ -544,12 +549,7 @@ def _invokeMinimizer(cfg, logger, logsql, console):
     # ... create SQLiteReporter
     if logsql:
         if os.path.exists("fitting_run.db"):
-            _console_log(
-                console,
-                logger,
-                logging.INFO,
-                "Removing existing 'fitting_run.db'",
-            )
+            console_logger.info("Removing existing 'fitting_run.db'")
             os.remove("fitting_run.db")
         sqlreporter = atsim.pro_fit.reporters.SQLiteReporter(
             "fitting_run.db",
@@ -580,6 +580,15 @@ def _invokeMinimizer(cfg, logger, logsql, console):
             sqlreporter.finished(True)
 
 
+def _welcome_message():
+    console_logger = logging.getLogger("console.starting")
+    console_logger.info(
+        "Potential Pro-Fit v%s\n\n", atsim.pro_fit._version.__version__
+    )
+    console_logger.info("Starting...")
+    gevent.sleep(0)
+
+
 class _PluginException(Exception):
     def __init__(self, filename, childexception):
         self.filename = filename
@@ -607,116 +616,119 @@ def _processPlugins(pathList):
     return retlist
 
 
-def _console_log(console, logger, log_level, msg):
-    if console:
-        console.log(logger, log_level, msg)
-    else:
-        logger.log(log_level, msg)
-
-
 def main():
     # Get command line options
     options = _parseCommandLine()
     _setupLogging(options.verbose)
     console = None
+    exit_code = 0
 
-    # Support for the --disable-console option.
-    if options.console:
-        console = Console()
-    else:
-        # ... if enabled, the data logged to pprofit.log will also appear in the terminal.
-        root_logger = logging.getLogger()
-        stream_handler = logging.StreamHandler(sys.stderr)
-        stream_handler.setLevel(logging.DEBUG)
-        stream_handler.setFormatter(
-            logging.Formatter(
-                "%(asctime)s:%(name)s:%(levelname)s %(module)s:%(lineno)d:  %(message)s"
+    try:
+        # Support for the --disable-console option.
+        if options.console:
+            console = Console()
+            _setupConsoleLogging(console)
+            console.start()
+            gevent.sleep(0)
+        else:
+            # ... if enabled, the data logged to pprofit.log will also appear in the terminal.
+            root_logger = logging.getLogger()
+            stream_handler = logging.StreamHandler(sys.stderr)
+            stream_handler.setLevel(logging.DEBUG)
+            stream_handler.setFormatter(
+                logging.Formatter(
+                    "%(asctime)s:%(name)s:%(levelname)s %(module)s:%(lineno)d:  %(message)s"
+                )
             )
-        )
-        root_logger.addHandler(stream_handler)
+            root_logger.addHandler(stream_handler)
 
-    pluginmodules = []
+        _welcome_message()
 
-    if options.plugins:
-        try:
-            pluginmodules.extend(_processPlugins(options.plugins))
-        except _PluginException as pe:
-            filename = pe.filename
+        pluginmodules = []
+
+        if options.plugins:
             try:
-                raise pe.childexception
-            except IOError as e:
-                logging.getLogger("console").error(
-                    "Error processing --plugin option for file '%s': '%s'"
-                    % (filename, e.strerror)
+                pluginmodules.extend(_processPlugins(options.plugins))
+            except _PluginException as pe:
+                filename = pe.filename
+                try:
+                    raise pe.childexception
+                except IOError as e:
+                    raise ConfigException(
+                        "Error processing --plugin option for file '%s': '%s'"
+                        % (filename, e.strerror)
+                    )
+                except Exception:
+                    raise ConfigException(
+                        "Error processing --plugin option for file '%s'"
+                        % (filename,)
+                    )
+
+        if options.init:
+            # Initialize directory
+            try:
+                _initializeRun(options.init)
+                logging.getLogger("console").info(
+                    "Now cd into directory and use --init-job to create jobs."
                 )
-            except Exception:
-                logging.getLogger("console").exception(
-                    "Error processing --plugin option for file '%s'"
-                    % (filename,)
+                sys.exit(0)
+            except _DirectoryInitializationException as e:
+                raise ConfigException(
+                    "Error initializing directory: {}".format(str(e))
                 )
-            finally:
-                sys.exit(1)
+        elif options.initjob:
+            # Initialize job
+            try:
+                _initializeJob(options.initjob)
+                sys.exit(0)
+            except _DirectoryInitializationException as e:
+                raise ConfigException(
+                    "Error initializing job: {}".format(str(e))
+                )
 
-    if options.init:
-        # Initialize directory
-        try:
-            _initializeRun(options.init)
-            logging.getLogger("console").info(
-                "Now cd into directory and use --init-job to create jobs."
-            )
-            sys.exit(0)
-        except _DirectoryInitializationException as e:
-            logging.getLogger("console").error("Error initializing directory:")
-            logging.getLogger("console").error(str(e))
-            sys.exit(1)
-    elif options.initjob:
-        # Initialize job
-        try:
-            _initializeJob(options.initjob)
-            sys.exit(0)
-        except _DirectoryInitializationException as e:
-            logging.getLogger("console").error("Error initializing job:")
-            logging.getLogger("console").error(str(e))
-            sys.exit(1)
+        # Check that directory is valid
+        _isValidDirectory()
+        _makeLockFile()
 
-    # Check that directory is valid
-    if not _isValidDirectory():
-        sys.exit(1)
-    _makeLockFile()
-
-    # Start the minimizer
-    if console:
-        console.start()
+        # Start the minimizer
         perform_minimization(options, pluginmodules, console)
-    else:
-        perform_minimization(options, pluginmodules, console)
+    except Exception as e:
+        logger = logging.getLogger(__name__).getChild("main")
+        try:
+            raise e
+        except ConfigException:
+            logger.error(e)
+        except Exception:
+            logger.exception(e)
+
+        if console and console.started:
+            evt = console.terminalError(str(e))
+            evt.wait()
+        exit_code = 1
+    finally:
+        if console and console.started:
+            console_close_event = console.close()
+            gevent.wait([console_close_event])
+        sys.exit(exit_code)
 
 
 def perform_minimization(options, pluginmodules, console):
     tempdir = tempfile.mkdtemp()
 
-    # if console:
-    #     console.start()
+    console_logger = logging.getLogger("console")
 
-    exit_code = 0
     try:
         cfg = None
         logsql = True
-        logger = logging.getLogger(__name__).getChild("main")
         if options.single_step:
             # Do not run a minimization run
-            _console_log(
-                console, logger, logging.INFO, "Performing Single-step run"
-            )
+            console_logger.info("Performing Single-step run")
             cfg = _getSingleStepCfg(
                 tempdir, options.single_step, pluginmodules
             )
         elif options.create_files:
-            _console_log(
-                console,
-                logger,
-                logging.INFO,
-                "Job files will be created in: %s" % options.create_files,
+            console_logger.info(
+                "Job files will be created in: %s", options.create_files
             )
             cfg = _getCreateFilesCfg(
                 tempdir, options.create_files, pluginmodules
@@ -724,25 +736,11 @@ def perform_minimization(options, pluginmodules, console):
             logsql = False
         else:
             # Perform a minimization run
-            _console_log(
-                console, logger, logging.INFO, "Performing Minimization run"
-            )
+            console_logger.info("Performing Minimization run")
             cfg = _getfitcfg(tempdir, pluginmodules=pluginmodules)
 
-        _invokeMinimizer(cfg, logger, logsql, console)
-        # import pdb;pdb.set_trace()
-        # gevent.sleep(0)
-        # import gc
-        # greenlets = [obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)]
-        # gevent.wait(greenlets, timeout=10)
-        # gevent.killall(greenlets, timeout=10)
-    except Exception as e:
-        logger.exception(e)
+        _invokeMinimizer(cfg, logsql, console)
 
-        if console and console.started:
-            evt = console.terminalError(str(e))
-            evt.wait()
-        exit_code = 1
     finally:
         if cfg:
             cfg.endEvent.set()
@@ -753,10 +751,5 @@ def perform_minimization(options, pluginmodules, console):
 
         gevent.wait([cfg_closed_event])
 
-        if console and console.started:
-            console_close_event = console.close()
-            gevent.wait([console_close_event])
-
         _removeLockFile()
         shutil.rmtree(tempdir, ignore_errors=True)
-        sys.exit(exit_code)

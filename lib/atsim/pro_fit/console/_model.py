@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import logging
 
 from ._variables import CurrentBestTuple
 
@@ -33,7 +34,11 @@ class Queue_To_List(object):
     def _monitor(self):
         while True:
             v = self.queue.get()
+            v = self._transform(v)
             self.output_list.append(v)
+
+    def _transform(self, v):
+        return v
 
     def close(self):
         self._greenlet.kill()
@@ -41,6 +46,29 @@ class Queue_To_List(object):
         evt = gevent.event.Event()
         evt.set()
         return evt
+
+
+class Log_Queue_To_List(Queue_To_List):
+    """Queue_To_List descendant for use with logging.QueueHandler,
+    this acts in the same way as logging.QueueListener by consuming
+    messages from its in-built queue and passing them through
+    a logging.Formatter instance before poking them into 
+    a list object belonging to atsim.pro_fit.console.ConsoleModel"""
+
+    def __init__(self, output_list, log_formatter):
+        """Instantiate object.
+
+        Arguments:
+            output_list {list} -- Items place in queue will be appended to this output_list
+            log_formatter {logging.Formatter} -- Object that will convert logging.LogRecord 
+                instances into strings before being appended to `output_list`"""
+
+        super().__init__(output_list)
+        self.log_formatter = log_formatter
+
+    def _transform(self, log_record):
+        formatted = self.log_formatter.format(log_record)
+        return formatted
 
 
 class ObservedList(MonitoredList):
@@ -310,7 +338,10 @@ class ConsoleModel(ObservableObject):
 
         # provide access to the messages box via a queue. This is to enable integration with the
         # logging frame work.
-        self._messages_queue = Queue_To_List(self.messages.lines)
+        log_formatter = logging.Formatter("%(message)s")
+        self._messages_queue = Log_Queue_To_List(
+            self.messages.lines, log_formatter
+        )
 
         self._normal_setattr = False
 

@@ -81,13 +81,9 @@ class Console(object):
         self.mainframe = MainFrame()
         self._controller = ConsoleController(self.model, self.mainframe)
         self._greenlet = None
-
-        self.model.messages.lines.append(
-            "Potential Pro-Fit v%s" % atsim.pro_fit._version.__version__
-        )
-        self.model.messages.lines.append("")
-        self.model.messages.lines.append("Starting...")
         self.model.messages.visible = True
+
+        gevent.sleep(0)
 
     def registerConfig(self, cfg):
         """Initialise the console with a FitConfig object.
@@ -153,17 +149,6 @@ class Console(object):
                 self.model.current_iteration.variables
             )
 
-    def log(self, logger, level, message):
-        """Write a message to logger and to the console messages
-
-    Args:
-        logger (logging.Logger): Logger to which log message will be written
-        level : Log level
-        message (str): Message to be logged
-    """
-        logger.log(level, message)
-        self.model.messages.lines.append(message)
-
     def terminalError(self, message):
         """Show a modal dialog indicating a terminal error.
 
@@ -197,6 +182,7 @@ class Console(object):
 
     def _monitor_shutdown(self):
         logger = logging.getLogger("console.shutdown")
+        self.model.messages.lines[:] = []
         self.model.messages.visible = True
         logger.info("Potential Pro-Fit Shutting Down Now")
 
@@ -205,10 +191,6 @@ class Console(object):
             raise urwid.ExitMainLoop()
 
         self._gevent_loop.enter_idle(term)
-
-    # def _killMainLoopOnEvent(self, evt):
-    #     evt.wait()
-    #     self._killMainLoop()
 
     def start(self):
         self._gevent_loop = GeventLoop()

@@ -95,21 +95,22 @@ class FitConfig(object):
     def _close(self):
         """Shuts-down the fitting system"""
         self._endEvent.wait()
-        logging.info("Shutting down 'pprofit'")
-        logging.info("Shutting down minimizer.")
+        logger = logging.getLogger("console.shutdown")
+        logger.info("Shutting down 'pprofit'")
         self._minimizer.stopMinimizer()
         evts = self._closeRunners()
         gevent.wait(evts)
 
     def _closeRunners(self):
         evts = []
+        logger = logging.getLogger("console.shutdown")
         for name, r in self._runners.items():
-            self._logger.info("Closing runner: '%s'", name)
+            logger.info("Closing runner: '%s'", name)
             e = r.close()
 
             def repclose(evt, name):
                 evt.wait()
-                self._logger.info("Runner '%s' now closed.", name)
+                logger.info("Runner '%s' now closed.", name)
 
             grn = gevent.spawn(repclose, e, name)
             grn.name = "FitConfig__closeRunners-{}-{}".format(name, grn.name)
