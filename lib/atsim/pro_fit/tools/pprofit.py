@@ -17,7 +17,7 @@ from atsim.pro_fit._util import MultiCallback, iter_namespace
 from atsim.pro_fit.console import Console
 from atsim.pro_fit.exceptions import ConfigException
 
-import optparse
+import argparse
 import sys
 import os
 import logging
@@ -320,13 +320,11 @@ def _setupConsoleLogging(console):
 
 
 def _parseCommandLine():
-    usage = """%prog [OPTIONS]
-
-%prog performs an automated potential fitting run in the current directory. See documentation \
+    usage = """%(prog)s performs an automated potential fitting run in the current directory. See documentation \
 for description of required directory structure and files."""
 
-    parser = optparse.OptionParser(usage)
-    parser.add_option(
+    parser = argparse.ArgumentParser(description=usage)
+    parser.add_argument(
         "-v",
         "--verbose",
         dest="verbose",
@@ -335,7 +333,7 @@ for description of required directory structure and files."""
         help="use verbose logging",
     )
 
-    parser.add_option(
+    parser.add_argument(
         "--disable-console",
         dest="console",
         action="store_false",
@@ -343,8 +341,8 @@ for description of required directory structure and files."""
         help="disable the curses based console",
     )
 
-    optgroup = optparse.OptionGroup(parser, "Run options")
-    optgroup.add_option(
+    optgroup = parser.add_argument_group("Run options")
+    optgroup.add_argument(
         "-s",
         "--single-step",
         dest="single_step",
@@ -352,9 +350,8 @@ for description of required directory structure and files."""
         metavar="JOB_DIR",
         help="using the values from fit.cfg evaluate the merit function and store job files in JOB_DIR",
     )
-    parser.add_option_group(optgroup)
 
-    optgroup.add_option(
+    optgroup.add_argument(
         "-c",
         "--create-files",
         dest="create_files",
@@ -363,7 +360,7 @@ for description of required directory structure and files."""
         help="create job files but do not run or perform evaluation. Jobs are created in JOB_DIR",
     )
 
-    optgroup.add_option(
+    optgroup.add_argument(
         "-p",
         "--plugin",
         dest="plugins",
@@ -372,10 +369,10 @@ for description of required directory structure and files."""
         help="Search python .py with filename PYTHON_FILE for additional meta-evalutaors, evaluators, runners, minimizers and job-factories. Specify -p/--plugin once for each plugin file.",
     )
 
-    optgroup = optparse.OptionGroup(
-        parser, "Initialisation", "Options for creating fitting runs and jobs"
+    optgroup = parser.add_argument_group(
+        "Initialisation", "Options for creating fitting runs and jobs"
     )
-    optgroup.add_option(
+    optgroup.add_argument(
         "-i",
         "--init",
         dest="init",
@@ -384,7 +381,7 @@ for description of required directory structure and files."""
         help="create directory named RUN_DIR and initialize directory structure for new fitting run.",
     )
 
-    optgroup.add_option(
+    optgroup.add_argument(
         "-j",
         "--init-job",
         dest="initjob",
@@ -393,27 +390,26 @@ for description of required directory structure and files."""
         help="create skeleton of a new job using 'Template' job factory, within fit_files directory. Job directory will be named JOB_DIRECTORY. Optionally, RUNNER can be specified. \
 This gives name of runner (defined in fit.cfg) to be associated with created JOB. If not specified, first runner within 'fit.cfg' will be used.",
     )
-    parser.add_option_group(optgroup)
 
-    options, _args = parser.parse_args()
+    args = parser.parse_args()
 
     # Validate option choice.
-    if options.single_step and (
-        options.init or options.initjob or options.create_files
+    if args.single_step and (
+        args.init or args.initjob or args.create_files
     ):
         parser.error("-s/--single-step cannot be specified with other options")
 
-    if options.create_files and (
-        options.init or options.initjob or options.single_step
+    if args.create_files and (
+        args.init or args.initjob or args.single_step
     ):
         parser.error(
             "-c/--create-files cannot be specified with other options"
         )
 
-    if options.init and options.initjob:
+    if args.init and args.initjob:
         parser.error("-i/--init cannot be specified with -j/--init-job")
 
-    return options
+    return args
 
 
 def _getfitcfg(
