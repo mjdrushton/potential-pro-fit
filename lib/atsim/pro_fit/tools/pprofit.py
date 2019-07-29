@@ -287,7 +287,6 @@ def _initializeJob(jobDescription):
 def _setupLogging(verbose):
     """Set-up python logging"""
     # Read logging information from logging.cfg in the resources package
-    # cfg = pkgutil.get_data('atsim.pro_fit', 'resources/logging.cfg')
     cfg = importlib.resources.read_text(
         "atsim.pro_fit.resources", "logging.cfg"
     )
@@ -408,6 +407,13 @@ This gives name of runner (defined in fit.cfg) to be associated with created JOB
 
     if args.init and args.initjob:
         parser.error("-i/--init cannot be specified with -j/--init-job")
+
+    # Automatically disable the console for certain options
+    if args.console:
+        disable_console_opts = ['initjob', 'init', 'create_files']
+        for o in disable_console_opts:
+            if getattr(args, o):
+                vars(args)['console'] = False
 
     return args
 
@@ -540,10 +546,10 @@ def _invokeMinimizer(cfg, logsql, console):
 
     # Set-up reporters
     stepCallback = MultiCallback()
-    # ... create the console log reporter
-    stepCallback.append(atsim.pro_fit.reporters.LogReporter())
     # ... create SQLiteReporter
     if logsql:
+        # ... create the console log reporter
+        stepCallback.append(atsim.pro_fit.reporters.LogReporter())
         if os.path.exists("fitting_run.db"):
             console_logger.info("Removing existing 'fitting_run.db'")
             os.remove("fitting_run.db")
@@ -566,8 +572,6 @@ def _invokeMinimizer(cfg, logsql, console):
         _registerSignalHandlers(cfg.endEvent)
 
         minimizer.minimize(cfg.merit)
-        if logsql:
-            sqlreporter.finished()
     except:
         logger.exception("Exception raised")
         raise

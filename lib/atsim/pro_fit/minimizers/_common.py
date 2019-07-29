@@ -1,12 +1,16 @@
 import operator
 from functools import total_ordering
 
+from atsim.pro_fit.exceptions import ConfigException
 
 class ExistingCallbackException(Exception):
     pass
 
 
 class MinimizerException(Exception):
+    pass
+
+class MinimizerConfigException(ConfigException):
     pass
 
 

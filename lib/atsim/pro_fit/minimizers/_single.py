@@ -4,7 +4,7 @@ import shutil
 
 import gevent
 
-from ._common import *  # noqa
+from ._common import MinimizerException, MinimizerConfigException, ExistingCallbackException, MinimizerResults
 
 from atsim.pro_fit.exceptions import ConfigException
 
@@ -34,7 +34,7 @@ class SingleStepMinimizer(object):
     def _checkDestDirectory(self):
         """Ensure that the destination directory for copying back both exists and is empty"""
         if not os.path.isdir(self._keepFilesDirectory):
-            raise MinimizerException(
+            raise MinimizerConfigException(
                 "Destination directory in which run files should be stored after single-step run does not exist: '%s'"
                 % self._keepFilesDirectory
             )
@@ -45,7 +45,7 @@ class SingleStepMinimizer(object):
             if not f.startswith(".")
         ]
         if files:
-            raise MinimizerException(
+            raise MinimizerConfigException(
                 "Destination directory for single-step run files is not empty: '%s'"
                 % self._keepFilesDirectory
             )
