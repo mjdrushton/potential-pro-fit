@@ -4,7 +4,12 @@ import shutil
 
 import gevent
 
-from ._common import MinimizerException, MinimizerConfigException, ExistingCallbackException, MinimizerResults
+from ._common import (
+    MinimizerException,
+    MinimizerConfigException,
+    ExistingCallbackException,
+    MinimizerResults,
+)
 
 from atsim.pro_fit.exceptions import ConfigException
 

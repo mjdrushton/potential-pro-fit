@@ -5,12 +5,15 @@ from atsim.pro_fit.variables import VariableException
 from atsim.pro_fit.variables import BoundedVariableBaseClass
 
 from ._inspyred_common import (
-    _IntConvert,
-    _FloatConvert,
-    _RandomSeed,
-    _ChoiceConvert,
     _EvolutionaryComputationMinimizerBaseClass,
     Population_To_Generator_Adapter,
+)
+
+from atsim.pro_fit.cfg import (
+    int_convert,
+    float_convert,
+    random_seed_option,
+    choice_convert,
 )
 
 from ._config import Initial_Population_Config_Helper
@@ -100,20 +103,20 @@ class Particle_SwarmMinimizer(object):
         defaults = dict(
             topology=(
                 "star",
-                _ChoiceConvert(clsname, "topology", ["star", "ring"]),
+                choice_convert(clsname, "topology", ["star", "ring"]),
             ),
-            neighbourhood_size=(3, _IntConvert(clsname, "neighbourhood_size")),
+            neighbourhood_size=(3, int_convert(clsname, "neighbourhood_size")),
             inertia=(
                 0.5,
-                _FloatConvert(clsname, "inertia", (0, float("inf"))),
+                float_convert(clsname, "inertia", (0, float("inf"))),
             ),
             cognitive_rate=(
                 2.1,
-                _FloatConvert(clsname, "cognitive_rate", (0, float("inf"))),
+                float_convert(clsname, "cognitive_rate", (0, float("inf"))),
             ),
             social_rate=(
                 2.1,
-                _FloatConvert(clsname, "social_rate", (0, float("inf"))),
+                float_convert(clsname, "social_rate", (0, float("inf"))),
             ),
         )
 

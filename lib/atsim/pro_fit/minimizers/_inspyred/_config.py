@@ -1,12 +1,13 @@
 from ._inspyred_common import (
-    _IntConvert,
-    _FloatConvert,
-    _RandomSeed,
-    _ChoiceConvert,
-    _RandomSeed,
-    _BooleanConvert,
-    _InfileConvert,
     Population_To_Generator_Adapter,
+)
+
+from atsim.pro_fit.cfg import (
+    int_convert,
+    random_seed_option,
+    boolean_convert,
+    infile_convert,
+    choice_convert,
 )
 
 from atsim.pro_fit.minimizers.population_generators import (
@@ -50,27 +51,27 @@ class Initial_Population_Config_Helper(object):
         defaults = dict(
             max_iterations=(
                 update_defaults.get("max_iterations", 1000),
-                _IntConvert(clsname, "max_iterations", (1, float("inf"))),
+                int_convert(clsname, "max_iterations", (1, float("inf"))),
             ),
             population_size=(
                 update_defaults.get("population_size", 64),
-                _IntConvert(clsname, "population_size", (2, float("inf"))),
+                int_convert(clsname, "population_size", (2, float("inf"))),
             ),
             random_seed=(
                 update_defaults.get("random_seed", None),
-                _RandomSeed(clsname, "random_seed"),
+                random_seed_option(clsname, "random_seed"),
             ),
             population_include_orig_vars=(
                 update_defaults.get("population_include_orig_vars", "True"),
-                _BooleanConvert(clsname, "population_include_orig_vars"),
+                boolean_convert(clsname, "population_include_orig_vars"),
             ),
             population_load_from_csv=(
                 update_defaults.get("population_load_from_csv", None),
-                _InfileConvert(clsname, "population_load_from_csv"),
+                infile_convert(clsname, "population_load_from_csv"),
             ),
             population_load_from_ppdump=(
                 update_defaults.get("population_load_from_ppdump", None),
-                _InfileConvert(clsname, "population_load_from_ppdump"),
+                infile_convert(clsname, "population_load_from_ppdump"),
             ),
         )
         _Initial_Population_Factory.update_default_dict(
@@ -274,7 +275,7 @@ class _Distribution_Factory:
         d = dict(
             population_distribution=(
                 update_defaults.get("population_distribution", "uniform"),
-                _ChoiceConvert(
+                choice_convert(
                     clsname, "population_distribution", cls.available_choices
                 ),
             )

@@ -5,11 +5,14 @@ import math
 from atsim.pro_fit.variables import BoundedVariableBaseClass
 from atsim.pro_fit.variables import VariableException
 from ._inspyred_common import (
-    _IntConvert,
-    _FloatConvert,
-    _RandomSeed,
     _EvolutionaryComputationMinimizerBaseClass,
     Population_To_Generator_Adapter,
+)
+
+from atsim.pro_fit.cfg import (
+    int_convert,
+    float_convert,
+    random_seed_option,
 )
 
 from atsim.pro_fit.minimizers.population_generators import (
@@ -217,7 +220,7 @@ class Simulated_AnnealingMinimizer(object):
         defaults = dict(
             temperature=(
                 0,
-                _FloatConvert(
+                float_convert(
                     "Simulated_Annealing minimizer",
                     "temperature",
                     (0, float("inf")),
@@ -225,13 +228,13 @@ class Simulated_AnnealingMinimizer(object):
             ),
             cooling_rate=(
                 0.01,
-                _FloatConvert(
+                float_convert(
                     "Simulated_Annealing minimizer", "cooling_rate", (0.0, 1.0)
                 ),
             ),
             mutation_rate=(
                 0.1,
-                _FloatConvert(
+                float_convert(
                     "Simulated_Annealing minimizer",
                     "mutation_rate",
                     (0.0, 1.0),
@@ -239,13 +242,13 @@ class Simulated_AnnealingMinimizer(object):
             ),
             gaussian_mean=(
                 0,
-                _FloatConvert(
+                float_convert(
                     "Simulated_Annealing minimizer", "gaussian_mean"
                 ),
             ),
             gaussian_stdev=(
                 1,
-                _FloatConvert(
+                float_convert(
                     "Simulated_Annealing minimizer",
                     "gaussian_stdev",
                     (1e-3, float("inf")),
@@ -253,7 +256,7 @@ class Simulated_AnnealingMinimizer(object):
             ),
             max_iterations=(
                 1000,
-                _IntConvert(
+                int_convert(
                     "Simulated_Annealing minimizer",
                     "max_iterations",
                     (1, float("inf")),
@@ -261,7 +264,7 @@ class Simulated_AnnealingMinimizer(object):
             ),
             random_seed=(
                 None,
-                _RandomSeed("Simulated_Annealing minimizer", "random_seed"),
+                random_seed_option("Simulated_Annealing minimizer", "random_seed"),
             ),
         )
 

@@ -7,12 +7,14 @@ import inspyred
 from atsim.pro_fit.variables import BoundedVariableBaseClass
 from atsim.pro_fit.variables import VariableException
 from ._inspyred_common import (
-    _IntConvert,
-    _FloatConvert,
-    _RandomSeed,
     _EvolutionaryComputationMinimizerBaseClass,
 )
 
+from atsim.pro_fit.cfg import (
+    int_convert,
+    float_convert,
+    random_seed_option,
+)
 
 from atsim.pro_fit.minimizers._inspyred._config import (
     Initial_Population_Config_Helper,
@@ -95,24 +97,24 @@ class DEAMinimizer(object):
         defaults = dict(
             num_selected=(
                 2,
-                _IntConvert(clsname, "num_selected", (2, float("inf"))),
+                int_convert(clsname, "num_selected", (2, float("inf"))),
             ),
             tournament_size=(
                 2,
-                _IntConvert(clsname, "tournament_size", (2, float("inf"))),
+                int_convert(clsname, "tournament_size", (2, float("inf"))),
             ),
             crossover_rate=(
                 1.0,
-                _FloatConvert(clsname, "crossover_rate", (0.0, 1.0)),
+                float_convert(clsname, "crossover_rate", (0.0, 1.0)),
             ),
             mutation_rate=(
                 0.1,
-                _FloatConvert(clsname, "mutation_rate", (0.0, 1.0)),
+                float_convert(clsname, "mutation_rate", (0.0, 1.0)),
             ),
-            gaussian_mean=(0, _FloatConvert(clsname, "gaussian_mean")),
+            gaussian_mean=(0, float_convert(clsname, "gaussian_mean")),
             gaussian_stdev=(
                 1,
-                _FloatConvert(clsname, "gaussian_stdev", (1e-3, float("inf"))),
+                float_convert(clsname, "gaussian_stdev", (1e-3, float("inf"))),
             ),
         )
 

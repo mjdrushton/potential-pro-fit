@@ -393,14 +393,10 @@ This gives name of runner (defined in fit.cfg) to be associated with created JOB
     args = parser.parse_args()
 
     # Validate option choice.
-    if args.single_step and (
-        args.init or args.initjob or args.create_files
-    ):
+    if args.single_step and (args.init or args.initjob or args.create_files):
         parser.error("-s/--single-step cannot be specified with other options")
 
-    if args.create_files and (
-        args.init or args.initjob or args.single_step
-    ):
+    if args.create_files and (args.init or args.initjob or args.single_step):
         parser.error(
             "-c/--create-files cannot be specified with other options"
         )
@@ -410,10 +406,10 @@ This gives name of runner (defined in fit.cfg) to be associated with created JOB
 
     # Automatically disable the console for certain options
     if args.console:
-        disable_console_opts = ['initjob', 'init', 'create_files']
+        disable_console_opts = ["initjob", "init", "create_files"]
         for o in disable_console_opts:
             if getattr(args, o):
-                vars(args)['console'] = False
+                vars(args)["console"] = False
 
     return args
 
