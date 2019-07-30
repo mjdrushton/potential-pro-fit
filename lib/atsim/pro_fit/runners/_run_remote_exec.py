@@ -15,6 +15,10 @@ import time
 JobTuple = collections.namedtuple("JobTuple", ["job_id", "path"])
 
 
+class Channel_Closed_Exception(Exception):
+    pass
+
+
 class RunCmd(threading.Thread):
     def __init__(self, parent, shell, hardkill_timeout, semval):
         self.lock = threading.RLock()
@@ -247,7 +251,10 @@ class EventLoop(threading.Thread):
         threading.Thread.__init__(self)
 
     def send(self, msg):
-        self.channel.send(msg)
+        try:
+            self.channel.send(msg)
+        except IOError as e:
+            raise Channel_Closed_Exception(str(e))
 
     def sendargs(self, **kwargs):
         self.send(kwargs)
@@ -314,49 +321,54 @@ class EventLoop(threading.Thread):
 
         self.runners = Runners(self, self.nprocesses)
         self.runners.start()
-        for msg in self.channel:
-
-            if msg is None:
-                break
-
-            mtype = msg.get("msg", None)
-            if not mtype:
-                continue
-
-            if mtype == "JOB_START":
+        try:
+            for msg in self.channel:
                 try:
-                    job_id = msg["job_id"]
-                    path = msg["job_path"]
-                except KeyError:
-                    self.sendargs(
-                        msg="JOB_START_ERROR",
-                        channel_id=self.channel_id,
-                        reason="MISSING_ARGUMENTS",
-                    )
-                    continue
+                    if msg is None:
+                        break
 
-                self.runners.runjob(job_id, path)
-            elif mtype == "JOB_KILL":
-                try:
-                    job_id = msg["job_id"]
-                except KeyError:
-                    self.sendargs(
-                        msg="ERROR",
-                        channel_id=self.channel_id,
-                        reason="missing job_id for JOB_KILL",
-                    )
+                    mtype = msg.get("msg", None)
+                    if not mtype:
+                        continue
 
-                self.runners.killjob(job_id, wait=True)
-            elif mtype == "KEEP_ALIVE":
-                self.send(msg)
-            else:
-                self.sendargs(
-                    msg="ERROR", reason="UNKNOWN_MSG_TYPE", msg_type=mtype
-                )
+                    if mtype == "JOB_START":
+                        try:
+                            job_id = msg["job_id"]
+                            path = msg["job_path"]
+                        except KeyError:
+                            self.sendargs(
+                                msg="JOB_START_ERROR",
+                                channel_id=self.channel_id,
+                                reason="MISSING_ARGUMENTS",
+                            )
+                            continue
 
-        self.runners.terminate()
-        self.runners.join()
-        return
+                        self.runners.runjob(job_id, path)
+                    elif mtype == "JOB_KILL":
+                        try:
+                            job_id = msg["job_id"]
+                        except KeyError:
+                            self.sendargs(
+                                msg="ERROR",
+                                channel_id=self.channel_id,
+                                reason="missing job_id for JOB_KILL",
+                            )
+
+                        self.runners.killjob(job_id, wait=True)
+                    elif mtype == "KEEP_ALIVE":
+                        self.send(msg)
+                    else:
+                        self.sendargs(
+                            msg="ERROR",
+                            reason="UNKNOWN_MSG_TYPE",
+                            msg_type=mtype,
+                        )
+                except Channel_Closed_Exception:
+                    return
+        finally:
+            self.runners.terminate()
+            self.runners.join()
+            return
 
 
 # Used by LocalRunner and RemoteRunner to start and kill jobs
