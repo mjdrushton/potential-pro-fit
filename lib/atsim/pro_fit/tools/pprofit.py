@@ -26,7 +26,7 @@ import shutil
 import tempfile
 import contextlib
 import pkgutil
-import importlib.resources
+import importlib_resources
 import curses
 
 import jinja2
@@ -287,7 +287,7 @@ def _initializeJob(jobDescription):
 def _setupLogging(verbose):
     """Set-up python logging"""
     # Read logging information from logging.cfg in the resources package
-    cfg = importlib.resources.read_text(
+    cfg = importlib_resources.read_text(
         "atsim.pro_fit.resources", "logging.cfg"
     )
     import io

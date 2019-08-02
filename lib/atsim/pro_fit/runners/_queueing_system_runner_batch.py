@@ -7,7 +7,7 @@ import logging
 import weakref
 import posixpath
 import os
-import importlib.resources
+import importlib_resources
 
 from gevent.event import Event
 
@@ -196,7 +196,7 @@ class QueueingSystemRunnerBatch(RunnerBatch):
         runjobpath = os.path.join(job.sourcePath, "runjob")
         from . import templates
 
-        dat = importlib.resources.read_text(
+        dat = importlib_resources.read_text(
             templates, "queueing_system_jobrun"
         )
         with open(runjobpath, "w") as runjob:
