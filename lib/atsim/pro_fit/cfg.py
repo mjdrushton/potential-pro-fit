@@ -1,9 +1,10 @@
 """Classes and functions to help write createFromConfig() methods"""
 
-from exceptions import ConfigException
+from atsim.pro_fit.exceptions import ConfigException
 
+import operator
 
-def convert_factory(clsname, key, convfunc, bounds):
+def convert_factory(clsname, key, convfunc, bounds, bounds_inclusive = (True, True)):
     """Creates a callable which takes a single argument.
 
     This argument is passed to convfunc - if this raises an exceeption
@@ -16,6 +17,9 @@ def convert_factory(clsname, key, convfunc, bounds):
         key {str} -- gives option name in error messages.
         convfunc {callable} -- single argument callable used to perform conversion
         bounds {tuple} -- (low, high) tuple describing allowed bounds.
+        bounds_inclusive {tuple} -- Two value tuple. True value indicates inclusive range.
+            So (True, True) means high and low values shoud be included in range (low <= v <= high).
+            (True, Fale) means (low <= v < high)
     
     Returns:
         callable -- conversion function that takes single value and converts it
@@ -33,7 +37,11 @@ def convert_factory(clsname, key, convfunc, bounds):
             )
 
         if bounds:
-            if not (v >= bounds[0] and v <= bounds[1]):
+            low_inc, high_inc = bounds_inclusive
+            lowop = operator.ge if low_inc else operator.gt
+            highop = operator.le if high_inc else operator.lt
+
+            if not (lowop(v,bounds[0]) and highop(v,bounds[1])):
                 raise ConfigException(
                     "Option value does not lie within bounds ({}, {}). Option key '{}' for {}: {}".format(
                         bounds[0], bounds[1], key, clsname, v
@@ -44,7 +52,7 @@ def convert_factory(clsname, key, convfunc, bounds):
     return f
 
 
-def int_convert(clsname, key, bounds=None):
+def int_convert(clsname, key, bounds=None, bounds_inclusive = (True, True)):
     """Function factory for converting option values to integers.
     
     Arguments:
@@ -53,14 +61,18 @@ def int_convert(clsname, key, bounds=None):
     
     Keyword Arguments:
         bounds {tuple} -- (low, high) tuple giving allowed bounds for option (default: {None})
+        bounds_inclusive {tuple} -- Two value tuple. True value indicates inclusive range.
+            So (True, True) means high and low values shoud be included in range (low <= v <= high).
+            (True, Fale) means (low <= v < high)
+
     
     Returns:
         callable -- Option conversion function
     """
-    return convert_factory(clsname, key, int, bounds)
+    return convert_factory(clsname, key, int, bounds, bounds_inclusive)
 
 
-def float_convert(clsname, key, bounds=None):
+def float_convert(clsname, key, bounds=None, bounds_inclusive = (True, True)):
     """Function factory for converting option values to floats.
     
     Arguments:
@@ -69,11 +81,15 @@ def float_convert(clsname, key, bounds=None):
     
     Keyword Arguments:
         bounds {tuple} -- (low, high) tuple giving allowed bounds for option (default: {None})
+        bounds_inclusive {tuple} -- Two value tuple. True value indicates inclusive range.
+            So (True, True) means high and low values shoud be included in range (low <= v <= high).
+            (True, Fale) means (low <= v < high)
+
     
     Returns:
         callable -- Option conversion function
     """
-    return convert_factory(clsname, key, float, bounds)
+    return convert_factory(clsname, key, float, bounds, bounds_inclusive)
 
 
 def random_seed_option(clsname, key):
