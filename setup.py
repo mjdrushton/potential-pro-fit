@@ -69,6 +69,7 @@ def package_files(directory):
 # pkgs = find_packages('lib', exclude=["tests"])
 pkgs = ['atsim.pro_fit', 
         'atsim.pro_fit.console',
+        'atsim.pro_fit.cfg',
         'atsim.pro_fit.db',
         'atsim.pro_fit.evaluators',
         'atsim.pro_fit.filetransfer',
