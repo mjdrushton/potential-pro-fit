@@ -4,7 +4,10 @@ from atsim.pro_fit.exceptions import ConfigException
 
 import operator
 
-def convert_factory(clsname, key, convfunc, bounds, bounds_inclusive = (True, True)):
+
+def convert_factory(
+    clsname, key, convfunc, bounds, bounds_inclusive=(True, True)
+):
     """Creates a callable which takes a single argument.
 
     This argument is passed to convfunc - if this raises an exceeption
@@ -41,7 +44,7 @@ def convert_factory(clsname, key, convfunc, bounds, bounds_inclusive = (True, Tr
             lowop = operator.ge if low_inc else operator.gt
             highop = operator.le if high_inc else operator.lt
 
-            if not (lowop(v,bounds[0]) and highop(v,bounds[1])):
+            if not (lowop(v, bounds[0]) and highop(v, bounds[1])):
                 raise ConfigException(
                     "Option value does not lie within bounds ({}, {}). Option key '{}' for {}: {}".format(
                         bounds[0], bounds[1], key, clsname, v
@@ -52,7 +55,7 @@ def convert_factory(clsname, key, convfunc, bounds, bounds_inclusive = (True, Tr
     return f
 
 
-def int_convert(clsname, key, bounds=None, bounds_inclusive = (True, True)):
+def int_convert(clsname, key, bounds=None, bounds_inclusive=(True, True)):
     """Function factory for converting option values to integers.
     
     Arguments:
@@ -72,7 +75,7 @@ def int_convert(clsname, key, bounds=None, bounds_inclusive = (True, True)):
     return convert_factory(clsname, key, int, bounds, bounds_inclusive)
 
 
-def float_convert(clsname, key, bounds=None, bounds_inclusive = (True, True)):
+def float_convert(clsname, key, bounds=None, bounds_inclusive=(True, True)):
     """Function factory for converting option values to floats.
     
     Arguments:
@@ -166,9 +169,10 @@ def boolean_convert(clsname, key):
     sconv = choice_convert(clsname, key, ["True", "False"])
 
     def f(v):
-        v = sconv(v)
+        if not (v is True or v is False):
+            v = sconv(v)
 
-        if v == "True":
+        if v is True or v == "True":
             return True
         else:
             return False

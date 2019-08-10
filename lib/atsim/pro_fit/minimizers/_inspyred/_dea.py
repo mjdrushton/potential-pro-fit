@@ -1,23 +1,17 @@
 import logging
 import itertools
 import math
+import sys
 
 import inspyred
 
 from atsim.pro_fit.variables import BoundedVariableBaseClass
 from atsim.pro_fit.variables import VariableException
-from ._inspyred_common import (
-    _EvolutionaryComputationMinimizerBaseClass,
-)
+from ._inspyred_common import _EvolutionaryComputationMinimizerBaseClass
 
 from atsim.pro_fit.cfg import (
-    int_convert,
-    float_convert,
-    random_seed_option,
-)
-
-from atsim.pro_fit.minimizers._inspyred._config import (
-    Initial_Population_Config_Helper,
+    Create_From_Config_Parser,
+    add_initial_population_options,
 )
 
 from atsim.pro_fit.exceptions import ConfigException
@@ -30,7 +24,21 @@ class DEAMinimizer(object):
 
     logger = logging.getLogger("atsim.pro_fit.minimizers.DEAMinimizer")
 
-    def __init__(self, initialVariables, **args):
+    def __init__(
+        self,
+        initial_variables,
+        initial_population,
+        population_size,
+        generator,
+        random_seed,
+        num_selected,
+        tournament_size,
+        crossover_rate,
+        mutation_rate,
+        gaussian_mean,
+        gaussian_stdev,
+        max_iterations,
+    ):
 
         # Configure the terminator
         terminator = inspyred.ec.terminators.generation_termination
@@ -39,28 +47,24 @@ class DEAMinimizer(object):
         import random
 
         r = random.Random()
-        r.seed(args["random_seed"])
+        r.seed(random_seed)
 
         dea = inspyred.ec.DEA(r)
         dea.terminator = terminator
 
         # Create initial population from Latin Hyper Cube
-        initial_population = args["initial_population"]
-
-        generator = args["generator"]
-
         self._minimizer = _EvolutionaryComputationMinimizerBaseClass(
             generator,
             dea,
-            args["population_size"],
+            population_size,
             initial_population,
-            num_selected=args["num_selected"],
-            tournament_size=args["tournament_size"],
-            crossover_rate=args["crossover_rate"],
-            mutation_rate=args["mutation_rate"],
-            gaussian_mean=args["gaussian_mean"],
-            gaussian_stdev=args["gaussian_stdev"],
-            max_generations=args["max_iterations"],
+            num_selected=num_selected,
+            tournament_size=tournament_size,
+            crossover_rate=crossover_rate,
+            mutation_rate=mutation_rate,
+            gaussian_mean=gaussian_mean,
+            gaussian_stdev=gaussian_stdev,
+            max_generations=max_iterations,
         )
 
     def minimize(self, merit):
@@ -77,8 +81,44 @@ class DEAMinimizer(object):
     def stopMinimizer(self):
         self._minimizer.stopMinimizer()
 
-    @staticmethod
-    def createFromConfig(variables, configitems):
+    @classmethod
+    def _create_minimizer_instance(
+        cls,
+        variables,
+        population,
+        random_seed,
+        num_selected,
+        tournament_size,
+        crossover_rate,
+        mutation_rate,
+        gaussian_mean,
+        gaussian_stdev,
+        max_iterations,
+    ):
+        population_factory = population(variables)
+        initial_population = population_factory.population
+        population_size = population_factory.population_size
+        generator = population_factory.generator
+
+        minimizer = cls(
+            variables,
+            initial_population,
+            population_size,
+            generator,
+            random_seed,
+            num_selected,
+            tournament_size,
+            crossover_rate,
+            mutation_rate,
+            gaussian_mean,
+            gaussian_stdev,
+            max_iterations,
+        )
+
+        return minimizer
+
+    @classmethod
+    def createFromConfig(cls, variables, configitems):
         """Create DEAMinimizer from [Minimizer] section of fit.cfg config file.
 
     @param variables atsim.pro_fit.variables.Variables instance containing starting parameters for minimization.
@@ -91,57 +131,46 @@ class DEAMinimizer(object):
         except VariableException as e:
             raise ConfigException("DEA Minimizer:" + str(e))
 
-        cfgdict = dict(configitems)
-        del cfgdict["type"]
         clsname = "DEA minimizer"
-        defaults = dict(
-            num_selected=(
-                2,
-                int_convert(clsname, "num_selected", (2, float("inf"))),
-            ),
-            tournament_size=(
-                2,
-                int_convert(clsname, "tournament_size", (2, float("inf"))),
-            ),
-            crossover_rate=(
-                1.0,
-                float_convert(clsname, "crossover_rate", (0.0, 1.0)),
-            ),
-            mutation_rate=(
-                0.1,
-                float_convert(clsname, "mutation_rate", (0.0, 1.0)),
-            ),
-            gaussian_mean=(0, float_convert(clsname, "gaussian_mean")),
-            gaussian_stdev=(
-                1,
-                float_convert(clsname, "gaussian_stdev", (1e-3, float("inf"))),
-            ),
+
+        cfgparse = Create_From_Config_Parser(clsname)
+
+        cfgparse.add_int_option(
+            "num_selected", "num_selected", bounds=(2, sys.maxsize), default=2
+        ).add_int_option(
+            "tournament_size",
+            "tournament_size",
+            bounds=(2, sys.maxsize),
+            default=2,
+        ).add_float_option(
+            "crossover_rate", "crossover_rate", bounds=(0.0, 1.0), default=1.0
+        ).add_float_option(
+            "mutation_rate", "mutation_rate", bounds=(0.0, 1.0), default=0.1
+        ).add_float_option(
+            "gaussian_mean", "gaussian_mean", default=0
+        ).add_float_option(
+            "gaussian_stdev",
+            "gaussian_stdev",
+            bounds=(1e-6, float("inf")),
+            default=1.0,
+        ).add_random_seed_option(
+            "random_seed", "random_seed"
+        ).add_int_option(
+            "max_iterations",
+            "max_iterations",
+            bounds=(1, sys.maxsize),
+            default=1000,
         )
 
-        cfg_helper = Initial_Population_Config_Helper(clsname)
-
-        # Throw if cfgdict has any keys not in defaults
-        relevant_keys = set(
-            itertools.chain(defaults.keys(), cfg_helper.default_keys)
+        add_initial_population_options(cfgparse)
+        parsed_options = cfgparse.parse(configitems)
+        cfgparse.log_options(parsed_options, DEAMinimizer.logger)
+        minimizer = cls._create_minimizer_instance(
+            *cfgparse.options_to_function_args(
+                parsed_options,
+                cls._create_minimizer_instance,
+                {"variables": variables},
+            )
         )
-        for k in relevant_keys:
-            if k not in relevant_keys:
-                raise ConfigException(
-                    "Unknown configuration option '{}' for DEA minimizer".format(
-                        k
-                    )
-                )
 
-        # Override any values specified in cfgdict.
-        optiondict = cfg_helper.parse(variables, cfgdict)
-        for k, (default, converter) in defaults.items():
-            optiondict[k] = converter(cfgdict.get(k, converter(default)))
-
-        # Log the options
-        DEAMinimizer.logger.info(
-            "Configuring DEAMinimizer with following options:"
-        )
-        for k, v in optiondict.items():
-            DEAMinimizer.logger.info("%s = %s" % (k, v))
-
-        return DEAMinimizer(variables, **optiondict)
+        return minimizer

@@ -1,6 +1,4 @@
-from ._inspyred_common import (
-    Population_To_Generator_Adapter,
-)
+from ._inspyred_common import Population_To_Generator_Adapter
 
 from atsim.pro_fit.cfg import (
     int_convert,

@@ -1,5 +1,3 @@
-
-
 def NullStepCallback(minimizerResults):
     pass
 
@@ -51,13 +49,16 @@ class Abstract_Base_Minimizer(object):
             {atsim.pro_fit.minimizers.MinimizerResults} -- object representing the results of minimization.
         
         """
-        raise NotImplementedError("Inheriting classes should implement minimize() method")
-
+        raise NotImplementedError(
+            "Inheriting classes should implement minimize() method"
+        )
 
     def stopMinimizer(self):
         """May be called after minimization has started using `minimize()`. This method terminates
         the minimization loop."""
-        raise NotImplementedError("Inheriting classes should implement stopMinimizer() method")
+        raise NotImplementedError(
+            "Inheriting classes should implement stopMinimizer() method"
+        )
 
     @classmethod
     def createFromConfig(cls, variables, configitems):
@@ -71,4 +72,6 @@ class Abstract_Base_Minimizer(object):
         Returns:
             {instance of cls} -- returns an instance of this minimizer.
         """
-        raise NotImplementedError("Inheriting classes should implement createFromConfig() class method")
+        raise NotImplementedError(
+            "Inheriting classes should implement createFromConfig() class method"
+        )

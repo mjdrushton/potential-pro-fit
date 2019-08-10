@@ -17,7 +17,6 @@ class Configured_Minimizer_Abstract_Base(Abstract_Base_Minimizer):
         super().__init_()
         self.variables = variables
 
-
     @classmethod
     def _populate_cfg_parser(self, cfgparse):
         raise NotImplementedError(

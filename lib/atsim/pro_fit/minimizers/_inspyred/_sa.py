@@ -9,11 +9,7 @@ from ._inspyred_common import (
     Population_To_Generator_Adapter,
 )
 
-from atsim.pro_fit.cfg import (
-    int_convert,
-    float_convert,
-    random_seed_option,
-)
+from atsim.pro_fit.cfg import int_convert, float_convert, random_seed_option
 
 from atsim.pro_fit.minimizers.population_generators import (
     Predefined_Initial_Population,
@@ -264,7 +260,9 @@ class Simulated_AnnealingMinimizer(object):
             ),
             random_seed=(
                 None,
-                random_seed_option("Simulated_Annealing minimizer", "random_seed"),
+                random_seed_option(
+                    "Simulated_Annealing minimizer", "random_seed"
+                ),
             ),
         )
 

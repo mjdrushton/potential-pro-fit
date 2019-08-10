@@ -1,4 +1,11 @@
-from atsim.pro_fit.cfg import float_convert, int_convert, boolean_convert
+from atsim.pro_fit.cfg import (
+    float_convert,
+    int_convert,
+    boolean_convert,
+    infile_convert,
+    choice_convert,
+    random_seed_option,
+)
 from atsim.pro_fit.exceptions import ConfigException
 
 import sys
@@ -55,6 +62,27 @@ class Depends_On_Constraint(object):
         return out_args
 
 
+class Mutually_Exclusive_Constraint(object):
+    def __init__(self, only_one_allowed_keys):
+        self.only_one_allowed_keys = set(only_one_allowed_keys)
+
+    def __call__(self, out_args):
+        specified_keys = set([o.option.cfg_key for o in out_args if o.value])
+
+        specified_keys = specified_keys.intersection(
+            self.only_one_allowed_keys
+        )
+
+        if len(specified_keys) > 1:
+            specified_keys_str = ",".join(list(specified_keys))
+            allowed_keys_str = ",".join(list(self.only_one_allowed_keys))
+            msg = "Only one of {} may be specified. {} were given".format(
+                specified_keys_str, allowed_keys_str
+            )
+            raise ConfigException(msg)
+        return out_args
+
+
 class Create_From_Config_Parser(object):
 
     _Option = collections.namedtuple(
@@ -67,16 +95,21 @@ class Create_From_Config_Parser(object):
     def __init__(self, clsname):
         self.clsname = clsname
         self._options = []
+        self._sub_parsers = []
         self._constraints = []
 
     @property
     def _required_options(self):
         options = [o for o in self._options if o.required]
+        for sp in self._sub_parsers:
+            options.extend(sp._required_options)
         return options
 
     @property
     def _allowed_option_keys(self):
         option_keys = [o.cfg_key for o in self._options]
+        for sp in self._sub_parsers:
+            option_keys.extend(sp._allowed_option_keys)
         option_keys = set(option_keys)
         return option_keys
 
@@ -84,6 +117,11 @@ class Create_From_Config_Parser(object):
         for constraint in self._constraints:
             out_args = constraint(out_args)
         return out_args
+
+    def add_sub_parser(self, out_key, factory_function):
+        sub_parser = _Sub_Parser(self.clsname, out_key, factory_function)
+        self._sub_parsers.append(sub_parser)
+        return sub_parser
 
     def add_option(
         self, cfg_key, out_key, convert, default=None, required=False
@@ -141,6 +179,32 @@ class Create_From_Config_Parser(object):
         )
         return self
 
+    def add_choices_option(
+        self, cfg_key, out_key, choices, default=None, required=False
+    ):
+        converter = choice_convert(self.clsname, cfg_key, choices)
+        self.add_option(
+            cfg_key, out_key, converter, default=default, required=required
+        )
+
+        return self
+
+    def add_infile_option(
+        self, cfg_key, out_key, default=None, required=False
+    ):
+        converter = infile_convert(self.clsname, cfg_key)
+        self.add_option(
+            cfg_key, out_key, converter, default=default, required=required
+        )
+        return self
+
+    def add_random_seed_option(self, cfg_key, out_key, required=False):
+        converter = random_seed_option(self.clsname, cfg_key)
+        self.add_option(
+            cfg_key, out_key, converter, default=None, required=required
+        )
+        return self
+
     def add_constraint(self, constraint):
         self._constraints.append(constraint)
         return self
@@ -151,6 +215,11 @@ class Create_From_Config_Parser(object):
         constraint = Depends_On_Constraint(
             self.clsname, arg_key, depends_on_key, depends_on_value
         )
+        self.add_constraint(constraint)
+        return self
+
+    def add_mutually_exclusive_constraint(self, *exclusive_cfg_keys):
+        constraint = Mutually_Exclusive_Constraint(exclusive_cfg_keys)
         self.add_constraint(constraint)
         return self
 
@@ -192,8 +261,14 @@ class Create_From_Config_Parser(object):
 
             out_args.append(v)
 
+        # Process sub-parser
+        for sp in self._sub_parsers:
+            arg = sp.parse(config_items)
+            out_args.append(arg)
+
         # Apply constraints
         out_args = self._apply_constraints(out_args)
+
         return out_args
 
     def log_options(
@@ -279,3 +354,34 @@ class Create_From_Config_Parser(object):
             out_args.append(v)
         out_args = tuple(out_args)
         return out_args
+
+
+class _Sub_Parser(Create_From_Config_Parser):
+    def __init__(self, clsname, out_key, call_me, drop_self=False):
+        super().__init__(clsname)
+
+        self.out_key = out_key
+        self.call_me = call_me
+        self.drop_self = drop_self
+
+    def parse(self, config_items):
+
+        # Pre-process config_items so only options relevant to the sub-parser are considered.
+        filtered_items = []
+
+        configured_options = set([o.cfg_key for o in self._options])
+
+        for k, v in config_items:
+            if k in configured_options:
+                filtered_items.append((k, v))
+
+        parsed_options = super().parse(filtered_items, [])
+        args = self.options_to_function_args(
+            parsed_options, self.call_me, drop_self=self.drop_self
+        )
+        value = self.call_me(*args)
+
+        o = self._Option(self.out_key, self.out_key, None, None, False)
+        v = self._Value(value, False, o)
+
+        return v
