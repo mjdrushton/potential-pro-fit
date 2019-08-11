@@ -14,7 +14,7 @@ class Configured_Minimizer_Abstract_Base(Abstract_Base_Minimizer):
     _clsname = "Abstract Minimizer CHANGE ME"
 
     def __init__(self, variables):
-        super().__init_()
+        super().__init__()
         self.variables = variables
 
     @classmethod
