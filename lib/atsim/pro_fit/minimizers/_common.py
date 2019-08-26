@@ -27,6 +27,8 @@ class MinimizerResults(object):
         self.candidateJobList = candidateJobList
 
     def _bestIndexValue(self):
+        if not self.meritValues:
+            raise MinimizerException("List of merit values for population is empty. This may indicate that all candidates produced invalid values.")
         minval = min(enumerate(self.meritValues), key=operator.itemgetter(1))
         return minval
 
