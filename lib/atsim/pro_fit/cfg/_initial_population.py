@@ -3,17 +3,7 @@ import sys
 from atsim.pro_fit.exceptions import ConfigException
 from atsim.pro_fit.variables import VariableException
 
-from atsim.pro_fit.minimizers.population_generators import (
-    Predefined_Initial_Population,
-    Latin_Hypercube_InitialPopulation,
-    Combine_Initial_Population,
-    Uniform_Random_Initial_Population,
-    File_Initial_Population,
-    Ppdump_File_Initial_Population,
-    Candidate_Generator,
-    Uniform_Variable_Distributions,
-    PERT_Variable_Distributions,
-)
+import atsim.pro_fit.minimizers.population_generators as population_generators
 
 
 class Population_To_Generator_Adapter(object):
@@ -62,10 +52,10 @@ class _Initial_Population_Factory(object):
 
     def _init_population_loader(self):
         if self.population_load_from_csv:
-            cls = File_Initial_Population
+            cls = population_generators.File_Initial_Population
             filename = self.population_load_from_csv
         elif self.population_load_from_ppdump:
-            cls = Ppdump_File_Initial_Population
+            cls = population_generators.Ppdump_File_Initial_Population
             filename = self.population_load_from_ppdump
         else:
             return None
@@ -110,24 +100,24 @@ class _Initial_Population_Factory(object):
         if len(popns) == 1:
             return popns[0]
         else:
-            popn = Combine_Initial_Population(*popns)
+            popn = population_generators.Combine_Initial_Population(*popns)
             return popn
 
     def _create_default_distribution(self, population_size):
         vds = self._distribution_factory.variable_distributions
-        candidate_generator = Candidate_Generator(vds)
+        candidate_generator = population_generators.Candidate_Generator(vds)
 
-        popn = Latin_Hypercube_InitialPopulation(
+        popn = population_generators.Latin_Hypercube_InitialPopulation(
             self.initialVariables,
             population_size,
-            Latin_Hypercube_InitialPopulation.Criterion.correlation,
+            population_generators.Latin_Hypercube_InitialPopulation.Criterion.correlation,
             candidate_generator=candidate_generator,
         )
 
         return popn
 
     def _create_init_variables(self, population_size):
-        orig_vars = Predefined_Initial_Population(
+        orig_vars = population_generators.Predefined_Initial_Population(
             self.initialVariables, from_array=[self.initialVariables.fitValues]
         )
         return orig_vars
@@ -161,7 +151,7 @@ class _Distribution_Factory:
         )
 
     def _create_uniform_distribution(self):
-        distn = Uniform_Variable_Distributions(self.initialVariables)
+        distn = population_generators.Uniform_Variable_Distributions(self.initialVariables)
         return distn
 
     def _create_bias_distribution(self, distn_string):
@@ -184,7 +174,7 @@ class _Distribution_Factory:
         else:
             shape = 10.0
 
-        distn = PERT_Variable_Distributions(self.initialVariables, shape=shape)
+        distn = population_generators.PERT_Variable_Distributions(self.initialVariables, shape=shape)
         return distn
 
 

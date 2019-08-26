@@ -9,13 +9,9 @@ from atsim.pro_fit.variables import BoundedVariableBaseClass
 from atsim.pro_fit.variables import VariableException
 from ._inspyred_common import _EvolutionaryComputationMinimizerBaseClass
 
-from atsim.pro_fit.cfg import (
-    Create_From_Config_Parser,
-    add_initial_population_options,
-)
+import atsim.pro_fit.cfg
 
 from atsim.pro_fit.exceptions import ConfigException
-
 
 class DEAMinimizer(object):
     """Differential Evoluation Algorithm Minimizer.
@@ -133,7 +129,7 @@ class DEAMinimizer(object):
 
         clsname = "DEA minimizer"
 
-        cfgparse = Create_From_Config_Parser(clsname)
+        cfgparse = atsim.pro_fit.cfg.Create_From_Config_Parser(clsname)
 
         cfgparse.add_int_option(
             "num_selected", "num_selected", bounds=(2, sys.maxsize), default=2
@@ -162,7 +158,7 @@ class DEAMinimizer(object):
             default=1000,
         )
 
-        add_initial_population_options(cfgparse)
+        atsim.pro_fit.cfg.add_initial_population_options(cfgparse)
         parsed_options = cfgparse.parse(configitems)
         cfgparse.log_options(parsed_options, DEAMinimizer.logger)
         minimizer = cls._create_minimizer_instance(
