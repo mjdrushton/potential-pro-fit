@@ -28,6 +28,7 @@ def _mkclient(channel_id, channel_class, vagrant_box):
     return client
 
 
+@pytest.mark.slow
 def testStartChannel(client):
     client.close()
 
@@ -79,6 +80,7 @@ class QSUBCallback(object):
         self.lastPbsID = None
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("clearqueue")
 def testQueueingSystemState(gw, channel, channel_id):
     qsubcallback = QSUBCallback()
@@ -211,6 +213,7 @@ class TstCallback(object):
         self.exception = exception
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("clearqueue")
 def testQueueingSystemClientSingleJob(gw, client):
     clch, runjobs = mkrunjobs(gw, 1, numSuffix=True)
@@ -251,6 +254,7 @@ def testQueueingSystemClientSingleJob(gw, client):
         clch.send(None)
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("clearqueue")
 def testQueueingSystemMultipleJobsInSingleBatch(gw, client):
     clch, runjobs = mkrunjobs(gw, 3, numSuffix=True)
@@ -303,6 +307,7 @@ def testQueueingSystemMultipleJobsInSingleBatch(gw, client):
         clch.send(None)
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("clearqueue")
 def testQueueingSystemClientMultipleJobsInMultipleBatches(gw, client):
     clch, runjobs = mkrunjobs(gw, 3, numSuffix=True)
@@ -362,6 +367,7 @@ def testQueueingSystemClientMultipleJobsInMultipleBatches(gw, client):
         clch.send(None)
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("clearqueue")
 def testQueueingSystemClientKillJob(gw, client, channel):
     clch1, rj1 = mkrunjobs(gw, 1, numSuffix=True, sleep=None)

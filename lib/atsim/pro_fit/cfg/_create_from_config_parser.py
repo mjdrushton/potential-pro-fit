@@ -5,13 +5,16 @@ from atsim.pro_fit.cfg import (
     infile_convert,
     choice_convert,
     random_seed_option,
+    str_convert
 )
+
 from atsim.pro_fit.exceptions import ConfigException
 
 import sys
 import collections
 import logging
 import inspect
+import operator
 
 
 class Depends_On_Constraint(object):
@@ -99,10 +102,20 @@ class Create_From_Config_Parser(object):
         self._constraints = []
 
     @property
-    def _required_options(self):
-        options = [o for o in self._options if o.required]
+    def _assembled_options(self):
+        options = [o for o in self._options]
         for sp in self._sub_parsers:
-            options.extend(sp._required_options)
+            options.extend(sp._assembled_options)
+        return options
+
+    @property
+    def _required_options(self):
+        options = [o for o in self._assembled_options if o.required]
+        return options
+
+    @property
+    def _optional_options(self):
+        options = [o for o in self._assembled_options if not o.required]
         return options
 
     @property
@@ -123,11 +136,17 @@ class Create_From_Config_Parser(object):
         self._sub_parsers.append(sub_parser)
         return sub_parser
 
+
     def add_option(
         self, cfg_key, out_key, convert, default=None, required=False
     ):
         option = self._Option(cfg_key, out_key, convert, default, required)
         self._options.append(option)
+        return self
+
+    def add_str_option(self, cfg_key, out_key, default = None, required=False):
+        converter = str_convert(self.clsname, cfg_key)
+        self.add_option(cfg_key, out_key, converter, default=default, required=required)
         return self
 
     def add_float_option(
@@ -354,6 +373,64 @@ class Create_From_Config_Parser(object):
             out_args.append(v)
         out_args = tuple(out_args)
         return out_args
+
+    def _option_to_doc(self, o, outfile):
+        outfile.write(":Name: {} \n".format(o.cfg_key))
+
+        if o.convert.destination_typename:
+            outfile.write(
+                ":Arg-type: {} \n".format(o.convert.destination_typename)
+            )
+
+        outfile.write(":Default: {} \n".format(o.default))
+
+        l_br = "("
+        r_br = ")"
+        if o.convert.bounds:
+            if not o.convert.bounds_inclusive[0]:
+                l_br = "["
+            if not o.convert.bounds_inclusive[1]:
+                r_br = "]"
+
+            lowbound, highbound = o.convert.bounds
+
+            if type(highbound) is int and highbound == sys.maxsize:
+                highbound = "inf"
+
+            bounds = "{}{}, {}{}".format(l_br, lowbound, highbound, r_br)
+            outfile.write(":Bounds: {} \n".format(bounds))
+        if hasattr(o.convert, "choicestring"):
+            outfile.write(
+                ":Allowed Values: {}\n".format(o.convert.choicestring)
+            )
+        outfile.write(":Description:\n")
+
+    def to_docs(self, outfile):
+        """Introspect this parser and format its options in restructured text
+        suitable for including in documentation.
+        
+        Arguments:
+            outfile {file} -- File into which documentation will be written.
+        """
+
+        outfile.write("{} \n".format(self.clsname))
+        outfile.write("{} \n\n".format("^" * len(self.clsname)))
+
+        if self._required_options:
+            outfile.write("Required Fields\n")
+            outfile.write("===============\n\n")
+
+            for o in sorted(self._required_options, key=operator.attrgetter('cfg_key')):
+                self._option_to_doc(o, outfile)
+                outfile.write("\n\\ \n\n")
+
+        if self._optional_options:
+            outfile.write("Optional Fields\n")
+            outfile.write("===============\n\n")
+
+            for o in sorted(self._optional_options, key=operator.attrgetter('cfg_key')):
+                self._option_to_doc(o, outfile)
+                outfile.write("\n\n\\ \n\n")
 
 
 class _Sub_Parser(Create_From_Config_Parser):

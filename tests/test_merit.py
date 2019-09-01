@@ -4,7 +4,6 @@ import atsim.pro_fit.variables
 import atsim.pro_fit.evaluators
 import atsim.pro_fit.merit
 
-
 from . import testutil
 
 from .common import *
@@ -13,6 +12,8 @@ import shutil
 import stat
 import logging
 import sys
+import itertools
+import math
 
 
 class MeritTestCase(unittest.TestCase):
@@ -406,7 +407,7 @@ class MeritTestCase(unittest.TestCase):
                                 ).append(candid)
                                 break
 
-        self.merit.beforeRun = beforeRun
+        self.merit.beforeRun.append(beforeRun)
         self.merit.calculate(self.candidates)
 
         expect = {
@@ -467,7 +468,7 @@ class MeritTestCase(unittest.TestCase):
                             vals
                         )
 
-        self.merit.afterRun = afterRun
+        self.merit.afterRun.append(afterRun)
         self.merit.calculate(self.candidates)
         expect = {
             0: {
@@ -551,7 +552,7 @@ class MeritTestCase(unittest.TestCase):
                             "evaluated", []
                         ).append(elist)
 
-        self.merit.afterEvaluation = afterEvaluation
+        self.merit.afterEvaluation.append(afterEvaluation)
 
         self.merit.calculate(self.candidates)
         expect = {
@@ -603,3 +604,60 @@ class MeritTestCase(unittest.TestCase):
             },
         }
         testutil.compareCollection(self, expect, afterEvaluationDict)
+
+    def testAfterEvaluation_substitute_bad_callback(self):
+        class NanEvaluator(object):
+            def __init__(self):
+                self.call_count = 0
+
+            def __call__(self, iitems):
+                self.call_count += 1
+
+                if self.call_count % 4 == 0:
+                    return float("nan")
+                else:
+                    return float(self.call_count)
+
+        naneval = NanEvaluator()
+        mockeval = MockEvaluator(naneval, name="NaNEval")
+
+        for jf in self.merit._jobfactories:
+            jf.evaluators.append(mockeval)
+
+        evalrecords = []
+
+        def afterMerit(meritValues, candidateJobPairs):
+            evalrecords[:] = []
+            for v, jobs in candidateJobPairs:
+                for j in jobs:
+                    for erl in j.evaluatorRecords:
+                        for er in erl:
+                            evalrecords.append(er)
+
+        self.merit.afterMerit.append(afterMerit)
+        self.merit.calculate(self.candidates)
+
+        actual = [er.meritValue for er in evalrecords if er.name == "NaNEval"]
+        expect = [1.0, 5.0, 2.0, 6.0, 3.0, 7.0, float("nan"), float("nan")]
+
+        self.assertEqual(len(expect), len(actual))
+
+        self.assertTrue(math.isnan(actual[-1]))
+        self.assertTrue(math.isnan(actual[-2]))
+        self.assertEqual(expect[:-2], actual[:-2])
+
+        naneval.call_count = 0
+
+        self.merit.afterEvaluation.append(
+            atsim.pro_fit.merit.Replace_Merit_After_Evaluation_Callback(
+                math.isfinite, 100.0
+            )
+        )
+        self.merit.calculate(self.candidates)
+
+        actual = [er.meritValue for er in evalrecords if er.name == "NaNEval"]
+        expect = [1.0, 5.0, 2.0, 6.0, 3.0, 7.0, 100.0, 100.0]
+
+        self.assertEqual(expect, actual)
+
+        # self.fail()

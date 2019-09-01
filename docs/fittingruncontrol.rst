@@ -13,3 +13,9 @@ The ``[FittingRun]`` section of the ``fit.cfg`` file contains options relevant t
 :Description: Name of the fitting run. This is displayed in ``pprofitmon`` and is particularly useful for distinguising between multiple fitting runs.
 
 \
+
+:Name: bad_merit_substitute
+:Type: +ve float
+:Description: This option can be used to replace bad evaluator values. If an evaluator record has a merit value of nan it will be replaced by this option's value.
+
+\

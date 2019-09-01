@@ -6,6 +6,8 @@ from atsim.pro_fit import jobfactories
 
 import gevent
 
+from atsim.pro_fit._util import MultiCallback
+
 
 def _sumValuesReductionFunction(evaluatedJobs):
     """Default reduction function, for each list enter sub lists and sum values"""
@@ -17,6 +19,28 @@ def _sumValuesReductionFunction(evaluatedJobs):
                 v += sum([er.meritValue for er in e])
         ret.append(v)
     return ret
+
+
+class Replace_Merit_After_Evaluation_Callback(object):
+    """Callback for use with Merit.afterEvaluation to replace merit values based on a predicate"""
+
+    def __init__(self, false_predicate, replacement_value):
+        """Replace merit values of evaluators based on when predicate is false.
+        
+        Arguments:
+            false_predicate {callable} -- Unary predicate that accepts merit value as its argument. Returns True for evaluator records that should not be modified.
+            replacement_value {float} -- merit value to be used when predicate returns false.
+        """
+        self.false_predicate = false_predicate
+        self.replacement_value = replacement_value
+
+    def __call__(self, candidate_job_pairs):
+        for v, jobs in candidate_job_pairs:
+            for j in jobs:
+                for erl in j.evaluatorRecords:
+                    for er in erl:
+                        if not self.false_predicate(er.meritValue):
+                            er.meritValue = self.replacement_value
 
 
 class Merit(object):
@@ -36,17 +60,20 @@ class Merit(object):
                 representing each job belonging to the candidate.
 
     afterRun  : this is called after the jobs have been run, but before merit values are
-                evaluated. It is passed the same variables as beforeRun.
+                evaluated. It is passed the same variables as beforeRun. This is an instance of
+                MultiCallback meaning new callbacks are registered by appending to the afterRun property.
 
     afterEvaluation : called after evaluation but before values are reduced to produce
-                merit values and also before job directories are removed.
+                merit values and also before job directories are removed. This is an instance of
+                MultiCallback meaning new callbacks are registered by appending to the afterEvaluation property.
 
                 As for afterRun and beforeRun, list of (CANDIDATE, JOB_LIST) pairs are passed
                 to callback and job.evaluate() methods have been called therefore job.evaluatorRecords is
                 accessible at this point.
 
     afterMerit : Called after reduction function (but before job directories are deleted) is applied and before calculate() returns.
-                Has signature: afterMerit(meritValues, candidateJobPairs).
+                Has signature: afterMerit(meritValues, candidateJobPairs). This is an instance of
+                MultiCallback meaning new callbacks are registered by appending to the afterMerit property.
 
                 Where candidateJobPairs is as before and meritValues is a list of merit values one
                 per candidate. """
@@ -66,10 +93,10 @@ class Merit(object):
        @param jobdir Directory in which job files should be created"""
 
         # Initialize callbacks to be None
-        self.beforeRun = None
-        self.afterRun = None
-        self.afterEvaluation = None
-        self.afterMerit = None
+        self._beforeRun = MultiCallback()
+        self._afterRun = MultiCallback()
+        self._afterEvaluation = MultiCallback()
+        self._afterMerit = MultiCallback()
 
         self._runners = runners
         self._jobfactories = jobfactories
@@ -100,8 +127,7 @@ class Merit(object):
             gevent.wait(objects=finishedEvents)
 
             # Call the afterRun callback
-            if self.afterRun:
-                self.afterRun(candidate_job_lists)  # pylint: disable=E1102
+            self.afterRun(candidate_job_lists)  # pylint: disable=E1102
 
             # Apply evaluators
             self._applyEvaluators(batchedJobs)
@@ -110,20 +136,16 @@ class Merit(object):
             )
 
             # Call the afterEvaluation callback (first zip evaluated lists with their jobs)
-            if self.afterEvaluation:
-                self.afterEvaluation(
-                    candidate_job_lists
-                )  # pylint: disable=E1102
+            self.afterEvaluation(candidate_job_lists)  # pylint: disable=E1102
 
             # Reduce evaluated dictionary into single values
             meritvals = self._reductionFunction(
                 [joblist for (v, joblist) in candidate_job_lists]
             )
 
-            if self.afterMerit:
-                self.afterMerit(
-                    meritvals, candidate_job_lists
-                )  # pylint: disable=E1102
+            self.afterMerit(
+                meritvals, candidate_job_lists
+            )  # pylint: disable=E1102
 
             if returnCandidateJobPairs:
                 return (meritvals, candidate_job_lists)
@@ -161,8 +183,7 @@ class Merit(object):
                 runnerBatches.setdefault(factory.runnerName, []).append(job)
 
         # Call the beforeRun callback
-        if self.beforeRun:
-            self.beforeRun(candidate_job_lists)  # pylint: disable=E1102
+        self.beforeRun(candidate_job_lists)  # pylint: disable=E1102
 
         # Convert runnerBatches into list of lists
         return (
@@ -210,3 +231,19 @@ class Merit(object):
                     "meta_evaluator", evaluatorRecords, batch[0].variables
                 )
                 batch.append(metaEvaluatorJob)
+
+    @property
+    def beforeRun(self):
+        return self._beforeRun
+
+    @property
+    def afterRun(self):
+        return self._afterRun
+
+    @property
+    def afterEvaluation(self):
+        return self._afterEvaluation
+
+    @property
+    def afterMerit(self):
+        return self._afterMerit

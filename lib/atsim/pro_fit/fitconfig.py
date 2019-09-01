@@ -3,12 +3,14 @@ from atsim.pro_fit.exceptions import (
     MultipleSectionConfigException,
 )
 from atsim.pro_fit.variables import Variables, CalculatedVariables
-from atsim.pro_fit.merit import Merit
+from atsim.pro_fit.merit import Merit, Replace_Merit_After_Evaluation_Callback
+from atsim.pro_fit.cfg import float_convert
 
 import configparser
 
 import os
 import logging
+import math
 
 from atsim.pro_fit import jobfactories
 
@@ -75,9 +77,11 @@ class FitConfig(object):
 
         # Create the runners we actually need.
         self._instantiateRunners()
+        self._title = self._parseTitle()
+        self._bad_merit_substitute = self._parse_bad_merit_substitute()
+
         self._merit = self._createMerit()
         self._minimizer = self._createMinimizer(minimizermodules)
-        self._title = self._parseTitle()
 
         self._endEvent = gevent.event.Event()
 
@@ -191,6 +195,14 @@ class FitConfig(object):
     closedEvent = property(
         closedEvent,
         doc="Return event that is set when the system clean-up has taken place.",
+    )
+
+    def bad_merit_substitute(self):
+        return self._bad_merit_substitute
+
+    bad_merit_substitute = property(
+        bad_merit_substitute,
+        doc="If this is not None, evaluator merit values that are non finite (e.g. nan or inf) will be replaced with this value",
     )
 
     def _parseConfig(self, fitCfgFilename):
@@ -403,13 +415,27 @@ class FitConfig(object):
     def _createMerit(self):
         # Build the merit object
         runners = [v for (k, v) in sorted(self.runners.items())]
-        return Merit(
+        merit = Merit(
             runners,
             self._jobfactories,
             self._metaevaluators,
             self.calculatedVariables,
             self.jobdir,
         )
+
+        if self.bad_merit_substitute is not None:
+            # Register afterEvaluation callback
+            after_evaluation = Replace_Merit_After_Evaluation_Callback(
+                math.isfinite, self.bad_merit_substitute
+            )
+            merit.afterEvaluation.append(after_evaluation)
+            self._logger.info(
+                "bad_merit_substitute specified. Invalid merit values will be repalced with %f".format(
+                    self.bad_merit_substitute
+                )
+            )
+
+        return merit
 
     def _createJobFactories(self, jobfactorymodules, evaluatormodules):
         evaldict = self._findClasses(evaluatormodules, "Evaluator")
@@ -547,12 +573,26 @@ class FitConfig(object):
     def _parseTitle(self):
         try:
             title = self._cfg.get("FittingRun", "title")
-            if title == None:
+            if title is None:
                 title = "fitting_run"
         except configparser.NoSectionError:
             title = "fitting_run"
 
         return title
+
+    def _parse_bad_merit_substitute(self):
+        value = None
+        try:
+            converter = float_convert(
+                "fit.cfg", "bad_merit_substitute", bounds=(0.0, float("inf"))
+            )
+            value = self._cfg.get("FittingRun", "bad_merit_substitute")
+            if value:
+                value = converter(value)
+        except (configparser.NoSectionError, configparser.NoOptionError) as e:
+            pass
+
+        return value
 
     def _verifyHasJobs(self):
         if not self._jobfactories:

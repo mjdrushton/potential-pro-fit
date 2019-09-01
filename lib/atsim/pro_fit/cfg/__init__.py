@@ -12,6 +12,7 @@ from ._converters import (
     choice_convert,
     boolean_convert,
     infile_convert,
+    str_convert
 )
 
 from ._create_from_config_parser import Create_From_Config_Parser

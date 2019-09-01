@@ -75,6 +75,7 @@ def makesleepy(jobs):
             runjob.write("sleep 1200\n")
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("clearqueue")
 def testBatchTerminate(
     runfixture, gw, vagrant_box, channel_class, runner_class
@@ -235,6 +236,7 @@ def testBatchTerminate(
             indyrunner.close()
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("clearqueue")
 def testRunnerClose(runfixture, vagrant_box, runner_class, channel_class, gw):
     """Test batch .terminate() method."""
@@ -386,12 +388,14 @@ def _tstSingleBatch(runner_class, runfixture, vagrant_box, sub_batch_size):
         runner.close()
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("clearqueue")
 def testAllInSingleBatch(runner_class, runfixture, vagrant_box):
     # import pdb; pdb.set_trace()
     _tstSingleBatch(runner_class, runfixture, vagrant_box, None)
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("clearqueue")
 def testAllInSingleBatch_with_coexisting_jobs(
     runner_class, runfixture, vagrant_box
@@ -424,6 +428,7 @@ def testAllInSingleBatch_with_coexisting_jobs(
             indyrunner.close().wait(20)
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("clearqueue")
 def testAllInSingleBatch_sub_batch_size_1(
     runner_class, runfixture, vagrant_box
@@ -431,6 +436,7 @@ def testAllInSingleBatch_sub_batch_size_1(
     _tstSingleBatch(runner_class, runfixture, vagrant_box, 1)
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("clearqueue")
 def testAllInSingleBatch_sub_batch_size_5(
     runner_class, runfixture, vagrant_box
@@ -438,6 +444,7 @@ def testAllInSingleBatch_sub_batch_size_5(
     _tstSingleBatch(runner_class, runfixture, vagrant_box, 5)
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("clearqueue")
 def testAllInMultipleBatch(runner_class, runfixture, vagrant_box):
     runner = _createRunner(runner_class, runfixture, vagrant_box, None)
@@ -452,6 +459,7 @@ def testAllInMultipleBatch(runner_class, runfixture, vagrant_box):
         runner.close()
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("clearqueue")
 def testAllInMultipleBatch_sub_batch_size_5(
     runner_class, runfixture, vagrant_box
@@ -468,6 +476,7 @@ def testAllInMultipleBatch_sub_batch_size_5(
         runner.close()
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("clearqueue")
 def testAllInMultipleBatch_sub_batch_size_1(
     runner_class, runfixture, vagrant_box
@@ -512,6 +521,7 @@ def qstatRemoteExec(channel):
     channel.send(output)
 
 
+@pytest.mark.slow
 @pytest.mark.usefixtures("clearqueue")
 def testPBSInclude(
     runfixture, queueing_system_test_module, vagrant_box, runner_class, gw
@@ -541,13 +551,6 @@ def testPBSInclude(
         ch.send(pbsid)
         qstat = ch.receive()
         qstat = qstat.split("\n")
-
-        # for i in xrange(5):
-        #   ch = gw.remote_exec(qstatRemoteExec)
-        #   ch.send(pbsid)
-        #   qstat = ch.receive()
-        #   qstat = qstat.split("\n")
-        #   if
 
         memline = [
             line

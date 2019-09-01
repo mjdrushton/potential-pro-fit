@@ -152,7 +152,7 @@ def testColumnSets():
     outputlines = _run_ppdump(
         [
             "-f %s" % _getdbpath(),
-            "-c variable:M_charge --evaluator-columns --variable-columns",
+            "-C variable:M_charge --evaluator-columns --variable-columns",
         ]
     )
 
@@ -220,7 +220,7 @@ def testOptionOutput(tmpdir):
     """Test ppdump --output"""
     outputfilename = str(tmpdir.join("output.csv", abs=True))
     outputlines = _run_ppdump(
-        ["-f %s" % _getdbpath(), "-o %s" % outputfilename]
+        ["-i", "all", "-f %s" % _getdbpath(), "-o %s" % outputfilename]
     )
     assert_that(outputfilename).is_file()
 
@@ -243,7 +243,7 @@ def testOptionColumn():
     extracols.extend(list(zip(evaluator, mcharge)))
 
     outputlines = _run_ppdump(
-        ["-f %s" % _getdbpath(), "-c %s" % " ".join(colkeys)]
+        ["-i", "all", "-f %s" % _getdbpath(), "-C %s" % " ".join(colkeys)]
     )
     print(outputlines)
     _check_table(outputlines, extracols=extracols)
@@ -251,14 +251,14 @@ def testOptionColumn():
 
 def testDumpNoOptions():
     """Test ppdump with default options"""
-    outputlines = _run_ppdump(["-f %s" % _getdbpath()])
+    outputlines = _run_ppdump(["-i", "all", "-f %s" % _getdbpath()])
     _check_table(outputlines)
 
 
 def testCandidateFilterAll():
     """Test ppdump with --candidate-filter=all"""
     outputlines = _run_ppdump(
-        ["-f %s" % _getpopdbpath(), "--candidate-filter=all"]
+        ["-f %s" % _getpopdbpath(), "--candidate-filter=all", "-i", "all"]
     )
     expect = [
         ["iteration_number", "candidate_number", "merit_value"],
@@ -293,7 +293,7 @@ def testCandidateFilterAll():
 def testCandidateFilterMin():
     """Test ppdump with --candidate-filter=min"""
     outputlines = _run_ppdump(
-        ["-f %s" % _getpopdbpath(), "--candidate-filter=min"]
+        ["-f %s" % _getpopdbpath(), "--candidate-filter=min", "-i", "all"]
     )
     expect = [
         ["iteration_number", "candidate_number", "merit_value"],
@@ -310,7 +310,7 @@ def testCandidateFilterMin():
 def testCandidateFilterMax():
     """Test ppdump with --candidate-filter=max"""
     outputlines = _run_ppdump(
-        ["-f %s" % _getpopdbpath(), "--candidate-filter=max"]
+        ["-f %s" % _getpopdbpath(), "--candidate-filter=max", "-i", "all"]
     )
     expect = [
         ["iteration_number", "candidate_number", "merit_value"],

@@ -13,6 +13,7 @@ import atsim.pro_fit.cfg
 
 from atsim.pro_fit.exceptions import ConfigException
 
+
 class DEAMinimizer(object):
     """Differential Evoluation Algorithm Minimizer.
 

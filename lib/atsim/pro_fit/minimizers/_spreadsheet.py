@@ -35,6 +35,7 @@ class SpreadsheetMinimizer(object):
             self._greenlet.name
         )
         gevent.wait([self._greenlet])
+        return self._greenlet.value
 
     def stopMinimizer(self):
         self._greenlet.kill()

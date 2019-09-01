@@ -88,11 +88,7 @@ class SingleStepMinimizer(object):
 
         class MeritCallback(object):
             def __init__(self, merit, keepFilesDirectory):
-                if merit.afterMerit:
-                    raise ExistingCallbackException(
-                        "Merit.afterMerit not None, not overwriting"
-                    )
-                merit.afterMerit = self
+                merit.afterMerit.append(self)
                 self.minimizerResults = None
                 self._keepFilesDirectory = keepFilesDirectory
 
@@ -117,20 +113,20 @@ class SingleStepMinimizer(object):
             def __call__(self, candidateJobPairList):
                 copyback(self._keepFilesDirectory, candidateJobPairList)
 
-        afterMerit = MeritCallback(merit, self._keepFilesDirectory)
-        beforeRun = BeforeAfterCallback(
+        self.afterMerit = MeritCallback(merit, self._keepFilesDirectory)
+        self.beforeRun = BeforeAfterCallback(
             "beforeRun", merit, self._keepFilesDirectory
         )  # noqa
-        afterRun = BeforeAfterCallback(
+        self.afterRun = BeforeAfterCallback(
             "afterRun", merit, self._keepFilesDirectory
         )  # noqa
 
         def cleanup():
-            merit.afterMerit = None
-            merit.beforeRun = None
-            merit.afterRun = None
+            del merit.afterMerit[merit.afterMerit.index(self.afterMerit)]
+            del merit.beforeRun[merit.beforeRun.index(self.beforeRun)]
+            del merit.afterRun[merit.afterRun.index(self.afterRun)]
 
-        return afterMerit, cleanup
+        return self.afterMerit, cleanup
 
     def _minimize(self, merit):
         """Perform minimization.

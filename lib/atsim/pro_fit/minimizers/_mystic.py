@@ -51,18 +51,14 @@ class _NelderMeadStepMonitor(object):
         self.bestSolution = None
         self.merit = merit
         self.stepCallback = stepCallback
-        self.afterMerit = None
 
         # Register a memoizing callback with the merit function so we can access Job instances at each step.
         self._logger.debug(
             "Registering _NelderMeadMeritCallback with merit object"
         )
-        if merit.afterMerit != None:
-            raise ExistingCallbackException(
-                "Merit object already has afterMerit registered."
-            )
+
         afterMerit = _NelderMeadMeritCallback()
-        self.merit.afterMerit = afterMerit
+        self.merit.afterMerit.append(afterMerit)
         self.afterMerit = afterMerit
 
     def __call__(self, x, fval):
@@ -88,7 +84,7 @@ class _NelderMeadStepMonitor(object):
 
     def cleanUp(self):
         # Unregister callback from the merit function
-        self.merit.afterMerit = None
+        del self.merit.afterMerit[self.merit.afterMerit.index(self.afterMerit)]
 
 
 class _NelderMeadInner(object):

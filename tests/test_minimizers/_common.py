@@ -2,6 +2,8 @@ import os
 
 import mystic.models
 
+from atsim.pro_fit._util import MultiCallback
+
 
 def getResourceDir():
     return os.path.join(os.path.dirname(__file__), os.path.pardir, "resources")
@@ -19,7 +21,7 @@ class MockMeritRosen(object):
     """Mock merit object which evaluates Rosenbrock function"""
 
     def __init__(self):
-        self.afterMerit = None
+        self.afterMerit = MultiCallback()
 
     def calculate(self, candidates):
         c = candidates[0]
@@ -27,8 +29,7 @@ class MockMeritRosen(object):
 
         j = MockJob(c)
 
-        if self.afterMerit:
-            self.afterMerit(v, [(c, [j])])
+        self.afterMerit(v, [(c, [j])])
 
         return v
 
@@ -37,7 +38,7 @@ class MockMerit(object):
     """Mock merit object which returns squared sum of variable values."""
 
     def __init__(self):
-        self.afterMerit = None
+        self.afterMerit = MultiCallback()
 
     def calculate(self, candidates, returnCandidateJobPairs=False):
         retvals = []
@@ -48,8 +49,7 @@ class MockMerit(object):
             retvals.append(vsum)
             amvals.append((c, [j]))
 
-        if self.afterMerit:
-            self.afterMerit(retvals, amvals)
+        self.afterMerit(retvals, amvals)
 
         if returnCandidateJobPairs:
             return (retvals, amvals)

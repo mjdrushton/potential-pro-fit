@@ -4,5 +4,7 @@ class MockJobFactory(object):
         self.evaluators = evaluators
 
     @staticmethod
-    def createFromConfig(jobpath, runnername, jobname, evaluators, cfgitems):
+    def createFromConfig(
+        jobpath, fit_root_path, runnername, jobname, evaluators, cfgitems
+    ):
         return MockJobFactory(runnername, evaluators)

@@ -98,6 +98,7 @@ def testUrlParse():
     assert port == 2222
 
 
+@pytest.mark.slow
 def testSingle(runfixture, vagrant_basic):
     import logging
     import sys
@@ -109,6 +110,7 @@ def testSingle(runfixture, vagrant_basic):
     runnertestjob(runfixture, 0, expectstderr_stdout=True)
 
 
+@pytest.mark.slow
 def testAllInSingleBatch(runfixture, vagrant_basic):
     runner = _createRunner(runfixture, vagrant_basic, 3)
     _runBatch(runner, runfixture.jobs).join()
@@ -118,6 +120,7 @@ def testAllInSingleBatch(runfixture, vagrant_basic):
     assert runner.close().wait(10)
 
 
+@pytest.mark.slow
 def testAllInMultipleBatch(runfixture, vagrant_basic):
     runner = _createRunner(runfixture, vagrant_basic, 3)
 
@@ -186,6 +189,7 @@ def _read_pids(channel):
         channel.send(open(path).read())
 
 
+@pytest.mark.slow
 def testTerminate(tmpdir_factory, runfixture, vagrant_basic):
     """Test runner future's .terminate() method."""
     logger = logging.getLogger(__name__).getChild("testTerminate")
@@ -333,6 +337,7 @@ def testTerminate(tmpdir_factory, runfixture, vagrant_basic):
     isdirchannel.waitclose()
 
 
+@pytest.mark.slow
 def testClose(runfixture, vagrant_basic, tmpdir_factory):
     """Test runner's .close() method."""
     tmpdir = tmpdir_factory.mktemp("jobs")
@@ -423,6 +428,7 @@ def testClose(runfixture, vagrant_basic, tmpdir_factory):
     assert rstatus.numchannels == 0
 
 
+@pytest.mark.slow
 def testBatchTerminate2(runfixture, vagrant_basic, tmpdir_factory):
     """Test runner's .close() method."""
     tmpdir = tmpdir_factory.mktemp("jobs")

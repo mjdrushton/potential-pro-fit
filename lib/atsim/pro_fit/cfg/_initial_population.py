@@ -151,7 +151,9 @@ class _Distribution_Factory:
         )
 
     def _create_uniform_distribution(self):
-        distn = population_generators.Uniform_Variable_Distributions(self.initialVariables)
+        distn = population_generators.Uniform_Variable_Distributions(
+            self.initialVariables
+        )
         return distn
 
     def _create_bias_distribution(self, distn_string):
@@ -174,7 +176,9 @@ class _Distribution_Factory:
         else:
             shape = 10.0
 
-        distn = population_generators.PERT_Variable_Distributions(self.initialVariables, shape=shape)
+        distn = population_generators.PERT_Variable_Distributions(
+            self.initialVariables, shape=shape
+        )
         return distn
 
 
@@ -214,10 +218,9 @@ def add_initial_population_options(cfgparse):
         "population_load_from_ppdump",
         "population_load_from_ppdump",
         default=None,
-    ).add_option(
+    ).add_str_option(
         "population_distribution",
         "population_distribution",
-        str,
         default="uniform",
     )
 

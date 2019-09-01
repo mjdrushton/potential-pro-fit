@@ -52,8 +52,9 @@ def mockfuture(jobs):
 
 
 class MockEvaluator(object):
-    def __init__(self, evalfunc):
+    def __init__(self, evalfunc, name="v"):
         self.evalfunc = evalfunc
+        self.name = name
 
     def __call__(self, job):
         opath = os.path.join(job.path, "job_files", "output", "output.res")
@@ -69,7 +70,7 @@ class MockEvaluator(object):
 
         return [
             pro_fit.evaluators.EvaluatorRecord(
-                "v", None, None, meritValue=self.evalfunc(d)
+                self.name, None, None, meritValue=self.evalfunc(d)
             )
         ]
 

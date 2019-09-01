@@ -32,6 +32,7 @@ def clearqueue(vagrant_torque):
     return vagrant_torque
 
 
+@pytest.mark.slow
 def testStartChannel(vagrant_torque, channel_id):
     gw = _mkexecnetgw(vagrant_torque)
     ch = gw.remote_exec(_pbs_remote_exec)
@@ -93,6 +94,7 @@ def testPBSIdentify():
     assert actual.flavour == "PBSPro"
 
 
+@pytest.mark.slow
 def testQSub(clearqueue, channel_id):
     gw = _mkexecnetgw(clearqueue)
     ch = gw.remote_exec(_pbs_remote_exec)
@@ -134,6 +136,7 @@ def testQSub(clearqueue, channel_id):
         ch.waitclose(5)
 
 
+@pytest.mark.slow
 def testQSubSingleJob(clearqueue, channel_id):
     gw = _mkexecnetgw(clearqueue)
     ch = gw.remote_exec(_pbs_remote_exec)
@@ -163,6 +166,7 @@ def testQSubSingleJob(clearqueue, channel_id):
         ch.waitclose(5)
 
 
+@pytest.mark.slow
 def testQSelect(clearqueue, channel_id):
     gw = _mkexecnetgw(clearqueue)
     ch = gw.remote_exec(_pbs_remote_exec)
@@ -203,6 +207,7 @@ def testQSelect(clearqueue, channel_id):
         ch.send(None)
 
 
+@pytest.mark.slow
 def testQRls(clearqueue, channel_id):
     gw = _mkexecnetgw(clearqueue)
     ch = gw.remote_exec(_pbs_remote_exec)
@@ -250,6 +255,7 @@ def testQRls(clearqueue, channel_id):
         ch.waitclose(5)
 
 
+@pytest.mark.slow
 def testQDel(clearqueue, channel_id):
     gw = _mkexecnetgw(clearqueue)
     ch = gw.remote_exec(_pbs_remote_exec)

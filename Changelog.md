@@ -4,6 +4,7 @@
 ### Changed
 
 ### Added
+- Added the 'bad_merit_substitute' for the `[FittingRun]` section of `fit.cfg`. This allows invalid merit values (nan) to be substituted with a large float.
 - Added the --iteration/-i option to the ppdump tool. This allows the last, best or numbered steps from a fitting run to be dumped.
 - Population minimizers:
     + Population based minimizers now include initial variable values in their initial populations, this behaviour can be controlled using the `population_include_orig_vars` fit.cfg option.

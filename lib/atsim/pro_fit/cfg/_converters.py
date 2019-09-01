@@ -3,6 +3,53 @@
 from atsim.pro_fit.exceptions import ConfigException
 
 import operator
+import sys
+
+
+class _Converter(object):
+    def __init__(
+        self,
+        clsname,
+        key,
+        convfunc,
+        bounds,
+        bounds_inclusive=(True, True),
+        destination_typename=None,
+    ):
+
+        self.clsname = clsname
+        self.key = key
+        self.convfunc = convfunc
+        self.bounds = bounds
+        self.bounds_inclusive = bounds_inclusive
+        self.destination_typename = destination_typename
+
+    def __call__(self, v):
+        try:
+            v = convfunc(v)
+        except:
+            raise ConfigException(
+                "Could not parse option '{}' for {}: {}".format(
+                    self.key, self.clsname, v
+                )
+            )
+
+        if self.bounds:
+            low_inc, high_inc = self.bounds_inclusive
+            lowop = operator.ge if low_inc else operator.gt
+            highop = operator.le if high_inc else operator.lt
+
+            if not (lowop(v, self.bounds[0]) and highop(v, self.bounds[1])):
+                raise ConfigException(
+                    "Option value does not lie within bounds ({}, {}). Option key '{}' for {}: {}".format(
+                        self.bounds[0],
+                        self.bounds[1],
+                        self.key,
+                        self.clsname,
+                        v,
+                    )
+                )
+        return v
 
 
 def convert_factory(
@@ -10,7 +57,7 @@ def convert_factory(
 ):
     """Creates a callable which takes a single argument.
 
-    This argument is passed to convfunc - if this raises an exceeption
+    This argument is passed to convfunc - if this raises an exception
     this is converted to ConfigException with an appropriate error 
     message.
     
@@ -26,34 +73,14 @@ def convert_factory(
     
     Returns:
         callable -- conversion function that takes single value and converts it
-            from a string to desired type. If this fails, raises ConfigException.
-    """
+            from a string to desired type. If this fails, raises ConfigException. """
+    converter = _Converter(clsname, key, convfunc, bounds, bounds_inclusive)
+    return converter
 
-    def f(v):
-        try:
-            v = convfunc(v)
-        except:
-            raise ConfigException(
-                "Could not parse option '{}' for {}: {}".format(
-                    key, clsname, v
-                )
-            )
-
-        if bounds:
-            low_inc, high_inc = bounds_inclusive
-            lowop = operator.ge if low_inc else operator.gt
-            highop = operator.le if high_inc else operator.lt
-
-            if not (lowop(v, bounds[0]) and highop(v, bounds[1])):
-                raise ConfigException(
-                    "Option value does not lie within bounds ({}, {}). Option key '{}' for {}: {}".format(
-                        bounds[0], bounds[1], key, clsname, v
-                    )
-                )
-        return v
-
-    return f
-
+def str_convert(clsname, key):
+    converter = convert_factory(clsname, key, str, bounds=None)
+    converter.destination_typename = "str"
+    return converter
 
 def int_convert(clsname, key, bounds=None, bounds_inclusive=(True, True)):
     """Function factory for converting option values to integers.
@@ -72,7 +99,9 @@ def int_convert(clsname, key, bounds=None, bounds_inclusive=(True, True)):
     Returns:
         callable -- Option conversion function
     """
-    return convert_factory(clsname, key, int, bounds, bounds_inclusive)
+    converter = convert_factory(clsname, key, int, bounds, bounds_inclusive)
+    converter.destination_typename = "int"
+    return converter
 
 
 def float_convert(clsname, key, bounds=None, bounds_inclusive=(True, True)):
@@ -92,7 +121,9 @@ def float_convert(clsname, key, bounds=None, bounds_inclusive=(True, True)):
     Returns:
         callable -- Option conversion function
     """
-    return convert_factory(clsname, key, float, bounds, bounds_inclusive)
+    converter = convert_factory(clsname, key, float, bounds, bounds_inclusive)
+    converter.destination_typename = "float"
+    return converter
 
 
 def random_seed_option(clsname, key):
@@ -109,16 +140,19 @@ def random_seed_option(clsname, key):
     Returns:
         callable -- Option conversion function
     """
-    iconv = int_convert(clsname, key, (0, float("inf")))
+
     import time
 
-    def f(v):
-        if v:
-            return iconv(v)
-        else:
-            return int(time.time())
+    iconv = int_convert(clsname, key, (0, sys.maxsize))
 
-    return f
+    def convfunc(v):
+        if v is None:
+            return int(time.time())
+        else:
+            return int(v)
+
+    iconv.convfunc = convfunc
+    return iconv
 
 
 def choice_convert(clsname, key, choices):
@@ -133,25 +167,31 @@ def choice_convert(clsname, key, choices):
         callable -- Option conversion function
     """
 
-    choices = set(choices)
-    choicestring = sorted(list(choices))
-    if len(choicestring) == 2:
-        choicestring = " or ".join(choicestring)
-    else:
-        choicestring = ", ".join(choicestring)
+    class _Choice_Converter(_Converter):
+        def __init__(self, clsname, key, choices):
+            super().__init__(clsname, key, None, None, None)
+            self.choices = choices
+            self.destination_typename = "(see allowed values)"
 
-    def f(v):
-        v = v.strip()
-        vt = v.split()[0]
-        if not vt in choices:
-            raise ConfigException(
-                "Could not parse option '{}' for {}. Value '{}' should be one of {}. ".format(
-                    key, clsname, v, choicestring
+            self.choicestring = sorted(list(choices))
+            if len(self.choicestring) == 2:
+                self.choicestring = " or ".join(self.choicestring)
+            else:
+                self.choicestring = ", ".join(self.choicestring)
+
+        def __call__(self, v):
+            v = v.strip()
+            vt = v.split()[0]
+            if not vt in self.choices:
+                raise ConfigException(
+                    "Could not parse option '{}' for {}. Value '{}' should be one of {}. ".format(
+                        self.key, self.clsname, v, self.choicestring
+                    )
                 )
-            )
-        return v
+            return v
 
-    return f
+    conv = _Choice_Converter(clsname, key, choices)
+    return conv
 
 
 def boolean_convert(clsname, key):
@@ -177,7 +217,12 @@ def boolean_convert(clsname, key):
         else:
             return False
 
-    return f
+    converter = convert_factory(
+        clsname, key, f, bounds=None, bounds_inclusive=None
+    )
+    converter.destination_typename = "bool"
+    converter.choicestring = sconv.choicestring
+    return converter
 
 
 def infile_convert(clsname, key):
@@ -196,4 +241,6 @@ def infile_convert(clsname, key):
             )
         return v
 
-    return f
+    converter = convert_factory(clsname, key, f, bounds=None)
+    converter.destination_typename = "file path"
+    return converter

@@ -5,7 +5,9 @@ import os
 import configparser
 import io
 
-from atsim import pro_fit
+import atsim.pro_fit.minimizers
+import atsim.pro_fit.variables
+
 
 from ._common import *
 
@@ -31,7 +33,7 @@ filename : %(filename)s
         cfg.read_file(io.StringIO(config))
         configitems = cfg.items("Minimizer")
 
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [
                 ("A", 10.0, False),
                 ("B", 20.0, True),
@@ -40,11 +42,11 @@ filename : %(filename)s
             ]
         )
 
-        minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(
+        minimizer = atsim.pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(
             variables, configitems
         )
         self.assertEqual(
-            pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer)
+            atsim.pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer)
         )
 
         minimizer.stepCallback = StepCallBack()
@@ -91,7 +93,7 @@ start_row : 1
         cfg.read_file(io.StringIO(config))
         configitems = cfg.items("Minimizer")
 
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [
                 ("A", 10.0, False),
                 ("B", 20.0, True),
@@ -100,11 +102,11 @@ start_row : 1
             ]
         )
 
-        minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(
+        minimizer = atsim.pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(
             variables, configitems
         )
         self.assertEqual(
-            pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer)
+            atsim.pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer)
         )
 
         minimizer.stepCallback = StepCallBack()
@@ -139,7 +141,7 @@ end_row : 2
         cfg.read_file(io.StringIO(config))
         configitems = cfg.items("Minimizer")
 
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [
                 ("A", 10.0, False),
                 ("B", 20.0, True),
@@ -148,11 +150,11 @@ end_row : 2
             ]
         )
 
-        minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(
+        minimizer = atsim.pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(
             variables, configitems
         )
         self.assertEqual(
-            pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer)
+            atsim.pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer)
         )
 
         minimizer.stepCallback = StepCallBack()
@@ -188,7 +190,7 @@ end_row : 2
         cfg.read_file(io.StringIO(config))
         configitems = cfg.items("Minimizer")
 
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [
                 ("A", 10.0, False),
                 ("B", 20.0, True),
@@ -197,11 +199,11 @@ end_row : 2
             ]
         )
 
-        minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(
+        minimizer = atsim.pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(
             variables, configitems
         )
         self.assertEqual(
-            pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer)
+            atsim.pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer)
         )
 
         minimizer.stepCallback = StepCallBack()
@@ -234,7 +236,7 @@ batch_size : 2
         cfg.read_file(io.StringIO(config))
         configitems = cfg.items("Minimizer")
 
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [
                 ("A", 10.0, False),
                 ("B", 20.0, True),
@@ -243,11 +245,11 @@ batch_size : 2
             ]
         )
 
-        minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(
+        minimizer = atsim.pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(
             variables, configitems
         )
         self.assertEqual(
-            pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer)
+            atsim.pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer)
         )
 
         cvalpairs = []
@@ -256,7 +258,7 @@ batch_size : 2
             cvalpairs.append((meritvals, candvalpairs))
 
         merit = MockMerit()
-        merit.afterMerit = afterMerit
+        merit.afterMerit.append(afterMerit)
         optimized = minimizer.minimize(merit)
 
         testutil.compareCollection(
@@ -314,7 +316,7 @@ batch_size : 2
         cfg.read_file(io.StringIO(config))
         configitems = cfg.items("Minimizer")
 
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [
                 ("A", 10.0, False),
                 ("B", 20.0, True),
@@ -323,11 +325,11 @@ batch_size : 2
             ]
         )
 
-        minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(
+        minimizer = atsim.pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(
             variables, configitems
         )
         self.assertEqual(
-            pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer)
+            atsim.pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer)
         )
 
         cvalpairs = []
@@ -336,7 +338,7 @@ batch_size : 2
             cvalpairs.append((meritvals, candvalpairs))
 
         merit = MockMerit()
-        merit.afterMerit = afterMerit
+        merit.afterMerit.append(afterMerit)
         optimized = minimizer.minimize(merit)
 
         testutil.compareCollection(
@@ -389,7 +391,7 @@ row_step : 2
         cfg.read_file(io.StringIO(config))
         configitems = cfg.items("Minimizer")
 
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [
                 ("A", 10.0, False),
                 ("B", 20.0, True),
@@ -398,11 +400,11 @@ row_step : 2
             ]
         )
 
-        minimizer = pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(
+        minimizer = atsim.pro_fit.minimizers.SpreadsheetMinimizer.createFromConfig(
             variables, configitems
         )
         self.assertEqual(
-            pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer)
+            atsim.pro_fit.minimizers.SpreadsheetMinimizer, type(minimizer)
         )
 
         cvalpairs = []
@@ -411,7 +413,7 @@ row_step : 2
             cvalpairs.append((meritvals, candvalpairs))
 
         merit = MockMerit()
-        merit.afterMerit = afterMerit
+        merit.afterMerit.append(afterMerit)
         optimized = minimizer.minimize(merit)
 
         testutil.compareCollection(
@@ -453,7 +455,7 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
         )
 
         with open(spreadfilename) as infile:
-            variables = pro_fit.variables.Variables(
+            variables = atsim.pro_fit.variables.Variables(
                 [
                     ("A", 10.0, True),
                     ("B", 20.0, True),
@@ -485,7 +487,7 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
         )
 
         with open(spreadfilename) as infile:
-            variables = pro_fit.variables.Variables(
+            variables = atsim.pro_fit.variables.Variables(
                 [
                     ("A", 10.0, False),
                     ("B", 20.0, False),
@@ -516,7 +518,7 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
             getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv"
         )
 
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [
                 ("A", 10.0, True),
                 ("B", 20.0, False),
@@ -552,7 +554,7 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
             getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv"
         )
 
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [
                 ("Label", 10.0, True),
                 ("A", 10.0, True),
@@ -589,7 +591,7 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
         spreadfilename = os.path.join(
             getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv"
         )
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [("A", 10.0, True)], [(float("-inf"), 15.0)]
         )
 
@@ -618,7 +620,7 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
             getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv"
         )
 
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [
                 ("A", 10.0, True),
                 ("B", 20.0, True),
@@ -678,7 +680,7 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
             getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv"
         )
 
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [
                 ("A", 10.0, True),
                 ("B", 20.0, True),
@@ -705,7 +707,7 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
             getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv"
         )
 
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [
                 ("A", 10.0, True),
                 ("B", 20.0, True),
@@ -729,7 +731,7 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
     def testBlankSpreadSheet(self):
         """Test that empty spreadsheets raise appropriate exceptions."""
 
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [
                 ("A", 10.0, True),
                 ("B", 20.0, True),
@@ -759,7 +761,7 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
             getResourceDir(), "spreadsheet_minimizer", "spreadsheet.csv"
         )
 
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [
                 ("A", 10.0, True),
                 ("B", 20.0, True),
