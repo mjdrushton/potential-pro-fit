@@ -430,7 +430,7 @@ class FitConfig(object):
             )
             merit.afterEvaluation.append(after_evaluation)
             self._logger.info(
-                "bad_merit_substitute specified. Invalid merit values will be repalced with %f".format(
+                "bad_merit_substitute specified. Invalid merit values will be replaced with {}".format(
                     self.bad_merit_substitute
                 )
             )
@@ -589,7 +589,7 @@ class FitConfig(object):
             value = self._cfg.get("FittingRun", "bad_merit_substitute")
             if value:
                 value = converter(value)
-        except (configparser.NoSectionError, configparser.NoOptionError) as e:
+        except (configparser.NoSectionError, configparser.NoOptionError) as _e:
             pass
 
         return value

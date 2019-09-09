@@ -26,7 +26,7 @@ class _Converter(object):
 
     def __call__(self, v):
         try:
-            v = convfunc(v)
+            v = self.convfunc(v)
         except:
             raise ConfigException(
                 "Could not parse option '{}' for {}: {}".format(

@@ -107,7 +107,7 @@ class SingleStepMinimizer(object):
                     raise ExistingCallbackException(
                         "Merit.%s not None, not overwriting" % self.attr
                     )
-                setattr(merit, self.attr, self)
+                getattr(merit, self.attr).append(self)
                 self._keepFilesDirectory = keepFilesDirectory
 
             def __call__(self, candidateJobPairList):
