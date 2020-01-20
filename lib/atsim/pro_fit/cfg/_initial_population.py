@@ -3,7 +3,7 @@ import sys
 from atsim.pro_fit.exceptions import ConfigException
 from atsim.pro_fit.variables import VariableException
 
-import atsim.pro_fit.minimizers.population_generators as population_generators
+from atsim.pro_fit.minimizers import population_generators
 
 
 class Population_To_Generator_Adapter(object):
