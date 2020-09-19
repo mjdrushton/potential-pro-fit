@@ -35,7 +35,7 @@ class Replace_Merit_After_Evaluation_Callback(object):
         self.replacement_value = replacement_value
 
     def __call__(self, candidate_job_pairs):
-        for v, jobs in candidate_job_pairs:
+        for _v, jobs in candidate_job_pairs:
             for j in jobs:
                 for erl in j.evaluatorRecords:
                     for er in erl:

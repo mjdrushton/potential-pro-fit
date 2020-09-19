@@ -19,7 +19,7 @@ def parseCONFIG(infile):
     # Read the toxyz matrix
     re_split = re.compile("(.{20})(.{20})(.{20})")
     dlvec = []
-    for i in range(3):
+    for _ in range(3):
         line = infile.readline()
         c1, c2, c3 = re_split.match(line).groups()
         dlvec.append([float(c1), float(c2), float(c3)])

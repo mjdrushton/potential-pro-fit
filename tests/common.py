@@ -106,7 +106,7 @@ class MockJobFactory(object):
         rfdir = os.path.join(destdir, "runner_files")
         os.mkdir(rfdir)
 
-        with open(os.path.join(rfdir, "testfile"), "w") as testfile:
+        with open(os.path.join(rfdir, "testfile"), "w") as _testfile:
             pass
 
         # Create runjob

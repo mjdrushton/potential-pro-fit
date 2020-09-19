@@ -357,7 +357,7 @@ class TableEvaluatorCreateFromConfigTestCase(unittest.TestCase):
     def testExpectColumnValidation(self):
         """Test TableEvaluator._validateExpectColumns()"""
 
-        expression = "(e_A+e_B) - (r_A + r_B)"
+        # expression = "(e_A+e_B) - (r_A + r_B)"
 
         import io
 
@@ -633,7 +633,6 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
         import os
 
         tempdir = tempfile.mkdtemp()
-        oldir = os.getcwd()
         try:
             # Create an empty file
             os.chdir(tempdir)

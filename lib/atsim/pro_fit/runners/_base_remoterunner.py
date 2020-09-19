@@ -685,7 +685,7 @@ class BaseRemoteRunner(object):
 
         identityfile = None
         username, host, port, path = _execnet.urlParse(remotehost)
-        gwurl, sshcfgfile = _execnet.makeExecnetConnectionSpec(
+        gwurl, _sshcfgfile = _execnet.makeExecnetConnectionSpec(
             username, host, port, identityfile, extra_ssh_options
         )
 
@@ -808,7 +808,7 @@ class BaseRemoteRunner(object):
                 "remotehost configuration item must start with ssh://"
             )
 
-        username, host, port, path = _execnet.urlParse(remotehost)
+        _username, host, _port, _path = _execnet.urlParse(remotehost)
         if not host:
             raise ConfigException(
                 "remotehost configuration item should be of form ssh://[username@]hostname/remote_path"
