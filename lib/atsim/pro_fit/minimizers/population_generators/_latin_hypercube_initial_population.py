@@ -39,11 +39,11 @@ class Latin_Hypercube_InitialPopulation(
     ):
         """Create an initial population of candidates based on the bounds in 
 
-        
+
         Arguments:
             initial_variables {atsim.pro_fit.variables.Variables} -- Initial variables
             population_size {int} -- Number of candidate sets to generate.
-        
+
         Keyword Arguments:
             criterion {Criterion or None} -- Determines how points are arranged in interval.
                 * "random": randomizes the points within the intervals

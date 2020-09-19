@@ -37,6 +37,9 @@ When you are at the interpreter you can do:
 """
 
 
+from sys import exc_info
+from cherrypy import request
+import cherrypy
 from sqlalchemy import MetaData, create_engine, __version__ as sa_version
 from sqlalchemy.orm import scoped_session, sessionmaker
 
@@ -82,11 +85,6 @@ def configure_session_for_app(app, echo=False, convert_unicode=True):
     if not dburi:
         raise RuntimeError("This app is not configured for SATransaction.")
     configure_session(dburi, echo=echo, convert_unicode=convert_unicode)
-
-
-import cherrypy
-from cherrypy import request
-from sys import exc_info
 
 
 class SATransaction(cherrypy.Tool):

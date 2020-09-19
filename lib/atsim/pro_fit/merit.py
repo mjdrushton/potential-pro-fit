@@ -26,7 +26,7 @@ class Replace_Merit_After_Evaluation_Callback(object):
 
     def __init__(self, false_predicate, replacement_value):
         """Replace merit values of evaluators based on when predicate is false.
-        
+
         Arguments:
             false_predicate {callable} -- Unary predicate that accepts merit value as its argument. Returns True for evaluator records that should not be modified.
             replacement_value {float} -- merit value to be used when predicate returns false.

@@ -20,7 +20,7 @@ class _QueueingSystemRunnerCloseThread(RemoteRunnerCloseThreadBase):
 
 class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
     """Generic runner class for batch queueing systems. This is an abstract base class designed to be used as the basis for publicly accesible runners.
-  
+
   Sub-classes should override this class and provide an implementation of the `makeRunChannel` method."""
 
     """Suffix appended to uuid to produce channel's ID"""
@@ -92,7 +92,7 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
 
     Args:
       channel_id (str) : String used to identify created channel.
-      
+
     Returns:
       atsim.pro_fit._channel.AbstractChannel : Channel instance that supports the protocol expected by QueueingSystemClient."""
         raise NotImplementedError(
@@ -126,7 +126,7 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
     Returns:
       dict: If option is found returned dictionary is of form `{ 'header_include' : VALUE}` where `VALUE` is contents
             of file referred to by the `header_include` configuration option. If option is not found, `VALUE` is `None`.
-      
+
     Raises:
       atsim.pro_fit.exceptions.ConfigException: thrown if configuration problem found."""
         cfgdict = dict(cfgitems)
@@ -154,7 +154,7 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
     Returns:
       dict: If option is dictionary `{ 'arraysize' : VALUE}` is returned. Where `VALUE` is value of `arraysize` configuration option. 
             If option is not found, `VALUE` is `None`.
-      
+
     Raises:
       atsim.pro_fit.exceptions.ConfigException: thrown if configuration problem found."""
         cfgdict = dict(cfgitems)
@@ -192,7 +192,7 @@ class QueueingSystemRunnerBaseClass(BaseRemoteRunner):
 
     Returns:
       dict: If option is dictionary `{ 'pollinterval' : VALUE}` is returned. Where `VALUE` is value of `pollinterval` configuration option. 
-      
+
     Raises:
       atsim.pro_fit.exceptions.ConfigException: thrown if configuration problem found."""
         cfgdict = dict(cfgitems)

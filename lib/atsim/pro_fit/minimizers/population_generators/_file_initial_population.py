@@ -12,11 +12,11 @@ class File_Initial_Population(Predefined_Initial_Population):
         """Create population from CSV data contained in infile.
 
         Column titles are used as variable names.
-        
+
         Arguments:
             initialVariables {atsim.pro_fit.variables.Variables} -- Initial variables
             infile {file} -- File containing data
-        
+
         Keyword Arguments:
             max_population_size {int} -- If specified limit number of rows read from infile to this number (default: {None})
         """

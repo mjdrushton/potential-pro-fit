@@ -409,7 +409,7 @@ class FitConfig(object):
     @param prefix Prefix to be returned
     @param s String to be stripped
     @return s with 'prefix:' stripped from s"""
-        k = s[len(prefix) + 1 :]
+        k = s[len(prefix) + 1:]
         return k.strip()
 
     def _createMerit(self):

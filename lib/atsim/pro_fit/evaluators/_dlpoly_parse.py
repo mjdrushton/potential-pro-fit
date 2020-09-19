@@ -202,7 +202,7 @@ def _parseSTATISInternal(infile):
         blockdict["time"] = float(time)
 
         # Stick any extra items in here
-        blockdict["extra_items"] = block[len(keys) :]
+        blockdict["extra_items"] = block[len(keys):]
         yield blockdict
     infile.close()
 

@@ -23,7 +23,7 @@ class Predefined_Initial_Population(object):
         variable label to variable value. These dictionaries must include keys
         for all the fitting variables (they can include more than these but
         only fit keys will be used). Example:
-        
+
         ```
             [
                 {'a' :  1.0}, 'c' : 2.0},
@@ -51,7 +51,7 @@ class Predefined_Initial_Population(object):
         Arguments:
             initialVariables {atsim.pro_fit.variables.Variables} -- Variables defining
                 fitting keys and variable bounds.
-        
+
         Keyword Arguments:
             from_dict {list} -- See above for format. (default: {None})
             from_array {list} -- See above for format. (default: {None})

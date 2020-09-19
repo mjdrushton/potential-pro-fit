@@ -136,7 +136,6 @@ class Create_From_Config_Parser(object):
         self._sub_parsers.append(sub_parser)
         return sub_parser
 
-
     def add_option(
         self, cfg_key, out_key, convert, default=None, required=False
     ):
@@ -144,9 +143,10 @@ class Create_From_Config_Parser(object):
         self._options.append(option)
         return self
 
-    def add_str_option(self, cfg_key, out_key, default = None, required=False):
+    def add_str_option(self, cfg_key, out_key, default=None, required=False):
         converter = str_convert(self.clsname, cfg_key)
-        self.add_option(cfg_key, out_key, converter, default=default, required=required)
+        self.add_option(cfg_key, out_key, converter,
+                        default=default, required=required)
         return self
 
     def add_float_option(
@@ -308,12 +308,12 @@ class Create_From_Config_Parser(object):
         to the args or kwargs lists based on their `out_key` names. 
 
         This assumes call_me takes the same number of arguments as there are options.
-        
+
         Arguments:
             parsed_options {list} -- List of options as returned by `parse()`
             call_me {callable} -- Callable to introspected, the arguments returned by this method will be suitable
                 for calling this function.
-        
+
         Keyword Arguments:
             extra_args {dict} -- Additional arguments to call_me that do not appear in parsed_options (default: {{}})
             drop_self {bool} -- If True assume first arg of call_me is self and do not include in args.
@@ -408,7 +408,7 @@ class Create_From_Config_Parser(object):
     def to_docs(self, outfile):
         """Introspect this parser and format its options in restructured text
         suitable for including in documentation.
-        
+
         Arguments:
             outfile {file} -- File into which documentation will be written.
         """

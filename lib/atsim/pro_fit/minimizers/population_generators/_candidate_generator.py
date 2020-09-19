@@ -32,7 +32,7 @@ class Candidate_Generator(object):
         0 and 1 and passes them through each variable's statistical
         distribution (managed by the VariableDistributions class) to to 
         produce a candidate in variable space.
-        
+
         `norm_values` can be a 1D list or numpy array with length 
         equal to the number of fitting values.
 

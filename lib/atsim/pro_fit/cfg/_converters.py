@@ -60,7 +60,7 @@ def convert_factory(
     This argument is passed to convfunc - if this raises an exception
     this is converted to ConfigException with an appropriate error 
     message.
-    
+
     Arguments:
         clsname {str} -- used in error messages to show which class value
             conversion is being performed.
@@ -70,32 +70,34 @@ def convert_factory(
         bounds_inclusive {tuple} -- Two value tuple. True value indicates inclusive range.
             So (True, True) means high and low values shoud be included in range (low <= v <= high).
             (True, Fale) means (low <= v < high)
-    
+
     Returns:
         callable -- conversion function that takes single value and converts it
             from a string to desired type. If this fails, raises ConfigException. """
     converter = _Converter(clsname, key, convfunc, bounds, bounds_inclusive)
     return converter
 
+
 def str_convert(clsname, key):
     converter = convert_factory(clsname, key, str, bounds=None)
     converter.destination_typename = "str"
     return converter
 
+
 def int_convert(clsname, key, bounds=None, bounds_inclusive=(True, True)):
     """Function factory for converting option values to integers.
-    
+
     Arguments:
         clsname {str} -- Used in error messages to describe class where conversion is being performed.
         key {str} -- Defines option name used in error messages.
-    
+
     Keyword Arguments:
         bounds {tuple} -- (low, high) tuple giving allowed bounds for option (default: {None})
         bounds_inclusive {tuple} -- Two value tuple. True value indicates inclusive range.
             So (True, True) means high and low values shoud be included in range (low <= v <= high).
             (True, Fale) means (low <= v < high)
 
-    
+
     Returns:
         callable -- Option conversion function
     """
@@ -106,18 +108,18 @@ def int_convert(clsname, key, bounds=None, bounds_inclusive=(True, True)):
 
 def float_convert(clsname, key, bounds=None, bounds_inclusive=(True, True)):
     """Function factory for converting option values to floats.
-    
+
     Arguments:
         clsname {str} -- Used in error messages to describe class where conversion is being performed.
         key {str} -- Defines option name used in error messages.
-    
+
     Keyword Arguments:
         bounds {tuple} -- (low, high) tuple giving allowed bounds for option (default: {None})
         bounds_inclusive {tuple} -- Two value tuple. True value indicates inclusive range.
             So (True, True) means high and low values shoud be included in range (low <= v <= high).
             (True, Fale) means (low <= v < high)
 
-    
+
     Returns:
         callable -- Option conversion function
     """
@@ -132,11 +134,11 @@ def random_seed_option(clsname, key):
      If None is passed to the returned function then a random seed is
      generated from the current time. Otherwise the conversion function expects an
      integer.
-    
+
     Arguments:
         clsname {str} -- Used in error messages to describe class where conversion is being performed.
         key {str} -- Defines option name used in error messages.
-    
+
     Returns:
         callable -- Option conversion function
     """
@@ -157,12 +159,12 @@ def random_seed_option(clsname, key):
 
 def choice_convert(clsname, key, choices):
     """Function factory for options that can only take a limited set of choices.
-    
+
     Arguments:
         clsname {str} -- Used in error messages to describe class where conversion is being performed.
         key {str} -- Defines option name used in error messages.
         choices {list} -- List of options allowed as input to conversion function.
-    
+
     Returns:
         callable -- Option conversion function
     """
@@ -197,11 +199,11 @@ def choice_convert(clsname, key, choices):
 def boolean_convert(clsname, key):
     """Function factory for parsing values into booleans from "True" or "False"
     inputs.
-    
+
     Arguments:
         clsname {str} -- Used in error messages to describe class where conversion is being performed.
         key {str} -- Defines option name used in error messages.
-    
+
     Returns:
         callable -- Option conversion function
     """

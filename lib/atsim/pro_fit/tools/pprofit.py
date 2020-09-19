@@ -1,36 +1,32 @@
 #! /usr/bin/env python
+import gevent
+import jinja2
+import curses
+import importlib_resources
+import pkgutil
+import contextlib
+import tempfile
+import shutil
+import logging.config
+import logging
+import os
+import sys
+import argparse
+from atsim.pro_fit.exceptions import ConfigException
+from atsim.pro_fit.console import Console
+from atsim.pro_fit._util import MultiCallback, iter_namespace
+import atsim.pro_fit.exceptions
+import atsim.pro_fit.fitconfig
+import atsim.pro_fit.runners
+import atsim.pro_fit.reporters
+import atsim.pro_fit.minimizers
+import atsim.pro_fit.metaevaluators
+import atsim.pro_fit.jobfactories
+import atsim.pro_fit.evaluators
 from gevent import monkey
 
 monkey.patch_all()
 monkey.patch_thread()
-
-import atsim.pro_fit.evaluators
-import atsim.pro_fit.jobfactories
-import atsim.pro_fit.metaevaluators
-import atsim.pro_fit.minimizers
-import atsim.pro_fit.reporters
-import atsim.pro_fit.runners
-import atsim.pro_fit.fitconfig
-import atsim.pro_fit.exceptions
-
-from atsim.pro_fit._util import MultiCallback, iter_namespace
-from atsim.pro_fit.console import Console
-from atsim.pro_fit.exceptions import ConfigException
-
-import argparse
-import sys
-import os
-import logging
-import logging.config
-import shutil
-import tempfile
-import contextlib
-import pkgutil
-import importlib_resources
-import curses
-
-import jinja2
-import gevent
 
 
 def _monkeyPatchExecnetSIGINT():

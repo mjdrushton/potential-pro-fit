@@ -84,7 +84,7 @@ class FormulaMetaEvaluator(object):
             for evalrecords in job.evaluatorRecords:
                 for evalrecord in evalrecords:
                     evaluatorName = evalrecord.evaluatorName[
-                        len(job.name) + 1 :
+                        len(job.name) + 1:
                     ]
                     self._logger.debug("evaluatorName: %s " % evaluatorName)
                     if (

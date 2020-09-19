@@ -4,7 +4,7 @@ def NullStepCallback(minimizerResults):
 
 class Abstract_Base_Minimizer(object):
     """Abstract base class that demonstrated the basic minimizer interface.
-    
+
       class Minimizer:
 
         def minimize(self, merit):
@@ -32,7 +32,6 @@ class Abstract_Base_Minimizer(object):
     """
 
     def __init__(self):
-
         """Callable called at the end of each minimization step. 
         This should be called with a single argument which is an instance of MinimizerResult"""
         self.stepCallBack = NullStepCallback
@@ -47,7 +46,7 @@ class Abstract_Base_Minimizer(object):
 
         Returns:
             {atsim.pro_fit.minimizers.MinimizerResults} -- object representing the results of minimization.
-        
+
         """
         raise NotImplementedError(
             "Inheriting classes should implement minimize() method"
@@ -64,7 +63,7 @@ class Abstract_Base_Minimizer(object):
     def createFromConfig(cls, variables, configitems):
         """Configures an instance of this minimizer from a list of configuration items and variables
 
-        
+
         Arguments:
             variables {atsim.pro_fit.variables.Variables} -- Variables defined in fit.cfg file
             configitems {list} -- list of (OPTION_NAME, OPTION_VALUE) string tuples relevant to this minimizer.

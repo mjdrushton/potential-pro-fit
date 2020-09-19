@@ -2,6 +2,7 @@
 # Modification of code obtained from:
 # http://www.sqlalchemy.org/trac/wiki/UsageRecipes/SchemaDisplay#no1
 
+from sqlalchemy import text
 from sqlalchemy.orm.properties import PropertyLoader
 import pydot
 import types
@@ -191,8 +192,6 @@ try:
 except ImportError:
     PGDialect = None
 
-from sqlalchemy import text
-
 
 def _render_table_html(table, metadata, show_indexes, show_datatypes):
     def format_col_type(col):
@@ -232,7 +231,7 @@ def _render_table_html(table, metadata, show_indexes, show_datatypes):
             html += '<TR><TD BORDER="1" CELLPADDING="0"></TD></TR>'
             for index, defin in list(indexes.items()):
                 ilabel = "UNIQUE" in defin and "UNIQUE " or "INDEX "
-                ilabel += defin[defin.index("(") :]
+                ilabel += defin[defin.index("("):]
                 html += '<TR><TD ALIGN="LEFT">%s</TD></TR>' % ilabel
     html += "</TABLE>>"
     return html

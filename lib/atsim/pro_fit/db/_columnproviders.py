@@ -1,3 +1,9 @@
+import math
+import re
+import operator
+import contextlib
+import functools
+import sqlalchemy as sa
 from ._util import calculatePercentageDifference
 from atsim.pro_fit._util import cmp
 
@@ -5,14 +11,6 @@ from atsim.pro_fit._util import cmp
 from ._metadata import getMetadata
 
 _metadata = getMetadata()
-
-import sqlalchemy as sa
-
-import functools
-import contextlib
-import operator
-import re
-import math
 
 
 def _mean(data):

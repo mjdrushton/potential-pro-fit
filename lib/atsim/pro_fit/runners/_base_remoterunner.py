@@ -764,7 +764,7 @@ class BaseRemoteRunner(object):
 
     Returns:
       dict: Dictionary of form `{ 'do_cleanup' : VALUE}` where `VALUE` is True or False depending on value in configuration file.
-      
+
     Raises:
       atsim.pro_fit.exceptions.ConfigException: thrown if configuration problem found."""
 

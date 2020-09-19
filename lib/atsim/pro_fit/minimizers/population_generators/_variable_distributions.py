@@ -17,7 +17,7 @@ class Variable_Distribution(object):
     def __init__(self, variable_label, distn_function):
         """Create object for mapping 0 to 1 values into
         variable domain.
-        
+
         Arguments:
             variable_label {str} -- Fitting variable label
             distn_function {callable} -- Single argument callable that performs conversion.
@@ -28,7 +28,7 @@ class Variable_Distribution(object):
 
     def apply(self, norm_array):
         """Apply the distribution function to values in norm_array.
-        
+
         Arguments:
             norm_array {numpy.array} -- 0...1 values
         """
@@ -50,7 +50,7 @@ class _Bounded_Variable_Distribution(Variable_Distribution):
 
         The range 0 to 1 will linearly map on the domain between
         the given variable's lower and upper bounds
-        
+
         Arguments:
             variable_label {str} -- variable in `initial_variables` that this object represents.
             initial_variables {atsim.pro_fit.variables.Variables} -- Variables instance.
@@ -97,7 +97,7 @@ class Uniform_Variable_Distribution(_Bounded_Variable_Distribution):
 
         The range 0 to 1 will linearly map on the domain between
         the given variable's lower and upper bounds
-        
+
         Arguments:
             variable_label {str} -- variable in `initial_variables` that this object represents.
             initial_variables {atsim.pro_fit.variables.Variables} -- Variables instance.
@@ -113,7 +113,6 @@ class Uniform_Variable_Distribution(_Bounded_Variable_Distribution):
 
 class PERT_Variable_Distribution(_Bounded_Variable_Distribution):
     def __init__(self, variable_label, initial_variables, shape=10):
-
         """Create norm to variable transformation for a given variable.
 
         The range 0 to 1 will linearly map on the domain between
@@ -123,7 +122,7 @@ class PERT_Variable_Distribution(_Bounded_Variable_Distribution):
         The shape parameter can be used to localise the solution around the variable's
         initial value. A value of 0 will produce the uniform distribution, whilst large
         values will produce candidates very close to the variable's initial value.
-        
+
         Arguments:
             variable_label {str} -- variable in `initial_variables` that this object represents.
             initial_variables {atsim.pro_fit.variables.Variables} -- Variables instance.
@@ -180,7 +179,7 @@ class Variable_Distributions(object):
 
     def __init__(self, initial_variables, variable_distributions):
         """Associate fitting variables with a collection of Variable_Distribution objects 
-        
+
         Arguments:
             initial_variables {atsim.pro_fit.variables.Variables} -- Variables to which
                 Variable_Distribution objects are related.

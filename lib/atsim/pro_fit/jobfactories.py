@@ -42,6 +42,7 @@ from the job.cfg files located in fit_files.
 
 """
 
+from atsim.pro_fit.tools import csvbuild
 import os
 import logging
 
@@ -97,9 +98,6 @@ class MetaEvaluatorJob(object):
         self.evaluatorRecords = evaluatorRecords
         self.variables = variables
         self.isMetaEvaluatorJob = True
-
-
-from atsim.pro_fit.tools import csvbuild
 
 
 class TemplateJobFactory(object):

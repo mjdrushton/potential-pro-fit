@@ -17,7 +17,7 @@ class Queue_To_List(object):
 
     def __init__(self, output_list):
         """Create Queue_To_list instance
-        
+
         Arguments:
             output_list {list} -- Items place in queue will be appended to this output_list
         """

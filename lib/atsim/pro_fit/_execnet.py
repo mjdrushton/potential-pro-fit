@@ -1,9 +1,8 @@
-EXECNET_TERM_TIMEOUT = 10
-
-import logging
-import tempfile
-import execnet
 import os
+import execnet
+import tempfile
+import logging
+EXECNET_TERM_TIMEOUT = 10
 
 
 logger = logging.getLogger("atsim.pro_fit._execnet")
