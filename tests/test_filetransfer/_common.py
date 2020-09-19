@@ -1,3 +1,4 @@
+from filecmp import dircmp
 import os
 import shutil
 import stat
@@ -61,9 +62,6 @@ def create_dir_structure(tmpdir):
 
     dpath = tmpdir.join("dest")
     dpath.mkdir()
-
-
-from filecmp import dircmp
 
 
 def cmpdirs(left, right):

@@ -1,3 +1,4 @@
+from tests.common import MockJobFactory
 import configparser
 import math
 import os
@@ -13,8 +14,6 @@ def _getResourceDir():
         os.path.dirname(__file__), "resources", "table_evaluator"
     )
 
-
-from tests.common import MockJobFactory
 
 mockJobFactory = MockJobFactory("Runner", "TableJob", [])
 

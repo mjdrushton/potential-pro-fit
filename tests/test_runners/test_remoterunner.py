@@ -1,5 +1,6 @@
 """Tests for atsim.pro_fit.runners.RemoteRunner"""
 
+from atsim.pro_fit.jobfactories import Job
 import logging
 import os
 import pytest
@@ -132,9 +133,6 @@ def testAllInMultipleBatch(runfixture, vagrant_basic):
         runnertestjob(runfixture, job.variables.id, expectstderr_stdout=True)
 
     assert runner.close().wait(10)
-
-
-from atsim.pro_fit.jobfactories import Job
 
 
 def _mklongjob(tmpdir):

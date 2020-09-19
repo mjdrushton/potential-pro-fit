@@ -1,3 +1,4 @@
+from filecmp import dircmp
 from atsim.pro_fit.filetransfer import (
     DownloadDirectory,
     DownloadHandler,
@@ -42,8 +43,6 @@ def create_dir_structure(tmpdir):
     dpath = tmpdir.join("dest")
     dpath.mkdir()
 
-
-from filecmp import dircmp
 
 # def cmpdirs(left, right):
 #   dcmp = dircmp(left, right)

@@ -1,3 +1,4 @@
+from .. import testutil
 import os
 import unittest
 import json
@@ -6,8 +7,6 @@ from mechanize import Browser
 from atsim.pro_fit import webmonitor
 
 cherrypy = webmonitor.cherrypy
-
-from .. import testutil
 
 
 def _getResourceDir():
@@ -30,7 +29,9 @@ class CherryPyDBTestCaseBase(unittest.TestCase):
 
     def fetchJSON(self, url):
         br = Browser()
-        import urllib.request, urllib.parse, urllib.error
+        import urllib.request
+        import urllib.parse
+        import urllib.error
 
         url = urllib.parse.quote(url, safe="/?=")
         br.open("%s/%s" % (self.baseurl, url))

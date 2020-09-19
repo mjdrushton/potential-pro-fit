@@ -1,3 +1,4 @@
+from ..testutil import _make_vagrant_box
 from atsim.pro_fit.runners._sge_channel import SGEChannel
 from atsim.pro_fit.runners import SGERunner
 
@@ -32,9 +33,6 @@ def clearqueue(channel):
         output = subprocess.check_output(["qstat"])
         output = output.strip()
         cleared = not output
-
-
-from ..testutil import _make_vagrant_box
 
 
 def vagrant_box():

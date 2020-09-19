@@ -1,3 +1,4 @@
+from ..testutil import _make_vagrant_box
 from atsim.pro_fit.runners._slurm_channel import SlurmChannel
 from atsim.pro_fit.runners import SlurmRunner
 
@@ -19,9 +20,6 @@ def clearqueue(channel):
         output = subprocess.check_output("squeue -h", shell=True)
         output = output.strip()
         cleared = not output
-
-
-from ..testutil import _make_vagrant_box
 
 
 def vagrant_box():

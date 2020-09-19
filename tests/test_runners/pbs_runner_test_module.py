@@ -1,3 +1,4 @@
+from ..testutil import _make_vagrant_box
 from atsim.pro_fit.runners._pbs_channel import PBSChannel
 from atsim.pro_fit.runners import PBSRunner
 
@@ -19,9 +20,6 @@ def clearqueue(channel):
         output = subprocess.check_output(["qselect"])
         output = output.strip()
         cleared = not output
-
-
-from ..testutil import _make_vagrant_box
 
 
 def vagrant_box():

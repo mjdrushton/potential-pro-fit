@@ -1,3 +1,4 @@
+from atsim.pro_fit.jobfactories import Job
 import multiprocessing
 import subprocess
 import os
@@ -85,9 +86,6 @@ def e2(d):
 
 def e3(d):
     return d["A"] - d["B"] - d["C"] - d["D"]
-
-
-from atsim.pro_fit.jobfactories import Job
 
 
 class MockBatch(object):
