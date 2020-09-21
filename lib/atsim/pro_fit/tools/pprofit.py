@@ -432,7 +432,7 @@ def _getfitcfg(
         import atsim.pro_fit.plugins
         import importlib
 
-        for _finder, name, _ispkg in iter_namespace(atsim.pro_fit.plugins):
+        for _finder, name, _ispkg in iter_namespace(atsim.pro_fit.plugins): # pylint: disable=no-member
             m = importlib.import_module(name)
             ns_pluginsmodules.append(m)
     except ImportError:

@@ -190,7 +190,7 @@ class SkipWhiteSpaceDictReader(csv.DictReader):
 
     @csv.DictReader.fieldnames.getter
     def fieldnames(self):
-        orignames = csv.DictReader.fieldnames.fget(self)
+        orignames = csv.DictReader.fieldnames.fget(self) # pylint: disable=assignment-from-no-return
         if orignames is None:
             return None
         return [f.strip() for f in orignames]

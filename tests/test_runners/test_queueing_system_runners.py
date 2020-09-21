@@ -1,35 +1,22 @@
 import logging
-import sys
 import os
-
-from ..testutil import vagrant_torque
-from ._runnercommon import runfixture, DIR, FILE, runnertestjob
-
-from atsim import pro_fit
-
-# from atsim.pro_fit.runners._pbsrunner_batch import PBSRunnerJobRecord
-from atsim.pro_fit.runners._queueing_system_runner_batch import (
-    QueueingSystemRunnerBatch,
-)
-from atsim.pro_fit.runners._queueing_system_runner_batch import (
-    QueueingSystemRunnerJobRecord,
-)
-from atsim.pro_fit.runners._pbs_channel import PBSChannel
-
-from ._queueing_system_fixtures import queueing_system_test_module
-from ._queueing_system_fixtures import gw
-from ._queueing_system_fixtures import clearqueue
-from ._queueing_system_fixtures import vagrant_box
-from ._queueing_system_fixtures import client
-from ._queueing_system_fixtures import channel
-from ._queueing_system_fixtures import channel_class
-from ._queueing_system_fixtures import runner_class
-
-from .test_queue_system_clients import chIsDir
+import sys
 
 import gevent
-
 import pytest
+from atsim import pro_fit
+from atsim.pro_fit.runners._pbs_channel import PBSChannel
+# from atsim.pro_fit.runners._pbsrunner_batch import PBSRunnerJobRecord
+from atsim.pro_fit.runners._queueing_system_runner_batch import (
+    QueueingSystemRunnerBatch, QueueingSystemRunnerJobRecord)
+
+from ..testutil import vagrant_torque
+from ._queueing_system_fixtures import (channel, channel_class, clearqueue,
+                                        client, gw,
+                                        queueing_system_test_module,
+                                        runner_class, vagrant_box)
+from ._runnercommon import DIR, FILE, runfixture, runnertestjob
+from .test_queue_system_clients import chIsDir
 
 
 def _createRunner(
@@ -118,9 +105,6 @@ def testBatchTerminate(
         assert ij3.jobId
 
         gevent.sleep(0)
-
-        jr1_id = jr1.jobId
-        jr2_id = jr2.jobId
 
         # Spin up a pbs_channel and check we can see the two jobs
         # ch = PBSChannel(gw, 'check_channel', nocb = True)
@@ -279,8 +263,6 @@ def testRunnerClose(runfixture, vagrant_box, runner_class, channel_class, gw):
 
     gevent.sleep(0)
 
-    jr1_id = jr1.jobId
-    jr2_id = jr2.jobId
 
     # Spin up a pbs_channel and check we can see the two jobs
     ch = channel_class(gw, "check_channel", nocb=True)

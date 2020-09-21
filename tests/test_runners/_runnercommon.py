@@ -9,7 +9,7 @@ import time
 import atsim.pro_fit._execnet as _execnet
 
 from .. import common
-from atsim import pro_fit
+import atsim.pro_fit.variables
 
 from pytest import fixture
 
@@ -39,7 +39,6 @@ def runnertestjob(runfixture, jobid, expectstderr_stdout=False):
 
     job_path = runfixture.jobs[jobid].path
     jfdir = os.path.join(job_path, "job_files")
-    rfdir = os.path.join(job_path, "runner_files")
 
     expect = [("job_files", DIR), ("runner_files", DIR)]
     actual = _compareDir(job_path)
@@ -96,7 +95,7 @@ def runfixture(tmpdir, request):
     jobs = []
 
     for i in range(12):
-        variables = pro_fit.variables.Variables([("A", i, True)])
+        variables = atsim.pro_fit.variables.Variables([("A", i, True)])
         variables.id = i
         jd = tmpdir.join(str(i))
         jd.mkdir()
@@ -230,7 +229,7 @@ def mkrunjobs(gw, num, numSuffix=False, sleep=None):
                         outfile.write("echo Hello > outfile\n")
                 outpaths.append(filename)
             channel.send(outpaths)
-            rcv = channel.receive()
+            channel.receive()
         finally:
             import shutil
 
@@ -243,7 +242,7 @@ def mkrunjobs(gw, num, numSuffix=False, sleep=None):
 
 def send_and_compare(ch, sendmsg, expect):
     pause = 0.5
-    for i in range(10):
+    for _ in range(10):
         ch.send(sendmsg)
         msg = ch.receive(2)
         try:

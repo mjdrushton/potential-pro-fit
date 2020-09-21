@@ -253,7 +253,7 @@ class DownloadDirectory(object):
         else:
             grl.join()
             if self.exception and self.exception != (None, None, None):
-                et, ei, tb = self.exception
+                _et, ei, tb = self.exception # pylint: disable=unpacking-non-sequence
                 raise ei.with_traceback(tb)
             log.info("Finished download id='%s'", self.transaction_id)
 
@@ -286,7 +286,7 @@ class _DownloadCallback(object):
         msgid = msg["id"]
 
         try:
-            (transid, path) = msgid
+            (transid, _path) = msgid
         except (TypeError, ValueError):
             self._logger.debug(
                 "Callback ID: '%s'. Unrecognized 'id' field, message will not be processed: '%s'",
@@ -391,7 +391,7 @@ class _DownloadCallback(object):
                 self._process_queue_item(msg)
             except gevent.queue.Empty:
                 pass
-            except Exception as e:
+            except Exception:
                 exc = sys.exc_info()
                 break
             gevent.sleep(0)
@@ -416,7 +416,7 @@ class _DownloadCallback(object):
 
     def _register_file(self, pathtransid, remote_path):
         """Puts file_id into self.file_q wait and triggers DOWNLOAD_FILE request"""
-        transid, junk = pathtransid
+        transid, _ = pathtransid
         fileid = (transid, remote_path)
 
         self.file_q_wait.add(fileid)
@@ -471,7 +471,7 @@ class _DownloadCallback(object):
         if self._isFinished():
             try:
                 self.parent.download_handler.finish(None)
-            except Exception as e:
+            except Exception:
                 self.enabled = False
                 self._exc = sys.exc_info()
                 self._logger.exception("Exception during file download")
@@ -559,7 +559,7 @@ class _DownloadCallback(object):
         self.enabled = False
         try:
             self.parent.download_handler.finish(exc)
-        except Exception as e:
+        except Exception:
             self._exc = sys.exc_info()
         self._finish()
         return self.event

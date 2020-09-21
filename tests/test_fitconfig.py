@@ -11,9 +11,6 @@ import stat
 import logging
 import sys
 
-from .common import *
-
-# import test_monitor
 
 
 def _getResourceDir():
@@ -190,7 +187,7 @@ class FitConfigTestCase(unittest.TestCase):
         with self.assertRaises(
             atsim.pro_fit.exceptions.MultipleSectionConfigException
         ):
-            cfgobject = atsim.pro_fit.fitconfig.FitConfig(
+            atsim.pro_fit.fitconfig.FitConfig(
                 cfgFilename,
                 runnermodules=[mockrunners],
                 evaluatormodules=[mockeval1, mockeval2],

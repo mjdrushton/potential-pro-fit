@@ -5,11 +5,9 @@ from atsim.pro_fit.filetransfer.remote_exec.file_transfer_remote_exec import (
 )
 
 import os
+import pathlib
 
 from ._common import execnet_gw, channel_id
-
-import py.path
-
 
 def testGoodStart(tmpdir, execnet_gw, channel_id):
     ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
@@ -37,7 +35,7 @@ def testBadStart_nonexistent_directory(execnet_gw, channel_id):
     ch1 = execnet_gw.remote_exec(file_transfer_remote_exec)
     try:
         badpath = "/this/is/not/a/path"
-        assert not py.path.local(badpath).exists()
+        assert not pathlib.Path(badpath).exists()
 
         ch1.send(
             {
@@ -160,7 +158,7 @@ def testDownloadFile_bad(tmpdir, execnet_gw, channel_id):
                 "remote_path": tmpdir.strpath,
             }
         )
-        msg = ch1.receive(10.0)
+        ch1.receive(10.0)
 
         # Ask for a non existent file
         rpath = tmpdir.join("not_there").strpath
@@ -224,7 +222,7 @@ def testDownloadFile(tmpdir, execnet_gw, channel_id):
                 "remote_path": tmpdir.strpath,
             }
         )
-        msg = ch1.receive(10.0)
+        ch1.receive(10.0)
 
         chpath = tmpdir.join("0").join("1").join("file")
         contents = b"one two three four"

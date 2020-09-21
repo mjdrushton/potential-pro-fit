@@ -171,7 +171,6 @@ Ucharge : electroneg * 4
         cfg = configparser.ConfigParser()
         cfg.optionxform = str
         cfg.read_file(io.StringIO(config))
-        configitems = cfg.items("CalculatedVariables")
 
         variables = atsim.pro_fit.variables.Variables(
             [
@@ -208,7 +207,6 @@ Ucharge : electroneg * 4
         cfg = configparser.ConfigParser()
         cfg.optionxform = str
         cfg.read_file(io.StringIO(config))
-        configitems = cfg.items("CalculatedVariables")
 
         with self.assertRaises(atsim.pro_fit.exceptions.ConfigException):
             atsim.pro_fit.variables.CalculatedVariables.createFromConfig(

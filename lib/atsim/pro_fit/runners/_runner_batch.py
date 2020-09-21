@@ -32,6 +32,7 @@ class _BatchMonitorThread(object):
         self.completedJobQueue = gevent.queue.Queue()
         self.dirLocked = False
         self.exception = None
+        self.name = None
 
     def run(self):
         try:
@@ -228,7 +229,6 @@ class RunnerBatch(object):
     def _createJobInstances(self, jobs):
         """Create RunnerJob instances from jobfactories.Job instances"""
         retlist = []
-        numjobs = len(jobs)
         for i, job in enumerate(jobs):
             job_name = "%s-%d" % (job.name, i)
             rjob = RunnerJob(self, job, job_name)

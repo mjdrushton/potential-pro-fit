@@ -130,7 +130,7 @@ class LockTree(object):
         """Unlock path and anything below it by setting nodes with `islocked` == `True`
     to False and leaving any that are None as None"""
         startnode = self[path]
-        for node, state in startnode.treeIterator():
+        for node, _state in startnode.treeIterator():
             if not node.islocked is None:
                 node.islocked = False
 
@@ -138,7 +138,7 @@ class LockTree(object):
         def visitor(node, state):
             return node.islocked
 
-        for node, state in startnode.treeIterator(visitor, None):
+        for _node, state in startnode.treeIterator(visitor, None):
             if state == True:
                 return True
         return False
@@ -161,6 +161,7 @@ class LockTree(object):
         return currnode
 
     def _splitpath(self, pathstring):
+        
         if os.path.isabs(pathstring):
             pathstring = os.path.normpath(pathstring)
             if not pathstring.startswith(self.root):
@@ -172,6 +173,10 @@ class LockTree(object):
                 pathstring = pathstring.replace(self.root, "", 1)
                 if len(pathstring) > 0 and pathstring[0] == "/":
                     pathstring = pathstring[1:]
+        else:
+            pathstring = os.path.normpath(pathstring)
+            if pathstring == ".":
+                pathstring = ""
 
         tokens = []
         while pathstring != "":

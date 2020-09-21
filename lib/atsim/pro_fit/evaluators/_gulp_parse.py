@@ -114,7 +114,7 @@ def _getFirstOutputConfigurationChunk(glpFile):
 
 
 def skip(fileObj, n):
-    for i in range(n):
+    for _i in range(n):
         next(fileObj)
 
 
@@ -137,7 +137,7 @@ def columnSplitGenerator(columnSlices):
         for s in columnSlices:
             if len(s) == 3:
                 retdict = True
-                junk, callable, sliceObj = s
+                _, callable, sliceObj = s
             elif len(s) == 2:
                 callable, sliceObj = s
             else:
@@ -162,7 +162,7 @@ def createMatrixParse(coldefs, rows, numSkip=4):
     def func(outputChunk):
         mat = []
         skip(outputChunk, numSkip)
-        for i in range(rows):
+        for _ in range(rows):
             mat.append(splitLine(next(outputChunk)))
         return mat
 

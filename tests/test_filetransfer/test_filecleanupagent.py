@@ -1,19 +1,14 @@
-from atsim.pro_fit.filetransfer.remote_exec import file_cleanup_remote_exec
-from atsim.pro_fit.filetransfer import (
-    CleanupChannel,
-    CleanupClient,
-    CleanupChannelException,
-)
-
-from ._common import execnet_gw, channel_id
-
-import posixpath
 import os
+import pathlib
+import posixpath
 import time
 
 import gevent.event
+from atsim.pro_fit.filetransfer import (CleanupChannel,
+                                        CleanupChannelException, CleanupClient)
+from atsim.pro_fit.filetransfer.remote_exec import file_cleanup_remote_exec
 
-import py.path
+from ._common import channel_id, execnet_gw
 
 
 def test_file_cleanup_end_to_end(tmpdir, execnet_gw, channel_id):
@@ -255,7 +250,7 @@ def test_file_cleanup_BadStart_nonexistent_directory(execnet_gw, channel_id):
     ch1 = execnet_gw.remote_exec(file_cleanup_remote_exec)
     try:
         badpath = "/this/is/not/a/path"
-        assert not py.path.local(badpath).exists()
+        assert not pathlib.Path(badpath).exists()
 
         ch1.send(
             {
@@ -298,20 +293,28 @@ def test_file_cleanup_lock_bad(tmpdir, execnet_gw, channel_id):
         expect = {
             "msg": "ERROR",
             "id": "transid",
-            "reason": "path does not lie within directory structure",
+            "reason": "path does not lie within directory structure.",
             "remote_path": "../",
             "error_code": ("PATHERROR", "NOTCHILD"),
         }
+        del msg['channel_id']
+        assert(expect == msg)
 
         ch1.send({"msg": "LOCK", "id": "transid", "remote_path": "/"})
         msg = ch1.receive(10.0)
         expect = {
             "msg": "ERROR",
             "id": "transid",
-            "reason": "path does not lie within directory structure",
+
             "remote_path": "/",
             "error_code": ("PATHERROR", "NOTCHILD"),
         }
+        del msg['channel_id']
+        reason = msg['reason']
+        del msg['reason']
+        assert expect == msg
+        assert reason.startswith(
+            "path does not lie within directory structure.")
     finally:
         ch1.close()
         ch1.waitclose()
@@ -347,20 +350,25 @@ def test_file_cleanup_unlock_bad(tmpdir, execnet_gw, channel_id):
         expect = {
             "msg": "ERROR",
             "id": "transid",
-            "reason": "path does not lie within cleanup directory structure",
+            "reason": "path does not lie within directory structure.",
             "remote_path": "../../",
             "error_code": ("PATHERROR", "NOTCHILD"),
         }
+        del msg['channel_id']
+        assert expect == msg
 
         ch1.send({"msg": "UNLOCK", "id": "transid", "remote_path": "boop"})
         msg = ch1.receive(10.0)
         expect = {
             "msg": "ERROR",
             "id": "transid",
-            "reason": "path is not registered with cleanup agent",
-            "remote_path": "boop",
-            "error_code": ("PATHERROR", "NOT_REGISTERED"),
+            'keyerror': "'boop'",
+            "reason": "path not registered with cleanup agent",
+            "remote_path": root.join("boop").strpath,
+            "error_code": ("PATHERROR", "UNKNOWN_PATH"),
         }
+        del msg['channel_id']
+        assert expect == msg
     finally:
         ch1.close()
         ch1.waitclose()
@@ -370,8 +378,6 @@ def test_file_cleanup_unlock_path_normalize(tmpdir, execnet_gw, channel_id):
     # Create directory structure
     tmpdir.ensure("one", dir=True)
     root = tmpdir.join("one")
-    p = tmpdir
-
     root.ensure("a", "b", "c", "d", dir=True)
 
     def currfiles():
@@ -588,7 +594,7 @@ def cbcheck(call, expect_exception=None):
         assert cb.exception is None
     else:
         try:
-            et, ei, tb = cb.exception
+            _et, ei, tb = cb.exception
             raise ei.with_traceback(tb)
             # assert False, "Exception %s should have been raised" % expect_exception
         except Exception as e:
@@ -624,7 +630,7 @@ def test_file_cleanup_client_lock_exception(tmpdir, execnet_gw, channel_id):
             assert (
                 False
             ), "CleanupChannelException should have been raised and wasn't"
-        except CleanupChannelException as e:
+        except CleanupChannelException:
             pass
     finally:
         channel.close()
@@ -664,7 +670,7 @@ def test_file_cleanup_client_unlock_exception(tmpdir, execnet_gw, channel_id):
             assert (
                 False
             ), "CleanupChannelException should have been raised and wasn't"
-        except CleanupChannelException as e:
+        except CleanupChannelException:
             pass
     finally:
         channel.close()
@@ -679,3 +685,33 @@ def test_file_cleanup_client_flush_callback(tmpdir, execnet_gw, channel_id):
         client.flush(callback=cb)
 
     cbcheck(call)
+
+
+def test_path_normalize():
+    normalized = file_cleanup_remote_exec.normalize_path('/a/b/c', '/')
+    assert normalized is None
+
+    class Mock_Channel:
+
+        def __init__(self):
+            self.msgs = []
+
+        def send(self, item):
+            self.msgs.append(item)
+
+        def reset(self):
+            self.msgs.clear()
+
+    channel = Mock_Channel()
+    normalized = file_cleanup_remote_exec.normalize_path_with_error(
+        channel, 'channel_id', '/a/b/c', '/', trans_id='transid')
+    assert normalized is None
+
+    assert channel.msgs == [{
+        "channel_id": "channel_id",
+        "msg": "ERROR",
+        "id": "transid",
+        "reason": "path does not lie within directory structure.",
+        "remote_path": "/",
+        "error_code": ("PATHERROR", "NOTCHILD"),
+    }]

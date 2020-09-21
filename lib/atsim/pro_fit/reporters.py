@@ -1,9 +1,9 @@
 import sqlalchemy as sa
 import tabulate
 
-from ._util import retry_backoff
+from atsim.pro_fit._util import retry_backoff
 
-from . import db
+from atsim.pro_fit import db
 
 import logging
 import os
@@ -247,10 +247,9 @@ class LogReporter(object):
 
     def _variableKeyLabelPairs(self):
         variables = self.bestIteration.bestVariables
-        variableKeys = self.firstIteration
         fitkeys = set(variables.fitKeys)
         l = []
-        for k, v in variables.variablePairs:
+        for k, _v in variables.variablePairs:
             if k in fitkeys:
                 fflag = " *"
             else:
@@ -261,7 +260,7 @@ class LogReporter(object):
     def _getVariableColumn(self, variableLabelPairs, minimizerResults):
         variables = dict(minimizerResults.bestVariables.variablePairs)
         column = []
-        for k, label in variableLabelPairs:
+        for k, _label in variableLabelPairs:
             v = variables[k]
             column.append(float(v))
         return column

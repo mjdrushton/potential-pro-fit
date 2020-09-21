@@ -1,15 +1,13 @@
-import unittest
-from .. import testutil
-
-import os
 import configparser
 import io
+import os
+import unittest
 
 import atsim.pro_fit.minimizers
 import atsim.pro_fit.variables
 
-
-from ._common import *
+from .. import testutil
+from ._common import MockMerit, StepCallBack, getResourceDir
 
 
 class SpreadsheetTestCase(unittest.TestCase):
@@ -50,7 +48,8 @@ filename : %(filename)s
         )
 
         minimizer.stepCallback = StepCallBack()
-        optimized = minimizer.minimize(MockMerit())
+        
+        optimized = minimizer.minimize(MockMerit()) # type: atsim.pro_fit.minimizers.MinimizerResults
 
         testutil.compareCollection(
             self,
@@ -60,7 +59,7 @@ filename : %(filename)s
                 ("C", 30.0, False),
                 ("D", 4.0, True),
             ],
-            optimized.bestVariables.flaggedVariablePairs,
+            optimized.bestVariables.flaggedVariablePairs, # pylint: disable=no-member
         )
 
         stepcallbackexpect = [
@@ -269,7 +268,7 @@ batch_size : 2
                 ("C", 30.0, False),
                 ("D", 4.0, True),
             ],
-            optimized.bestVariables.flaggedVariablePairs,
+            optimized.bestVariables.flaggedVariablePairs, # pylint: disable=no-member
         )
 
         expect = [
@@ -349,7 +348,7 @@ batch_size : 2
                 ("C", 30.0, False),
                 ("D", 9.0, True),
             ],
-            optimized.bestVariables.flaggedVariablePairs,
+            optimized.bestVariables.flaggedVariablePairs, # pylint: disable=no-member
         )
 
         expect = [
@@ -424,7 +423,7 @@ row_step : 2
                 ("C", 30.0, False),
                 ("D", 9.0, True),
             ],
-            optimized.bestVariables.flaggedVariablePairs,
+            optimized.bestVariables.flaggedVariablePairs, # pylint: disable=no-member
         )
 
         expect = [
@@ -537,13 +536,13 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
             rowit = _SpreadsheetRowIterator(variables, infile)
 
             with self.assertRaises(_MissingColumnException):
-                for row in rowit:
+                for _row in rowit:
                     pass
 
         with open(spreadfilename) as infile:
             rowit = _SpreadsheetRowIterator(variables, infile)
             try:
-                for row in rowit:
+                for _row in rowit:
                     pass
             except _MissingColumnException as e:
                 self.assertEqual("Missing", e.columnKey)
@@ -573,13 +572,13 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
             rowit = _SpreadsheetRowIterator(variables, infile)
 
             with self.assertRaises(_BadValueException):
-                for row in rowit:
+                for _row in rowit:
                     pass
 
         with open(spreadfilename) as infile:
             rowit = _SpreadsheetRowIterator(variables, infile)
             try:
-                for row in rowit:
+                for _row in rowit:
                     pass
             except _BadValueException as e:
                 self.assertEqual("Label", e.columnKey)
@@ -606,7 +605,7 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
             with open(spreadfilename) as infile:
                 rowit = _SpreadsheetRowIterator(variables, infile)
                 try:
-                    for row in rowit:
+                    for _row in rowit:
                         pass
                     self.fail("Test should raise _OutOfBoundsException")
                 except _OutOfBoundsException as e:
@@ -698,7 +697,7 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
             rowit = _SpreadsheetRowIterator(variables, infile, startRow=6)
 
             with self.assertRaises(_RowRangeException):
-                for row in rowit:
+                for _row in rowit:
                     pass
 
     def testBadEndRow(self):
@@ -725,7 +724,7 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
             rowit = _SpreadsheetRowIterator(variables, infile, endRow=6)
 
             with self.assertRaises(_RowRangeException):
-                for row in rowit:
+                for _row in rowit:
                     pass
 
     def testBlankSpreadSheet(self):
@@ -752,7 +751,7 @@ class SpreadsheetRowIteratorTestCase(unittest.TestCase):
         sio.seek(0)
         rowit = _SpreadsheetRowIterator(variables, sio)
         with self.assertRaises(_RowRangeException):
-            for row in rowit:
+            for _row in rowit:
                 pass
 
     def testRowIncrement(self):

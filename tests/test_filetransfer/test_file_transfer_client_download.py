@@ -1,27 +1,17 @@
-from filecmp import dircmp
-from atsim.pro_fit.filetransfer import (
-    DownloadDirectory,
-    DownloadHandler,
-    DownloadCancelledException,
-)
-from atsim.pro_fit.filetransfer import (
-    DownloadChannel,
-    DownloadChannels,
-    ChannelException,
-)
-
 import os
+import pathlib
 import shutil
 import stat
 import threading
-
-from ._common import execnet_gw, channel_id, create_dir_structure, cmpdirs
-
-import py.path
+from filecmp import dircmp
 
 import pytest
+from atsim.pro_fit.filetransfer import (ChannelException,
+                                        DownloadCancelledException,
+                                        DownloadChannel, DownloadChannels,
+                                        DownloadDirectory, DownloadHandler)
 
-# pytestmark = pytest.mark.skip()
+from ._common import channel_id, cmpdirs, execnet_gw
 
 KEEP_ALIVE = 0.5
 
@@ -73,7 +63,7 @@ def do_dl(tmpdir, channels, dl=None, do_cmp=True):
 
 def testDownloadChannel_BadStart_nonexistent_directory(execnet_gw, channel_id):
     badpath = "/this/is/not/a/path"
-    assert not py.path.local(badpath).exists()
+    assert not pathlib.Path(badpath).exists()
     ch = None
     try:
         try:
@@ -155,9 +145,9 @@ def testDirectoryDownload_missing_dest(tmpdir, execnet_gw, channel_id):
         keepAlive=KEEP_ALIVE,
     )
     try:
-        dl = DownloadDirectory(ch1, rpath.strpath, dpath.strpath)
-        fail("DownloadDirectory.download() should have raised IOError")
-    except IOError as e:
+        DownloadDirectory(ch1, rpath.strpath, dpath.strpath)
+        pytest.fail("DownloadDirectory.download() should have raised IOError")
+    except IOError:
         pass
     finally:
         ch1.broadcast(None)
@@ -255,12 +245,12 @@ def testDirectoryDownload_file_access_denied(tmpdir, execnet_gw, channel_id):
 
 
 def testDownloadHandler_rewrite_path():
-    p1 = py.path.local("/One/Two/Three/source")
-    p2 = py.path.local("/Five/Six/Seven/dest")
+    p1 = pathlib.Path("/One/Two/Three/source")
+    p2 = pathlib.Path("/Five/Six/Seven/dest")
 
-    dlh = DownloadHandler(p1.strpath, p2.strpath)
+    dlh = DownloadHandler(str(p1), str(p2))
     expect = "/Five/Six/Seven/dest/file"
-    actual = dlh.rewrite_path({"remote_path": p1.join("file").strpath})
+    actual = dlh.rewrite_path({"remote_path": str(p1 /"file")})
     assert actual == expect
 
 
@@ -305,7 +295,7 @@ def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
             def finish(self, exception=None):
                 super(ThrowHandler, self).finish(exception)
                 raise ThrowMe()
-                return False
+
 
         dest_path.remove(rec=True)
         dest_path.ensure_dir()
@@ -341,7 +331,7 @@ def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
 
             do_dl(tmpdir, ch1, dl, False)
             assert dlh.complete_called == True
-            et, ei, tb = dlh.completion_exception
+            et, _ei, _tb = dlh.completion_exception
             assert et == PermissionError
 
             # Now check supresssion of exception raising.
@@ -357,7 +347,7 @@ def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
 
             do_dl(tmpdir, [ch1], dl, False)
             assert dlh.complete_called == True
-            et, ei, tb = dlh.completion_exception
+            et, _ei, _tb = dlh.completion_exception
             assert et == PermissionError
 
             # Test that DownloadHandler.complete can raise exception and this will be correctly propagated.
@@ -375,7 +365,7 @@ def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
                 pass
             assert dlh.complete_called == True
 
-            et, ei, tb = dlh.completion_exception
+            et, _ei, _tb = dlh.completion_exception
             assert et == PermissionError
 
         finally:
@@ -387,7 +377,7 @@ def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
 
 def testDirectoryDownload_multiple_channels(tmpdir, execnet_gw, channel_id):
     create_dir_structure(tmpdir)
-    channels = []
+    
     multichannel = DownloadChannels(
         execnet_gw,
         tmpdir.join("remote").strpath,
@@ -544,7 +534,6 @@ def testDirectoryDownload_cancel(tmpdir, execnet_gw, channel_id):
     dest1.ensure_dir()
 
     pause_event = threading.Event()
-    download_event = threading.Event()
 
     class PauseDownloadHandler(DownloadHandler):
         def __init__(self, *args, **kwargs):

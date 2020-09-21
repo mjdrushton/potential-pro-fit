@@ -73,7 +73,7 @@ class SingleStepMinimizer(object):
                 )
 
             # Only one candidate
-            candidate, jobs = candidateJobPairList[0]
+            _candidate, jobs = candidateJobPairList[0]
             for job in jobs:
                 if not hasattr(job, "path"):
                     continue
@@ -116,10 +116,10 @@ class SingleStepMinimizer(object):
         self.afterMerit = MeritCallback(merit, self._keepFilesDirectory)
         self.beforeRun = BeforeAfterCallback(
             "beforeRun", merit, self._keepFilesDirectory
-        )  # noqa
+        )
         self.afterRun = BeforeAfterCallback(
             "afterRun", merit, self._keepFilesDirectory
-        )  # noqa
+        )
 
         def cleanup():
             del merit.afterMerit[merit.afterMerit.index(self.afterMerit)]
@@ -141,9 +141,9 @@ class SingleStepMinimizer(object):
             merit.calculate([self._initialArgs])
 
             if self.stepCallback:
-                self.stepCallback(
+                self.stepCallback( # pylint: disable=not-callable
                     cb.minimizerResults
-                )  # pylint: disable=not-callable
+                )  
 
             return cb.minimizerResults
         finally:

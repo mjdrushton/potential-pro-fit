@@ -162,7 +162,7 @@ class DEAMinimizer(object):
         atsim.pro_fit.cfg.add_initial_population_options(cfgparse)
         parsed_options = cfgparse.parse(configitems)
         cfgparse.log_options(parsed_options, DEAMinimizer.logger)
-        minimizer = cls._create_minimizer_instance(
+        minimizer = cls._create_minimizer_instance( # pylint: disable=no-value-for-parameter
             *cfgparse.options_to_function_args(
                 parsed_options,
                 cls._create_minimizer_instance,

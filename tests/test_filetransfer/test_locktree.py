@@ -1,10 +1,11 @@
-from atsim.pro_fit.filetransfer.remote_exec import file_cleanup_remote_exec
-from ._common import execnet_gw, channel_id
-
-import posixpath
 import os
+import pathlib
+import posixpath
+import pytest
 
-import py.path
+from atsim.pro_fit.filetransfer.remote_exec import file_cleanup_remote_exec
+
+from ._common import channel_id, execnet_gw
 
 
 def testLockTree_2():
@@ -167,6 +168,12 @@ def testLockTree_get():
         assert False, "KeyError not raised"
     except KeyError:
         pass
+
+def test_lock_root():
+    rootdir = "/this/is/the/root"
+    lt = file_cleanup_remote_exec.LockTree(rootdir)
+    with pytest.raises(file_cleanup_remote_exec.LockTreeException):
+        lt.add('/')
 
 
 def testLockTree_splitpath():

@@ -101,9 +101,8 @@ class AbstractChannel(object):
 
         if mtype is None or not mtype in ["READY", "ERROR"]:
             self._logger.warning(
-                "Couldn't start channel, id='%s', remote_path='%s'",
-                self.channel_id,
-                self.remote_path,
+                "Couldn't start channel, id='%s'",
+                self.channel_id
             )
             raise ChannelException(
                 "Couldn't create channel for channel_id: '%s', was expecting 'READY' got: %s"

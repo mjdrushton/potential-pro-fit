@@ -106,11 +106,11 @@ def test_cfg_parser_errorcontrol_constraint(cfgparser):
         "ec_merit_factor": "2.0",
         "ec_alpha": "0.1",
     }.items():
-        defaults = cfgparser.parse(
+        cfgparser.parse(
             {"error_control": "True", other_key: value}, delete_options=[]
         )
         with pytest.raises(ConfigException):
-            defaults = cfgparser.parse(
+            cfgparser.parse(
                 {"error_control": "False", other_key: value}, delete_options=[]
             )
 

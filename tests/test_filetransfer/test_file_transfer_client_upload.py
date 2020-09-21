@@ -1,20 +1,15 @@
-from ._common import execnet_gw, channel_id, cmpdirs
-from ._common import create_dir_structure as _create_dir_structure
-
-from atsim.pro_fit.filetransfer import (
-    UploadChannels,
-    UploadDirectory,
-    UploadHandler,
-)
-from atsim.pro_fit.filetransfer import (
-    ChannelException,
-    DirectoryUploadException,
-    UploadCancelledException,
-)
-
-import py.path
+import pathlib
 
 import pytest
+from atsim.pro_fit.filetransfer import (ChannelException,
+                                        DirectoryUploadException,
+                                        UploadCancelledException,
+                                        UploadChannels, UploadDirectory,
+                                        UploadHandler)
+
+from ._common import channel_id, cmpdirs
+from ._common import create_dir_structure as _create_dir_structure
+from ._common import execnet_gw
 
 # pytestmark = pytest.mark.skip()
 
@@ -47,7 +42,7 @@ def do_ul(tmpdir, channels, dl=None, do_cmp=True):
 
 def testUploadChannel_BadStart_nonexistent_directory(execnet_gw, channel_id):
     badpath = "/this/is/not/a/path"
-    assert not py.path.local(badpath).exists()
+    assert not pathlib.Path(badpath).exists()
     ch = None
     try:
         ch = UploadChannels(
@@ -95,7 +90,7 @@ def testDirectoryUpload_local_nonexistent(tmpdir, execnet_gw, channel_id):
         keepAlive=KEEP_ALIVE,
     )
     try:
-        dl = UploadDirectory(ch1, spath.strpath, dpath.strpath)
+        UploadDirectory(ch1, spath.strpath, dpath.strpath)
         assert False, "OSError should have been raised, it wasn't."
     except OSError:
         pass
@@ -169,7 +164,7 @@ def testUploadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
             def finish(self, exception=None):
                 super(ThrowHandler, self).finish(exception)
                 raise ThrowMe()
-                return False
+                
 
         remote_path.remove(rec=True)
         remote_path.ensure_dir()
@@ -378,7 +373,6 @@ def testDirectoryUpload_cancel(tmpdir, execnet_gw, channel_id):
     dest1.ensure_dir()
 
     pause_event = threading.Event()
-    upload_event = threading.Event()
 
     class PauseUploadHandler(UploadHandler):
         def __init__(self, *args, **kwargs):

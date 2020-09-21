@@ -127,7 +127,7 @@ class CleanupAgentCallback(object):
     def raise_exception(self):
         if self.should_raise:
             if self.exception:
-                et, ei, tb = self.exception
+                _et, ei, tb = self.exception
                 raise ei.with_traceback(tb)
 
 

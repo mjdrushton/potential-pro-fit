@@ -229,7 +229,7 @@ def _render_table_html(table, metadata, show_indexes, show_datatypes):
         )
         if indexes and show_indexes:
             html += '<TR><TD BORDER="1" CELLPADDING="0"></TD></TR>'
-            for index, defin in list(indexes.items()):
+            for _index, defin in list(indexes.items()):
                 ilabel = "UNIQUE" in defin and "UNIQUE " or "INDEX "
                 ilabel += defin[defin.index("("):]
                 html += '<TR><TD ALIGN="LEFT">%s</TD></TR>' % ilabel

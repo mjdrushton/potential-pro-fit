@@ -1,24 +1,26 @@
-from ..testutil import vagrant_torque, vagrant_basic
-
-from atsim.pro_fit.runners import _pbs_remote_exec
-from atsim.pro_fit import _execnet
-from atsim.pro_fit.runners._pbs_remote_exec import (
-    pbsIdentify,
-    PBSIdentifyRecord,
-)
-from ._runnercommon import channel_id, mkrunjobs, send_and_compare
-
-import py.path
-from pytest import fixture
-import pytest
-
+import pathlib
 import time
+import os
+
+import pytest
+from atsim.pro_fit import _execnet
+from atsim.pro_fit.runners import _pbs_remote_exec
+from atsim.pro_fit.runners._pbs_remote_exec import (PBSIdentifyRecord,
+                                                    pbsIdentify)
+from pytest import fixture
+
+from ..testutil import vagrant_basic, vagrant_torque
+from ._runnercommon import channel_id, mkrunjobs, send_and_compare
 
 
 def _mkexecnetgw(vagrant_box):
-    with py.path.local(vagrant_box.root).as_cwd():
+    old_cwd = os.getcwd()
+    try:
+        os.chdir(vagrant_box.root)
         group = _execnet.Group()
         gw = group.makegateway("vagrant_ssh=default")
+    finally:
+        os.chdir(old_cwd)
     return gw
 
 

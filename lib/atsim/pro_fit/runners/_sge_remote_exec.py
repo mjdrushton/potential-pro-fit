@@ -113,7 +113,7 @@ def qrls(job_ids):
     p = subprocess.Popen(
         args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True
     )
-    output, err = p.communicate()
+    _output, err = p.communicate()
 
     if p.returncode != 0:
         raise QRlsException(err.strip())
@@ -135,7 +135,7 @@ def qdel(job_ids, force):
     p = subprocess.Popen(
         args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True
     )
-    output, err = p.communicate()
+    _output, err = p.communicate()
 
     if p.returncode != 0:
         raise QDelException(err.strip())
@@ -194,10 +194,10 @@ def qsub_handler(channel, channel_id, msg):
     # Check that the job files exist.
     jobs = [os.path.abspath(p) for p in jobs]
     for j in jobs:
-        if not os.path.isfile(p):
+        if not os.path.isfile(j):
             error(
                 channel,
-                'no job found at path for QSUB request: "%s"' % p,
+                'no job found at path for QSUB request: "%s"' % j,
                 channel_id=channel_id,
             )
             return
@@ -244,7 +244,7 @@ def checkCommand(cmd):
         p = subprocess.Popen(
             [cmd, "-help"], stdout=subprocess.PIPE, close_fds=True
         )
-        output, err = p.communicate()
+        p.communicate()
     except OSError:
         raise NoSGEException("Could not run '%s'" % cmd)
 
@@ -338,4 +338,4 @@ def remote_exec(channel):
 
 
 if __name__ == "__channelexec__":
-    remote_exec(channel)
+    remote_exec(channel) # pylint: disable=undefined-variable

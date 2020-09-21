@@ -1,10 +1,10 @@
 import logging
 
-from ._common import *  # noqa
-from atsim.pro_fit.exceptions import ConfigException
-
 import gevent
 import mystic
+
+from atsim.pro_fit.exceptions import ConfigException
+from ._common import MinimizerResults
 
 
 class _NelderMeadMeritCallback(object):
@@ -126,7 +126,7 @@ class _NelderMeadInner(object):
     else return list of bound tuples for each fitted variable"""
         bounds = []
         allUnbounded = True
-        for (k, v, f), bound in zip(
+        for (_k, _v, f), bound in zip(
             self._initialVariables.flaggedVariablePairs,
             self._initialVariables.bounds,
         ):

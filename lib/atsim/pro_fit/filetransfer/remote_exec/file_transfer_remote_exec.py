@@ -14,7 +14,7 @@ def mktempdir(channel, channel_id):
         tmpdir = tempfile.mkdtemp()
         return tmpdir
     except Exception as e:
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "Couldn't create temporary directory. '%s' " % e,
@@ -31,7 +31,7 @@ def process_path(channel, channel_id, remote_path):
         return True, remote_path
 
     if os.path.exists(remote_path):
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "'remote_path' exists but is not a directory '%s'" % remote_path,
@@ -41,7 +41,7 @@ def process_path(channel, channel_id, remote_path):
 
     rootpath = os.path.dirname(remote_path)
     if not os.path.isdir(rootpath):
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "'remote_path' is invalid, neither '%s' or '%s' are existing directories."
@@ -54,7 +54,7 @@ def process_path(channel, channel_id, remote_path):
         os.mkdir(remote_path)
         return True, remote_path
     except Exception as e:
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "Couldn't create directory. '%s' reason '%s'" % (remote_path, e),
@@ -70,7 +70,7 @@ def keepalive(channel, channel_id, msg):
 def chkpath(channel, channel_id, remote_path):
     # Ensure that the destination directory is writeable
     if not os.access(remote_path, os.W_OK):
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "Directory is not writeable.",
@@ -83,7 +83,7 @@ def chkpath(channel, channel_id, remote_path):
 
 def upload(channel, channel_id, remote_root, msg):
     if "id" not in msg:
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "UPLOAD message does not contain 'id' argument",
@@ -95,7 +95,7 @@ def upload(channel, channel_id, remote_root, msg):
     file_data = msg.get("file_data", b"")
     mode = msg.get("mode", None)
     fileid = msg["id"]
-    rp = child_path(channel, channel_id, remote_root, msg)
+    rp = child_path(channel, channel_id, remote_root, msg) # pylint: disable=undefined-variable
 
     if rp is None:
         return
@@ -111,13 +111,15 @@ def upload(channel, channel_id, remote_root, msg):
         with open(remote_path, "wb") as outfile:
             outfile.write(file_data)
     except Exception as e:
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "Error writing file: '%s'" % str(e),
             ("IOERROR", "WRITE"),
             remote_path=remote_path,
             id=fileid,
+            remote_root=remote_root,
+            orig_msg=str(msg)
         )
         return False
 
@@ -137,7 +139,7 @@ def upload(channel, channel_id, remote_root, msg):
 
 def mkdir(channel, channel_id, remote_root, msg):
     if "id" not in msg:
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "MKDIR message does not contain 'id' argument",
@@ -148,7 +150,7 @@ def mkdir(channel, channel_id, remote_root, msg):
 
     mode = msg.get("mode", 0o777)
     fileid = msg["id"]
-    rp = child_path(channel, channel_id, remote_root, msg)
+    rp = child_path(channel, channel_id, remote_root, msg) # pylint: disable=undefined-variable
 
     if rp is None:
         return
@@ -158,7 +160,7 @@ def mkdir(channel, channel_id, remote_root, msg):
     try:
         os.mkdir(remote_path, mode)
     except OSError as e:
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "Error making directory: '%s'" % str(e),
@@ -178,7 +180,7 @@ def mkdir(channel, channel_id, remote_root, msg):
 
 def mkdirs(channel, channel_id, remote_root, msg):
     if "id" not in msg:
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "MKDIRS message does not contain 'id' argument",
@@ -189,7 +191,7 @@ def mkdirs(channel, channel_id, remote_root, msg):
 
     mode = msg.get("mode", 0o777)
     fileid = msg["id"]
-    rp = child_path(channel, channel_id, remote_root, msg)
+    rp = child_path(channel, channel_id, remote_root, msg) # pylint: disable=undefined-variable
 
     if rp is None:
         return
@@ -206,7 +208,7 @@ def mkdirs(channel, channel_id, remote_root, msg):
         try:
             _makedirs(remote_path, mode)
         except OSError as e:
-            error(
+            error( # pylint: disable=undefined-variable
                 channel,
                 channel_id,
                 "Error making directory: '%s'" % str(e),
@@ -222,7 +224,7 @@ def mkdirs(channel, channel_id, remote_root, msg):
 def _makedirs(path, mode):
     if not path or os.path.exists(path):
         return []
-    (head, tail) = os.path.split(path)
+    (head, _tail) = os.path.split(path)
     res = _makedirs(head, mode)
     os.mkdir(path)
     os.chmod(path, mode)
@@ -234,7 +236,7 @@ def list_dir(channel, channel_id, remote_root, msg):
     # Extract required arguments
     path = msg.get("remote_path", None)
     if path is None:
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "Could not find 'remote_path' argument in 'LIST' request'",
@@ -245,7 +247,7 @@ def list_dir(channel, channel_id, remote_root, msg):
 
     fileid = msg.get("id", None)
     if fileid is None:
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "Could not find 'id' argument in 'LIST' request'",
@@ -254,7 +256,7 @@ def list_dir(channel, channel_id, remote_root, msg):
         )
         return
 
-    rpath = child_path(channel, channel_id, remote_root, msg)
+    rpath = child_path(channel, channel_id, remote_root, msg) # pylint: disable=undefined-variable
     if rpath is None:
         return
     path = rpath
@@ -265,7 +267,7 @@ def list_dir(channel, channel_id, remote_root, msg):
     try:
         file_list = os.listdir(path)
     except OSError as e:
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "Could not list directory",
@@ -277,7 +279,7 @@ def list_dir(channel, channel_id, remote_root, msg):
         return
 
     for f in file_list:
-        p = normalize_path(remote_root, os.path.join(path, f))
+        p = normalize_path(remote_root, os.path.join(path, f)) # pylint: disable=undefined-variable
         mode = os.stat(p).st_mode
 
         if os.path.isdir(p):
@@ -293,7 +295,7 @@ def download_file(channel, channel_id, remote_root, msg):
     # Extract required arguments
     path = msg.get("remote_path", None)
     if path is None:
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "Could not find 'remote_path' argument in 'DOWNLOAD_FILE' request'",
@@ -304,7 +306,7 @@ def download_file(channel, channel_id, remote_root, msg):
 
     fileid = msg.get("id", None)
     if fileid is None:
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "Could not find 'id' argument in 'DOWNLOAD_FILE' request'",
@@ -313,9 +315,9 @@ def download_file(channel, channel_id, remote_root, msg):
         )
         return
 
-    rpath = normalize_path(remote_root, path)
+    rpath = normalize_path(remote_root, path) # pylint: disable=undefined-variable
     if rpath is None:
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "'path' argument in 'DOWNLOAD_FILE' request references location outside channel root.",
@@ -328,7 +330,7 @@ def download_file(channel, channel_id, remote_root, msg):
     path = rpath
 
     if not os.path.exists(path):
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "file does not exist",
@@ -339,7 +341,7 @@ def download_file(channel, channel_id, remote_root, msg):
         return
 
     if os.path.isdir(path) or not os.path.isfile(path):
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "path refers to a directory and cannot be downloaded",
@@ -353,7 +355,7 @@ def download_file(channel, channel_id, remote_root, msg):
         with open(path, "rb") as infile:
             filecontents = infile.read()
     except IOError as e:
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "permission denied",
@@ -390,14 +392,14 @@ def upload_remote_exec(channel, channel_id, remote_path):
     if not rc:
         return
 
-    ready(channel, channel_id, remote_path)
+    ready(channel, channel_id, remote_path) # pylint: disable=undefined-variable
 
     for msg in channel:
         if msg is None:
             return
 
         try:
-            mtype = extract_mtype(msg, channel, channel_id)
+            mtype = extract_mtype(msg, channel, channel_id) # pylint: disable=undefined-variable
             if mtype is None:
                 continue
 
@@ -410,7 +412,7 @@ def upload_remote_exec(channel, channel_id, remote_path):
             elif mtype == "KEEP_ALIVE":
                 keepalive(channel, channel_id, msg)
             else:
-                error(
+                error( # pylint: disable=undefined-variable
                     channel,
                     channel_id,
                     "Unknown 'msg' type: '%s'" % (mtype,),
@@ -418,7 +420,7 @@ def upload_remote_exec(channel, channel_id, remote_path):
                     mtype=mtype,
                 )
         except Exception as e:
-            error(
+            error( # pylint: disable=undefined-variable
                 channel,
                 channel_id,
                 "Exception: %s" % str(e),
@@ -429,7 +431,7 @@ def upload_remote_exec(channel, channel_id, remote_path):
 
 def download_remote_exec(channel, channel_id, remote_path):
     if remote_path is None:
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "'remote_path' argument not found in START_DOWNLOAD channel request.",
@@ -438,7 +440,7 @@ def download_remote_exec(channel, channel_id, remote_path):
 
     remote_path = os.path.normpath(remote_path)
     if not os.path.isdir(remote_path):
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             channel_id,
             "path does not exist or is not a directory",
@@ -447,13 +449,13 @@ def download_remote_exec(channel, channel_id, remote_path):
         )
         return
 
-    ready(channel, channel_id, remote_path)
+    ready(channel, channel_id, remote_path) # pylint: disable=undefined-variable
 
     for msg in channel:
         if msg is None:
             return
         try:
-            mtype = extract_mtype(msg, channel, channel_id)
+            mtype = extract_mtype(msg, channel, channel_id) # pylint: disable=undefined-variable
             if mtype is None:
                 continue
 
@@ -464,7 +466,7 @@ def download_remote_exec(channel, channel_id, remote_path):
             elif mtype == "KEEP_ALIVE":
                 keepalive(channel, channel_id, msg)
             else:
-                error(
+                error( # pylint: disable=undefined-variable
                     channel,
                     channel_id,
                     "Unknown 'msg' type: '%s'" % (mtype,),
@@ -472,7 +474,7 @@ def download_remote_exec(channel, channel_id, remote_path):
                     mtype=mtype,
                 )
         except Exception as e:
-            error(
+            error( # pylint: disable=undefined-variable
                 channel,
                 channel_id,
                 "Exception: %s" % str(e),
@@ -493,18 +495,11 @@ def start_channel(channel):
     }
 
     if not mtype in channeltypes:
-        error(
+        error( # pylint: disable=undefined-variable
             channel,
             None,
-            'was expecting msg that is one of %s, got "%s" instead'
-            % (
-                ",".join(
-                    ['"%s"' % ctype for ctype in list(channeltypes.keys())],
-                    ("MSGERROR", "UNKNOWN_MSGTYPE"),
-                    mtype,
-                )
-            ),
-        )
+            'was expecting msg that is one of %s, got "%s" instead' % ( ",".join( ['"%s"' % ctype for ctype in list(channeltypes.keys())]) , mtype), 
+            ("MSGERROR", "UNKNOWN_MSGTYPE"))
         return
 
     channel_id = msg.get("channel_id", str(uuid.uuid4()))
@@ -514,4 +509,4 @@ def start_channel(channel):
 
 
 if __name__ == "__channelexec__":
-    start_channel(channel)
+    start_channel(channel) # pylint: disable=undefined-variable

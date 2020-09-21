@@ -5,7 +5,7 @@ import shutil
 from atsim.pro_fit import db
 from atsim.pro_fit.db._tableserialize import _RangeDiscoverIterator
 
-from assertpy import *
+from assertpy import assert_that
 
 import sqlalchemy as sa
 
@@ -79,7 +79,7 @@ def _makeTable():
 
 def test_serializeTableForGNUPlot():
     """Test atsim.pro_fit.db.serializeTableForGNUPlot()"""
-    engine = sa.create_engine("sqlite:///" + _getdbpath())
+    sa.create_engine("sqlite:///" + _getdbpath())
     table = _makeTable()
 
     from io import StringIO
@@ -162,7 +162,7 @@ def test_serializeTableForR_badcolumnkeys(tmpdir):
                 "variable:B",
                 "evaluator:mult:mult:val:Z:extracted_value",
             )
-            fail("KeyError not raised")
+            pytest.fail("KeyError not raised")
         except KeyError:
             pass
 

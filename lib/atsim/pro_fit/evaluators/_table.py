@@ -1,7 +1,3 @@
-from ._common import *
-from atsim.pro_fit.exceptions import ConfigException
-from atsim.pro_fit._util import SkipWhiteSpaceDictReader
-
 import csv
 import itertools
 import logging
@@ -9,6 +5,11 @@ import math
 import os
 
 import cexprtk
+
+from atsim.pro_fit._util import SkipWhiteSpaceDictReader
+from atsim.pro_fit.exceptions import ConfigException
+
+from ._common import ErrorEvaluatorRecord, EvaluatorRecord, RMSEvaluatorRecord
 
 
 class TableEvaluatorConfigException(ConfigException):
@@ -370,7 +371,7 @@ class TableEvaluator(object):
             ]
         )
 
-        for k, v in cfgdict.items():
+        for k in cfgdict.keys():
             if not k in supportedFields:
                 raise ConfigException(
                     "unknown configuration option for Table evaluator: '%s'"
@@ -380,26 +381,26 @@ class TableEvaluator(object):
         # Get the required fields
         try:
             results_filename = cfgdict["results_filename"]
-        except KeyError as e:
+        except KeyError:
             raise ConfigException(
                 "required field not found: 'results_filename'"
             )
 
         try:
             expect_filename = cfgdict["expect_filename"]
-        except KeyError as e:
+        except KeyError:
             raise ConfigException(
                 "required field not found: 'expect_filename'"
             )
 
         try:
             row_compare = cfgdict["row_compare"]
-        except KeyError as e:
+        except KeyError:
             raise ConfigException("required field not found: 'row_compare'")
 
         try:
             weight = float(cfgdict.get("weight", 1.0))
-        except ValueError as e:
+        except ValueError:
             raise ConfigException(
                 "couldn't parse 'weight' configuration option into float: ''"
                 % weight
@@ -535,7 +536,7 @@ class TableEvaluator(object):
         # Throw when unknown variables found. Will require changes to cexprtk.
         callback = _UnknownVariableResolver()
         st = cexprtk.Symbol_Table({}, add_constants=True)
-        cexprExpression = cexprtk.Expression(expression, st, callback)
+        cexprtk.Expression(expression, st, callback)
 
         evars = callback.expectVariables
 
@@ -631,7 +632,7 @@ class TableEvaluator(object):
 
         callback = _UnknownVariableResolver()
         st = cexprtk.Symbol_Table({})
-        cexprExpression = cexprtk.Expression(expression, st, callback)
+        cexprtk.Expression(expression, st, callback)
         requiredVariables = callback.expectVariables
         if expect_value == None:
             requiredVariables.append("expect")
@@ -778,7 +779,7 @@ class _RowComparator(object):
                 raise ValueError(
                     "for expect table variable '%s',  %s." % (varkey, ve)
                 )
-            except KeyError as ke:
+            except KeyError:
                 raise UnknownVariableException(self.expressionString, [varkey])
 
             self._expression.symbol_table.variables[varkey] = val
@@ -792,7 +793,7 @@ class _RowComparator(object):
                 raise ValueError(
                     "for results table variable '%s', %s." % (varkey, ve)
                 )
-            except KeyError as ke:
+            except KeyError:
                 raise UnknownVariableException(self.expressionString, [varkey])
 
             self._expression.symbol_table.variables[varkey] = val

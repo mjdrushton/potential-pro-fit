@@ -27,11 +27,11 @@ in the fit.cfg file.
 
 """
 
-from ._localrunner import LocalRunner  # noqa
-from ._remoterunner import RemoteRunner  # noqa
+from ._localrunner import LocalRunner
+from ._remoterunner import RemoteRunner
 from ._base_remoterunner import BaseRemoteRunnerObserverAdapter
 from ._runner_job import RunnerJobObserverAdapter
-from ._exceptions import RunnerClosedException  # noqa
+from ._exceptions import RunnerClosedException
 from ._pbsrunner import PBSRunner
 from ._slurmrunner import SlurmRunner
 from ._sgerunner import SGERunner

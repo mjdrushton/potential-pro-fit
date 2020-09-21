@@ -127,7 +127,7 @@ class _RunnerJobThread(object):
                 "%s run exception", self.job
             )
             self.finishJob(exception)
-            et, ei, tb = exception
+            _et, ei, tb = exception
             raise ei.with_traceback(tb)
 
     def doLock(self):
@@ -314,7 +314,7 @@ class _RunnerJobThread(object):
                 self.job.status.append("finish job")
             else:
                 try:
-                    et, ei, tb = exception
+                    _et, ei, tb = exception
                     raise ei.with_traceback(tb)
                 except (
                     RunJobKilledException,

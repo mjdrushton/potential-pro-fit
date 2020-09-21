@@ -1,8 +1,10 @@
 #! /bin/bash
 
-apt-get update
-apt-get --yes install python
-apt-get --yes install language-pack-en
+export DEBIAN_FRONTEND=noninteractive
+
+apt-get update -yq
+apt-get -yq install python
+apt-get -yq install language-pack-en
 
 # Configure the master hostname for Grid Engine
 echo "gridengine-master       shared/gridenginemaster string  $HOSTNAME" | sudo debconf-set-selections

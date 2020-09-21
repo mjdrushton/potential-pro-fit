@@ -13,6 +13,9 @@ def _getResourceDir():
 
 
 class DBTestCase(unittest.TestCase):
+
+    dbname = None
+    
     @classmethod
     def dbPath(cls):
         path = os.path.join(_getResourceDir(), cls.dbname)

@@ -267,13 +267,11 @@ class RunJobCallback(object):
                 return False
 
             if mtype == "ERROR":
-                self.exception = self.error(msg)
-                # self._runjobState.errorEvent.set()
+                self.error(msg)
                 self.finish()
                 return True
             elif mtype == "JOB_START_ERROR":
                 self.exception = JobStartException()
-                # self._runjobState.jobStartEvent.set()
                 self.finish()
                 return True
 
@@ -342,7 +340,7 @@ class RunJobCallback(object):
         self.exception = RunChannelException(
             "Error, received error: %s. Msg: %s", reason, msg
         )
-        self._runJobState.errorEvent.set()
+        # self._runJobState.errorEvent.set()
 
     def finish(self):
         self._logger.debug("finish called, %s", self.workingDirectory)
@@ -354,7 +352,7 @@ class RunJobCallback(object):
     def raise_exception(self):
         if self.should_raise:
             if self.exception:
-                self._runjobState.errorEvent.set()
+                # self._runjobState.errorEvent.set()
                 raise self.exception
 
     def _setPid(self, pid):

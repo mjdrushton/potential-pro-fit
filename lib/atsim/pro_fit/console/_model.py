@@ -278,7 +278,7 @@ class _RunnerOverviewUpdateHandler(object):
     def __init__(self, consoleModel):
         self.model = consoleModel
         self._registerHandlers()
-        self._registeredHandlers = []
+        self._registered_handlers = []
 
     def _registerHandlers(self):
         self._register_runnerlist_callback()
@@ -292,12 +292,12 @@ class _RunnerOverviewUpdateHandler(object):
         self._register_runner_handlers()
 
     def _removeExistingHandlers(self):
-        for handler in self._registerHandlers:
+        for handler in self._registered_handlers:
             handler.unregisterHandlers()
 
     def _register_runner_handlers(self):
         runners = list(self.model.runners)
-        self._registerHandlers = [
+        self._registered_handlers.extend([
             _SumRunnerValues(
                 "total_jobs", runners, self.model.runner_overview
             ),
@@ -306,7 +306,7 @@ class _RunnerOverviewUpdateHandler(object):
             _SumRunnerValues(
                 "downloaded", runners, self.model.runner_overview
             ),
-        ]
+        ])
 
 
 class _ConsoleModel(object):

@@ -1,9 +1,9 @@
-from ._common import *  # noqa
-
-# from atomsscripts import dlpoly
-from . import _dlpoly_parse
-
 import os
+
+from atsim.pro_fit.exceptions import ConfigException
+
+from . import _dlpoly_parse
+from ._common import ErrorEvaluatorRecord, RMSEvaluatorRecord
 
 
 class DLPOLY_STATISEvaluatorException(Exception):

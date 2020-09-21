@@ -156,7 +156,7 @@ class MainFrame(urwid.WidgetPlaceholder):
                 opts = top.overlayOptions
                 args = [top, bottom]
                 args.extend(list(opts))
-                overlay = urwid.Overlay(*args)
+                overlay = urwid.Overlay(*args) # pylint: disable=no-value-for-parameter
                 bottom = overlay
             self.original_widget = overlay
 

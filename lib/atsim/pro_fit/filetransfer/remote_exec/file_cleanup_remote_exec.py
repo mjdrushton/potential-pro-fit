@@ -112,7 +112,7 @@ def _deleter_action(
             error(  # pylint: disable=E0602
                 channel,
                 channel_id,
-                "path not registerd with cleanup agent",
+                "path not registered with cleanup agent",
                 ("PATHERROR", "UNKNOWN_PATH"),
                 remote_path=p,
                 keyerror=str(e),
@@ -171,31 +171,45 @@ def flush(msg, channel, channel_id, deleter):
 
 
 def cleanup_remote_exec(channel, channel_id, remote_root):
-    ready(channel, channel_id, remote_root)  # pylint: disable=E0602
+    ready(channel, channel_id, remote_root)  # pylint: disable=undefined-variable
     deleter = FileDeleter(remote_root)
     try:
         for msg in channel:
             if msg is None:
                 break
-            mtype = extract_mtype(
+            mtype = extract_mtype(  # pylint: disable=undefined-variable
                 msg, channel, channel_id
-            )  # pylint: disable=E0602
-            if mtype is None:
-                continue
-            elif mtype == "LOCK":
-                lock(msg, channel, channel_id, remote_root, deleter)
-            elif mtype == "UNLOCK":
-                unlock(msg, channel, channel_id, remote_root, deleter)
-            elif mtype == "FLUSH":
-                flush(msg, channel, channel_id, deleter)
-            else:
-                error(  # pylint: disable=E0602
-                    channel,
-                    channel_id,
-                    "Unknown 'msg' type: '%s'" % (mtype,),
-                    ("MSGERROR", "UNKNOWN_MSGTYPE"),
-                    mtype=mtype,
-                )
+            )
+
+            try:
+                if mtype is None:
+                    continue
+                elif mtype == "LOCK":
+                    lock(msg, channel, channel_id, remote_root, deleter)
+                elif mtype == "UNLOCK":
+                    unlock(msg, channel, channel_id, remote_root, deleter)
+                elif mtype == "FLUSH":
+                    flush(msg, channel, channel_id, deleter)
+                else:
+                    error(  # pylint: disable=undefined-variable
+                        channel,
+                        channel_id,
+                        "Unknown 'msg' type: '%s'" % (mtype,),
+                        ("MSGERROR", "UNKNOWN_MSGTYPE"),
+                        mtype=mtype,
+                    )
+            except LockTreeException as lte:  # pylint: disable=undefined-variable
+                kwargs = {}
+                if 'id' in msg:
+                    kwargs['id'] = msg['id']
+                
+                if 'remote_path' in msg:
+                    kwargs['remote_path'] = msg['remote_path']
+
+                error(channel,  # pylint: disable=undefined-variable
+                      channel_id,
+                      str(lte),
+                      ("PATHERROR", "NOTCHILD"), **kwargs)
     finally:
         deleter.finish()
 

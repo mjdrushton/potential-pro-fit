@@ -17,6 +17,9 @@ def error(channel, channel_id, reason, error_code, **extra_args):
 def normalize_path(remote_root, dest_path):
   dest_path = os.path.normpath(dest_path)
   if os.path.isabs(dest_path):
+    if dest_path == '/' and remote_root != '/':
+      return None
+
     cp = os.path.commonprefix([remote_root, dest_path])
     dest_path = dest_path.replace(cp, "", 1)
     if os.path.isabs(dest_path):
@@ -31,8 +34,8 @@ def normalize_path(remote_root, dest_path):
   return dest_path
 
 def normalize_path_with_error(channel, channel_id, remote_root, remote_path, trans_id = None):
-  remote_path = normalize_path(remote_root, remote_path)
-  if remote_path is None:
+  norm_path = normalize_path(remote_root, remote_path)
+  if norm_path is None:
     kwargs = {'remote_path' : remote_path}
     if not trans_id is None:
       kwargs['id'] = trans_id
@@ -42,7 +45,7 @@ def normalize_path_with_error(channel, channel_id, remote_root, remote_path, tra
       ("PATHERROR", "NOTCHILD"),
       **kwargs)
     return None
-  return remote_path
+  return norm_path
 
 def child_path(channel, channel_id, remote_root, msg):
   """Extract 'remote_path' from msg and normalize path.

@@ -7,7 +7,7 @@ import subprocess
 import re
 
 
-torque_jobid_regex = re.compile("^([0-9]+?)(-([0-9]+?))?(\.(.*?))?(@.*?)?$")
+torque_jobid_regex = re.compile(r"^([0-9]+?)(-([0-9]+?))?(\.(.*?))?(@.*?)?$")
 
 
 def torque_split(pbs_id):
@@ -101,7 +101,7 @@ def compressTORQUEArrayJobs(pbs_ids):
     # array jobs are listed
     outids = []
     for i in pbs_ids:
-        jobid, subid, host = torque_split(i)
+        jobid, _subid, host = torque_split(i)
         newid = "".join([jobid, ".", host])
         outids.append(newid)
 
@@ -155,7 +155,7 @@ def qrls(pbs_ids):
     p = subprocess.Popen(
         args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True
     )
-    output, err = p.communicate()
+    _output, err = p.communicate()
 
     if p.returncode != 0:
         raise QRlsException(err.strip())
@@ -176,7 +176,7 @@ def qdel(pbs_ids, force, pbsConfig):
     p = subprocess.Popen(
         args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True
     )
-    output, err = p.communicate()
+    _output, err = p.communicate()
 
     if p.returncode != 0:
         raise QDelException(err.strip())
@@ -458,4 +458,4 @@ def remote_exec(channel):
 
 
 if __name__ == "__channelexec__":
-    remote_exec(channel)
+    remote_exec(channel) # pylint: disable=undefined-variable

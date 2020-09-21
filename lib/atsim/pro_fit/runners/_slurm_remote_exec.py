@@ -102,7 +102,7 @@ def qrls(job_ids):
     p = subprocess.Popen(
         args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True
     )
-    output, err = p.communicate()
+    _output, err = p.communicate()
 
     if p.returncode != 0:
         raise QRlsException(err.strip())
@@ -123,7 +123,7 @@ def qdel(job_ids, force):
     p = subprocess.Popen(
         args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True
     )
-    output, err = p.communicate()
+    _output, err = p.communicate()
 
     if p.returncode != 0:
         raise QDelException(err.strip())
@@ -185,7 +185,7 @@ def qsub_handler(channel, channel_id, msg):
         if not os.path.isfile(j):
             error(
                 channel,
-                'no job found at path for QSUB request: "%s"' % p,
+                'no job found at path for QSUB request: "%s"' % j,
                 channel_id=channel_id,
             )
             return
@@ -306,7 +306,7 @@ def remote_exec(channel):
 
     # Configure Slurm
     try:
-        versionstring = checkSlurm()
+        checkSlurm()
     except NoSlurmException as e:
         msg = "Slurm not found: " + str(e)
         error(channel, msg, channel_id=channel_id)
@@ -341,4 +341,4 @@ def remote_exec(channel):
 
 
 if __name__ == "__channelexec__":
-    remote_exec(channel)
+    remote_exec(channel) # pylint: disable=undefined-variable

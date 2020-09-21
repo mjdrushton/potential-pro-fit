@@ -391,7 +391,7 @@ def testQueueingSystemClientKillJob(gw, client, channel):
         # Check that the jr2 jobs have appeared in the queue
 
         def wait_for_release():
-            for i in range(10):
+            for _ in range(10):
                 if jr2._qscallback.jobReleased:
                     return True
                 gevent.sleep(5)

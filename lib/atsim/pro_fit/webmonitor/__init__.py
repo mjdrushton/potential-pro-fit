@@ -1,22 +1,20 @@
 #! /isr/bin/env python
 
-import cherrypy
-from cherrypy import tools
-
-import pkgutil
-import os
 import math
 import optparse
+import os
+import pkgutil
+from contextlib import closing
 
+import cherrypy
+from cherrypy import tools
 import sqlalchemy as sa
+from cp_sqlalchemy import SQLAlchemyTool, SQLAlchemyPlugin
 
-from atsim.pro_fit import reporters, db
 
-from atsim.pro_fit._sqlalchemy_cherrypy_integration import (
-    session,
-    configure_session,
-)
-from . import _jinja_cherrypy_integration  # noqa
+from atsim.pro_fit import db, reporters
+
+from . import _jinja_cherrypy_integration
 
 
 class Root:
@@ -29,7 +27,7 @@ class Root:
     }
 
     @cherrypy.expose
-    @cherrypy.tools.jinja(template="index.html")
+    @cherrypy.tools.jinja(template="index.html")  # pylint: disable=no-member
     def index(self):
         """Serve index.html performing jinja template substitution"""
         return {}
@@ -38,7 +36,7 @@ class Root:
         resourceurl = ["webresources", "static"]
         resourceurl.extend(args)
         resourceurl = "/".join(resourceurl)
-        junk, extension = os.path.splitext(resourceurl)
+        _, extension = os.path.splitext(resourceurl)
         try:
             data = pkgutil.get_data(__package__, resourceurl)
         except IOError:
@@ -53,7 +51,7 @@ class Root:
                 data = infile.read()
         except IOError:
             raise cherrypy.NotFound
-        junk, extension = os.path.splitext(filepath)
+        _, extension = os.path.splitext(filepath)
         return extension, data
 
     @cherrypy.expose
@@ -89,9 +87,9 @@ class Fitting:
       }
 
     '"""
-        configure_session(cherrypy.request.config["tools.SATransaction.dburi"])
-        f = db.Fitting(session)
-        return {"current_iteration": f.current_iteration()}
+        with closing(cherrypy.request.db) as session:
+            f = db.Fitting(session)
+            return {"current_iteration": f.current_iteration()}
 
     @cherrypy.expose
     @tools.json_out(on=True)
@@ -111,10 +109,10 @@ class Fitting:
 
 
       """
-        configure_session(cherrypy.request.config["tools.SATransaction.dburi"])
-        f = db.Fitting(session)
-        row = f.best_candidate()
-        return row
+        with closing(cherrypy.request.db) as session:
+            f = db.Fitting(session)
+            row = f.best_candidate()
+            return row
 
     @cherrypy.expose
     @tools.json_out(on=True)
@@ -131,10 +129,10 @@ class Fitting:
     ``run_status`` can have values of ``Running``, ``Finished`` or ``Error``.
 
     """
-        configure_session(cherrypy.request.config["tools.SATransaction.dburi"])
-        f = db.Fitting(session)
-        row = f.run_status()
-        return row
+        with closing(cherrypy.request.db) as session:
+            f = db.Fitting(session)
+            row = f.run_status()
+            return row
 
     @cherrypy.expose
     @tools.json_out(on=True)
@@ -169,9 +167,9 @@ class Fitting:
       }
 
       """
-        configure_session(cherrypy.request.config["tools.SATransaction.dburi"])
-        f = db.Fitting(session)
-        return f.iteration_overview(iterationNumber)
+        with closing(cherrypy.request.db) as session:
+            f = db.Fitting(session)
+            return f.iteration_overview(iterationNumber)
 
     @cherrypy.expose
     @tools.json_out(on=True)
@@ -196,10 +194,10 @@ class Fitting:
       }
 
     """
-        configure_session(cherrypy.request.config["tools.SATransaction.dburi"])
-        f = db.Fitting(session)
-        output = f.variables(iterationNumber, candidateNumber)
-        return output
+        with closing(cherrypy.request.db) as session:
+            f = db.Fitting(session)
+            output = f.variables(iterationNumber, candidateNumber)
+            return output
 
     @cherrypy.expose
     @tools.json_out(on=True)
@@ -226,10 +224,10 @@ class Fitting:
       }
 
     """
-        configure_session(cherrypy.request.config["tools.SATransaction.dburi"])
-        f = db.Fitting(session)
-        output = f.evaluated(iterationNumber, candidateNumber)
-        return output
+        with closing(cherrypy.request.db) as session:
+            f = db.Fitting(session)
+            output = f.evaluated(iterationNumber, candidateNumber)
+            return output
 
 
 class _FilterWrapper(object):
@@ -372,24 +370,24 @@ class IterationSeries:
 
 
     """
-        configure_session(cherrypy.request.config["tools.SATransaction.dburi"])
+        with closing(cherrypy.request.db) as session:
 
-        if columns:
-            columns = columns.split(",")
+            if columns:
+                columns = columns.split(",")
 
-        t = db.IterationSeriesTable(
-            session.get_bind(),
-            primaryColumnKey="merit_value",
-            iterationFilter=iterationFilter,
-            candidateFilter=candidateFilter,
-            columns=columns,
-        )
+            t = db.IterationSeriesTable(
+                session.get_bind(),
+                primaryColumnKey="merit_value",
+                iterationFilter=iterationFilter,
+                candidateFilter=candidateFilter,
+                columns=columns,
+            )
 
-        colheads = next(t)
+            colheads = next(t)
 
-        j = {"columns": colheads, "values": list(t)}
+            j = {"columns": colheads, "values": list(t)}
 
-        return j
+            return j
 
 
 def _setPort(portNumber):
@@ -439,27 +437,42 @@ def _processCommandLineOptions():
             "pprofitmon must be run from same directory as fitting run."
         )
 
-    options, args = parser.parse_args()
+    options, _args = parser.parse_args()
     _setPort(options.port)
     _setStaticPath(options.static_files)
+
+
+class _SQLAlchemyPlugin(SQLAlchemyPlugin):
+
+    def create(self):
+        pass
+
+    def bind(self, session):
+        super().bind(session)
 
 
 def _setupCherryPy(sqliteURL):
     root = Root()
     root.fitting = Fitting()
     root.fitting.iteration_series = IterationSeries()
+
+    cherrypy.tools.db = SQLAlchemyTool()
+
     cherrypy.tree.mount(
         root,
         "",
         {
             "/": {
-                "tools.SATransaction.on": True,
-                "tools.SATransaction.dburi": sqliteURL,
-                "tools.SATransaction.echo": True,
                 "tools.encode.encoding": "utf8",
+                "tools.db.on": True
             }
         },
     )
+
+    _SQLAlchemyPlugin(
+        cherrypy.engine, None, sqliteURL
+    ).subscribe()
+
     return root
 
 

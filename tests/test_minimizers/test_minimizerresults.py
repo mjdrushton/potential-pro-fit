@@ -2,8 +2,7 @@ import unittest
 
 from atsim import pro_fit
 
-from ._common import *
-
+from ._common import MockJob
 
 class MinimizerResultsTestCase(unittest.TestCase):
     """Tests for atsim.pro_fit.minimizers.MinimizerResults"""

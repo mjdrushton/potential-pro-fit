@@ -219,7 +219,7 @@ def _check_table(outputlines, extracols=None, expect=None):
 def testOptionOutput(tmpdir):
     """Test ppdump --output"""
     outputfilename = str(tmpdir.join("output.csv", abs=True))
-    outputlines = _run_ppdump(
+    _run_ppdump(
         ["-i", "all", "-f %s" % _getdbpath(), "-o %s" % outputfilename]
     )
     assert_that(outputfilename).is_file()
@@ -330,7 +330,7 @@ def test_outputRGrid(tmpdir):
     from .test_db.test_serializetable import _getdbpath, _checkRSerializedDB
 
     outfilename = str(tmpdir.join("dget.r", abs=True))
-    outputlines = _run_ppdump(
+    _run_ppdump(
         [
             "-f '%s'" % _getdbpath(),
             "-o",
@@ -351,7 +351,7 @@ def test_default_fitting_run_db_does_not_exist(tmpdir):
     from atsim.pro_fit.tools import ppdump
 
     with pytest.raises(subprocess.CalledProcessError) as excinfo:
-        outputlines = _run_ppdump([])
+        _run_ppdump([])
     exc = excinfo.value
     status = exc.returncode
     assert_that(status).is_equal_to(ppdump.EXIT_STATUS_DB_FILE_NOT_FOUND)
@@ -362,11 +362,11 @@ def test_default_fitting_run_db_cannot_be_opened(tmpdir):
     os.chdir(str(tmpdir))
     from atsim.pro_fit.tools import ppdump
 
-    with open("fitting_run.db", "w") as emptyfile:
+    with open("fitting_run.db", "w") as _emptyfile:
         pass
 
     with pytest.raises(subprocess.CalledProcessError) as excinfo:
-        outputlines = _run_ppdump([])
+        _run_ppdump([])
     exc = excinfo.value
     status = exc.returncode
     assert_that(status).is_equal_to(ppdump.EXIT_STATUS_DB_CANNOT_OPEN)

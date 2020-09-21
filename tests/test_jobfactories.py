@@ -1,12 +1,12 @@
-import unittest
-
+import configparser
+import os
 import shutil
 import tempfile
-import os
-import configparser
+import unittest
 
-from .common import *
 from atsim import pro_fit
+
+from .common import logger
 
 
 def _getResourceDir():

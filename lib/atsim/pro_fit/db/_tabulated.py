@@ -319,7 +319,7 @@ class IterationSeriesTable(object):
         popnresults = self._getSeriesCandidates(
             primaryColumnKey, iterationFilter, candidateFilter
         )
-        insertQuery = t.insert()
+        insertQuery = t.insert() # pylint: disable=no-value-for-parameter
         insertData = []
         for row in popnresults:
             insertData.append(dict(list(zip(list(popnresults.keys()), row))))

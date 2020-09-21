@@ -4,15 +4,10 @@ The basic interface for a Minimizer is described in: atsim.pro_fit.minimizers.ba
 
 """
 
-# flake8: noqa
-from ._common import *
+from . import base_minimizers
+from ._common import MinimizerResults
+from ._inspyred import (DEAMinimizer, Particle_SwarmMinimizer,
+                        Simulated_AnnealingMinimizer)
 from ._mystic import NelderMeadMinimizer
 from ._single import SingleStepMinimizer
-from ._inspyred import (
-    DEAMinimizer,
-    Simulated_AnnealingMinimizer,
-    Particle_SwarmMinimizer,
-)
 from ._spreadsheet import SpreadsheetMinimizer
-
-from . import base_minimizers

@@ -1,19 +1,20 @@
-import unittest
-
-import atsim.pro_fit.variables
-import atsim.pro_fit.evaluators
-import atsim.pro_fit.merit
-
-from . import testutil
-
-from .common import *
+import itertools
+import logging
+import math
 import os
 import shutil
 import stat
-import logging
 import sys
-import itertools
-import math
+import unittest
+
+import atsim.pro_fit.evaluators
+import atsim.pro_fit.merit
+import atsim.pro_fit.variables
+import gevent
+
+from . import testutil
+from .common import (MockEvaluator, MockJobFactory, MockRunner, e1, e2, e3,
+                     logger)
 
 
 class MeritTestCase(unittest.TestCase):
@@ -628,7 +629,7 @@ class MeritTestCase(unittest.TestCase):
 
         def afterMerit(meritValues, candidateJobPairs):
             evalrecords[:] = []
-            for v, jobs in candidateJobPairs:
+            for _v, jobs in candidateJobPairs:
                 for j in jobs:
                     for erl in j.evaluatorRecords:
                         for er in erl:

@@ -1,16 +1,18 @@
-from atsim.pro_fit.exceptions import ConfigException
-from . import _gulp_parse
-
 import collections
-import os
-import math
 import inspect
 import logging
+import math
+import os
 import sys
 
-_logger = logging.getLogger("atsim.pro_fit.evaluators")
+from atsim.pro_fit.exceptions import ConfigException
 
-from ._common import *  # noqa
+from . import _gulp_parse
+# from ._common import *
+from ._common import (ErrorEvaluatorRecord, EvaluatorRecord,
+                      FractionalDifferenceEvaluatorRecord, RMSEvaluatorRecord)
+
+_logger = logging.getLogger("atsim.pro_fit.evaluators")
 
 
 class GulpDrvParser(object):

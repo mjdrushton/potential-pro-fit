@@ -1,8 +1,9 @@
-from ._common import *
-from atsim.pro_fit.exceptions import ConfigException
+import logging
+
 import gevent
 
-import logging
+from atsim.pro_fit.exceptions import ConfigException
+from ._common import MinimizerResults
 
 
 class SpreadsheetMinimizer(object):
@@ -75,9 +76,9 @@ class SpreadsheetMinimizer(object):
                 )
 
             if self.stepCallback:
-                self.stepCallback(
+                self.stepCallback( # pylint: disable=not-callable
                     currentMinimizerResults
-                )  # pylint: disable=not-callable
+                )
         return minimizerResults
 
     def _batchIt(self):
@@ -182,7 +183,7 @@ class SpreadsheetMinimizer(object):
                 variables, infile, startRow=startRow, endRow=endRow
             )
             try:
-                for row in rowit:
+                for _row in rowit:
                     pass
             except _RowColException as rce:
                 msg = (

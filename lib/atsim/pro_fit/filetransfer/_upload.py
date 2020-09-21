@@ -208,8 +208,8 @@ class UploadDirectory(object):
             ulchannels.callback = MultiCallback()
 
         if not isinstance(ulchannels.callback, MultiCallback):
-            raise DirectoryDownloadException(
-                "Callback already registered with DownloadChannel is not an instance of MultiCallback"
+            raise DirectoryUploadException(
+                "Callback already registered with UploadChannel is not an instance of MultiCallback"
             )
 
         ulchannels.callback.append(self._callback)
@@ -364,7 +364,7 @@ class _UploadCallback(object):
         if not non_blocking:
             self.event.wait()
             if self._exc:
-                et, ei, tb = self._exc
+                _et, ei, tb = self._exc
                 raise ei.with_traceback(tb)
         else:
             return self.event
@@ -402,7 +402,7 @@ class _UploadCallback(object):
             self._logger.debug("StopIteration")
             try:
                 self.parent.upload_handler.finish(None)
-            except Exception as e:
+            except Exception:
                 self.enabled = False
                 self._exc = sys.exc_info()
                 traceback.print_exc()
@@ -565,7 +565,7 @@ class _UploadCallback(object):
         self.enabled = False
         try:
             self.parent.upload_handler.finish(exc)
-        except Exception as e:
+        except Exception:
             self._exc = sys.exc_info()
         self._finish()
         return self.event

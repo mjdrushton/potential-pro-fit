@@ -202,5 +202,5 @@ class Particle_SwarmMinimizer(object):
             # drop_self=True,
             extra_args={"variables": variables},
         )
-        minimizer = cls._create_minimizer_instance(*args)
+        minimizer = cls._create_minimizer_instance(*args) # pylint: disable=no-value-for-parameter
         return minimizer

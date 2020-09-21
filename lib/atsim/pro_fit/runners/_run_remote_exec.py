@@ -155,11 +155,11 @@ class Runners(threading.Thread):
             if not runcmd.kill_called.is_set():
                 runcmd.start()
             elif not runcmd.is_alive():
-                self.jobdone(runcmd.job_id)
+                self.jobdone(runcmd.job_id,1)
 
     def runjob(self, job_id, job_path):
         if self._killevent.is_set():
-            self.jobdone(job_id)
+            self.jobdone(job_id,1)
             return
         jobtuple = JobTuple(job_id, job_path)
         self._queued_jobs.put(jobtuple)
@@ -379,4 +379,4 @@ def remote_exec(channel):
 
 
 if __name__ == "__channelexec__":
-    remote_exec(channel)
+    remote_exec(channel) # pylint: disable=undefined-variable

@@ -76,7 +76,6 @@ class FormulaMetaEvaluator(unittest.TestCase):
 
     def testGetVariableValues(self):
         """Test metaevaluators.FormulaMetaEvaluator"""
-        Job = jobfactories.Job
         ER = evaluators.EvaluatorRecord
 
         le = ER("lattice_energy", 1000.0, 100.0, 2.0, 123.0, "MgO:Gulp")
@@ -128,7 +127,6 @@ class FormulaMetaEvaluator(unittest.TestCase):
 
     def testEvaluate(self):
         """Test that formula FormulaMetaEvaluator performs calculations correctly"""
-        Job = jobfactories.Job
         ER = evaluators.EvaluatorRecord
 
         le = ER("lattice_energy", 1000.0, 100.0, 2.0, 123.0, "MgO:Gulp")
@@ -311,7 +309,7 @@ class FormulaMetaEvaluator(unittest.TestCase):
         )
         cfgitems = parser.items("MetaEvaluator:Sumthings")
         with self.assertRaises(ConfigException):
-            evaluator = metaevaluators.FormulaMetaEvaluator.createFromConfig(
+            metaevaluators.FormulaMetaEvaluator.createFromConfig(
                 "Sumthings", "/a/path", cfgitems
             )
 
@@ -327,6 +325,6 @@ class FormulaMetaEvaluator(unittest.TestCase):
         )
         cfgitems = parser.items("MetaEvaluator:Sumthings")
         with self.assertRaises(ConfigException):
-            evaluator = metaevaluators.FormulaMetaEvaluator.createFromConfig(
+            metaevaluators.FormulaMetaEvaluator.createFromConfig(
                 "Sumthings", "/a/path", cfgitems
             )

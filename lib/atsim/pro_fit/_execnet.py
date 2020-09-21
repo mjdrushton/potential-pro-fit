@@ -1,5 +1,7 @@
 import os
 import execnet
+import execnet.multi
+import execnet.xspec
 import tempfile
 import logging
 EXECNET_TERM_TIMEOUT = 10
@@ -9,7 +11,7 @@ logger = logging.getLogger("atsim.pro_fit._execnet")
 
 
 def Group(*args, **kwargs):
-    group = execnet.Group(*args, **kwargs)
+    group = execnet.multi.Group(*args, **kwargs)
     group.set_execmodel("gevent", "thread")
     return group
 
@@ -49,11 +51,11 @@ def makeExecnetConnectionSpec(
         gwurl += host
 
     if identityfile:
-        identifyfile = os.path.abspath(identityfile)
+        identityfile = os.path.abspath(identityfile)
 
         if not os.path.isfile(identityfile):
             # Check that the identityfile can be opened
-            with open(identityfile, "r") as infile:
+            with open(identityfile, "r") as _infile:
                 pass
 
         sshcfg.write("IdentityFile %s\n" % identityfile)
@@ -72,7 +74,7 @@ def makeExecnetConnectionSpec(
     for line in sshcfg:
         local_log.debug("ssh_config contents: %s" % line[:-1])
 
-    xspec = execnet.XSpec(gwurl)
+    xspec = execnet.xspec.XSpec(gwurl)
     xspec.ssh_config = sshcfg.name
 
     return xspec, sshcfg

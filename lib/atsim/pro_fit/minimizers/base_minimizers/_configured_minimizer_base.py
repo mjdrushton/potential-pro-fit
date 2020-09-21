@@ -44,5 +44,5 @@ class Configured_Minimizer_Abstract_Base(Abstract_Base_Minimizer):
         args = cfgparse.options_to_function_args(
             opts, cls.__init__, {"variables": variables}, drop_self=True
         )
-        minimizer = cls(*args)
+        minimizer = cls(*args) # pylint: disable=no-value-for-parameter
         return minimizer

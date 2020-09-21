@@ -1,11 +1,11 @@
-import unittest
-import io
 import configparser
+import io
+import unittest
 
 from atsim import pro_fit
-from .. import testutil
 
-from ._common import *
+from .. import testutil
+from ._common import MockMeritRosen, StepCallBack
 
 
 class NelderMeadTestCase(unittest.TestCase):

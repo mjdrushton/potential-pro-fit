@@ -37,7 +37,7 @@ class GulpDrvParserTestCase(unittest.TestCase):
         ]
 
         actual = self.parser.gradientsCartesian
-        actual = testutil.compareCollection(self, expect, actual)
+        testutil.compareCollection(self, expect, actual)
 
     def testGradientsStrain(self):
         expect = [
@@ -437,9 +437,9 @@ class GulpEvaluatorTestCase(unittest.TestCase):
         extractedvalues = dict(
             [(v.name, v.extractedValue) for v in subevalled]
         )
-        fractionaldiffs = dict(
-            [(v.name, v.fractionalDifference) for v in subevalled]
-        )
+        # fractionaldiffs = dict(
+        #     [(v.name, v.fractionalDifference) for v in subevalled]
+        # )
         # weighteddiffs = dict([ (v.name, v.weightedDifference) for v in subevalled])
 
         testutil.compareCollection(

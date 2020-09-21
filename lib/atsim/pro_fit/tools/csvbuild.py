@@ -193,7 +193,6 @@ class _DirectoryWalker(object):
             os.mkdir(destdirname)
         shutil.copystat(dirname, destdirname)
         for n in names:
-            fname = os.path.join(dirname, n)
             self._processFile(dirname, destdirname, n, row)
 
     def processRow(self, row):
