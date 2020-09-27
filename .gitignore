@@ -1,4 +1,4 @@
-.vscode/settings.json
+.vscode/
 venv/
 .python-version
 .pytest_cache/
@@ -8,3 +8,4 @@ venv/
 lib/potential_pro_fit.egg-info/
 tests/vagrant/basic/ubuntu-bionic-18.04-cloudimg-console.log
 tests/vagrant/slurm/ubuntu-bionic-18.04-cloudimg-console.log
+html/

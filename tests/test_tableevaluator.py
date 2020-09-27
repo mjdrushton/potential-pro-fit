@@ -548,7 +548,6 @@ class TableEvaluatorErrorConditionTestCase(unittest.TestCase):
         print("2,3,4,5", file=sio)
 
         sio.seek(0)
-        # import pdb; pdb.set_trace()
         with self.assertRaises(pro_fit.evaluators._table.TableHeaderException):
             pro_fit.evaluators.TableEvaluator._validateExpectRows("e_A", sio)
 

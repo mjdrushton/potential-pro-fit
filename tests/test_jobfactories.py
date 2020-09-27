@@ -4,7 +4,8 @@ import shutil
 import tempfile
 import unittest
 
-from atsim import pro_fit
+import atsim.pro_fit
+import atsim.pro_fit.variables
 
 from .common import logger
 
@@ -36,15 +37,16 @@ class TemplateJobFactoryTestCase(unittest.TestCase):
         logger.debug("srcpath: %s" % srcpath)
         logger.debug("destpath: %s" % self.tempd)
 
-        factory = pro_fit.jobfactories.TemplateJobFactory(
+        factory = atsim.pro_fit.jobfactories.TemplateJobFactory(
             srcpath,
             os.path.join(self.rootDir, "runner_files", "runner_name"),
             "Runner",
             "Job",
             [],
+            []
         )
 
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [("NAME", "Named", True), ("A", 5.0, False)]
         )
 
@@ -86,11 +88,11 @@ echo 5.0 > output.res
         logger.debug("srcpath: %s" % srcpath)
         logger.debug("destpath: %s" % self.tempd)
 
-        factory = pro_fit.jobfactories.TemplateJobFactory(
-            srcpath, None, "Runner", "Job", []
+        factory = atsim.pro_fit.jobfactories.TemplateJobFactory(
+            srcpath, None, "Runner", "Job", [], []
         )
 
-        variables = pro_fit.variables.Variables(
+        variables = atsim.pro_fit.variables.Variables(
             [("NAME", "Named", True), ("A", 5.0, False)]
         )
 
@@ -139,15 +141,16 @@ runner : runner_name
         from . import mockeval1
 
         eval1 = mockeval1.MockEvaluator1Evaluator()
-        jf = pro_fit.jobfactories.TemplateJobFactory.createFromConfig(
+        jf = atsim.pro_fit.jobfactories.TemplateJobFactory.createFromConfig(
             "path/to/sourcedir",
             self.rootDir,
             "runner_name",
             "Blah",
             [eval1],
-            sect,
+            [],
+            sect
         )
-        self.assertEqual(pro_fit.jobfactories.TemplateJobFactory, type(jf))
+        self.assertEqual(atsim.pro_fit.jobfactories.TemplateJobFactory, type(jf))
         self.assertEqual("runner_name", jf.runnerName)
         self.assertEqual("Blah", jf.jobName)
         self.assertEqual([eval1], jf.evaluators)
@@ -163,23 +166,25 @@ runner : runner_name
         shutil.rmtree(
             os.path.join(self.rootDir, "runner_files", "runner_name")
         )
-        jf = pro_fit.jobfactories.TemplateJobFactory.createFromConfig(
+        jf = atsim.pro_fit.jobfactories.TemplateJobFactory.createFromConfig(
             "path/to/sourcedir",
             self.rootDir,
             "runner_name",
             "Blah",
             [eval1],
-            sect,
+            [],
+            sect
         )
         self.assertEqual(None, jf.runnerFilesPath)
 
         shutil.rmtree(os.path.join(self.rootDir, "runner_files"))
-        jf = pro_fit.jobfactories.TemplateJobFactory.createFromConfig(
+        jf = atsim.pro_fit.jobfactories.TemplateJobFactory.createFromConfig(
             "path/to/sourcedir",
             self.rootDir,
             "runner_name",
             "Blah",
             [eval1],
+            [],
             sect,
         )
         self.assertEqual(None, jf.runnerFilesPath)

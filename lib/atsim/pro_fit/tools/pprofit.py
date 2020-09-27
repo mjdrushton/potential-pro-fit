@@ -23,6 +23,7 @@ import atsim.pro_fit.minimizers
 import atsim.pro_fit.metaevaluators
 import atsim.pro_fit.jobfactories
 import atsim.pro_fit.evaluators
+import atsim.pro_fit.jobtasks
 from gevent import monkey
 
 monkey.patch_all()
@@ -425,6 +426,7 @@ def _getfitcfg(
     metaevaluators = [atsim.pro_fit.metaevaluators]
     jobfactories = [atsim.pro_fit.jobfactories]
     minimizers = [atsim.pro_fit.minimizers]
+    jobtasks = [atsim.pro_fit.jobtasks]
 
     # Introspect the the atsim.pro_fit.plugins namespace and add these to pluginmodules too.
     ns_pluginsmodules = []
@@ -438,7 +440,7 @@ def _getfitcfg(
     except ImportError:
         pass
 
-    for l in [runners, evaluators, metaevaluators, jobfactories, minimizers]:
+    for l in [runners, evaluators, metaevaluators, jobfactories, minimizers, jobtasks]:
         l.extend(pluginmodules)
         l.extend(ns_pluginsmodules)
 
@@ -449,6 +451,7 @@ def _getfitcfg(
         metaevaluators,
         jobfactories,
         minimizers,
+        jobtasks,
         jobdir=jobdir,
     )
 

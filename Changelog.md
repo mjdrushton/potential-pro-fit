@@ -1,9 +1,11 @@
 # Changelog
 
-## [0.9.1] - Unreleased
+## [0.10.0] - Unreleased
 ### Changed
 
 ### Added
+- New feature job-tasks:
+    + `Potable` job-task allows tabulation of `atsim.potentials` potable files within a fitting run.
 - Added the 'bad_merit_substitute' for the `[FittingRun]` section of `fit.cfg`. This allows invalid merit values (nan) to be substituted with a large float.
 - Added the --iteration/-i option to the ppdump tool. This allows the last, best or numbered steps from a fitting run to be dumped.
 - Population minimizers:

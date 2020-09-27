@@ -554,7 +554,7 @@ class MeritTestCase(unittest.TestCase):
                         ).append(elist)
 
         self.merit.afterEvaluation.append(afterEvaluation)
-
+        # import pdb; pdb.set_trace()
         self.merit.calculate(self.candidates)
         expect = {
             0: {

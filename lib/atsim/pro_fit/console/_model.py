@@ -277,8 +277,8 @@ class _SumRunnerValues(object):
 class _RunnerOverviewUpdateHandler(object):
     def __init__(self, consoleModel):
         self.model = consoleModel
-        self._registerHandlers()
         self._registered_handlers = []
+        self._registerHandlers()
 
     def _registerHandlers(self):
         self._register_runnerlist_callback()

@@ -149,7 +149,6 @@ def test_sub_parser():
 
     inputs = [("float_option", "1.23"), ("one", "1"), ("three", "4")]
 
-    # import pdb; pdb.set_trace()
     parsed = cfgparser.parse(inputs, delete_options=[])
 
     assert len(parsed) == 2

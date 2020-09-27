@@ -1,7 +1,7 @@
 SingleStepMinimizer
 ^^^^^^^^^^^^^^^^^^^
 
-:Type-Name: SingleStepMinimizer
+:Type-Name: SingleStep
 :Description: Evaluates the merit function once then exits. Using this minimizer is equivalent to specifying the ``--single`` option to ``pprofit``. 
 
 \ 

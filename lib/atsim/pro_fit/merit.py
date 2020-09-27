@@ -8,6 +8,7 @@ import gevent
 
 from atsim.pro_fit._util import MultiCallback
 
+from typing import List
 
 def _sumValuesReductionFunction(evaluatedJobs):
     """Default reduction function, for each list enter sub lists and sum values"""
@@ -126,6 +127,9 @@ class Merit(object):
             finishedEvents = self._runBatches(batchedJobs)
             gevent.wait(objects=finishedEvents)
 
+            # Run job tasks.
+            self._runTasksAfterRun(candidate_job_lists)
+
             # Call the afterRun callback
             self.afterRun(candidate_job_lists)  # pylint: disable=E1102
 
@@ -179,6 +183,7 @@ class Merit(object):
                 os.mkdir(jobpath)
                 job = factory.createJob(jobpath, candidate)
                 candidate_job_lists[-1][1].append(job)
+                factory.runTasksBeforeRun(job)
                 # Assign job to correct batch
                 runnerBatches.setdefault(factory.runnerName, []).append(job)
 
@@ -231,6 +236,17 @@ class Merit(object):
                     "meta_evaluator", evaluatorRecords, batch[0].variables
                 )
                 batch.append(metaEvaluatorJob)
+
+    def _runTasksAfterRun(self, candidate_job_lists):
+        """Run job tasks after run but before evaluators are run.
+
+        Args:
+            candidate_job_lists (list) : Candidate job list pairs"""
+
+        for _candidate, job_list in candidate_job_lists:
+            for job in job_list:
+                job.jobFactory.runTasksAfterRun(job)
+
 
     @property
     def beforeRun(self):

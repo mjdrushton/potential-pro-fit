@@ -36,20 +36,17 @@ def mockfuture(jobs):
         rundir = os.path.abspath(os.path.join(job.path, "rundir"))
         shutil.copytree(jfdir, rundir)
 
-        oldcwd = os.getcwd()
         try:
-            os.chdir(rundir)
             # Make runjob executable
-            logger.debug("Directory contents: %s" % os.listdir("."))
-            os.chmod("runjob", stat.S_IRWXU)
-            status = subprocess.check_call("./runjob", shell=True)
+            logger.debug("Directory contents: %s" % os.listdir(rundir))
+            os.chmod(os.path.join(rundir, "runjob"), stat.S_IRWXU)
+            status = subprocess.check_call("./runjob", shell=True, cwd=rundir)
             logger.debug("Runjob status: %s" % status)
-            with open("STATUS", "w") as outfile:
+            with open(os.path.join(rundir, "STATUS"), "w") as outfile:
                 print("%d" % status, file=outfile)
-            logger.debug("Directory contents after run: %s" % os.listdir("."))
+            logger.debug("Directory contents after run: %s" % os.listdir(rundir))
         finally:
             os.rename(rundir, outputdir)
-            os.chdir(oldcwd)
 
 
 class MockEvaluator(object):
@@ -98,6 +95,12 @@ class MockJobFactory(object):
         self.name = jobName
         self.runnerName = runnerName
         self.evaluators = evaluators
+
+    def runTasksBeforeRun(self, job):
+        pass
+
+    def runTasksAfterRun(self, job):
+        pass
 
     def createJob(self, destdir, variables):
         jfdir = os.path.join(destdir, "job_files")

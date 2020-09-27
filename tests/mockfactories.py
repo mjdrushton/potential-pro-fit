@@ -3,8 +3,14 @@ class MockJobFactory(object):
         self.runnerName = runnername
         self.evaluators = evaluators
 
+    def runTasksBeforeRun(self, job):
+        pass
+
+    def runTasksAfterRun(self, job):
+        pass
+
     @staticmethod
     def createFromConfig(
-        jobpath, fit_root_path, runnername, jobname, evaluators, cfgitems
+        jobpath, fit_root_path, runnername, jobname, evaluators, jobtasks, cfgitems
     ):
         return MockJobFactory(runnername, evaluators)

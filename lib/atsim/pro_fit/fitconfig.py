@@ -1,22 +1,18 @@
-from atsim.pro_fit.exceptions import (
-    ConfigException,
-    MultipleSectionConfigException,
-)
-from atsim.pro_fit.variables import Variables, CalculatedVariables
-from atsim.pro_fit.merit import Merit, Replace_Merit_After_Evaluation_Callback
-from atsim.pro_fit.cfg import float_convert
-
 import configparser
-
-import os
 import logging
 import math
-
-from atsim.pro_fit import jobfactories
+import os
+from types import ModuleType
+from typing import List, Optional
 
 import cexprtk
-
 import gevent
+from atsim.pro_fit import jobfactories
+from atsim.pro_fit.cfg import float_convert
+from atsim.pro_fit.exceptions import (ConfigException,
+                                      MultipleSectionConfigException)
+from atsim.pro_fit.merit import Merit, Replace_Merit_After_Evaluation_Callback
+from atsim.pro_fit.variables import CalculatedVariables, Variables
 
 
 class FitConfig(object):
@@ -27,25 +23,31 @@ class FitConfig(object):
     _repeatedSections = set(["Runner", "Evaluator"])
 
     def __init__(
-        self,
-        fitCfgFilename,
-        runnermodules,
-        evaluatormodules,
-        metaevaluatormodules,
-        jobfactorymodules,
-        minimizermodules,
-        jobdir=None,
-    ):
-        """Create FitConfig from file containing configuration information.
+            self,
+            fitCfgFilename: str,
+            runnermodules: List[ModuleType],
+            evaluatormodules: List[ModuleType],
+            metaevaluatormodules: List[ModuleType],
+            jobfactorymodules: List[ModuleType],
+            minimizermodules: List[ModuleType],
+            jobtaskmodules: List[ModuleType],
+            jobdir: Optional[str] = None):
+        """Create FitConfig from file containing configuration information
 
-    @param fitCfgFilename Filename for fit.cfg.
-    @param runnermodules List of python module objects containing Runner objects
-    @param evaluatormodules List of python module objects containing Evaluator objects
-    @param metaevaluatormodules List of python module objects containing MetaEvaluator objects
-    @param jobfactorymodules List of python module objects containing JobFactories objects
-    @param minimizermodules List of python module objects contiaining Minimizers
-    @param jobdir If specified use as directory for temporary files, if not use rootpath/jobs
-    @param minimizer If not None overrides the minimizer specified in fit.cfg"""
+        Args:
+            fitCfgFilename (str):  Filename for fit.cfg.
+            runnermodules (List[ModuleType]):  List of python module objects containing Runner classes.
+            evaluatormodules (List[ModuleType]):  List of python module objects containing Evaluator classes.
+            metaevaluatormodules (List[ModuleType]):  List of python module objects containing MetaEvaluator classes.
+            jobfactorymodules (List[ModuleType]):  List of python module objects containing JobFactories classes.
+            minimizermodules (List[ModuleType]):  List of python module objects containing Minimizers.
+            jobtaskmodules (List[ModuleType]): List of python modules containing JobTask classes.
+            jobdir (Optional[str], optional): If specified use as directory for temporary files, if not use rootpath/jobs. Defaults to None. 
+
+        Raises:
+            ConfigException: Raised when configuration problems are found.
+            MultipleSectionConfigException: Raised when multiple instances of a setion are found in configuration.
+        """
         self._logger = logging.getLogger(__name__).getChild("FitConfig")
         self._fitRootPath = os.path.abspath(os.path.dirname(fitCfgFilename))
         if jobdir:
@@ -60,7 +62,7 @@ class FitConfig(object):
         self._runners = self._createRunners(runnermodules)
         self._metaevaluators = self._createMetaEvaluators(metaevaluatormodules)
         self._jobfactories = self._createJobFactories(
-            jobfactorymodules, evaluatormodules
+            jobfactorymodules, evaluatormodules, jobtaskmodules
         )
 
         self._verifyHasJobs()
@@ -208,7 +210,7 @@ class FitConfig(object):
     def _parseConfig(self, fitCfgFilename):
         """@param fitCfgFilename Filename for fit.cfg.
     @return ConfigParser object"""
-        config = configparser.SafeConfigParser()
+        config = configparser.ConfigParser()
         config.optionxform = str
         with open(fitCfgFilename, "r") as fitCfgFile:
             config.read_file(fitCfgFile)
@@ -437,9 +439,10 @@ class FitConfig(object):
 
         return merit
 
-    def _createJobFactories(self, jobfactorymodules, evaluatormodules):
+    def _createJobFactories(self, jobfactorymodules, evaluatormodules, jobtaskmodules):
         evaldict = self._findClasses(evaluatormodules, "Evaluator")
         jobfdict = self._findClasses(jobfactorymodules, "JobFactory")
+        jobtaskdict = self._findClasses(jobtaskmodules, "JobTask")
 
         # Walk fit_files directory
         fitfilespath = os.path.join(self._fitRootPath, "fit_files")
@@ -453,12 +456,12 @@ class FitConfig(object):
             if not os.path.isdir(f):
                 continue
             self._logger.info('Processing job directory: "%s"' % f)
-            jf = self._processJobDirectory(f, evaldict, jobfdict)
+            jf = self._processJobDirectory(f, evaldict, jobfdict, jobtaskdict)
             jobfs.append(jf)
 
         return jobfs
 
-    def _processJobDirectory(self, path, evaldict, jobfdict):
+    def _processJobDirectory(self, path, evaldict, jobfdict, jobtaskdict):
         # Open job.cfg
         cfgpath = os.path.join(path, "job.cfg")
         try:
@@ -472,6 +475,9 @@ class FitConfig(object):
 
         # Process evaluators
         evaluators = self._createEvaluators(jobname, path, fitcfg, evaldict)
+
+        # Process job tasks
+        jobtasks = self._createJobTasks(jobname, path, fitcfg, jobtaskdict)
 
         # Process the Job section
         jfclsname = fitcfg.get("Job", "type")
@@ -495,6 +501,7 @@ class FitConfig(object):
             runnername,
             jobname,
             evaluators,
+            jobtasks,
             fitcfg.items("Job"),
         )
 
@@ -523,6 +530,27 @@ class FitConfig(object):
                 "Job does not define any evaluators: '%s'" % jobname
             )
         return evaluators
+
+    def _createJobTasks(self, jobname, jobpath, fitcfg, jobtaskdict):
+        jobtasks = []
+        for s in fitcfg.sections():
+            if s.startswith("Task:"):
+                name = self._parseColonKey("Task", s)
+                self._logger.debug('Processing job task "%s"' % name)
+                clsname = fitcfg.get(s, "type")
+                try:
+                    cls = jobtaskdict[clsname]
+                except KeyError:
+                    raise ConfigException(
+                        'Unknown job task type: "%s" for job "%s"'
+                        % (clsname, jobname)
+                    )
+
+                task = cls.createFromConfig(
+                    ":".join([jobname, name]), jobpath, fitcfg.items(s)
+                )
+                jobtasks.append(task)
+        return jobtasks
 
     def _createMinimizer(self, minimizermodules):
         minclasses = self._findClasses(minimizermodules, "Minimizer")

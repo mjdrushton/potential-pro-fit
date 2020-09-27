@@ -322,13 +322,6 @@ def testDownloadHandler_complete_callback(tmpdir, execnet_gw, channel_id):
                 ch1, remote_path.strpath, dest_path.strpath, dlh
             )
 
-            # try:
-            #   do_dl(tmpdir, ch1, dl, False)
-            #   import pdb; pdb.set_trace()
-            #   assert False, "OSError should have been raised."
-            # except OSError:
-            #   pass
-
             do_dl(tmpdir, ch1, dl, False)
             assert dlh.complete_called == True
             et, _ei, _tb = dlh.completion_exception

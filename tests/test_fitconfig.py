@@ -1,6 +1,7 @@
 import atsim.pro_fit.fitconfig
 import atsim.pro_fit.metaevaluators
 import atsim.pro_fit.minimizers
+import atsim.pro_fit.jobtasks
 from . import testutil
 
 import unittest
@@ -34,6 +35,7 @@ class FitConfigTestCase(unittest.TestCase):
             metaevaluatormodules=[atsim.pro_fit.metaevaluators],
             jobfactorymodules=[mockfactories],
             minimizermodules=[atsim.pro_fit.minimizers],
+            jobtaskmodules=[atsim.pro_fit.jobtasks]
         )
         self.cfgobject = cfgobject
 
@@ -57,6 +59,7 @@ class FitConfigTestCase(unittest.TestCase):
             metaevaluatormodules=[atsim.pro_fit.metaevaluators],
             jobfactorymodules=[mockfactories],
             minimizermodules=[atsim.pro_fit.minimizers],
+            jobtaskmodules=[atsim.pro_fit.jobtasks]
         )
 
         self.assertEqual("This is the name of the run", cfgobject.title)
@@ -81,6 +84,7 @@ class FitConfigTestCase(unittest.TestCase):
             metaevaluatormodules=[atsim.pro_fit.metaevaluators],
             jobfactorymodules=[mockfactories],
             minimizermodules=[atsim.pro_fit.minimizers],
+            jobtaskmodules=[atsim.pro_fit.jobtasks]
         )
 
         self.assertEqual(20.0, cfgobject.bad_merit_substitute)
@@ -152,6 +156,7 @@ class FitConfigTestCase(unittest.TestCase):
                 metaevaluatormodules=[atsim.pro_fit.metaevaluators],
                 jobfactorymodules=[mockfactories],
                 minimizermodules=[atsim.pro_fit.minimizers],
+                jobtaskmodules=[atsim.pro_fit.jobtasks]
             )
 
     def testErrorOnNoEvaluators(self):
@@ -172,6 +177,7 @@ class FitConfigTestCase(unittest.TestCase):
                 metaevaluatormodules=[atsim.pro_fit.metaevaluators],
                 jobfactorymodules=[mockfactories],
                 minimizermodules=[atsim.pro_fit.minimizers],
+                jobtaskmodules=[atsim.pro_fit.jobtasks]
             )
 
     def testErrorOnMultipleMinimizers(self):
@@ -194,6 +200,7 @@ class FitConfigTestCase(unittest.TestCase):
                 metaevaluatormodules=[atsim.pro_fit.metaevaluators],
                 jobfactorymodules=[mockfactories],
                 minimizermodules=[atsim.pro_fit.minimizers],
+                jobtaskmodules=[atsim.pro_fit.jobtasks]
             )
 
     def testParseBounds(self):

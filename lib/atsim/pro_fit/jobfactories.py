@@ -42,9 +42,12 @@ from the job.cfg files located in fit_files.
 
 """
 
-from atsim.pro_fit.tools import csvbuild
-import os
 import logging
+import os
+from typing import List, Tuple
+
+from atsim.pro_fit.exceptions import ConfigException
+from atsim.pro_fit.tools import csvbuild
 
 
 class Job(object):
@@ -108,21 +111,23 @@ class TemplateJobFactory(object):
     )
 
     def __init__(
-        self, templatePath, runnerFilesPath, runnerName, jobName, evaluators
+        self, templatePath: str, runnerFilesPath: str, runnerName: str, jobName: str, evaluators: List[object], jobtasks: List[object]
     ):
         """
     Args:
-        templatePath (string): Source directory containing files from which job directory is constructed
-        runnerFilesPath (string): Path to runner_files directory used by this job factory or `None` if no runner_files are to be used.
-        runnerName (string): Runner used to execute jobs created by this factory.
-        jobName (string): Factory name.
+        templatePath (str): Source directory containing files from which job directory is constructed.
+        runnerFilesPath (str): Path to runner_files directory used by this job factory or `None` if no runner_files are to be used.
+        runnerName (str): Runner used to execute jobs created by this factory.
+        jobName (str): Factory name.
         evaluators (list): List of evaluators to be applied to directory after run.
+        jobtasks (list): List of JobTask objects.
     """
         self.name = jobName
         self.runnerName = runnerName
         self.runnerFilesPath = runnerFilesPath
         self.jobName = jobName
         self.evaluators = evaluators
+        self.tasks = jobtasks
         self._templatePath = templatePath
 
     def createJob(self, destdir, variables):
@@ -137,9 +142,21 @@ class TemplateJobFactory(object):
         self._createRunnerFiles(rfdir, variables)
         return Job(self, destdir, variables)
 
+    def runTasksBeforeRun(self, job):
+        logger = self._logger.getChild("runTasksBeforeRun")
+        logger.debug("Processing job tasks before run for job: %s", job.name)
+        for task in self.tasks:
+            logger.debug("running job task: %s", task.name)
+            task.beforeRun(job)
+
+    def runTasksAfterRun(self, job):
+        logger = self._logger.getChild("runTasksBeforeRun")
+        logger.debug("Processing job tasks after run (before evaluation) for job: %s", job.name)
+        for task in self.tasks:
+            logger.debug("running job task: %s", task.name)
+            task.afterRun(job)
+
     def _createFiles(self, srcdir, destdir, variables):
-        import os
-        from atsim.pro_fit.exceptions import ConfigException
 
         oldcwd = os.getcwd()
         try:
@@ -165,16 +182,17 @@ class TemplateJobFactory(object):
 
     @staticmethod
     def createFromConfig(
-        jobpath, fitRootPath, runnername, jobname, evaluators, cfgitems
+        jobpath: str, fitRootPath: str, runnername:  str, jobname: str, evaluators: List[object], jobtasks: List[object], cfgitems: List[Tuple[str, str]]
     ):
         """Create job factory from job.cfg
 
     Args:
-        jobpath (string): Path to job directory.
-        fitRootPath (string): Path of fitting run root.
-        runnername (string): Name of the runner assigned to this job.
-        jobname (string): Name of this job.
+        jobpath (str): Path to job directory.
+        fitRootPath (str): Path of fitting run root.
+        runnername (str): Name of the runner assigned to this job.
+        jobname (str): Name of this job.
         evaluators (list): List of Evaluator instances associated with this job.
+        jobtasks (list): List of JobTask instances associated with this job.
         cfgitems (list): List of (key,value) tuples with the configuration items related to this job factory.
 
     Returns:
@@ -215,5 +233,5 @@ class TemplateJobFactory(object):
             )
 
         return TemplateJobFactory(
-            jobpath, runnerFilesPath, runnername, jobname, evaluators
+            jobpath, runnerFilesPath, runnername, jobname, evaluators, jobtasks
         )
