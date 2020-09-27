@@ -33,7 +33,4 @@ The following lists documentation relating to ``job.cfg`` configuration files:
 .. toctree::
     evaluators  
     jobfactories
-
-
-
-	
+    jobtasks
