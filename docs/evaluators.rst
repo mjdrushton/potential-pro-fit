@@ -544,7 +544,7 @@ Required Fields
 :Arg Type: string
 :Description: This field defines a mathematical expression that is evaluated for each row and compared to the contents of the ``expect`` column within the expectation table (if the ``expect_value`` option is used then this value is used instead of the ``expect`` column values). The merit value for each row is given as the square root of the squared difference between ``expect`` and ``row_compare``. 
 
-  Values from both the expectation and results tables can be used within expressions by using an `e_` or `r_` prefix respectively:
+  Values from both the expectation and results tables can be used within expressions by using an ``e_`` or ``r_`` prefix respectively:
   
     * ``e_COLUMN`` defines expect variables:
       

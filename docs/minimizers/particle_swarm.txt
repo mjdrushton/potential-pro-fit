@@ -13,6 +13,7 @@ Particle swarm optimiser.
 
 
 .. note::
+
   This minimizer wraps the PSO implementation provided within the `inspyred library <http://inspyred.github.com>`_ . If you use this minimizer please acknowledge inspyred. The approach used by the optimizer was described in [Deb and Padhye]_ please recognise their work if you make use of the Particle_Swarm minimizer.
   
 

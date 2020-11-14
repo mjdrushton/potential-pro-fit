@@ -6,7 +6,7 @@ Job-Tasks
 
 Job tasks work with :ref:`job factories <pprofit-jobfactories>` to provide additional files required by the job. After a job-factory has done the heavy lifting of creating and initially populating the job directory, job tasks are there to do common things like potential tabulation. Depending on their function they can run before the job's ``runjob`` is executed, or after the job completes (but before the :ref:`evaluator <pprofit-evaluators>` values are determined).
 
-Job tasks run on the same machine as `pprofit`\ . This can be useful in a number of circumstances. For instance, to execute a script which depends on  resources only available locally.
+Job tasks run on the same machine as ``pprofit``\ . This can be useful in a number of circumstances. For instance, to execute a script which depends on  resources only available locally.
 
 Tasks are defined in a job's ``job.cfg`` file and are executed in the order they are defined. They have the following general form::
 
@@ -25,7 +25,7 @@ Where:
 .. rubric:: Example:
 
 
-The following `job.cfg` contains a `Potable` task which would produce a tabulated potential, defined using the format used by the `atsim.potentials <https://atsimpotentials.readthedocs.io>`_ potable tool::
+The following `job.cfg` contains a ``Potable`` task which would produce a tabulated potential, defined using the format used by the `atsim.potentials <https://atsimpotentials.readthedocs.io>`_ potable tool::
 
         [Job]
         type : Template

@@ -1,0 +1,34 @@
+units metal
+boundary p p p
+atom_style full
+
+read_data CaO.lmpstruct
+
+#replicate 3 3 3
+
+set type 1 charge 2.0
+set type 2 charge -2.0
+
+kspace_style pppm 1.0e-7
+
+pair_style hybrid/overlay coul/long 10.0 table linear 1000
+pair_coeff * * coul/long
+pair_coeff 1 2 table table.lmptab Ca-O
+pair_coeff 2 2 table table.lmptab O-O
+
+variable X equal cella
+variable Y equal cellc
+variable Z equal cellc
+
+neigh_modify every 1 one 10000
+
+thermo_style custom step pe cella cellb cellc 
+thermo 1
+
+fix box_relax all box/relax aniso 0.0
+minimize 0.0 1.0e-8 100000 1000000
+
+
+print LA:$X
+print LB:$Y
+print LC:$Z

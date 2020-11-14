@@ -1,0 +1,8 @@
+[Tabulation]
+target : LAMMPS
+nr : 1000
+cutoff : 10.0
+
+[Pair]
+Ca-O : as.buck @Ca_O_A@ @Ca_O_rho@ @Ca_O_C@
+O-O :  as.buck @O_O_A@ @O_O_rho@ @O_O_C@

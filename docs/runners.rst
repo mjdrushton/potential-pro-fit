@@ -4,7 +4,7 @@
 Runners
 #######
 
-As their names suggest runners are responsible for running jobs and making sure that their output is copied to a job's ``output/`` sub-directory. Runners are provided to run jobs on the local machine (see :ref:`pprofit-runners-Local`) or on remote hosts (see :ref:`pprofit-runners-Remote` and :ref:`pprofit-runners-PBS` as examples). When jobs are run remotely, the runner is responsible for copying the job files to the remote machine, invoking ``runjob`` for each file, monitoring job completion before copying the output files back to the machine running ``pprofit``.
+As their names suggest runners are responsible for	 running jobs and making sure that their output is copied to a job's ``output/`` sub-directory. Runners are provided to run jobs on the local machine (see :ref:`pprofit-runners-Local`) or on remote hosts (see :ref:`pprofit-runners-Remote` and :ref:`pprofit-runners-PBS` as examples). When jobs are run remotely, the runner is responsible for copying the job files to the remote machine, invoking ``runjob`` for each file, monitoring job completion before copying the output files back to the machine running ``pprofit``.
 
 At present the following runners are supported by the fitting tool:
 
