@@ -1,5 +1,7 @@
 # Potential Pro-Fit v0.10.0
 
+By Michael J.D. Rushton (m.j.d.rushton@gmail.com)
+
 ## Installing Potential Pro-Fit
 
 To install `pprofit`:
