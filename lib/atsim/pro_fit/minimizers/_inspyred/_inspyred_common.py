@@ -11,6 +11,14 @@ from atsim.pro_fit.exceptions import ConfigException
 
 from atsim.pro_fit.variables import BoundedVariableBaseClass
 
+# Monkey patch the collections module imported by inspyred 
+# Iterable and Sequence we moved from collections to collections.abc
+# after python 3.10.
+import collections.abc
+inspyred.ec.ec.collections.Iterable = collections.abc.Iterable
+inspyred.ec.ec.collections.Sequence = collections.abc.Sequence
+
+
 
 class Bounder(BoundedVariableBaseClass):
     """Inspyred bounder populated from Variables instance"""
