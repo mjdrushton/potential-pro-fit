@@ -127,9 +127,10 @@ class SQLReporterDatabaseLockTestCase(unittest.TestCase):
         self.dbfilename = os.path.join(self.tempdir, "fitting_run.db")
 
     def tearDown(self):
-        self._lockerPipe.send("stop")
-        self._lockerPipe.recv()
-        self._lockerPipe.close()
+        if hasattr(self, "_lockerPipe"):
+            self._lockerPipe.send("stop")
+            self._lockerPipe.recv()
+            self._lockerPipe.close()
 
         shutil.rmtree(self.tempdir, ignore_errors=True)
 
