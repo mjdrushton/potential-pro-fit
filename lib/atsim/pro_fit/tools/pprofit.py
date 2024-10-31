@@ -626,7 +626,7 @@ def main():
             console.start()
             gevent.sleep(0)
         else:
-            # ... if enabled, the data logged to pprofit.log will also appear in the terminal.
+            # If console is disabled, log to terminal
             root_logger = logging.getLogger()
             stream_handler = logging.StreamHandler(sys.stderr)
             stream_handler.setLevel(logging.DEBUG)
@@ -703,20 +703,19 @@ def main():
     finally:
         if console and console.started:
             console_close_event = console.close()
-            gevent.wait([console_close_event])
+            gevent.wait([console_close_event])  # Wait for console to fully close
+            gevent.sleep(0)  # Final sleep to ensure all tasks are processed
         sys.exit(exit_code)
 
 
 def perform_minimization(options, pluginmodules, console):
     tempdir = tempfile.mkdtemp()
-
     console_logger = logging.getLogger("console")
 
     try:
         cfg = None
         logsql = True
         if options.single_step:
-            # Do not run a minimization run
             console_logger.info("Performing Single-step run")
             cfg = _getSingleStepCfg(
                 tempdir, options.single_step, pluginmodules
@@ -744,7 +743,10 @@ def perform_minimization(options, pluginmodules, console):
             cfg_closed_event = gevent.event.Event()
             cfg_closed_event.set()
 
-        gevent.wait([cfg_closed_event])
-
-        _removeLockFile()
-        shutil.rmtree(tempdir, ignore_errors=True)
+        try:
+            gevent.wait([cfg_closed_event])
+        except gevent.exceptions.LoopExit:
+            pass  # Handle LoopExit without raising
+        finally:
+            _removeLockFile()
+            shutil.rmtree(tempdir, ignore_errors=True)
